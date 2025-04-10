@@ -1,22 +1,22 @@
 import React, { useState, FormEvent } from 'react';
 import Logo from '../assets/logo.png';
-import BackgroundIm from '../assets/imagenBg.jpg';
+import BackgroundIm from '../assets/imagenBg.webp';
 import { login } from '../service/authService';
-import { useNavigate } from 'react-router-dom';
+
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [message, setMessage] = useState<string>('');
-  const navigate = useNavigate();
+
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const result = await login(email, password);
     setMessage(result.message);
     if (result.success) {
-      navigate('/');
+       window.location.href = '/home'
     }
   };
 

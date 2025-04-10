@@ -1,7 +1,7 @@
 import React, { useState, FC } from 'react';
+import Cookies from 'js-cookie';
 import Logo from "../assets/logo.png";
-import { Outlet } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 
 interface NavItemProps {
   icon: string;
@@ -40,9 +40,14 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
     setActiveDropdown(activeDropdown === index ? null : index);
   };
 
+  const handleLogout = () => {
+    Cookies.remove('authToken'); 
+    window.location.href = '/login'; 
+  };
+
   return (
     <div
-      className={`h-full transition-all duration-500 ease-in-out shadow-lg bg-gradient-to-br from-[#0458AB] to-[#051537] 
+      className={`relative h-full transition-all duration-500 ease-in-out shadow-lg bg-gradient-to-br from-[#0458AB] to-[#051537] 
       ${isCollapsed ? 'w-24' : 'w-72'}`}
     >
       <div className="px-6 py-6 mb-12 flex items-center transition-all duration-300 ease-in-out relative">
@@ -108,28 +113,42 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           )}
         </li>
       </ul>
+
+      {/* Botón de Logout */}
+      <div className="absolute bottom-6 w-full">
+        <button
+          className="w-full flex items-center py-4 px-6 text-white transition-all duration-300 ease-in-out 
+          hover:bg-red-600 hover:pl-8 text-lg"
+          onClick={handleLogout}
+        >
+          <span className="w-10 h-10 leading-10 text-center inline-block mr-3 rounded-sm text-xl">
+            <i className="fas fa-sign-out-alt text-white"></i>
+          </span>
+          {!isCollapsed && <span className="text-white text-lg">Logout</span>}
+        </button>
+      </div>
     </div>
   );
 };
 
 const NavItem: FC<NavItemProps> = ({ icon, text, isCollapsed, to }) => {
-    return (
-      <li>
-        <Link
-          to={to}
-          className="group flex items-center py-4 px-6 text-white no-underline transition-all duration-300 
-          ease-in-out relative hover:bg-[#60A3D9] hover:pl-8 text-lg"
-        >
-          <span className="w-10 h-10 leading-10 text-center inline-block mr-3 rounded-sm text-xl">
-            <i className={`fas ${icon} text-white`}></i>
-          </span>
-          {!isCollapsed && <span className="text-white text-lg">{text}</span>}
-          <span className="absolute left-0 top-0 w-1.5 h-full bg-white transition-transform duration-300 
-            ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top"></span>
-        </Link>
-      </li>
-    );
-  };
+  return (
+    <li>
+      <Link
+        to={to}
+        className="group flex items-center py-4 px-6 text-white no-underline transition-all duration-300 
+        ease-in-out relative hover:bg-[#60A3D9] hover:pl-8 text-lg"
+      >
+        <span className="w-10 h-10 leading-10 text-center inline-block mr-3 rounded-sm text-xl">
+          <i className={`fas ${icon} text-white`}></i>
+        </span>
+        {!isCollapsed && <span className="text-white text-lg">{text}</span>}
+        <span className="absolute left-0 top-0 w-1.5 h-full bg-white transition-transform duration-300 
+          ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top"></span>
+      </Link>
+    </li>
+  );
+};
 
 const DropdownItem: FC<DropdownItemProps> = ({ text }) => {
   return (
@@ -146,16 +165,16 @@ const DropdownItem: FC<DropdownItemProps> = ({ text }) => {
 };
 
 const MainContent: FC<MainContentProps> = ({ isCollapsed }) => {
-    return (
-      <div
-        className={`flex-1 overflow-auto transition-all duration-500 ease-in-out bg-[#f3f4f6] h-full
-        ${isCollapsed ? 'ml-14' : 'ml-2'}`}
-      >
-        <div className="p-10">
-          <Outlet />
-        </div>
+  return (
+    <div
+      className={`flex-1 overflow-auto transition-all duration-500 ease-in-out bg-[#f3f4f6] h-full
+      ${isCollapsed ? 'ml-14' : 'ml-2'}`}
+    >
+      <div className="p-10">
+        <Outlet />
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 export default Layout;

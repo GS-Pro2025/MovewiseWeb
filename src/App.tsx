@@ -4,25 +4,56 @@ import Layout from './componets/sidebar';
 import Home from './componets/home';
 import LoginPage from './componets/loginPage';
 import { isAuthenticated } from './service/authService';
+import { useState, useEffect } from 'react';
+import LoadingSpinner from './componets/LoadingSpinner'; // Crea este componente
 
 const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Simulamos un delay para verificar la autenticación
+    const checkAuth = async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo de delay
+      setAuthenticated(isAuthenticated());
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingSpinner />; // Muestra un spinner mientras carga
+  }
+
   return (
     <Router>
       <Routes>
-        {/* Login */}
-        <Route path="/login" element={<LoginPage />} />
-        {/* Protected routes */}
-        <Route path="/" element={<Layout />}>
-          <Route
-            path="home"
-            element={
-              isAuthenticated() ? <Home />: <Navigate to="/login" replace />
-            }
-          />
+        {/* Login - accesible solo si no está autenticado */}
+        <Route 
+          path="/login" 
+          element={authenticated ? <Navigate to="/home" replace /> : <LoginPage />} 
+        />
+        
+        {/* Rutas protegidas */}
+        <Route 
+          path="/" 
+          element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
+        >
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<Home />} />
+          {/* Agrega aquí otras rutas protegidas */}
         </Route>
 
-        {/* Default route */}
-        <Route path="*" element={<Navigate to="/home" />} />
+        {/* Ruta por defecto */}
+        <Route 
+          path="*" 
+          element={
+            authenticated ? 
+              <Navigate to="/home" replace /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
       </Routes>
     </Router>
   );

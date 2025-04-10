@@ -23,7 +23,6 @@ export const login = async (email: string, password: string): Promise<LoginResul
     });
 
     const data: LoginResponse = await response.json();
-    console.log(data);
     if (response.ok && data.token) {
       Cookies.set('authToken', data.token, { expires: 1 });
       return { success: true, message: 'Login exitoso' };
