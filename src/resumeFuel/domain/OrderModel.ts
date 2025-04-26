@@ -1,7 +1,8 @@
-import { PaginatedResult } from "../../models/PaginatedResult";
-import { Person } from "./PersonModel";
+import { Person } from './PersonModel';
+import { FuelCost } from './FuelCostModel';
+import { PaginatedResult } from '../../models/PaginatedResult';
 
-export interface OrderResult {
+export interface Order {
     key: string;
     key_ref: string;
     date: string;
@@ -11,7 +12,7 @@ export interface OrderResult {
     state_usa: string;
     person: Person;
     job: number;
-    fuelCost: any[];
+    fuelCost: FuelCost[];
 }
 // Tipo específico para la paginación de órdenes
-export type PaginatedOrderResult = PaginatedResult<OrderResult>;
+export type PaginatedOrderResult = PaginatedResult<Order>;

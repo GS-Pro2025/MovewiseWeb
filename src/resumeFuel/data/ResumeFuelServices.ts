@@ -1,13 +1,13 @@
-import { ResumeFuelRepositoryInterface } from "./ResumeFuelRepository";
+import { ResumeFuelRepository, ResumeFuelRepositoryInterface } from "./ResumeFuelRepository";
 
 export class ResumeFuelService  {
-    private ResumeFuelRepository: ResumeFuelRepositoryInterface;
+    private resumeFuelRepository: ResumeFuelRepositoryInterface;
 
-    constructor(ResumeFuelRepository: ResumeFuelRepositoryInterface) {
-        this.ResumeFuelRepository = ResumeFuelRepository;
+    constructor(resumeFuelRepository?: ResumeFuelRepositoryInterface) {
+        this.resumeFuelRepository = resumeFuelRepository || new ResumeFuelRepository();
     }
 
     async getResumeFuel(pages: number): Promise<any> {
-        return await this.ResumeFuelRepository.getResumeFuel(pages);
+        return await this.resumeFuelRepository.getResumeFuel(pages);
     }   
 }
