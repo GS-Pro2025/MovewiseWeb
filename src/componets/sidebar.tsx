@@ -1,4 +1,4 @@
-import React, { useState, FC } from 'react';
+import { useState, FC } from 'react';
 import Cookies from 'js-cookie';
 import Logo from "../assets/logo.png";
 import { Outlet, Link } from 'react-router-dom';
@@ -79,7 +79,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
 
       <ul className="mt-6 list-none p-0 m-0">
         <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />
-        <NavItem icon="fa-receipt" text="Payroll" isCollapsed={isCollapsed} to="/home" />
+        <NavItem icon="fa-receipt" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
         <NavItem icon="fa-solid fa-gas-pump" text="Resume Fuel" isCollapsed={isCollapsed} to="/home" />
         <li className={`relative ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
           <button
