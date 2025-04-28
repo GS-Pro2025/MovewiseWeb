@@ -80,9 +80,8 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       <ul className="mt-6 list-none p-0 m-0">
         {/* NavItems */}
         <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />
-        {/* <NavItem icon="fa-receipt" text="Payroll" isCollapsed={isCollapsed} to="/home" /> */}
         <NavItem icon="fa-solid fa-gas-pump" text="Resume Fuel" isCollapsed={isCollapsed} to="/resume-fuel" />
-        <NavItem icon="fa-solid fa-gas-pump" text="Resume Fuel" isCollapsed={isCollapsed} to="/resume-fuel" />
+        <NavItem icon="fa-solid fa-calculator" text="Summary Costs" isCollapsed={isCollapsed} to="/summary-cost" />
         <li className={`relative ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
           <button
             className="w-full flex items-center justify-between py-4 px-6 text-white transition-all duration-300 

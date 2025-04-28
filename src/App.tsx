@@ -7,6 +7,7 @@ import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
 import LoadingSpinner from './componets/LoadingSpinner'; // Crea este componente
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
+import SummaryCost from './summaryCost/ui/pages/SummaryCost';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +46,7 @@ const App = () => {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<Home />} />
           <Route path="resume-fuel" element={<ResumeFuel />} />
+          <Route path="/summary-cost" element={<SummaryCost />} />
           {/* Agrega aquí otras rutas protegidas */}
         </Route>
 
