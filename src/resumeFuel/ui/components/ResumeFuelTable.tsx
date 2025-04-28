@@ -53,6 +53,7 @@ const columns = [
     size: 100,
   }),
   columnHelper.accessor('fuelCost', {
+    id: 'costoPorGalon',
     header: 'Costo por Galón',
     size: 120,
     Cell: ({ cell }) => {
@@ -62,6 +63,7 @@ const columns = [
     },
   }),
   columnHelper.accessor('fuelCost', {
+    id: 'cantidadCombustible',
     header: 'Cantidad de Combustible',
     size: 120,
     Cell: ({ cell }) => {
@@ -71,6 +73,7 @@ const columns = [
     },
   }),
   columnHelper.accessor('fuelCost', {
+    id: 'distanciaRecorrida',
     header: 'Distancia Recorrida',
     size: 120,
     Cell: ({ cell }) => {
@@ -80,6 +83,7 @@ const columns = [
     },
   }),
   columnHelper.accessor('fuelCost', {
+    id: 'numeroCamion',
     header: 'Número de Camión',
     size: 120,
     Cell: ({ cell }) => {
@@ -89,6 +93,7 @@ const columns = [
     },
   }),
   columnHelper.accessor('fuelCost', {
+    id: 'tipoCamion',
     header: 'Tipo de Camión',
     size: 120,
     Cell: ({ cell }) => {
@@ -98,6 +103,7 @@ const columns = [
     },
   }),
   columnHelper.accessor('fuelCost', {
+    id: 'categoria',
     header: 'Categoría',
     size: 120,
     Cell: ({ cell }) => {
