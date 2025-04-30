@@ -13,6 +13,7 @@ export type Person = {
     idOperador: number;
     nameAnt: string;
     totalCost: number;
+    fuelcost?: any;
   };
   
   export const data = [

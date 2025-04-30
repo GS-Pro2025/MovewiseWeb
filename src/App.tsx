@@ -7,6 +7,7 @@ import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
 import LoadingSpinner from './componets/LoadingSpinner'; // Crea este componente
 import PayrollPage from './Payroll/pages/PayrollPage';
+import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -41,8 +42,10 @@ const App = () => {
           path="/" 
           element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
         >
+        
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<Home />} />
+          <Route path="resume-fuel" element={<ResumeFuel />} />
           <Route path="payroll" element={<PayrollPage />} />
           {/* Agrega aquí otras rutas protegidas */}
         </Route>
