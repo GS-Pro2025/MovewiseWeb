@@ -141,6 +141,7 @@ import {
   
     return (
         <MaterialReactTable table={table} />
+        
      
     );
     
