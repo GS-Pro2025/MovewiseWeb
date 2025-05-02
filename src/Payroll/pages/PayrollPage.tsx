@@ -5,6 +5,7 @@ import {
   AssignmentData,
   WeekInfo,
 } from '../../service/PayrollService';
+import { PayrollModal } from '../components/PayrollModal';
 
 /* ---------- Types ---------- */
 interface WeekAmounts {
@@ -20,8 +21,13 @@ interface WeekAmounts {
 interface OperatorRow extends WeekAmounts {
   code: string;
   name: string;
+  lastName: string;  // Agregamos lastName
   role: string;
+  cost: number;      // Agregamos cost
+  pay: string;       // Agregamos pay (para el indicador ✓ o ⚠️)
   total?: number;
+  additionalBonuses?: number; // Agregamos el campo para bonos adicionales
+  grandTotal?: number; // Agregamos el campo para el total general
 }
 
 const weekdayKeys: (keyof WeekAmounts)[] = [
@@ -45,8 +51,13 @@ const formatCurrency = (n: number) =>
     n,
   );
 
-const addAmount = (prev: number | undefined, salary: number, bonus: number | null) =>
-  (prev ?? 0) + salary + (bonus ?? 0);
+const addAmount = (prev: number | undefined, salary: number, bonus: number) => {
+  console.log(salary + "salary" + bonus + "bonus" + prev);
+  
+  
+  return (prev || 0) + (salary || 0) + (bonus || 0);
+};
+
 
 /* ==================================================== */
 
@@ -62,6 +73,7 @@ export default function PayrollPage() {
     const start = new Date(now.getFullYear(), 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000); // ms in a week
   });
+  const [selectedOperator, setSelectedOperator] = useState<OperatorRow | null>(null);
 
   /* ---------- Fetch ---------- */
   const fetchData = async () => {
@@ -78,14 +90,30 @@ export default function PayrollPage() {
         if (!map.has(key)) {
           map.set(key, {
             code: d.code,
-            name: `${d.first_name} ${d.last_name}`,
+            name: d.first_name,
+            lastName: d.last_name,  // Agregamos lastName separado
             role: d.role,
+            cost: d.salary,        // Usamos el salary como cost
+            pay: '⚠️',             // Por defecto usamos warning
             total: 0,
+            additionalBonuses: 0,
+            grandTotal: 0
           });
         }
         const row = map.get(key)!;
-        row[day] = addAmount(row[day], d.salary, d.bonus);
-        row.total! += d.salary + (d.bonus ?? 0);
+        
+
+        row[day] = addAmount(row[day], d.salary, 0);
+        // Aseguramos que los valores sean números válidos
+        const currentTotal = Number(row.total || 0);
+        const currentSalary = Number(d.salary || 0);
+        const currentBonus = Number(d.bonus || 0);
+
+        row.total = currentTotal + currentSalary;
+        row.additionalBonuses = (row.additionalBonuses || 0) + currentBonus;
+        row.grandTotal = Number(row.total) + Number(row.additionalBonuses);
+        
+        console.log(d.salary + "salary" );
       });
 
       setGrouped(Array.from(map.values()));
@@ -116,8 +144,12 @@ export default function PayrollPage() {
     }
   };
 
-  /* ---------- Totals ---------- */
-  const grandTotal = grouped.reduce((acc, r) => acc + (r.total ?? 0), 0);
+  
+  
+
+  const handleRowClick = (operator: OperatorRow) => {
+    setSelectedOperator(operator);
+  };
 
   /* ---------- Render ---------- */
   return (
@@ -159,34 +191,49 @@ export default function PayrollPage() {
         <>
           {/* Table */}
           <div className="overflow-x-auto">
+            <div className="mb-2 text-right">
+              <span className="text-sm text-gray-600">Count Days: 5</span>
+            </div>
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
                 <tr className="bg-gray-100">
+                  <th className="py-2 px-4 border-b text-left">Pay</th>
                   <th className="py-2 px-4 border-b text-left">Code</th>
+                  <th className="py-2 px-4 border-b text-left">Cost</th>
                   <th className="py-2 px-4 border-b text-left">Name</th>
-                  <th className="py-2 px-4 border-b text-left">Role</th>
+                  <th className="py-2 px-4 border-b text-left">Last Name</th>
                   {weekdayKeys.map(day => (
                     <th key={day} className="py-2 px-4 border-b text-right">
                       {day}
                     </th>
                   ))}
-                  <th className="py-2 px-4 border-b text-right">Total</th>
+                  <th className="py-2 px-4 border-b text-right">Additional Bonuses</th>
+                  <th className="py-2 px-4 border-b text-right">Grand Total</th>
                 </tr>
               </thead>
               <tbody>
                 {grouped.length ? (
                   grouped.map(r => (
-                    <tr key={r.code} className="hover:bg-gray-50">
+                    <tr 
+                      key={r.code} 
+                      className="hover:bg-gray-50 cursor-pointer" 
+                      onClick={() => handleRowClick(r)}
+                    >
+                      <td className="py-2 px-4 border-b">{r.pay || '⚠️'}</td>
                       <td className="py-2 px-4 border-b">{r.code}</td>
+                      <td className="py-2 px-4 border-b">${r.cost || 0}</td>
                       <td className="py-2 px-4 border-b">{r.name}</td>
-                      <td className="py-2 px-4 border-b">{r.role}</td>
+                      <td className="py-2 px-4 border-b">{r.lastName}</td>
                       {weekdayKeys.map(day => (
                         <td key={day} className="py-2 px-4 border-b text-right">
                           {r[day] ? formatCurrency(r[day]!) : '—'}
                         </td>
                       ))}
+                      <td className="py-2 px-4 border-b text-right">
+                        {formatCurrency(r.additionalBonuses ?? 0)}
+                      </td>
                       <td className="py-2 px-4 border-b text-right font-semibold">
-                        {formatCurrency(r.total ?? 0)}
+                        {formatCurrency(r.grandTotal ?? 0)}
                       </td>
                     </tr>
                   ))
@@ -198,17 +245,8 @@ export default function PayrollPage() {
                   </tr>
                 )}
               </tbody>
-              {/* Grand total footer */}
-              <tfoot>
-                <tr className="bg-gray-50 font-bold">
-                  <td colSpan={weekdayKeys.length + 3} className="py-2 px-4 text-right">
-                    Grand Total:
-                  </td>
-                  <td className="py-2 px-4 text-right">
-                    {formatCurrency(grandTotal)}
-                  </td>
-                </tr>
-              </tfoot>
+              
+              
             </table>
           </div>
 
@@ -244,6 +282,11 @@ export default function PayrollPage() {
           </div>
         </>
       )}
+      <PayrollModal
+        isOpen={!!selectedOperator}
+        onClose={() => setSelectedOperator(null)}
+        operatorData={selectedOperator}
+      />
     </div>
   );
 }
