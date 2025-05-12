@@ -83,7 +83,8 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         <NavItem icon="fa-solid fa-gas-pump" text="Resume Fuel" isCollapsed={isCollapsed} to="/resume-fuel" />
         <NavItem icon="fa-solid fa-calculator" text="Summary Costs" isCollapsed={isCollapsed} to="/summary-cost" />
         <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
-        
+        <NavItem icon="fa-solid fa-dollar-sign" text="Extra Cost" isCollapsed={isCollapsed} to="/extra-cost" />
+
 
         <li className={`relative ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
           <button
