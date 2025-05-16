@@ -9,6 +9,7 @@ import { Box, Button, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { useMemo } from 'react';
+import { useState } from 'react';
 
 interface GroupedExtraCost {
   order: {
@@ -82,10 +83,45 @@ const csvConfig = mkConfig({
   useKeysAsHeaders: true,
 });
 
+// Add these utility functions at the top of the file
+const getWeekDates = (date: Date) => {
+  const first = date.getDate() - date.getDay();
+  const last = first + 6;
+
+  const firstDay = new Date(date.setDate(first));
+  const lastDay = new Date(date.setDate(last));
+
+  firstDay.setHours(0, 0, 0, 0);
+  lastDay.setHours(23, 59, 59, 999);
+
+  return { firstDay, lastDay };
+};
+
+const isDateInRange = (dateStr: string, startDate: Date, endDate: Date) => {
+  const date = new Date(dateStr);
+  return date >= startDate && date <= endDate;
+};
+
 const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
-  // Memoize grouped data
-  const { tableData, groupedData } = useMemo(() => {
-    const grouped = data?.results.results.reduce((acc, cost) => {
+  const [week, setWeek] = useState(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
+  });
+
+  const { tableData, weekRange } = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    start.setDate(start.getDate() + (week - 1) * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+
+    const filtered = data?.results.results.filter(cost => {
+      const orderDate = new Date(cost.order.date);
+      return orderDate >= start && orderDate <= end;
+    }) ?? [];
+
+    const grouped = filtered.reduce((acc, cost) => {
       const orderKey = cost.order.key;
       if (!acc[orderKey]) {
         acc[orderKey] = {
@@ -97,39 +133,65 @@ const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
       acc[orderKey].extraCosts.push(cost);
       acc[orderKey].totalCost += parseFloat(cost.cost);
       return acc;
-    }, {} as Record<string, GroupedExtraCost>) ?? {};
+    }, {} as Record<string, GroupedExtraCost>);
 
     return {
       tableData: Object.values(grouped),
-      groupedData: grouped
+      weekRange: {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0]
+      }
     };
-  }, [data]);
+  }, [data, week]);
 
-  // Memoize export handler
   const handleExportRows = useMemo(() => (rows: MRT_Row<GroupedExtraCost>[]) => {
-    const rowData = rows.flatMap((row) => {
-      const order = row.original.order; // Get the order once
-      return row.original.extraCosts.map(cost => ({
-        id_orden: order.key,
-        referencia: order.key_ref,
-        fecha: order.date,
-        nombre: cost.name,
-        tipo: cost.type,
-        costo: cost.cost,
-        conductor: `${order.person.first_name} ${order.person.last_name}`,
-        estado: order.state_usa
-      }));
-    });
-    const csv = generateCsv(csvConfig)(rowData);
-    download(csvConfig)(csv);
-  }, []);
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    start.setDate(start.getDate() + (week - 1) * 7);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+
+    const filtered = data?.results.results.filter(cost => {
+      const orderDate = new Date(cost.order.date);
+      return orderDate >= start && orderDate <= end;
+    }) ?? [];
+
+    const grouped = filtered.reduce((acc, cost) => {
+      const orderKey = cost.order.key;
+      if (!acc[orderKey]) {
+        acc[orderKey] = {
+          order: cost.order,
+          extraCosts: [],
+          totalCost: 0
+        };
+      }
+      acc[orderKey].extraCosts.push(cost);
+      acc[orderKey].totalCost += parseFloat(cost.cost);
+      return acc;
+    }, {} as Record<string, GroupedExtraCost>);
+
+    return {
+      tableData: Object.values(grouped),
+      weekRange: {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0]
+      }
+    };
+  }, [data, week]);
+
+  const changeWeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const w = parseInt(e.target.value, 10);
+    if (w >= 1 && w <= 53) {
+      setWeek(w);
+    }
+  };
 
   const table = useMaterialReactTable({
     columns,
     data: tableData,
     enableRowSelection: true,
     enableExpanding: true,
-    muiTableBodyRowProps: { hover: false }, // Disable hover effect
+    muiTableBodyRowProps: { hover: false },
     renderDetailPanel: ({ row }) => (
       <Box sx={{ p: 2 }}>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>Información de la Orden</Typography>
@@ -191,7 +253,27 @@ const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
     ),
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <>
+      <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography sx={{ mr: 1 }}>Semana:</Typography>
+          <input
+            type="number"
+            min="1"
+            max="53"
+            value={week}
+            onChange={changeWeek}
+            style={{ padding: '8px', width: '80px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+          <Typography sx={{ ml: 2, color: 'text.secondary' }}>
+            Period: {weekRange.start} → {weekRange.end}
+          </Typography>
+        </Box>
+      </Box>
+      <MaterialReactTable table={table} />
+    </>
+  );
 };
 
 export default ExtraCostTable;
