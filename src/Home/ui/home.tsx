@@ -102,26 +102,23 @@ const columns = [
 ];
 
 const Example = () => {
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [data, setData] = useState<TableData[]>([]); // Estado para almacenar los datos de la tabla
-  const [filteredData, setFilteredData] = useState<TableData[]>([]); // Datos filtrados por semana
-  const [loading, setLoading] = useState<boolean>(true); // Estado para manejar el estado de carga
+  const [data, setData] = useState<TableData[]>([]);
+  const [filteredData, setFilteredData] = useState<TableData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [week, setWeek] = useState<number>(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 1);
-    return Math.ceil((now.getTime() - start.getTime()) / 604800000); // Semana actual
+    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
-
   const currentYear = new Date().getFullYear();
   const weekRange = useMemo(() => {
     return getWeekRange(currentYear, week);
   }, [currentYear, week]);
   // Función para cargar los datos desde el servicio
-  const loadData = useCallback(async (pageToLoad = page) => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetchOrdersReport(pageToLoad);
+      const response = await fetchOrdersReport(1);
       const mappedData = response.results.map((item) => {
         const date = new Date(item.date);
         return {
@@ -142,18 +139,17 @@ const Example = () => {
         };
       });
       setData(mappedData);
-      const pageSize = 10;
-      setTotalPages(Math.ceil(response.count / pageSize));
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
   // Filtrar datos por semana seleccionada
+
   useEffect(() => {
-    loadData(page);
-  }, [page, loadData]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     setFilteredData(data.filter((item) => item.week === week));
@@ -239,13 +235,6 @@ const handleExportData = () => {
         >
           Export Selected Rows
         </Button>
-          <Button disabled={page === 1} onClick={() => { setPage(page - 1); }}>
-            Anterior
-          </Button>
-          <Typography>Page {page} of {totalPages}</Typography>
-          <Button disabled={page === totalPages} onClick={() => { setPage(page + 1); }}>
-            Siguiente
-          </Button>
       </Box>
     ),
   });
