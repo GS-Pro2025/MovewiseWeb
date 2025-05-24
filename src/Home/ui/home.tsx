@@ -12,6 +12,7 @@ import { fetchOrdersWithCostFuel } from '../data/repositoryOrdersWIthCostFuel';
 
 // Definimos el tipo de datos que se mostrarán en la tabla
 interface TableData {
+  [key: string]: string | number;  //Indice para exportar a CSV
   id: string;
   firstName: string;
   lastName: string;
@@ -164,17 +165,23 @@ const Example = () => {
       setWeek(newWeek);
     }
   };
+  
+const csvConfig = mkConfig({
+  fieldSeparator: ',',
+  decimalSeparator: '.',
+  useKeysAsHeaders: true,
+});
 
-  const handleExportRows = (rows: MRT_Row<TableData>[]) => {
-    const rowData = rows.map((row) => row.original);
-    const csv = generateCsv(csvConfig)(rowData);
-    download(csvConfig)(csv);
-  };
+const handleExportRows = (rows: MRT_Row<TableData>[]) => {
+  const rowData = rows.map((row) => row.original);
+  const csv = generateCsv(csvConfig)(rowData);
+  download(csvConfig)(csv);
+};
 
-  const handleExportData = () => {
-    const csv = generateCsv(csvConfig)(filteredData);
-    download(csvConfig)(csv);
-  };
+const handleExportData = () => {
+  const csv = generateCsv(csvConfig)(filteredData);
+  download(csvConfig)(csv);
+};
 
   const table = useMaterialReactTable({
     columns,
