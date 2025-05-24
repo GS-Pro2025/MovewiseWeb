@@ -5,6 +5,7 @@ import {
   type MRT_Row,
   createMRTColumnHelper,
 } from 'material-react-table';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
@@ -107,7 +108,6 @@ const Example = () => {
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [rowOperators, setRowOperators] = useState<any[]>([]);
   const currentYear = new Date().getFullYear();
   const weekRange = useMemo(() => {
     return getWeekRange(currentYear, week);
@@ -246,22 +246,47 @@ const Example = () => {
       sx: { cursor: 'pointer' },
     }),
     renderDetailPanel: ({ row }) =>
-      expandedRowId === row.original.id ? (
-        <Box sx={{ p: 2, bgcolor: '#f5f5f5' }}>
-          <Typography variant="subtitle1">Operadores asignados:</Typography>
-          {row.original.operators && row.original.operators.length > 0 ? (
-            <ul>
+  expandedRowId === row.original.id ? (
+    <Box sx={{ p: 2, bgcolor: '#f5f5f5' }}>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+        Operadores asignados:
+      </Typography>
+      {row.original.operators && row.original.operators.length > 0 ? (
+        <TableContainer component={Paper} variant="outlined">
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Apellido</TableCell>
+                <TableCell>Rol</TableCell>
+                <TableCell>Código</TableCell>
+                <TableCell>Salario</TableCell>
+                <TableCell>Bono</TableCell>
+                <TableCell>Fecha</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {row.original.operators.map((op) => (
-                <li key={op.id_assign}>
-                  {op.first_name} {op.last_name} - {op.role}
-                </li>
+                <TableRow key={op.id_assign}>
+                  <TableCell>{op.first_name}</TableCell>
+                  <TableCell>{op.last_name}</TableCell>
+                  <TableCell>{op.role}</TableCell>
+                  <TableCell>{op.code}</TableCell>
+                  <TableCell>${op.salary.toLocaleString('en-US')}</TableCell>
+                  <TableCell>
+                    {op.bonus !== null ? `$${op.bonus.toLocaleString('en-US')}` : 'N/A'}
+                  </TableCell>
+                  <TableCell>{op.date}</TableCell>
+                </TableRow>
               ))}
-            </ul>
-          ) : (
-            <Typography variant="body2">Sin operadores asignados.</Typography>
-          )}
-        </Box>
-      ) : null,
+            </TableBody>
+          </Table>
+        </TableContainer>
+      ) : (
+        <Typography variant="body2">Sin operadores asignados.</Typography>
+      )}
+    </Box>
+  ) : null,
   });
 
   return <MaterialReactTable table={table} />;
