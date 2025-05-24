@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -8,7 +8,7 @@ import {
 import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
-import { fetchOrdersWithCostFuel } from '../data/repositoryOrdersWIthCostFuel';
+import { fetchOrdersReport } from '../data/repositoryOrdersReport';
 
 // Definimos el tipo de datos que se mostrarán en la tabla
 interface TableData {
@@ -66,12 +66,8 @@ const columns = [
     header: 'Company',
     size: 120,
   }),
-  columnHelper.accessor('city', {
-    header: 'City',
-    size: 120,
-  }),
-  columnHelper.accessor('country', {
-    header: 'Country',
+  columnHelper.accessor('state', {//USA state
+    header: 'State',
     size: 120,
   }),
   columnHelper.accessor('weekday', {
@@ -106,6 +102,8 @@ const columns = [
 ];
 
 const Example = () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [data, setData] = useState<TableData[]>([]); // Estado para almacenar los datos de la tabla
   const [filteredData, setFilteredData] = useState<TableData[]>([]); // Datos filtrados por semana
   const [loading, setLoading] = useState<boolean>(true); // Estado para manejar el estado de carga
@@ -120,44 +118,46 @@ const Example = () => {
     return getWeekRange(currentYear, week);
   }, [currentYear, week]);
   // Función para cargar los datos desde el servicio
-  const loadData = async () => {
+  const loadData = useCallback(async (pageToLoad = page) => {
     try {
       setLoading(true);
-      const response = await fetchOrdersWithCostFuel(1); // Llamamos al servicio
-      const mappedData = response.data.results.map((item) => {
+      const response = await fetchOrdersReport(pageToLoad);
+      const mappedData = response.results.map((item) => {
         const date = new Date(item.date);
         return {
           id: item.key,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
-          company: 'N/A', // Puedes ajustar este campo según tus datos
-          city: 'N/A', // Puedes ajustar este campo según tus datos
-          country: 'USA', // Puedes ajustar este campo según tus datos
+          company: item.customer_factory_name ?? 'N/A',
+          city: item.person.address ?? 'N/A',
+          country: 'USA',
           weekday: date.toLocaleDateString('en-US', { weekday: 'long' }),
           dateReference: item.date,
-          job: item.job.toString(),
+          job: item.job_name ?? item.job.toString(),
           weight: item.weight,
-          truckType: item.fuelCost[0]?.truck.type || 'N/A',
-          totalCost: item.fuelCost.reduce((sum, fuel) => sum + fuel.cost_fuel, 0),
-          week: getWeekOfYear(date), // Calculamos la semana del año
+          truckType: item.vehicles[0]?.type || 'N/A',
+          totalCost: item.summaryCost?.totalCost ?? 0,
+          week: getWeekOfYear(date),
+          state: item.state_usa ?? 'N/A',
         };
       });
-      setData(mappedData); // Actualizamos el estado con los datos mapeados
+      setData(mappedData);
+      const pageSize = 10;
+      setTotalPages(Math.ceil(response.count / pageSize));
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  };
-
+  }, [page]);
   // Filtrar datos por semana seleccionada
+  useEffect(() => {
+    loadData(page);
+  }, [page, loadData]);
+
   useEffect(() => {
     setFilteredData(data.filter((item) => item.week === week));
   }, [data, week]);
-
-  useEffect(() => {
-    loadData(); // Cargamos los datos al montar el componente
-  }, []);
 
   const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newWeek = parseInt(event.target.value, 10);
@@ -239,6 +239,13 @@ const handleExportData = () => {
         >
           Export Selected Rows
         </Button>
+          <Button disabled={page === 1} onClick={() => { setPage(page - 1); }}>
+            Anterior
+          </Button>
+          <Typography>Page {page} of {totalPages}</Typography>
+          <Button disabled={page === totalPages} onClick={() => { setPage(page + 1); }}>
+            Siguiente
+          </Button>
       </Box>
     ),
   });
