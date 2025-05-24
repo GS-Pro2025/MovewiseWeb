@@ -9,23 +9,23 @@ import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
-
+import type { Operator } from '../domain/ModelOrdersReport';
 // Definimos el tipo de datos que se mostrarán en la tabla
 interface TableData {
-  [key: string]: string | number;  //Indice para exportar a CSV
   id: string;
   firstName: string;
   lastName: string;
   company: string;
   city: string;
-  country: string;
+  state: string;
   weekday: string;
   dateReference: string;
   job: string;
   weight: string;
   truckType: string;
   totalCost: number;
-  week: number; // Nueva propiedad para la semana del año
+  week: number; 
+  operators: Operator[];
 }
 
 // Función para calcular la semana del año
@@ -50,10 +50,6 @@ const getWeekRange = (year: number, week: number): { start: string; end: string 
 const columnHelper = createMRTColumnHelper<TableData>();
 
 const columns = [
-  columnHelper.accessor('id', {
-    header: 'ID',
-    size: 40,
-  }),
   columnHelper.accessor('firstName', {
     header: 'First Name',
     size: 100,
@@ -110,6 +106,8 @@ const Example = () => {
     const start = new Date(now.getFullYear(), 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [rowOperators, setRowOperators] = useState<any[]>([]);
   const currentYear = new Date().getFullYear();
   const weekRange = useMemo(() => {
     return getWeekRange(currentYear, week);
@@ -120,6 +118,7 @@ const Example = () => {
       setLoading(true);
       const response = await fetchOrdersReport(1);
       const mappedData = response.results.map((item) => {
+        console.log('MAP OPERATORS:', item.operators);
         const date = new Date(item.date);
         return {
           id: item.key,
@@ -136,6 +135,7 @@ const Example = () => {
           totalCost: item.summaryCost?.totalCost ?? 0,
           week: getWeekOfYear(date),
           state: item.state_usa ?? 'N/A',
+          operators: item.operators, // <-- agrega los operadores aquí
         };
       });
       setData(mappedData);
@@ -162,22 +162,26 @@ const Example = () => {
     }
   };
   
-const csvConfig = mkConfig({
-  fieldSeparator: ',',
-  decimalSeparator: '.',
-  useKeysAsHeaders: true,
-});
+  const csvConfig = mkConfig({
+    fieldSeparator: ',',
+    decimalSeparator: '.',
+    useKeysAsHeaders: true,
+  });
 
-const handleExportRows = (rows: MRT_Row<TableData>[]) => {
-  const rowData = rows.map((row) => row.original);
-  const csv = generateCsv(csvConfig)(rowData);
-  download(csvConfig)(csv);
-};
+  const handleExportRows = (rows: MRT_Row<TableData>[]) => {
+    const rowData = rows.map((row) => row.original);
+    const csv = generateCsv(csvConfig)(rowData);
+    download(csvConfig)(csv);
+  };
 
-const handleExportData = () => {
-  const csv = generateCsv(csvConfig)(filteredData);
-  download(csvConfig)(csv);
-};
+  const handleExportData = () => {
+    const csv = generateCsv(csvConfig)(filteredData);
+    download(csvConfig)(csv);
+  };
+
+  const handleRowClick = (row: MRT_Row<TableData>) => {
+    setExpandedRowId((prev) => (prev === row.original.id ? null : row.original.id));
+  };
 
   const table = useMaterialReactTable({
     columns,
@@ -237,6 +241,27 @@ const handleExportData = () => {
         </Button>
       </Box>
     ),
+    muiTableBodyRowProps: ({ row }) => ({
+      onClick: () => handleRowClick(row),
+      sx: { cursor: 'pointer' },
+    }),
+    renderDetailPanel: ({ row }) =>
+      expandedRowId === row.original.id ? (
+        <Box sx={{ p: 2, bgcolor: '#f5f5f5' }}>
+          <Typography variant="subtitle1">Operadores asignados:</Typography>
+          {row.original.operators && row.original.operators.length > 0 ? (
+            <ul>
+              {row.original.operators.map((op) => (
+                <li key={op.id_assign}>
+                  {op.first_name} {op.last_name} - {op.role}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Typography variant="body2">Sin operadores asignados.</Typography>
+          )}
+        </Box>
+      ) : null,
   });
 
   return <MaterialReactTable table={table} />;
