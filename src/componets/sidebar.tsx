@@ -65,7 +65,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               className="h-8 mx-auto object-contain"
             />
           )}
-          {!isCollapsed && <span className="text-xl font-semibold">Move Wise</span>}
+          {!isCollapsed && <span className="text-xl font-semibold">Movingwise</span>}
         </div>
         <button
           className="w-7 h-7 bg-[#6c63ff] text-white rounded-full flex justify-center items-center cursor-pointer 

@@ -31,7 +31,7 @@ const LoginPage: React.FC = () => {
       >
         <div className="absolute bg-black opacity-60 inset-0 z-0"></div>
         <div className="w-full px-24 z-10">
-          <h1 className="text-5xl font-bold text-left tracking-wide">Welcome to Move Wise</h1>
+          <h1 className="text-5xl font-bold text-left tracking-wide">Welcome to Movingwise</h1>
           <p className="text-3xl my-4">
             Organize, plan and control every step of your move from one place.
           </p>
@@ -50,7 +50,7 @@ const LoginPage: React.FC = () => {
         <div className="w-full py-6 px-4 sm:px-8 z-20">
           <div className="my-6 flex justify-center items-center gap-4">
             <img src={Logo} alt="Company Logo" className="h-16 object-contain" />
-            <h1 className="text-5xl font-semibold">Move Wise</h1>
+            <h1 className="text-5xl font-semibold">Movingwise</h1>
           </div>
 
           <p className="text-xl text-gray-100 mb-6">or use email to sign into your account</p>
