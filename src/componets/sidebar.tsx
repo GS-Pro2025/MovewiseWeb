@@ -1,7 +1,9 @@
-import { useState, FC } from 'react';
+import { useState, FC, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import Logo from "../assets/logo.png";
 import { Outlet, Link } from 'react-router-dom';
+import { fetchUserProfile } from '../service/userService'; 
+import type { UserProfile } from '../models/UserModels';  
 
 interface NavItemProps {
   icon: string;
@@ -35,6 +37,18 @@ const Layout: FC = () => {
 
 const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  
+  useEffect(() => {
+    // Puedes obtener el id del usuario desde el token o de otra fuente
+    const token = Cookies.get('authToken');
+    if (!token) return;
+    // Aquí asumo que el id es 1, ajusta según tu lógica real
+    fetchUserProfile(1)
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, []);
 
   const toggleDropdown = (index: number) => {
     setActiveDropdown(activeDropdown === index ? null : index);
@@ -50,6 +64,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       className={`relative h-full transition-all duration-500 ease-in-out shadow-lg bg-gradient-to-br from-[#0458AB] to-[#051537] 
       ${isCollapsed ? 'w-24' : 'w-72'}`}
     >
+      {/* Logo */}
       <div className="px-6 py-6 mb-12 flex items-center transition-all duration-300 ease-in-out relative">
         <div className="brand flex items-center text-white">
           {!isCollapsed ? (
@@ -65,7 +80,9 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               className="h-8 mx-auto object-contain"
             />
           )}
-          {!isCollapsed && <span className="text-xl font-semibold">Movingwise</span>}
+          {!isCollapsed && (
+            <span className="text-xl font-semibold whitespace-nowrap">Movingwise</span>
+          )}
         </div>
         <button
           className="w-7 h-7 bg-[#6c63ff] text-white rounded-full flex justify-center items-center cursor-pointer 
@@ -77,6 +94,34 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         </button>
       </div>
 
+      {/* Nombre de usuario */}
+      {!isCollapsed && user && (
+        <div className="px-6 mb-8 flex items-center gap-3 flex-wrap">
+          {/* Foto circular */}
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white">
+            <img
+              src={
+                user.photo && user.photo.trim() !== ''
+                  ? user.photo
+                  : 'https://ui-avatars.com/api/?name=' +
+                    encodeURIComponent(`${user.person.first_name} ${user.person.last_name}`) +
+                    '&background=0458AB&color=fff&size=128'
+              }
+              alt="User Avatar"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {/* Info usuario */}
+          <div className="flex flex-col min-w-0">
+            <span className="text-white text-sm font-medium truncate">
+              {user.person.first_name} {user.person.last_name}
+            </span>
+            <span className="text-white text-xs truncate opacity-70">
+              {user.person.email}
+            </span>
+          </div>
+        </div>
+      )}
       <ul className="mt-6 list-none p-0 m-0">
         {/* NavItems */}
         <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />

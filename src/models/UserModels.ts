@@ -13,6 +13,7 @@ export interface Person {
 export interface UserProfile {
   user_name: string;
   person: Person;
+  photo: string;
   created_at: string;
   updated_at: string;
 }
