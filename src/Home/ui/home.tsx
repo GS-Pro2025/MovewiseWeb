@@ -16,6 +16,7 @@ import { useSnackbar } from 'notistack';
 interface TableData {
   id: string;
   status: string;
+  key_ref: string;
   firstName: string;
   lastName: string;
   company: string;
@@ -35,6 +36,7 @@ interface TableDataExport {
   [key: string]: string | number;
   id: string;
   status: string;
+  key_ref: string;
   firstName: string;
   lastName: string;
   company: string;
@@ -75,6 +77,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
     ({
       id,
       status,
+      key_ref,
       firstName,
       lastName,
       company,
@@ -89,6 +92,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       week,
     }) => ({
       id,
+      key_ref,
       status,
       firstName,
       lastName,
@@ -122,6 +126,10 @@ const columns = [
         </Typography>
       );
     },
+  }),
+  columnHelper.accessor('key_ref', {
+    header: 'Reference',
+    size: 100,
   }),
   columnHelper.accessor('firstName', {
     header: 'First Name',
@@ -196,6 +204,7 @@ const Example = () => {
         return {
           id: item.key,
           status: item.status,
+          key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
           company: item.customer_factory_name ?? 'N/A',
