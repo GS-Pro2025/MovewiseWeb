@@ -28,7 +28,23 @@ interface TableData {
   week: number; 
   operators: Operator[];
 }
-
+// Interfaz para exportar solo los campos planos
+interface TableDataExport {
+  [key: string]: string | number;
+  id: string;
+  firstName: string;
+  lastName: string;
+  company: string;
+  city: string;
+  state: string;
+  weekday: string;
+  dateReference: string;
+  job: string;
+  weight: string;
+  truckType: string;
+  totalCost: number;
+  week: number;
+}
 // Función para calcular la semana del año
 const getWeekOfYear = (date: Date): number => {
   const startOfYear = new Date(date.getFullYear(), 0, 1);
@@ -50,6 +66,40 @@ const getWeekRange = (year: number, week: number): { start: string; end: string 
 
 const columnHelper = createMRTColumnHelper<TableData>();
 
+// Función para limpiar los datos antes de exportar
+const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
+  data.map(
+    ({
+      id,
+      firstName,
+      lastName,
+      company,
+      city,
+      state,
+      weekday,
+      dateReference,
+      job,
+      weight,
+      truckType,
+      totalCost,
+      week,
+    }) => ({
+      id,
+      firstName,
+      lastName,
+      company,
+      city,
+      state,
+      weekday,
+      dateReference,
+      job,
+      weight,
+      truckType,
+      totalCost,
+      week,
+    })
+  );
+  
 const columns = [
   columnHelper.accessor('firstName', {
     header: 'First Name',
@@ -169,13 +219,15 @@ const Example = () => {
   });
 
   const handleExportRows = (rows: MRT_Row<TableData>[]) => {
-    const rowData = rows.map((row) => row.original);
+    if (!rows || rows.length === 0) return;
+    const rowData = mapTableDataForExport(rows.map((row) => row.original));
     const csv = generateCsv(csvConfig)(rowData);
     download(csvConfig)(csv);
   };
 
   const handleExportData = () => {
-    const csv = generateCsv(csvConfig)(filteredData);
+    if (!filteredData || filteredData.length === 0) return;
+    const csv = generateCsv(csvConfig)(mapTableDataForExport(filteredData));
     download(csvConfig)(csv);
   };
 
@@ -247,27 +299,51 @@ const Example = () => {
     }),
     renderDetailPanel: ({ row }) =>
   expandedRowId === row.original.id ? (
-    <Box sx={{ p: 2, bgcolor: '#f5f5f5' }}>
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-        Operadores asignados:
+    <Box
+      sx={{
+        p: 3,
+        bgcolor: '#ffffff',
+        borderRadius: 2,
+        boxShadow: 3,
+        border: '1px solid #e0e0e0',
+      }}
+    >
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#333' }}>
+        Operadores asignados
       </Typography>
+
       {row.original.operators && row.original.operators.length > 0 ? (
-        <TableContainer component={Paper} variant="outlined">
+        <TableContainer
+          component={Paper}
+          elevation={2}
+          sx={{
+            borderRadius: 2,
+            border: '1px solid #e0e0e0',
+          }}
+        >
           <Table size="small">
             <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Apellido</TableCell>
-                <TableCell>Rol</TableCell>
-                <TableCell>Código</TableCell>
-                <TableCell>Salario</TableCell>
-                <TableCell>Bono</TableCell>
-                <TableCell>Fecha</TableCell>
+              <TableRow sx={{ backgroundColor: '#f0f0f0' }}>
+                <TableCell><strong>Nombre</strong></TableCell>
+                <TableCell><strong>Apellido</strong></TableCell>
+                <TableCell><strong>Rol</strong></TableCell>
+                <TableCell><strong>Código</strong></TableCell>
+                <TableCell><strong>Salario</strong></TableCell>
+                <TableCell><strong>Bono</strong></TableCell>
+                <TableCell><strong>Fecha</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {row.original.operators.map((op) => (
-                <TableRow key={op.id_assign}>
+              {row.original.operators.map((op, idx) => (
+                <TableRow
+                  key={op.id_assign}
+                  sx={{
+                    backgroundColor: idx % 2 === 0 ? '#fafafa' : '#fff',
+                    '&:hover': {
+                      backgroundColor: '#f1f1f1',
+                    },
+                  }}
+                >
                   <TableCell>{op.first_name}</TableCell>
                   <TableCell>{op.last_name}</TableCell>
                   <TableCell>{op.role}</TableCell>
@@ -283,9 +359,12 @@ const Example = () => {
           </Table>
         </TableContainer>
       ) : (
-        <Typography variant="body2">Sin operadores asignados.</Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Sin operadores asignados.
+        </Typography>
       )}
     </Box>
+
   ) : null,
   });
 
