@@ -6,8 +6,10 @@ export interface ExtraCostRepositoryInterface {
 }
 
 export class ExtraCostRepository implements ExtraCostRepositoryInterface {
-    private baseUrl: string = 'http://127.0.0.1:8000';
+    private baseUrl: string =
+        import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
+    
     async getExtraCosts(): Promise<ExtraCostResponse> {
         const token = Cookies.get('authToken');
         

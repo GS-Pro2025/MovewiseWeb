@@ -1,7 +1,7 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './componets/sidebar';
-import Home from './componets/home';
+import Home from './Home/ui/home';
 import LoginPage from './componets/loginPage';
 import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
