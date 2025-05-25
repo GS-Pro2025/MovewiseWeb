@@ -15,6 +15,7 @@ import { useSnackbar } from 'notistack';
 // Definimos el tipo de datos que se mostrarán en la tabla
 interface TableData {
   id: string;
+  status: string;
   firstName: string;
   lastName: string;
   company: string;
@@ -33,6 +34,7 @@ interface TableData {
 interface TableDataExport {
   [key: string]: string | number;
   id: string;
+  status: string;
   firstName: string;
   lastName: string;
   company: string;
@@ -72,6 +74,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
   data.map(
     ({
       id,
+      status,
       firstName,
       lastName,
       company,
@@ -86,6 +89,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       week,
     }) => ({
       id,
+      status,
       firstName,
       lastName,
       company,
@@ -102,6 +106,23 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
   );
   
 const columns = [
+  columnHelper.accessor('status', {
+    header: 'Status',
+    size: 100,
+    Cell: ({ cell }) => {
+      const value = cell.getValue<string>().toLowerCase();
+      let color = '';
+      if (value === 'finished') color = 'green';
+      else if (value === 'pending') color = 'orange';
+      else if (value === 'inactive') color = 'red';
+      else color = 'inherit';
+      return (
+        <Typography sx={{ color, fontWeight: 600 }}>
+          {value.charAt(0).toUpperCase() + value.slice(1)}
+        </Typography>
+      );
+    },
+  }),
   columnHelper.accessor('firstName', {
     header: 'First Name',
     size: 100,
@@ -174,6 +195,7 @@ const Example = () => {
         const date = new Date(item.date);
         return {
           id: item.key,
+          status: item.status,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
           company: item.customer_factory_name ?? 'N/A',
