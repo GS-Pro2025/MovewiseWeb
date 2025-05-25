@@ -11,6 +11,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
 import type { Operator } from '../domain/ModelOrdersReport';
+import { useSnackbar } from 'notistack';
 // Definimos el tipo de datos que se mostrarán en la tabla
 interface TableData {
   id: string;
@@ -162,6 +163,7 @@ const Example = () => {
   const weekRange = useMemo(() => {
     return getWeekRange(currentYear, week);
   }, [currentYear, week]);
+  const { enqueueSnackbar } = useSnackbar();
   // Función para cargar los datos desde el servicio
   const loadData = useCallback(async () => {
     try {
@@ -232,6 +234,10 @@ const Example = () => {
   };
 
   const handleRowClick = (row: MRT_Row<TableData>) => {
+    if (!row.original.operators || row.original.operators.length === 0) {
+      enqueueSnackbar('Sin operadores asignados a esta orden.', { variant: 'info' });
+      return;
+    }
     setExpandedRowId((prev) => (prev === row.original.id ? null : row.original.id));
   };
 
@@ -242,7 +248,14 @@ const Example = () => {
     columnFilterDisplayMode: 'popover',
     paginationDisplayMode: 'pages',
     positionToolbarAlertBanner: 'bottom',
-    state: { isLoading: loading }, // Indicamos si la tabla está cargando
+    state: { isLoading: loading },
+    enableExpanding: true,
+    enableExpandAll: false,
+    // Elimina muiExpandButtonProps para mostrar el ícono de expandir
+    muiTableBodyRowProps: ({ row }) => ({
+      onClick: () => handleRowClick(row),
+      sx: { cursor: 'pointer' },
+    }),
     renderTopToolbarCustomActions: ({ table }) => (
       <Box
         sx={{
@@ -293,10 +306,6 @@ const Example = () => {
         </Button>
       </Box>
     ),
-    muiTableBodyRowProps: ({ row }) => ({
-      onClick: () => handleRowClick(row),
-      sx: { cursor: 'pointer' },
-    }),
     renderDetailPanel: ({ row }) =>
   expandedRowId === row.original.id ? (
     <Box
