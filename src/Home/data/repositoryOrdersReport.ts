@@ -1,9 +1,10 @@
 import { OrdersReportResponse } from '../domain/ModelOrdersReport';
 import Cookies from 'js-cookie';
 
-const BASE_URL_API = 'http://127.0.0.1:8000';
+const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 export async function fetchOrdersReport(page: number = 1): Promise<OrdersReportResponse> {
+  
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';

@@ -6,7 +6,8 @@ export interface ResumeFuelRepositoryInterface {
 }
 
 export class ResumeFuelRepository implements ResumeFuelRepositoryInterface {
-    private baseUrl: string = 'http://127.0.0.1:8000';
+    private baseUrl: string =
+        import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
     async getResumeFuel(pages: number): Promise<PaginatedOrderResult> {
         const token = Cookies.get('authToken');

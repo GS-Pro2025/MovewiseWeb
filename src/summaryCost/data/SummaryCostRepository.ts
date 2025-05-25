@@ -6,7 +6,8 @@ export interface SummaryCostRepositoryInterface {
 }
 
 export class SummaryCostRepository implements SummaryCostRepositoryInterface {
-    private baseUrl: string = 'http://127.0.0.1:8000';
+    private baseUrl: string =
+        import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
     async getSummaryCost(pages: number): Promise<PaginatedOrderSummaryResult> {
         const token = Cookies.get('authToken');

@@ -36,7 +36,7 @@ export interface ApiResponse {
 }
 
 const API_BASE: string =
-  import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000";
+  import.meta.env.VITE_URL_BASE ?? "http://127.0.0.1:8000";
 
 /**
  * GET /assign/list-assign-operator
