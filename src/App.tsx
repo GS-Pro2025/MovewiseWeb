@@ -5,30 +5,39 @@ import Home from './Home/ui/home';
 import LoginPage from './componets/loginPage';
 import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
-import LoadingSpinner from './componets/LoadingSpinner'; // Crea este componente
+import LoadingSpinner from './componets/LoadingSpinner';
 import PayrollPage from './Payroll/pages/PayrollPage';
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 import SummaryCost from './summaryCost/ui/pages/SummaryCost'
 import ExtraCost from './extraCost/ui/pages/ExtraCost';
 
-
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Simulamos un delay para verificar la autenticación
-    const checkAuth = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo de delay
-      setAuthenticated(isAuthenticated());
-      setIsLoading(false);
-    };
+    // Marca que estamos en el cliente
+    setIsClient(true);
     
+    const checkAuth = () => {
+      try {
+        const authStatus = isAuthenticated();
+        setAuthenticated(authStatus);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+        
     checkAuth();
   }, []);
 
-  if (isLoading) {
-    return <LoadingSpinner />; // Muestra un spinner mientras carga
+  // Mostrar loading hasta que se complete la hidratación
+  if (!isClient || isLoading) {
+    return <LoadingSpinner />;
   }
 
   return (
@@ -48,10 +57,9 @@ const App = () => {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<Home />} />
           <Route path="resume-fuel" element={<ResumeFuel />} />
-          <Route path="/summary-cost" element={<SummaryCost />} />
+          <Route path="summary-cost" element={<SummaryCost />} />
           <Route path="payroll" element={<PayrollPage />} />
           <Route path="extra-cost" element={<ExtraCost />} />
-          {/* Agrega aquí otras rutas protegidas */}
         </Route>
 
         {/* Ruta por defecto */}
