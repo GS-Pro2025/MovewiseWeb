@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 
-const API_URL = 'http://127.0.0.1:8000/login/';
+const API_URL = 
+        import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 interface LoginResponse {
   token?: string;
@@ -14,7 +15,7 @@ interface LoginResult {
 
 export const login = async (email: string, password: string): Promise<LoginResult> => {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(`${API_URL}/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -23,7 +24,6 @@ export const login = async (email: string, password: string): Promise<LoginResul
     });
 
     const data: LoginResponse = await response.json();
-    console.log(data);
     if (response.ok && data.token) {
       Cookies.set('authToken', data.token, { expires: 1 });
       return { success: true, message: 'Login exitoso' };
