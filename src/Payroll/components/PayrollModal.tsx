@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { createPayment } from '../../service/PayrollService';
 import { toast, ToastContainer } from 'react-toastify';
@@ -111,6 +111,14 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   periodStart,
   periodEnd,
 }) => {
+  // MOVIDOS AL INICIO: Todos los hooks useState deben estar ANTES de cualquier return condicional
+  const [additionalBonus, setAdditionalBonus] = useState(operatorData.additionalBonuses || 0);
+  const [grandTotal, setGrandTotal] = useState(operatorData.grandTotal || 0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
+
+  // AHORA SÍ puede ir el return condicional
   if (!isOpen) return null;
 
   const days: DayInfo[] = [
@@ -130,12 +138,6 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     const yyyy = today.getFullYear();
     return `${dd}-${mm}-${yyyy}`;
   };
-
-  const [additionalBonus, setAdditionalBonus] = useState(operatorData.additionalBonuses || 0);
-  const [grandTotal, setGrandTotal] = useState(operatorData.grandTotal || 0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
 
   const handleBonusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;

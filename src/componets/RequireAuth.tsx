@@ -1,3 +1,4 @@
+import React from 'react'; // ← AGREGADO: Import de React para JSX namespace
 import { Navigate, useLocation } from 'react-router-dom';
 
 interface RequireAuthProps {

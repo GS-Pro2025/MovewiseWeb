@@ -14,7 +14,7 @@ interface OperatorRow extends WeekAmounts {
   lastName: string;
   role: string;
   cost: number;
-  pay?: number | null;
+  pay?: string | null;
   total?: number;
   additionalBonuses?: number;
   grandTotal?: number;
@@ -93,7 +93,7 @@ export default function PayrollPage() {
             lastName: d.last_name,
             role: d.role,
             cost: d.salary,
-            pay: payId ?? null,
+            pay: payId ? payId.toString() : null, // CORREGIDO: Convertir a string si existe
             total: 0,
             additionalBonuses: 0,
             grandTotal: 0,
@@ -121,10 +121,8 @@ export default function PayrollPage() {
 
       setGrouped(operators);
 
-      // Usar la información de semana que viene del API
+      // CORREGIDO: Usar la información de semana que viene del API (eliminada línea duplicada)
       setWeekInfo(week_info);
-
-      setWeekInfo(response.week_info);
 
       setError(null);
     } catch (e) {
@@ -236,13 +234,16 @@ export default function PayrollPage() {
           </div>
         </>
       )}
-      <PayrollModal
-        isOpen={!!selectedOperator}
-        onClose={handleModalClose}
-        operatorData={selectedOperator!}
-        periodStart={weekInfo?.start_date!}
-        periodEnd={weekInfo?.end_date!}
-      />
+      {/* CORREGIDO: Agregadas validaciones para props opcionales */}
+      {selectedOperator && weekInfo && (
+        <PayrollModal
+          isOpen={!!selectedOperator}
+          onClose={handleModalClose}
+          operatorData={selectedOperator}
+          periodStart={weekInfo.start_date}
+          periodEnd={weekInfo.end_date}
+        />
+      )}
     </div>
   );
 }
