@@ -1,4 +1,4 @@
-import { ExtraCostResponse, ExtraCost } from '../../domain/ExtraCostModel';
+import { ExtraCostResponse } from '../../domain/ExtraCostModel';
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -83,8 +83,8 @@ const csvConfig = mkConfig({
 });
 
 const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
-  // Memoize grouped data
-  const { tableData, groupedData } = useMemo(() => {
+  // CORREGIDO: Solo crear tableData, eliminar groupedData no usado
+  const tableData = useMemo(() => {
     const grouped = data?.results.results.reduce((acc, cost) => {
       const orderKey = cost.order.key;
       if (!acc[orderKey]) {
@@ -99,10 +99,7 @@ const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
       return acc;
     }, {} as Record<string, GroupedExtraCost>) ?? {};
 
-    return {
-      tableData: Object.values(grouped),
-      groupedData: grouped
-    };
+    return Object.values(grouped);
   }, [data]);
 
   // Memoize export handler
