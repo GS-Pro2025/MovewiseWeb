@@ -187,6 +187,8 @@ const Example = () => {
     const start = new Date(now.getFullYear(), 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [totalRows, setTotalRows] = useState(0);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const currentYear = new Date().getFullYear();
   const weekRange = useMemo(() => {
@@ -197,7 +199,7 @@ const Example = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetchOrdersReport(1);
+      const response = await fetchOrdersReport(pagination.pageIndex + 1); 
       const mappedData = response.results.map((item) => {
         console.log('MAP OPERATORS:', item.operators);
         const date = new Date(item.date);
@@ -222,12 +224,13 @@ const Example = () => {
         };
       });
       setData(mappedData);
+      setTotalRows(response.count);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [pagination]);
   // Filtrar datos por semana seleccionada
 
   useEffect(() => {
@@ -277,11 +280,10 @@ const Example = () => {
     data: filteredData,
     enableRowSelection: true,
     columnFilterDisplayMode: 'popover',
-    paginationDisplayMode: 'pages',
-    positionToolbarAlertBanner: 'bottom',
-    state: { isLoading: loading },
-    enableExpanding: true,
-    enableExpandAll: false,
+    manualPagination: true,        // <--- Indica que la paginación será manual
+    rowCount: totalRows,           // <--- Total de filas (de tu API)
+    state: { isLoading: loading, pagination }, // <--- Controla la paginación desde tu estado
+    onPaginationChange: setPagination,         // <--- Cambia la página desde tu estado
     // Elimina muiExpandButtonProps para mostrar el ícono de expandir
     muiTableBodyRowProps: ({ row }) => ({
       onClick: () => handleRowClick(row),
@@ -403,6 +405,21 @@ const Example = () => {
           Sin operadores asignados.
         </Typography>
       )}
+        <Button
+          onClick={() => setPagination(p => ({ ...p, pageIndex: Math.max(0, p.pageIndex - 1) }))}
+          disabled={pagination.pageIndex === 0}
+        >
+          Anterior
+        </Button>
+        <Typography sx={{ mx: 2 }}>
+          Página {pagination.pageIndex + 1}
+        </Typography>
+        <Button
+          onClick={() => setPagination(p => ({ ...p, pageIndex: p.pageIndex + 1 }))}
+          disabled={(pagination.pageIndex + 1) * pagination.pageSize >= totalRows}
+        >
+          Siguiente
+        </Button>
     </Box>
 
   ) : null,
