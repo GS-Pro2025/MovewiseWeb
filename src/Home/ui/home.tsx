@@ -9,11 +9,16 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
-import { fetchOrdersReport } from '../data/repositoryOrdersReport';
+import { fetchOrdersReport, updateOrder } from '../data/repositoryOrdersReport';
 import type { Operator } from '../domain/ModelOrdersReport';
 import { useSnackbar } from 'notistack';
+
+import EditIcon from '@mui/icons-material/Edit';
+import EditOrderDialog from './editOrderModal';
+import { UpdateOrderData } from '../domain/ModelOrderUpdate';
+
 // Definimos el tipo de datos que se mostrarán en la tabla
-interface TableData {
+export interface TableData {
   id: string;
   status: string;
   key_ref: string;
@@ -109,74 +114,6 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
     })
   );
   
-const columns = [
-  columnHelper.accessor('status', {
-    header: 'Status',
-    size: 100,
-    Cell: ({ cell }) => {
-      const value = cell.getValue<string>().toLowerCase();
-      let color = '';
-      if (value === 'finished') color = 'green';
-      else if (value === 'pending') color = 'orange';
-      else if (value === 'inactive') color = 'red';
-      else color = 'inherit';
-      return (
-        <Typography sx={{ color, fontWeight: 600 }}>
-          {value.charAt(0).toUpperCase() + value.slice(1)}
-        </Typography>
-      );
-    },
-  }),
-  columnHelper.accessor('key_ref', {
-    header: 'Reference',
-    size: 100,
-  }),
-  columnHelper.accessor('firstName', {
-    header: 'First Name',
-    size: 100,
-  }),
-  columnHelper.accessor('lastName', {
-    header: 'Last Name',
-    size: 100,
-  }),
-  columnHelper.accessor('company', {
-    header: 'Company',
-    size: 120,
-  }),
-  columnHelper.accessor('state', {//USA state
-    header: 'State',
-    size: 120,
-  }),
-  columnHelper.accessor('weekday', {
-    header: 'Weekday',
-    size: 100,
-  }),
-  columnHelper.accessor('dateReference', {
-    header: 'Date',
-    size: 120,
-  }),
-  columnHelper.accessor('job', {
-    header: 'Job',
-    size: 120,
-  }),
-  columnHelper.accessor('weight', {
-    header: 'Weight (kg)',
-    size: 100,
-  }),
-  columnHelper.accessor('truckType', {
-    header: 'Truck Type',
-    size: 100,
-  }),
-  columnHelper.accessor('totalCost', {
-    header: 'Costo Total',
-    size: 120,
-    Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
-  }),
-  columnHelper.accessor('week', {
-    header: 'Week of Year',
-    size: 100,
-  }),
-];
 
 const Example = () => {
   const [data, setData] = useState<TableData[]>([]);
@@ -195,6 +132,98 @@ const Example = () => {
     return getWeekRange(currentYear, week);
   }, [currentYear, week]);
   const { enqueueSnackbar } = useSnackbar();
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState<TableData | null>(null);
+
+  const columns = [
+    {
+      header: 'Acciones',
+      id: 'actions',
+      size: 60,
+      Cell: ({ row }: { row: MRT_Row<TableData> }) => (
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEditOrder(row.original);
+          }}
+          size="small"
+          color="primary"
+          startIcon={<EditIcon />}
+        >
+          Editar
+        </Button>
+      ),
+      enableSorting: false,
+      enableColumnFilter: false,
+    },
+    columnHelper.accessor('status', {
+      header: 'Status',
+      size: 100,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<string>().toLowerCase();
+        let color = '';
+        if (value === 'finished') color = 'green';
+        else if (value === 'pending') color = 'orange';
+        else if (value === 'inactive') color = 'red';
+        else color = 'inherit';
+        return (
+          <Typography sx={{ color, fontWeight: 600 }}>
+            {value.charAt(0).toUpperCase() + value.slice(1)}
+          </Typography>
+        );
+      },
+    }),
+    columnHelper.accessor('key_ref', {
+      header: 'Reference',
+      size: 100,
+    }),
+    columnHelper.accessor('firstName', {
+      header: 'First Name',
+      size: 100,
+    }),
+    columnHelper.accessor('lastName', {
+      header: 'Last Name',
+      size: 100,
+    }),
+    columnHelper.accessor('company', {
+      header: 'Company',
+      size: 120,
+    }),
+    columnHelper.accessor('state', {//USA state
+      header: 'State',
+      size: 120,
+    }),
+    columnHelper.accessor('weekday', {
+      header: 'Weekday',
+      size: 100,
+    }),
+    columnHelper.accessor('dateReference', {
+      header: 'Date',
+      size: 120,
+    }),
+    columnHelper.accessor('job', {
+      header: 'Job',
+      size: 120,
+    }),
+    columnHelper.accessor('weight', {
+      header: 'Weight (kg)',
+      size: 100,
+    }),
+    columnHelper.accessor('truckType', {
+      header: 'Truck Type',
+      size: 100,
+    }),
+    columnHelper.accessor('totalCost', {
+      header: 'Costo Total',
+      size: 120,
+      Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
+    }),
+    columnHelper.accessor('week', {
+      header: 'Week of Year',
+      size: 100,
+    }),
+  ];
   // Función para cargar los datos desde el servicio
   const loadData = useCallback(async () => {
     try {
@@ -278,6 +307,52 @@ const Example = () => {
       return;
     }
     setExpandedRowId((prev) => (prev === row.original.id ? null : row.original.id));
+  };
+
+  const handleEditOrder = (order: TableData) => {
+    setOrderToEdit(order);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setOrderToEdit(null);
+  };
+
+  const handleSaveEdit = async (order: UpdateOrderData) => {
+    // Mapea order a UpdateOrderData según tu modelo
+    const orderData = {
+      key_ref: order.key_ref,
+      date: order.date,
+      distance: 0, // Ajusta según tu modelo
+      expense: '',
+      income: '',
+      weight: order.weight,
+      status: order.status,
+      payStatus: 0,
+      state_usa: order.state_usa,
+      customer_factory: order.customer_factory ?? 0, // <-- AGREGA ESTA LÍNEA
+      person: {
+        email: order.person.email, // Ajusta según tu modelo
+        first_name: order.person.first_name,
+        last_name: order.person.first_name,
+      },
+      job: 0, // Ajusta según tu modelo
+    };
+
+    const result = await updateOrder(order.id, orderData);
+    if (result.success) {
+      // Actualiza la UI o muestra un mensaje de éxito
+    } else {
+      // Muestra el error
+    }
+    setEditModalOpen(false);
+    setOrderToEdit(null);
+  };
+
+  const handleChangeOrder = (field: keyof TableData, value: unknown) => {
+    if (!orderToEdit) return;
+    setOrderToEdit({ ...orderToEdit, [field]: value });
   };
 
   const table = useMaterialReactTable({
@@ -426,11 +501,21 @@ const Example = () => {
           Siguiente
         </Button>
     </Box>
-
   ) : null,
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+  <>
+    <MaterialReactTable table={table} />
+    <EditOrderDialog
+      open={editModalOpen}
+      order={orderToEdit}
+      onClose={handleCloseEditModal}
+      onSave={handleSaveEdit}
+      onChange={handleChangeOrder}
+    />
+  </>
+);
 };
 
 export default Example;
