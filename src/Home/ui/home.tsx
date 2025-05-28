@@ -199,7 +199,12 @@ const Example = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetchOrdersReport(pagination.pageIndex + 1); 
+      const response = await fetchOrdersReport(
+        pagination.pageIndex + 1,
+        week,
+        currentYear,
+        pagination.pageSize
+      );
       const mappedData = response.results.map((item) => {
         console.log('MAP OPERATORS:', item.operators);
         const date = new Date(item.date);
@@ -230,7 +235,7 @@ const Example = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination]);
+  }, [pagination, week, currentYear]);
   // Filtrar datos por semana seleccionada
 
   useEffect(() => {
