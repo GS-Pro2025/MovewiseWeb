@@ -1,6 +1,9 @@
-import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Autocomplete, CircularProgress } from '@mui/material';
 import type { UpdateOrderData } from '../domain/ModelOrderUpdate';
+import { fetchJobs, fetchOrderStates } from '../data/repositoryOrders';
+import type { OrderState } from '../domain/OrderState';
+import { JobModel } from '../domain/JobModel';
 
 interface EditOrderDialogProps {
   open: boolean;
@@ -11,8 +14,26 @@ interface EditOrderDialogProps {
 }
 
 const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose, onSave, onChange }) => {
-  if (!order) return null;
+  console.log('EditOrderDialog rendered with order:', order);
+  const [states, setStates] = useState<OrderState[]>([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [jobs, setJobs] = useState<JobModel[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      setLoadingStates(true);
+      fetchOrderStates()
+        .then(setStates)
+        .finally(() => setLoadingStates(false));
+      fetchJobs()
+        .then(setJobs)
+        .finally(() => setLoadingJobs(false));
+    }
+  }, [open]);
+
+
+  if (!order) return null;
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Editar Orden</DialogTitle>
@@ -76,12 +97,30 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             value={order.payStatus ?? ''}
             onChange={e => onChange('payStatus', e.target.value)}
           />
-          <TextField
-            label="State USA"
-            fullWidth
-            margin="normal"
-            value={order.state_usa}
-            onChange={e => onChange('state_usa', e.target.value)}
+          <Autocomplete
+            options={states}
+            loading={loadingStates}
+            getOptionLabel={option => `${option.code} - ${option.name}`}
+            value={states.find(s => s.code === order.state_usa) || null}
+            onChange={(_, value) => onChange('state_usa', value ? value.code : '')}
+            renderInput={params => (
+              <TextField
+                {...params}
+                label="State USA"
+                margin="normal"
+                fullWidth
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {loadingStates ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            isOptionEqualToValue={(option, value) => option.code === value.code}
           />
           {/* Campos de la persona */}
           <TextField
@@ -119,12 +158,30 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             value={order.person?.address ?? ''}
             onChange={e => onChange('person.address', e.target.value)}
           />
-          <TextField
-            label="Job"
-            fullWidth
-            margin="normal"
-            value={order.job ?? ''}
-            onChange={e => onChange('job', e.target.value)}
+          <Autocomplete
+            options={jobs}
+            loading={loadingJobs}
+            getOptionLabel={option => `${option.id} - ${option.name}`}
+            value={jobs.find(s => s.id === order.job) || null} // <-- aquí busca por id
+            onChange={(_, value) => onChange('job', value ? value.id : '')}
+            renderInput={params => (
+              <TextField
+                {...params}
+                label="Job"
+                margin="normal"
+                fullWidth
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {loadingJobs ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
           />
           <TextField
             label="Customer Factory"

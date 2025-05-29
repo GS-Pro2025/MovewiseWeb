@@ -8,6 +8,7 @@ export interface TableData {
   phone: string;
   email: string;
   company: string;
+  customer_factory: number;
   city: string;
   state: string;
   weekday: string;
@@ -15,6 +16,7 @@ export interface TableData {
   income: string;
   dateReference: string;
   job: string;
+  job_id: number;
   weight: string;
   truckType: string;
   totalCost: number;

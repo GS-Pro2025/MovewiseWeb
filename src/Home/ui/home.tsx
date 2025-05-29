@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
-import { fetchOrdersReport, updateOrder } from '../data/repositoryOrdersReport';
-
+import { fetchOrdersReport } from '../data/repositoryOrdersReport';
+import { updateOrder } from '../data/repositoryOrders';
 import { useSnackbar } from 'notistack';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -19,6 +19,7 @@ import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import { TableData, TableDataExport } from '../domain/TableData';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
+  key: item.id,
   key_ref: item.key_ref,
   date: item.dateReference,
   distance: item.distance, 
@@ -30,14 +31,13 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   state_usa: item.state,
   customer_factory: typeof item.company === 'number' ? item.company : 0, // Ajusta si tienes el id
   person: {
-    email: item.email, // Ajusta si tienes este dato
+    email: item.email, 
     first_name: item.firstName,
     last_name: item.lastName,
-    phone: 0, // Ajusta si tienes este dato
-    address: item.city ?? '',
+    phone: Number(item.phone),
+    address: item.city,
   },
-  job: 0, // Ajusta si tienes el id
-  dispatch_ticket: '', // Ajusta si tienes este dato
+  job: item.job_id 
 });
 
 // Función para calcular la semana del año
@@ -73,6 +73,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       phone,
       email,
       company,
+      customer_factory,
       city,
       state,
       weekday,
@@ -80,6 +81,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       income,
       dateReference,
       job,
+      job_id,
       weight,
       truckType,
       totalCost,
@@ -95,6 +97,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       phone,
       email,
       company,
+      customer_factory,
       city,
       state,
       weekday,
@@ -102,6 +105,7 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       income,  
       dateReference,
       job,
+      job_id,
       weight,
       truckType,
       totalCost,
@@ -369,8 +373,10 @@ const Example = () => {
   };
 
   const handleSaveEdit = async (key: string, order: UpdateOrderData) => {
+    console.log('Saving order:', order);
     // Mapea order a UpdateOrderData según tu modelo
     const orderData: UpdateOrderData = {
+      key: key,
       key_ref: order.key_ref,
       date: order.date,
       distance: order.distance, 
@@ -378,7 +384,7 @@ const Example = () => {
       income: order.income,
       weight: order.weight,
       status: order.status,
-      payStatus: 0,
+      payStatus: order.payStatus,
       state_usa: order.state_usa,
       customer_factory: order.customer_factory ?? 0,
       person: {
@@ -388,7 +394,7 @@ const Example = () => {
         phone: order.person.phone,
         address: order.person.address
       },
-      job: 0, 
+      job: order.job, 
     };
     console.log('Order Data to Update:', orderData);
     const result = await updateOrder(key, orderData);
