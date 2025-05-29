@@ -4,6 +4,7 @@ import Logo from "../assets/logo.png";
 import { Outlet, Link } from 'react-router-dom';
 import { fetchUserProfile } from '../service/userService'; 
 import type { UserProfile } from '../models/UserModels';  
+import { decodeJWTAsync } from '../service/tokenDecoder';
 
 interface NavItemProps {
   icon: string;
@@ -40,14 +41,26 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
 
   
-  useEffect(() => {
-    // Puedes obtener el id del usuario desde el token o de otra fuente
-    const token = Cookies.get('authToken');
-    if (!token) return;
-    // Aquí asumo que el id es 1, ajusta según tu lógica real
-    fetchUserProfile(1)
-      .then(setUser)
-      .catch(() => setUser(null));
+  
+    useEffect(() => {
+    const fetchUser = async () => {
+      const token = Cookies.get('authToken');
+      const decodedToken = await decodeJWTAsync(token ?? '');
+      if (!decodedToken) {
+        setUser(null);
+        return;
+      }
+      // Accede a user_id del token decodificado
+      const userId = (decodedToken).person_id;
+      if (!userId) {
+        setUser(null);
+        return;
+      }
+      fetchUserProfile(Number(userId))
+        .then(setUser)
+        .catch(() => setUser(null));
+    };
+    fetchUser();
   }, []);
 
   const toggleDropdown = (index: number) => {
