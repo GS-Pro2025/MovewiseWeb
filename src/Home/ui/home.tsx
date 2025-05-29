@@ -10,51 +10,36 @@ import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { fetchOrdersReport, updateOrder } from '../data/repositoryOrdersReport';
-import type { Operator } from '../domain/ModelOrdersReport';
+
 import { useSnackbar } from 'notistack';
 
 import EditIcon from '@mui/icons-material/Edit';
 import EditOrderDialog from './editOrderModal';
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
+import { TableData, TableDataExport } from '../domain/TableData';
 
-// Definimos el tipo de datos que se mostrarán en la tabla
-export interface TableData {
-  id: string;
-  status: string;
-  key_ref: string;
-  firstName: string;
-  lastName: string;
-  company: string;
-  city: string;
-  state: string;
-  weekday: string;
-  dateReference: string;
-  job: string;
-  weight: string;
-  truckType: string;
-  totalCost: number;
-  week: number; 
-  operators: Operator[];
-}
-// Interfaz para exportar solo los campos planos
-interface TableDataExport {
-  [key: string]: string | number;
-  id: string;
-  status: string;
-  key_ref: string;
-  firstName: string;
-  lastName: string;
-  company: string;
-  city: string;
-  state: string;
-  weekday: string;
-  dateReference: string;
-  job: string;
-  weight: string;
-  truckType: string;
-  totalCost: number;
-  week: number;
-}
+const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
+  key_ref: item.key_ref,
+  date: item.dateReference,
+  distance: item.distance, 
+  expense: item.expense || '', 
+  income: item.income || '',  
+  weight: item.weight,
+  status: item.status,
+  payStatus: item.payStatus,
+  state_usa: item.state,
+  customer_factory: typeof item.company === 'number' ? item.company : 0, // Ajusta si tienes el id
+  person: {
+    email: item.email, // Ajusta si tienes este dato
+    first_name: item.firstName,
+    last_name: item.lastName,
+    phone: 0, // Ajusta si tienes este dato
+    address: item.city ?? '',
+  },
+  job: 0, // Ajusta si tienes el id
+  dispatch_ticket: '', // Ajusta si tienes este dato
+});
+
 // Función para calcular la semana del año
 const getWeekOfYear = (date: Date): number => {
   const startOfYear = new Date(date.getFullYear(), 0, 1);
@@ -85,15 +70,21 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       key_ref,
       firstName,
       lastName,
+      phone,
+      email,
       company,
       city,
       state,
       weekday,
+      expense,
+      income,
       dateReference,
       job,
       weight,
       truckType,
       totalCost,
+      payStatus,
+      distance,
       week,
     }) => ({
       id,
@@ -101,15 +92,21 @@ const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
       status,
       firstName,
       lastName,
+      phone,
+      email,
       company,
       city,
       state,
       weekday,
+      expense, 
+      income,  
       dateReference,
       job,
       weight,
       truckType,
       totalCost,
+      payStatus,
+      distance,
       week,
     })
   );
@@ -134,11 +131,11 @@ const Example = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [orderToEdit, setOrderToEdit] = useState<TableData | null>(null);
 
+  const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
   const columns = [
     {
-      header: 'Acciones',
+      header: 'Actions',
       id: 'actions',
       size: 60,
       Cell: ({ row }: { row: MRT_Row<TableData> }) => (
@@ -186,6 +183,14 @@ const Example = () => {
       header: 'Last Name',
       size: 100,
     }),
+    columnHelper.accessor('phone', {
+      header: 'Phone',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<string>();
+        return value ? value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : 'N/A';
+      },
+    }),
     columnHelper.accessor('company', {
       header: 'Company',
       size: 120,
@@ -214,6 +219,43 @@ const Example = () => {
       header: 'Truck Type',
       size: 100,
     }),
+    columnHelper.accessor('distance', {
+      header: 'Distance (mi)',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<number>();
+        return value ? `${value.toLocaleString('en-US')} mi` : 'N/A';
+      },
+    }),
+    columnHelper.accessor('expense', {
+      header: 'Expense',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<string>();
+        return value ? `$${Number(value).toLocaleString('en-US')}` : 'N/A';
+      },
+    }),
+    columnHelper.accessor('income', {
+      header: 'Income',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<string>();
+        return value ? `$${Number(value).toLocaleString('en-US')}` : 'N/A';
+      },
+    }),
+    columnHelper.accessor('payStatus', {
+      header: 'Pay Status',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<number>();
+        const color = value === 0 ? 'red' : 'green';
+        return (
+          <Typography sx={{ color, fontWeight: 600 }}>
+            {value === 0 ? 'Unpaid' : 'Paid'}
+          </Typography>
+        );
+      },
+    }),
     columnHelper.accessor('totalCost', {
       header: 'Costo Total',
       size: 120,
@@ -233,9 +275,7 @@ const Example = () => {
         week,
         currentYear,
         pagination.pageSize
-      );
-      const mappedData = response.results.map((item) => {
-        console.log('MAP OPERATORS:', item.operators);
+      );const mappedData = response.results.map((item) => {
         const date = new Date(item.date);
         return {
           id: item.key,
@@ -243,18 +283,27 @@ const Example = () => {
           key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
+          phone: item.person.phone != null ? String(item.person.phone) : '', // <-- aquí
+          email: item.person.email ?? '',
           company: item.customer_factory_name ?? 'N/A',
+          customer_factory: item.customer_factory ?? 0,
           city: item.person.address ?? 'N/A',
           country: 'USA',
           weekday: date.toLocaleDateString('en-US', { weekday: 'long' }),
           dateReference: item.date,
           job: item.job_name ?? item.job.toString(),
+          job_id: item.job ?? 0,
           weight: item.weight,
           truckType: item.vehicles[0]?.type || 'N/A',
           totalCost: item.summaryCost?.totalCost ?? 0,
           week: getWeekOfYear(date),
           state: item.state_usa ?? 'N/A',
-          operators: item.operators, // <-- agrega los operadores aquí
+          operators: item.operators,
+          distance: item.distance ?? 0,
+          expense: item.expense != null ? String(item.expense) : '',
+          income: item.income != null ? String(item.income) : '',
+          payStatus: Number(item.payStatus) || 0,
+          dispatch_ticket: item.dispatch_ticket ?? '',
         };
       });
       setData(mappedData);
@@ -310,7 +359,7 @@ const Example = () => {
   };
 
   const handleEditOrder = (order: TableData) => {
-    setOrderToEdit(order);
+    setOrderToEdit(mapTableDataToUpdateOrderData(order));
     setEditModalOpen(true);
   };
 
@@ -319,40 +368,57 @@ const Example = () => {
     setOrderToEdit(null);
   };
 
-  const handleSaveEdit = async (order: UpdateOrderData) => {
+  const handleSaveEdit = async (key: string, order: UpdateOrderData) => {
     // Mapea order a UpdateOrderData según tu modelo
-    const orderData = {
+    const orderData: UpdateOrderData = {
       key_ref: order.key_ref,
       date: order.date,
-      distance: 0, // Ajusta según tu modelo
-      expense: '',
-      income: '',
+      distance: order.distance, 
+      expense: order.expense,
+      income: order.income,
       weight: order.weight,
       status: order.status,
       payStatus: 0,
       state_usa: order.state_usa,
-      customer_factory: order.customer_factory ?? 0, // <-- AGREGA ESTA LÍNEA
+      customer_factory: order.customer_factory ?? 0,
       person: {
-        email: order.person.email, // Ajusta según tu modelo
+        email: order.person.email, 
         first_name: order.person.first_name,
         last_name: order.person.first_name,
+        phone: order.person.phone,
+        address: order.person.address
       },
-      job: 0, // Ajusta según tu modelo
+      job: 0, 
     };
-
-    const result = await updateOrder(order.id, orderData);
+    console.log('Order Data to Update:', orderData);
+    const result = await updateOrder(key, orderData);
     if (result.success) {
-      // Actualiza la UI o muestra un mensaje de éxito
+      loadData(); // Recarga los datos después de la edición
     } else {
       // Muestra el error
+      enqueueSnackbar(`Error al actualizar la orden: ${result.errorMessage}`, { variant: 'error' });
     }
     setEditModalOpen(false);
     setOrderToEdit(null);
   };
 
-  const handleChangeOrder = (field: keyof TableData, value: unknown) => {
+  const handleChangeOrder = (field: keyof UpdateOrderData | `person.${string}`, value: unknown) => {
     if (!orderToEdit) return;
-    setOrderToEdit({ ...orderToEdit, [field]: value });
+    if (field.startsWith('person.')) {
+      const personField = field.split('.')[1];
+      setOrderToEdit({
+        ...orderToEdit,
+        person: {
+          ...orderToEdit.person,
+          [personField]: value,
+        },
+      });
+    } else {
+      setOrderToEdit({
+        ...orderToEdit,
+        [field]: value,
+      });
+    }
   };
 
   const table = useMaterialReactTable({
@@ -504,18 +570,19 @@ const Example = () => {
   ) : null,
   });
 
+
   return (
-  <>
-    <MaterialReactTable table={table} />
-    <EditOrderDialog
-      open={editModalOpen}
-      order={orderToEdit}
-      onClose={handleCloseEditModal}
-      onSave={handleSaveEdit}
-      onChange={handleChangeOrder}
-    />
-  </>
-);
+    <>
+      <MaterialReactTable table={table} />
+      <EditOrderDialog
+        open={editModalOpen}
+        order={orderToEdit}
+        onClose={handleCloseEditModal}
+        onSave={(order) => handleSaveEdit(order.key_ref, order)}
+        onChange={handleChangeOrder}
+      />
+    </>
+  );
 };
 
 export default Example;
