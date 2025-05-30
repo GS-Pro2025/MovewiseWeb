@@ -35,31 +35,6 @@ function getISOWeek(date: Date): number {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
-const dayKeyFromDate = (iso: string): keyof WeekAmounts => {
-  // Extraer solo la fecha sin problemas de timezone
-  const dateStr = iso.split('T')[0]; // "2025-05-19T00:00:00Z" -> "2025-05-19"
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year, month - 1, day); // Crear fecha local
-  
-  const dayIndex = date.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
-  
-  console.log(`Fecha: ${dateStr}, getDay(): ${dayIndex}`);
-  
-  // Mapear para coincidir con weekdayKeys ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const dayMap: { [key: number]: keyof WeekAmounts } = {
-    0: 'Sun', // Domingo
-    1: 'Mon', // Lunes  
-    2: 'Tue', // Martes
-    3: 'Wed', // Miércoles
-    4: 'Thu', // Jueves
-    5: 'Fri', // Viernes
-    6: 'Sat'  // Sábado
-  };
-  
-  console.log(`Resultado: ${dayMap[dayIndex]}`);
-  return dayMap[dayIndex];
-};
-
 /** Genera las fechas de la semana basado en la información de week_info */
 function generateWeekDates(startDate: string, endDate: string): { [key in keyof WeekAmounts]?: string } {
   const dates: { [key in keyof WeekAmounts]?: string } = {};
