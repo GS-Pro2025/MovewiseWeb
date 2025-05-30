@@ -13,8 +13,8 @@ export interface UpdateOrderData {
   job?: number;
   weight: string;
   distance?: number;
-  expense?: string;
-  income?: string;
+  expense?: number;
+  income?: number;
   status?: string;
   payStatus?: number;
   customer_factory?: number;

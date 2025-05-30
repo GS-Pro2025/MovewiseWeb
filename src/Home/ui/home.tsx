@@ -23,13 +23,13 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key_ref: item.key_ref,
   date: item.dateReference,
   distance: item.distance, 
-  expense: item.expense || '', 
-  income: item.income || '',  
+  expense: item.expense || 0, 
+  income: item.income || 0,  
   weight: item.weight,
   status: item.status,
   payStatus: item.payStatus,
   state_usa: item.state,
-  customer_factory: typeof item.company === 'number' ? item.company : 0, // Ajusta si tienes el id
+  customer_factory: typeof item.customer_factory === 'number' ? item.customer_factory : 0, // Ajusta si tienes el id
   person: {
     email: item.email, 
     first_name: item.firstName,
@@ -289,23 +289,23 @@ const Example = () => {
           lastName: item.person.last_name,
           phone: item.person.phone != null ? String(item.person.phone) : '', // <-- aquí
           email: item.person.email ?? '',
-          company: item.customer_factory_name ?? 'N/A',
-          customer_factory: item.customer_factory ?? 0,
-          city: item.person.address ?? 'N/A',
+          company: item.customer_factory_name,
+          customer_factory: item.customer_factory,
+          city: item.person.address,
           country: 'USA',
           weekday: date.toLocaleDateString('en-US', { weekday: 'long' }),
           dateReference: item.date,
-          job: item.job_name ?? item.job.toString(),
-          job_id: item.job ?? 0,
+          job: item.job_name,
+          job_id: item.job,
           weight: item.weight,
-          truckType: item.vehicles[0]?.type || 'N/A',
-          totalCost: item.summaryCost?.totalCost ?? 0,
+          truckType: item.vehicles[0]?.type,
+          totalCost: item.summaryCost?.totalCost,
           week: getWeekOfYear(date),
-          state: item.state_usa ?? 'N/A',
+          state: item.state_usa,
           operators: item.operators,
           distance: item.distance ?? 0,
-          expense: item.expense != null ? String(item.expense) : '',
-          income: item.income != null ? String(item.income) : '',
+          expense: item.expense != null ? Number(item.expense) : 0,
+          income: item.income != null ? Number(item.income) : 0,
           payStatus: Number(item.payStatus) || 0,
           dispatch_ticket: item.dispatch_ticket ?? '',
         };
@@ -383,10 +383,8 @@ const Example = () => {
       expense: order.expense,
       income: order.income,
       weight: order.weight,
-      status: order.status,
-      payStatus: order.payStatus,
       state_usa: order.state_usa,
-      customer_factory: order.customer_factory ?? 0,
+      customer_factory: order.customer_factory,
       person: {
         email: order.person.email, 
         first_name: order.person.first_name,
@@ -399,6 +397,7 @@ const Example = () => {
     console.log('Order Data to Update:', orderData);
     const result = await updateOrder(key, orderData);
     if (result.success) {
+      enqueueSnackbar('Orden actualizada correctamente', { variant: 'success' });
       loadData(); // Recarga los datos después de la edición
     } else {
       // Muestra el error
@@ -584,7 +583,7 @@ const Example = () => {
         open={editModalOpen}
         order={orderToEdit}
         onClose={handleCloseEditModal}
-        onSave={(order) => handleSaveEdit(order.key_ref, order)}
+        onSave={(order) => handleSaveEdit(order.key, order)}
         onChange={handleChangeOrder}
       />
     </>

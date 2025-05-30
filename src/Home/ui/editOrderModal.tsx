@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Autocomplete, CircularProgress } from '@mui/material';
+import {Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Autocomplete, CircularProgress } from '@mui/material';
 import type { UpdateOrderData } from '../domain/ModelOrderUpdate';
-import { fetchJobs, fetchOrderStates } from '../data/repositoryOrders';
+import { fetchCustomerFactories, fetchJobs, fetchOrderStates } from '../data/repositoryOrders';
 import type { OrderState } from '../domain/OrderState';
 import { JobModel } from '../domain/JobModel';
+import { CustomerFactoryModel } from '../domain/CustomerFactoryModel';
 
 interface EditOrderDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
   const [loadingStates, setLoadingStates] = useState(false);
   const [jobs, setJobs] = useState<JobModel[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
+  const [loadingCf, setLoadingCf] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -29,11 +32,18 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
       fetchJobs()
         .then(setJobs)
         .finally(() => setLoadingJobs(false));
+      fetchCustomerFactories()
+        .then(setCf)
+        .finally(() => setLoadingCf(false));
     }
   }, [open]);
 
 
   if (!order) return null;
+  console.log('cf', cf);
+  console.log('order.customer_factory', order.customer_factory);
+  console.log('order.status', order.status, typeof order.status);
+  console.log('order.payStatus', order.payStatus, typeof order.payStatus);
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Editar Orden</DialogTitle>
@@ -82,20 +92,6 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             margin="normal"
             value={order.weight}
             onChange={e => onChange('weight', e.target.value)}
-          />
-          <TextField
-            label="Status"
-            fullWidth
-            margin="normal"
-            value={order.status}
-            onChange={e => onChange('status', e.target.value)}
-          />
-          <TextField
-            label="Pay Status"
-            fullWidth
-            margin="normal"
-            value={order.payStatus ?? ''}
-            onChange={e => onChange('payStatus', e.target.value)}
           />
           <Autocomplete
             options={states}
@@ -162,7 +158,7 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             options={jobs}
             loading={loadingJobs}
             getOptionLabel={option => `${option.id} - ${option.name}`}
-            value={jobs.find(s => s.id === order.job) || null} // <-- aquí busca por id
+            value={jobs.find(s => s.id === order.job) || null}
             onChange={(_, value) => onChange('job', value ? value.id : '')}
             renderInput={params => (
               <TextField
@@ -183,20 +179,36 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             )}
             isOptionEqualToValue={(option, value) => option.id === value.id}
           />
-          <TextField
-            label="Customer Factory"
-            fullWidth
-            margin="normal"
-            value={order.customer_factory ?? ''}
-            onChange={e => onChange('customer_factory', e.target.value)}
+          <Autocomplete
+            options={cf}
+            loading={loadingCf}
+            getOptionLabel={option => `${option.name}`}
+              value={
+                cf.length > 0
+                  ? cf.find(s => Number(s.id_factory) === Number(order.customer_factory)) || null
+                  : null
+              }
+            onChange={(_, value) => onChange('customer_factory', value ? value.id_factory : '')}
+            renderInput={params => (
+              <TextField
+                {...params}
+                label="Customer Factory"
+                margin="normal"
+                fullWidth
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {loadingCf ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            isOptionEqualToValue={(option, value) => Number(option.id_factory) === Number(value.id_factory)}
           />
-          <TextField
-            label="Dispatch Ticket"
-            fullWidth
-            margin="normal"
-            value={order.dispatch_ticket ?? ''}
-            onChange={e => onChange('dispatch_ticket', e.target.value)}
-          />
+        {/* dispatch ticket missing */}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -208,5 +220,4 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
     </Dialog>
   );
 };
-
 export default EditOrderDialog;

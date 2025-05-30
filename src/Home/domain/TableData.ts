@@ -12,8 +12,8 @@ export interface TableData {
   city: string;
   state: string;
   weekday: string;
-  expense: string;
-  income: string;
+  expense: number;
+  income: number;
   dateReference: string;
   job: string;
   job_id: number;
@@ -39,8 +39,8 @@ export interface TableDataExport {
   city: string;
   state: string;
   weekday: string;
-  expense: string;
-  income: string;
+  expense: number;
+  income: number;
   dateReference: string;
   job: string;
   weight: string;
