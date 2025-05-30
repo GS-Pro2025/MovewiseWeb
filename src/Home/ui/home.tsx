@@ -5,7 +5,6 @@ import {
   type MRT_Row,
   createMRTColumnHelper,
 } from 'material-react-table';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
@@ -17,6 +16,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import EditOrderDialog from './editOrderModal';
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import { TableData, TableDataExport } from '../domain/TableData';
+import OperatorsTable from './operatorsTable';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -357,7 +357,6 @@ const Example = () => {
   const handleRowClick = (row: MRT_Row<TableData>) => {
     if (!row.original.operators || row.original.operators.length === 0) {
       enqueueSnackbar('Sin operadores asignados a esta orden.', { variant: 'info' });
-      return;
     }
     setExpandedRowId((prev) => (prev === row.original.id ? null : row.original.id));
   };
@@ -491,89 +490,20 @@ const Example = () => {
       </Box>
     ),
     renderDetailPanel: ({ row }) =>
-  expandedRowId === row.original.id ? (
-    <Box
-      sx={{
-        p: 3,
-        bgcolor: '#ffffff',
-        borderRadius: 2,
-        boxShadow: 3,
-        border: '1px solid #e0e0e0',
-      }}
-    >
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold', color: '#333' }}>
-        Operadores asignados
-      </Typography>
-
-      {row.original.operators && row.original.operators.length > 0 ? (
-        <TableContainer
-          component={Paper}
-          elevation={2}
+      expandedRowId === row.original.id ? (
+        <Box
           sx={{
+            p: 3,
+            bgcolor: '#ffffff',
             borderRadius: 2,
+            boxShadow: 3,
             border: '1px solid #e0e0e0',
           }}
         >
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#f0f0f0' }}>
-                <TableCell><strong>Nombre</strong></TableCell>
-                <TableCell><strong>Apellido</strong></TableCell>
-                <TableCell><strong>Rol</strong></TableCell>
-                <TableCell><strong>Código</strong></TableCell>
-                <TableCell><strong>Salario</strong></TableCell>
-                <TableCell><strong>Bono</strong></TableCell>
-                <TableCell><strong>Fecha</strong></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {row.original.operators.map((op, idx) => (
-                <TableRow
-                  key={op.id_assign}
-                  sx={{
-                    backgroundColor: idx % 2 === 0 ? '#fafafa' : '#fff',
-                    '&:hover': {
-                      backgroundColor: '#f1f1f1',
-                    },
-                  }}
-                >
-                  <TableCell>{op.first_name}</TableCell>
-                  <TableCell>{op.last_name}</TableCell>
-                  <TableCell>{op.role}</TableCell>
-                  <TableCell>{op.code}</TableCell>
-                  <TableCell>${op.salary.toLocaleString('en-US')}</TableCell>
-                  <TableCell>
-                    {op.bonus !== null ? `$${op.bonus.toLocaleString('en-US')}` : 'N/A'}
-                  </TableCell>
-                  <TableCell>{op.date}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Sin operadores asignados.
-        </Typography>
-      )}
-        <Button
-          onClick={() => setPagination(p => ({ ...p, pageIndex: Math.max(0, p.pageIndex - 1) }))}
-          disabled={pagination.pageIndex === 0}
-        >
-          Anterior
-        </Button>
-        <Typography sx={{ mx: 2 }}>
-          Página {pagination.pageIndex + 1}
-        </Typography>
-        <Button
-          onClick={() => setPagination(p => ({ ...p, pageIndex: p.pageIndex + 1 }))}
-          disabled={(pagination.pageIndex + 1) * pagination.pageSize >= totalRows}
-        >
-          Siguiente
-        </Button>
-    </Box>
-  ) : null,
-  });
+          <OperatorsTable operators={row.original.operators || []} />
+        </Box>
+      ) : null,
+      });
 
 
   return (
