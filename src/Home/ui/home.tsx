@@ -500,7 +500,10 @@ const Example = () => {
             border: '1px solid #e0e0e0',
           }}
         >
-          <OperatorsTable operators={row.original.operators || []} />
+          <OperatorsTable 
+            operators={row.original.operators || []} 
+            orderKey={row.original.id} 
+          />
         </Box>
       ) : null,
       });

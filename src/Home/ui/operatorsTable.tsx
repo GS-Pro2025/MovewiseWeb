@@ -5,16 +5,22 @@ import {
   createMRTColumnHelper,
 } from 'material-react-table';
 import { Box, Button, Typography } from '@mui/material';
-import { useSnackbar } from 'notistack';
 import { Operator } from '../domain/ModelOrdersReport';
+import { useNavigate } from 'react-router-dom';
 
 interface OperatorsTableProps {
   operators: Operator[];
+  orderKey: string; // Optional, if you need to navigate to a specific order
 }
 
-const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators }) => {
-  const { enqueueSnackbar } = useSnackbar();
+const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) => {
   const columnHelper = createMRTColumnHelper<Operator>();
+  const navigate = useNavigate();
+
+  const handleAddOperator = () => {
+    navigate(`/add-operators-to-order/${orderKey}`);
+  };
+
 
   const columns = [
     columnHelper.accessor('first_name', {
@@ -88,9 +94,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators }) => {
           color="primary"
           size="small"
           sx={{ minWidth: 0, px: 1, py: 0.5, fontSize: 22, fontWeight: 'bold' }}
-          onClick={() => {
-            enqueueSnackbar('Funcionalidad para añadir operador', { variant: 'info' });
-          }}
+          onClick={handleAddOperator}
         >
           +
         </Button>
