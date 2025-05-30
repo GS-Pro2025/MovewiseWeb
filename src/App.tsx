@@ -10,6 +10,7 @@ import PayrollPage from './Payroll/pages/PayrollPage';
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 import SummaryCost from './summaryCost/ui/pages/SummaryCost'
 import ExtraCost from './extraCost/ui/pages/ExtraCost';
+import AddOperatorsToOrder from './addOperatorToOrder/ui/addOperatorsToOrder';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +61,7 @@ const App = () => {
           <Route path="summary-cost" element={<SummaryCost />} />
           <Route path="payroll" element={<PayrollPage />} />
           <Route path="extra-cost" element={<ExtraCost />} />
+          <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
         </Route>
 
         {/* Ruta por defecto */}
