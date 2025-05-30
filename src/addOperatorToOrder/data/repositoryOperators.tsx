@@ -1,11 +1,11 @@
 
 
 import Cookies from 'js-cookie';
-import { Operator } from '../domain/OperatorModels';
+import { OperatorAssigned, OperatorAvailable, OperatorsAvaliableAPIResponse } from '../domain/OperatorModels';
 
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-export async function fetchOperatorsAssignedToOrder(orderKey: string): Promise<Operator[]> {
+export async function fetchOperatorsAssignedToOrder(orderKey: string): Promise<OperatorAssigned[]> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -32,7 +32,7 @@ export async function fetchOperatorsAssignedToOrder(orderKey: string): Promise<O
   }
 }
 
-export async function fetchAvailableOperators(): Promise<Operator[]> {
+export async function fetchAvailableOperators(): Promise<OperatorAvailable[]> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -51,8 +51,8 @@ export async function fetchAvailableOperators(): Promise<Operator[]> {
     if (!response.ok) {
       throw new Error('Error al obtener los operadores disponibles');
     }
-
-    return await response.json();
+    const data: OperatorsAvaliableAPIResponse = await response.json();
+    return data.results;
   } catch (error) {
     console.error('Error fetching available operators:', error);
     throw error;
