@@ -78,7 +78,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       ${isCollapsed ? 'w-24' : 'w-72'}`}
     >
       {/* Logo */}
-      <div className="px-6 py-6 mb-12 flex items-center transition-all duration-300 ease-in-out relative">
+      <div className="px-6 py-6 mb-2 flex items-center transition-all duration-300 ease-in-out relative">
         <div className="brand flex items-center text-white">
           {!isCollapsed ? (
             <img
@@ -109,7 +109,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
 
       {/* Nombre de usuario */}
       {!isCollapsed && user && (
-        <div className="px-6 mb-8 flex items-center gap-3 flex-wrap">
+        <div className="px-6 mb-2 flex items-center gap-2 flex-wrap">
           {/* Foto circular */}
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white">
             <img
@@ -138,11 +138,12 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       <ul className="mt-6 list-none p-0 m-0">
         {/* NavItems */}
         <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />
+        <NavItem icon="fa-solid fa-box" text="Create daily" isCollapsed={isCollapsed} to="/create-daily" />
         <NavItem icon="fa-solid fa-gas-pump" text="Resume Fuel" isCollapsed={isCollapsed} to="/resume-fuel" />
         <NavItem icon="fa-solid fa-calculator" text="Summary Costs" isCollapsed={isCollapsed} to="/summary-cost" />
         <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
         <NavItem icon="fa-solid fa-dollar-sign" text="Extra Cost" isCollapsed={isCollapsed} to="/extra-cost" />
-
+        
 
         <li className={`relative ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
           <button
@@ -178,7 +179,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       </ul>
 
       {/* Botón de Logout */}
-      <div className="absolute bottom-6 w-full">
+      <div className="absolute bottom-2 w-full">
         <button
           className="w-full flex items-center py-4 px-6 text-white transition-all duration-300 ease-in-out 
           hover:bg-red-600 hover:pl-8 text-lg"

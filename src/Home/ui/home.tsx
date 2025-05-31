@@ -158,6 +158,19 @@ const Example = () => {
       enableSorting: false,
       enableColumnFilter: false,
     },
+    columnHelper.accessor('payStatus', {
+      header: 'Pay Status',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<number>();
+        const color = value === 0 ? 'red' : 'green';
+        return (
+          <Typography sx={{ color, fontWeight: 600 }}>
+            {value === 0 ? 'Unpaid' : 'Paid'}
+          </Typography>
+        );
+      },
+    }),
     columnHelper.accessor('status', {
       header: 'Status',
       size: 100,
@@ -219,10 +232,6 @@ const Example = () => {
       header: 'Weight (kg)',
       size: 100,
     }),
-    columnHelper.accessor('truckType', {
-      header: 'Truck Type',
-      size: 100,
-    }),
     columnHelper.accessor('distance', {
       header: 'Distance (mi)',
       size: 120,
@@ -245,19 +254,6 @@ const Example = () => {
       Cell: ({ cell }) => {
         const value = cell.getValue<string>();
         return value ? `$${Number(value).toLocaleString('en-US')}` : 'N/A';
-      },
-    }),
-    columnHelper.accessor('payStatus', {
-      header: 'Pay Status',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<number>();
-        const color = value === 0 ? 'red' : 'green';
-        return (
-          <Typography sx={{ color, fontWeight: 600 }}>
-            {value === 0 ? 'Unpaid' : 'Paid'}
-          </Typography>
-        );
       },
     }),
     columnHelper.accessor('totalCost', {
@@ -283,7 +279,7 @@ const Example = () => {
         const date = new Date(item.date);
         return {
           id: item.key,
-          status: item.status,
+          status: item.status.toLowerCase(),
           key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,

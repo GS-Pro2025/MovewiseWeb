@@ -11,6 +11,7 @@ import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 import SummaryCost from './summaryCost/ui/pages/SummaryCost'
 import ExtraCost from './extraCost/ui/pages/ExtraCost';
 import AddOperatorsToOrder from './addOperatorToOrder/ui/addOperatorsToOrder';
+import CreateOrder from './createOrder/ui/CreateOrder';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +63,7 @@ const App = () => {
           <Route path="payroll" element={<PayrollPage />} />
           <Route path="extra-cost" element={<ExtraCost />} />
           <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
+          <Route path="create-daily" element={<CreateOrder/>} />
         </Route>
 
         {/* Ruta por defecto */}
