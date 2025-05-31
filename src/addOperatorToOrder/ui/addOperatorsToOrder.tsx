@@ -133,6 +133,15 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
+                          sx={{
+                            mb: 1,
+                            borderRadius: 2,
+                            backgroundColor: 'background.paper',
+                            boxShadow: 1,
+                            '&:hover': {
+                              backgroundColor: 'action.hover',
+                            },
+                          }}
                       >
                         <ListItemText
                           primary={`${op.first_name} ${op.last_name}`}
@@ -168,6 +177,15 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
+                        sx={{
+                          mb: 1,
+                          borderRadius: 2,
+                          backgroundColor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
+                          },
+                        }}
                     >
                       <ListItemText
                         primary={`${op.first_name} ${op.last_name}`}
