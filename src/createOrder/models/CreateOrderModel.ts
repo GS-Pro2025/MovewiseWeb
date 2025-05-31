@@ -18,3 +18,13 @@ export interface CreateOrderModel {
   job: number; 
   customer_factory: number; 
 }
+
+export interface OrderState {
+  code: string;
+  name: string;
+}
+
+export interface CustomerFactoryModel {
+    id_factory: number;
+    name: string;
+}

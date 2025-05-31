@@ -232,10 +232,6 @@ const Example = () => {
       header: 'Weight (kg)',
       size: 100,
     }),
-    columnHelper.accessor('truckType', {
-      header: 'Truck Type',
-      size: 100,
-    }),
     columnHelper.accessor('distance', {
       header: 'Distance (mi)',
       size: 120,
@@ -283,7 +279,7 @@ const Example = () => {
         const date = new Date(item.date);
         return {
           id: item.key,
-          status: item.status,
+          status: item.status.toLowerCase(),
           key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
