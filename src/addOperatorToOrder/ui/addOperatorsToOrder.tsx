@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import { OperatorAvailable, OperatorAssigned, Vehicle } from '../domain/OperatorModels';
+import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
 import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -11,6 +11,7 @@ import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unass
 import { CreateAssignmentData } from '../domain/AssignModels';
 import AssignTruckDialog from './AssignTruckDialog';
 import OperatorAssignmentDetailDialog from './OperatorAssignamentDetailDialog';
+import { Truck } from '../domain/TruckModels';
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -42,10 +43,10 @@ const AddOperatorsToOrder: React.FC = () => {
     setSelectedOperator(null);
   };
 
-  const handleAssignTruck = async (truckId: number) => {
+  const handleAssignTruck = async (truck: Truck) => {
     if (selectedOperator) {
-      await patchTruckAssignment(selectedOperator.id_assign, truckId);
-      enqueueSnackbar('Camión asignado correctamente', { variant: 'success' });
+      await patchTruckAssignment(selectedOperator.id_assign, truck.id_truck);
+      enqueueSnackbar(`Camión con placa ${truck.number_truck} asignado correctamente`, { variant: 'success' });
       setTruckModalOpen(false);
       setSelectedOperator(null);
     }
@@ -289,7 +290,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
       open={detailOpen}
       onClose={() => setDetailOpen(false)}
       operator={selectedOperator}
-      truckPlate={selectedOperator?.code}
+      truckPlate={null}
     />
     </>
   );

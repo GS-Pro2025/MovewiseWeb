@@ -9,7 +9,7 @@ import { fetchTrucks } from '../data/repositoryTruck';
 interface AssignTruckDialogProps {
   open: boolean;
   onClose: () => void;
-  onAssign: (truckId: number) => void;
+  onAssign: (truck: Truck) => void;
   initialTruckId?: number | null;
 }
 
@@ -21,7 +21,7 @@ const AssignTruckDialog: React.FC<AssignTruckDialogProps> = ({
 }) => {
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedTruck, setSelectedTruck] = useState<number | null>(initialTruckId ?? null);
+  const [selectedTruck, setSelectedTruck] = useState<Truck | null>(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -35,8 +35,13 @@ const AssignTruckDialog: React.FC<AssignTruckDialogProps> = ({
   }, [open]);
 
   useEffect(() => {
-    setSelectedTruck(initialTruckId ?? null);
-  }, [initialTruckId, open]);
+    if (initialTruckId && trucks.length > 0) {
+      const found = trucks.find((t) => t.id_truck === initialTruckId) || null;
+      setSelectedTruck(found);
+    } else {
+      setSelectedTruck(null);
+    }
+  }, [initialTruckId, trucks, open]);
 
   const filteredTrucks = trucks.filter(
     (truck) =>
@@ -76,14 +81,14 @@ const AssignTruckDialog: React.FC<AssignTruckDialogProps> = ({
                 <TableRow
                   key={truck.id_truck}
                   hover
-                  selected={selectedTruck === truck.id_truck}
-                  onClick={() => setSelectedTruck(truck.id_truck)}
+                  selected={selectedTruck?.id_truck === truck.id_truck}
+                  onClick={() => setSelectedTruck(truck)}
                   sx={{ cursor: 'pointer' }}
                 >
                   <TableCell>
                     <Radio
-                      checked={selectedTruck === truck.id_truck}
-                      onChange={() => setSelectedTruck(truck.id_truck)}
+                      checked={selectedTruck?.id_truck === truck.id_truck}
+                      onChange={() => setSelectedTruck(truck)}
                       value={truck.id_truck}
                       color="primary"
                     />

@@ -22,7 +22,7 @@ const OperatorAssignmentDetailDialog: React.FC<OperatorAssignmentDetailDialogPro
   open,
   onClose,
   operator,
-  truckPlate,
+  //truckPlate,
 }) => {
   if (!operator) return null;
 
@@ -48,14 +48,7 @@ const OperatorAssignmentDetailDialog: React.FC<OperatorAssignmentDetailDialogPro
           </Typography>
           <Divider />
         </Box>
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Placa del camión
-          </Typography>
-          <Typography variant="body1">
-            {truckPlate ?? operator.code ?? 'No asignado'}
-          </Typography>
-        </Box>
+
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} variant="contained" color="primary">
@@ -67,3 +60,15 @@ const OperatorAssignmentDetailDialog: React.FC<OperatorAssignmentDetailDialogPro
 };
 
 export default OperatorAssignmentDetailDialog;
+
+/**
+ * Para analizar 
+ *       <Box>
+          <Typography variant="subtitle2" color="text.secondary">
+            Placa del camión
+          </Typography>
+          <Typography variant="body1">
+            {truckPlate ?? operator.code ?? 'No asignado'}
+          </Typography>
+        </Box>
+ */
