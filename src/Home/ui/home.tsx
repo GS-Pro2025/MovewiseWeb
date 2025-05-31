@@ -158,6 +158,19 @@ const Example = () => {
       enableSorting: false,
       enableColumnFilter: false,
     },
+    columnHelper.accessor('payStatus', {
+      header: 'Pay Status',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<number>();
+        const color = value === 0 ? 'red' : 'green';
+        return (
+          <Typography sx={{ color, fontWeight: 600 }}>
+            {value === 0 ? 'Unpaid' : 'Paid'}
+          </Typography>
+        );
+      },
+    }),
     columnHelper.accessor('status', {
       header: 'Status',
       size: 100,
@@ -245,19 +258,6 @@ const Example = () => {
       Cell: ({ cell }) => {
         const value = cell.getValue<string>();
         return value ? `$${Number(value).toLocaleString('en-US')}` : 'N/A';
-      },
-    }),
-    columnHelper.accessor('payStatus', {
-      header: 'Pay Status',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<number>();
-        const color = value === 0 ? 'red' : 'green';
-        return (
-          <Typography sx={{ color, fontWeight: 600 }}>
-            {value === 0 ? 'Unpaid' : 'Paid'}
-          </Typography>
-        );
       },
     }),
     columnHelper.accessor('totalCost', {
