@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import EditIcon from '@mui/icons-material/Edit';
-import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
+import { OperatorAvailable, OperatorAssigned, Vehicle } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
 import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText } from '@mui/material';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { assignOperatorToOrder, patchRoleAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
+import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
 import { CreateAssignmentData } from '../domain/AssignModels';
+import AssignTruckDialog from './AssignTruckDialog';
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -18,11 +19,36 @@ const AddOperatorsToOrder: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [assignedOperators, setAssignedOperators] = useState<OperatorAssigned[]>([]);
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
-  
+  const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
+
+
+  const [truckModalOpen, setTruckModalOpen] = useState(false);
+  const [trucks, setTrucks] = useState<Vehicle[]>([]);
+
   function getOperatorId(op: OperatorAssigned | OperatorAvailable) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (op as any).id_operator ?? (op as any).id;
   }
+
+  const handleOpenTruckModal = (operator: OperatorAssigned) => {
+    setSelectedOperator(operator);
+    setTruckModalOpen(true);
+  };
+
+  const handleCloseTruckModal = () => {
+    setTruckModalOpen(false);
+    setSelectedOperator(null);
+  };
+
+  const handleAssignTruck = async (truckId: number) => {
+    if (selectedOperator) {
+      await patchTruckAssignment(selectedOperator.id_assign, truckId);
+      enqueueSnackbar('Camión asignado correctamente', { variant: 'success' });
+      setTruckModalOpen(false);
+      setSelectedOperator(null);
+    }
+  };
+
   useEffect(() => {
     const loadOperators = async () => {
       try {
@@ -130,6 +156,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
     );
   }
   return (
+    <>
     <DragDropContext onDragEnd={onDragEnd}>
       <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
         {/* Operadores asignados */}
@@ -163,18 +190,30 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                           },
                         }}
                         secondaryAction={
-                          <Select
-                            size="small"
-                            value={op.rol}
-                            onChange={(e) => handleChangeRole(op, e.target.value)}
-                            sx={{ minWidth: 120, mr: 1 }}
-                          >
-                            {ROLES.map((role) => (
-                              <MenuItem key={role} value={role}>
-                                {role}
-                              </MenuItem>
-                            ))}
-                          </Select>
+                          <>
+                            <Select
+                              size="small"
+                              value={op.rol}
+                              onChange={(e) => handleChangeRole(op, e.target.value)}
+                              sx={{ minWidth: 120, mr: 1 }}
+                            >
+                              {ROLES.map((role) => (
+                                <MenuItem key={role} value={role}>
+                                  {role}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                            {(op.rol === "team leader" || op.rol === "driver") && (
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => handleOpenTruckModal(op)}
+                                sx={{ ml: 1 }}
+                              >
+                                <DirectionsCarIcon />
+                              </IconButton>
+                            )}
+                          </>
                         }
                       >
                         <ListItemText
@@ -235,6 +274,12 @@ const handleUnassign = async (operator: OperatorAssigned) => {
         </Paper>
       </Box>
     </DragDropContext>
+    <AssignTruckDialog
+      open={truckModalOpen}
+      onClose={handleCloseTruckModal}
+      onAssign={handleAssignTruck}
+    />
+    </>
   );
 };
 
