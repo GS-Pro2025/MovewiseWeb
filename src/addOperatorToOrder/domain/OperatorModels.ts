@@ -5,59 +5,64 @@ export interface Person {
   phone: number;
   address: string;
 }
-
 export interface OperatorAssigned {
-  id: number;
+  id: number; 
   id_assign: number;
   assigned_at: string;
+  number_licence: string;
   code: string;
+  n_children: number;
+  size_t_shift: string;
+  name_t_shift: string;
   salary: number;
+  photo: string | null;
+  license_front: string | null;
+  license_back: string | null;
+  status: string;
+  additional_costs: number | null;
+  rol: string;
   first_name: string;
   last_name: string;
-  bonus: number | null;
-  rol: string;
+  identification: string;
+  email: string;
+  phone: number;
   address: string;
   company_id: number;
   company_name: string;
-  email: string;
-  identification: string;
-  license_back: string | null;
-  license_front: string | null;
-  n_children: number;
-  name_t_shift: string;
+}
+export interface OperatorAvailable {
+  id_operator: number;
   number_licence: string;
-  phone: number;
-  photo: string | null;
+  code: string;
+  n_children: number;
   size_t_shift: string;
+  name_t_shift: string;
+  salary: string; // <-- string, no number
+  photo: string | null;
+  license_front: string | null;
+  license_back: string | null;
   status: string;
-  additional_costs: number | null;
+  first_name: string;
+  last_name: string;
+  birth_date: string;
+  type_id: string;
+  id_number: string;
+  address: string;
+  phone: string; // <-- string, no number
+  email: string;
+  id_company: number;
+  sons: Son[];
+}
+export interface Son {
+  name: string;
+  birth_date: string;
+  gender: string;
 }
 
-export interface OperatorAvailable {
-  id: number;
-  id_assign: number;
-  assigned_at: string;
-  code: string;
-  salary: number;
-  first_name: string;
-  last_name: string;
-  bonus: number | null;
-  rol: string;
-  address: string;
-  company_id: number;
-  company_name: string;
-  email: string;
-  identification: string;
-  license_back: string | null;
-  license_front: string | null;
-  n_children: number;
-  name_t_shift: string;
-  number_licence: string;
-  phone: number;
-  photo: string | null;
-  size_t_shift: string;
-  status: string;
-  additional_costs: number | null;
+export interface OperatorsAvaliableAPIResponse {
+  count: number;
+  results: OperatorAvailable[];
+  current_company_id: number;
 }
 export interface Vehicle {
   id_truck: number;
@@ -68,8 +73,3 @@ export interface Vehicle {
   category: string;
 }
 
-export interface OperatorsAvaliableAPIResponse {
-  count: number;
-  current_company_id: number;
-  results: OperatorAvailable[];
-}

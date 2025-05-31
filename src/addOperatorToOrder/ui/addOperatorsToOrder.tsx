@@ -5,6 +5,8 @@ import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
 import { Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText } from '@mui/material';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { assignOperatorToOrder, unassignOperatorFromOrder } from '../data/repositoryAssign';
+import { CreateAssignmentData } from '../domain/AssignModels';
 
 const AddOperatorsToOrder: React.FC = () => {
   const { orderKey } = useParams<{ orderKey: string }>();
@@ -12,18 +14,23 @@ const AddOperatorsToOrder: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [assignedOperators, setAssignedOperators] = useState<OperatorAssigned[]>([]);
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
-
+  
+  function getOperatorId(op: OperatorAssigned | OperatorAvailable) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (op as any).id_operator ?? (op as any).id;
+  }
   useEffect(() => {
     const loadOperators = async () => {
       try {
         if (!orderKey) return;
         const assigned = await fetchOperatorsAssignedToOrder(orderKey);
         const available = await fetchAvailableOperators();
-        const assignedIds = new Set(assigned.map(op => op.id));
-        const filteredAvailable = available.filter(op => !assignedIds.has(op.id));
+        const assignedIds = new Set(assigned.map(op => getOperatorId(op)));
+        const filteredAvailable = available.filter(op => !assignedIds.has(getOperatorId(op)));
         setAssignedOperators(assigned);
         setAvailableOperators(filteredAvailable);
         setLoading(false);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         enqueueSnackbar('Error al cargar operadores', { variant: 'error' });
         setLoading(false);
@@ -33,13 +40,51 @@ const AddOperatorsToOrder: React.FC = () => {
     loadOperators();
   }, [enqueueSnackbar, orderKey]);
 
-  const handleAssign = (operator: OperatorAvailable) => {
-    // Implementar lógica de asignación aquí
-  };
 
-  const handleUnassign = (operator: OperatorAssigned) => {
-    // Implementar lógica de desasignación aquí
-  };
+const handleAssign = async (operator: OperatorAvailable) => {
+  if (!orderKey) return;
+  console.log('Asignando operador:', operator);
+  try {
+    const now = new Date().toISOString();
+    const data: CreateAssignmentData = {
+      operator: operator.id_operator,
+      order: orderKey,
+      assigned_at: now,
+      rol: "operator",
+      additional_costs: "",
+    };
+    await assignOperatorToOrder(data);
+    enqueueSnackbar('Operador asignado correctamente', { variant: 'success' });
+    // Refresca las listas
+    const assigned = await fetchOperatorsAssignedToOrder(orderKey);
+    const available = await fetchAvailableOperators();
+    const assignedIds = new Set(assigned.map(op => op.id));
+    const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
+    setAssignedOperators(assigned);
+    setAvailableOperators(filteredAvailable);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (error) {
+    enqueueSnackbar('Error al asignar operador', { variant: 'error' });
+  }
+};
+
+const handleUnassign = async (operator: OperatorAssigned) => {
+  try {
+    await unassignOperatorFromOrder(operator.id_assign);
+    enqueueSnackbar('Operador desasignado correctamente', { variant: 'success' });
+    // Refresca las listas
+    if (!orderKey) return;
+    const assigned = await fetchOperatorsAssignedToOrder(orderKey);
+    const available = await fetchAvailableOperators();
+    const assignedIds = new Set(assigned.map(op => op.id));
+    const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
+    setAssignedOperators(assigned);
+    setAvailableOperators(filteredAvailable);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (error) {
+    enqueueSnackbar('Error al desasignar operador', { variant: 'error' });
+  }
+};
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
@@ -81,9 +126,10 @@ const AddOperatorsToOrder: React.FC = () => {
                   </ListItem>
                 )}
                 {assignedOperators.map((op, idx) => (
-                  <Draggable key={op.id} draggableId={`assigned-${op.id}`} index={idx}>
+                  <Draggable key={getOperatorId(op)} draggableId={`assigned-${getOperatorId(op)}`} index={idx}>
                     {(provided) => (
                       <ListItem
+                        key={getOperatorId(op)}
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
@@ -115,21 +161,21 @@ const AddOperatorsToOrder: React.FC = () => {
                   </ListItem>
                 )}
                 {availableOperators.map((op, idx) => (
-                  <Draggable key={op.id} draggableId={`available-${op.id}`} index={idx}>
-                    {(provided) => (
-                      <ListItem
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <ListItemText
-                          primary={`${op.first_name} ${op.last_name}`}
-                          secondary={op.rol}
-                        />
-                      </ListItem>
-                    )}
-                  </Draggable>
-                ))}
+                <Draggable key={getOperatorId(op)} draggableId={`available-${getOperatorId(op)}`} index={idx}>
+                  {(provided) => (
+                    <ListItem
+                      key={getOperatorId(op)}
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      <ListItemText
+                        primary={`${op.first_name} ${op.last_name}`}
+                      />
+                    </ListItem>
+                  )}
+                </Draggable>
+              ))}
                 {provided.placeholder}
               </List>
             )}
