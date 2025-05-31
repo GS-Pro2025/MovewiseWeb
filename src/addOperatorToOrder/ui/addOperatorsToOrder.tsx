@@ -12,6 +12,9 @@ import { CreateAssignmentData } from '../domain/AssignModels';
 import AssignTruckDialog from './AssignTruckDialog';
 import OperatorAssignmentDetailDialog from './OperatorAssignamentDetailDialog';
 import { Truck } from '../domain/TruckModels';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useNavigate } from 'react-router-dom';
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -23,6 +26,7 @@ const AddOperatorsToOrder: React.FC = () => {
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
 
+  const navigate = useNavigate();
 
   const [truckModalOpen, setTruckModalOpen] = useState(false);
 
@@ -160,6 +164,15 @@ const handleUnassign = async (operator: OperatorAssigned) => {
   }
   return (
     <>
+      {/* Botón de volver */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <IconButton color="primary" onClick={() => navigate(-1)}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" sx={{ ml: 1, fontWeight: 'bold' }}>
+          Asignar operadores a la orden
+        </Typography>
+      </Box>
     <DragDropContext onDragEnd={onDragEnd}>
       <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
         {/* Operadores asignados */}
@@ -236,6 +249,8 @@ const handleUnassign = async (operator: OperatorAssigned) => {
             )}
           </Droppable>
         </Paper>
+        {/* Icono de flecha para indicar la asignación */}
+        <CompareArrowsIcon sx={{ fontSize: 48, color: '#888' }} />
         {/* Operadores disponibles */}
         <Paper sx={{ width: 500, minHeight: 600, p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
