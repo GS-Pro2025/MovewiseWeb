@@ -13,6 +13,7 @@ import { createOrder, fetchCustomerFactories, fetchJobs, fetchOrderStates } from
 import { CreateOrderModel, CustomerFactoryModel, OrderState, Person } from '../models/CreateOrderModel';
 import { JobModel } from '../models/JobModel';
 import { enqueueSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 
 const initialPerson: Person = {
   first_name: '',
@@ -47,7 +48,7 @@ const CreateOrder: React.FC = () => {
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
   const [loadingCf, setLoadingCf] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
     setLoadingStates(true);
     fetchOrderStates()
@@ -80,22 +81,30 @@ const CreateOrder: React.FC = () => {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setSuccessMsg('');
-    setErrorMsg('');
-    const result = await createOrder(order);
-    setLoading(false);
-    if (result.success) {
-        enqueueSnackbar('Orden creada correctamente', { variant: 'success' });
-        setSuccessMsg('Orden creada correctamente');
-        setOrder(initialOrder);
-    } else {
-        enqueueSnackbar('Error al crear la orden', { variant: 'error' });
-        setErrorMsg(result.errorMessage || 'Error al crear la orden');
-    }
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setSuccessMsg('');
+        setErrorMsg('');
+        const result = await createOrder(order);
+        setLoading(false);
+
+        // El repository retorna un objeto OrderCreated (con key) si es éxito, o { success: false, errorMessage }
+        if ('key' in result && result.key) {
+            enqueueSnackbar('Orden creada correctamente', { variant: 'success' });
+            setSuccessMsg('Orden creada correctamente');
+            setOrder(initialOrder);
+            // Redirigir a addOperatorToOrder con el key de la orden creada
+            navigate(`/add-operators-to-order/${result.key}`);
+        } else {
+            enqueueSnackbar('Error al crear la orden', { variant: 'error' });
+            setErrorMsg(
+            'errorMessage' in result && result.errorMessage
+                ? result.errorMessage
+                : 'Error al crear la orden'
+            );
+        }
+    };
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

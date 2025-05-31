@@ -1,11 +1,11 @@
 import Cookies from "js-cookie";
-import { CreateOrderModel, CustomerFactoryModel, OrderState } from "../models/CreateOrderModel";
+import { CreateOrderModel, CustomerFactoryModel, OrderCreated, OrderState } from "../models/CreateOrderModel";
 
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 export async function createOrder(
   orderData: CreateOrderModel
-): Promise<{ success: boolean; data?: unknown; errorMessage?: string }> {
+): Promise<OrderCreated | { success: false; errorMessage: string }> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -28,7 +28,7 @@ export async function createOrder(
       return { success: false, errorMessage: data.messDev || 'Error creating the order' };
     }
 
-    return { success: true, data };
+    return data;
   } catch (err) {
     return {
       success: false,

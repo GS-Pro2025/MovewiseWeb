@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
-import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText } from '@mui/material';
+import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
@@ -15,6 +15,7 @@ import { Truck } from '../domain/TruckModels';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
+import CheckIcon from '@mui/icons-material/Check';
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -36,6 +37,11 @@ const AddOperatorsToOrder: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (op as any).id_operator ?? (op as any).id;
   }
+
+  const handleOk = () => {
+    enqueueSnackbar('Operación exitosa', { variant: 'success' });
+    navigate('/');
+  };
 
   const handleOpenTruckModal = (operator: OperatorAssigned) => {
     setSelectedOperator(operator);
@@ -173,6 +179,16 @@ const handleUnassign = async (operator: OperatorAssigned) => {
           Asignar operadores a la orden
         </Typography>
       </Box>
+        {/* Botón OK */}
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<CheckIcon />}
+          sx={{ ml: 'auto' }}
+          onClick={handleOk}
+        >
+          OK
+        </Button>
     <DragDropContext onDragEnd={onDragEnd}>
       <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
         {/* Operadores asignados */}
