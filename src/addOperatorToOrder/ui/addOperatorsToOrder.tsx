@@ -10,6 +10,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-p
 import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
 import { CreateAssignmentData } from '../domain/AssignModels';
 import AssignTruckDialog from './AssignTruckDialog';
+import OperatorAssignmentDetailDialog from './OperatorAssignamentDetailDialog';
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -23,7 +24,8 @@ const AddOperatorsToOrder: React.FC = () => {
 
 
   const [truckModalOpen, setTruckModalOpen] = useState(false);
-  const [trucks, setTrucks] = useState<Vehicle[]>([]);
+
+  const [detailOpen, setDetailOpen] = useState(false);
 
   function getOperatorId(op: OperatorAssigned | OperatorAvailable) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,6 +178,10 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                   <Draggable key={getOperatorId(op)} draggableId={`assigned-${getOperatorId(op)}`} index={idx}>
                     {(provided) => (
                       <ListItem
+                        onDoubleClick={() => {
+                          setSelectedOperator(op);
+                          setDetailOpen(true);
+                        }}
                         key={getOperatorId(op)}
                         ref={provided.innerRef}
                         {...provided.draggableProps}
@@ -278,6 +284,12 @@ const handleUnassign = async (operator: OperatorAssigned) => {
       open={truckModalOpen}
       onClose={handleCloseTruckModal}
       onAssign={handleAssignTruck}
+    />
+    <OperatorAssignmentDetailDialog
+      open={detailOpen}
+      onClose={() => setDetailOpen(false)}
+      operator={selectedOperator}
+      truckPlate={selectedOperator?.code}
     />
     </>
   );
