@@ -1,14 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import EditIcon from '@mui/icons-material/Edit';
 import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
-import { Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText } from '@mui/material';
+import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText } from '@mui/material';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { assignOperatorToOrder, unassignOperatorFromOrder } from '../data/repositoryAssign';
+import { assignOperatorToOrder, patchRoleAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
 import { CreateAssignmentData } from '../domain/AssignModels';
 
 const AddOperatorsToOrder: React.FC = () => {
+  const ROLES = ["team leader", "operator", "driver"];
+
   const { orderKey } = useParams<{ orderKey: string }>();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
@@ -68,6 +72,23 @@ const handleAssign = async (operator: OperatorAvailable) => {
   }
 };
 
+const handleChangeRole = async (operator: OperatorAssigned, newRole: string) => {
+  try {
+    // Aquí deberías tener un endpoint para actualizar el rol del operador asignado.
+    // Por ahora solo actualizamos el estado local:
+    setAssignedOperators((prev) =>
+      prev.map((op) =>
+        getOperatorId(op) === getOperatorId(operator) ? { ...op, rol: newRole } : op
+      )
+    );
+    await patchRoleAssignment(operator.id_assign, newRole);
+    enqueueSnackbar('Rol actualizado', { variant: 'success' });
+    // Si tienes un endpoint, llama aquí y refresca la lista después.
+  } catch (error) {
+    enqueueSnackbar('Error al actualizar el rol', { variant: 'error' });
+  }
+};
+
 const handleUnassign = async (operator: OperatorAssigned) => {
   try {
     await unassignOperatorFromOrder(operator.id_assign);
@@ -108,12 +129,11 @@ const handleUnassign = async (operator: OperatorAssigned) => {
       </Box>
     );
   }
-
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
         {/* Operadores asignados */}
-        <Paper sx={{ width: 350, minHeight: 400, p: 2 }}>
+        <Paper sx={{ width: 600, minHeight: 600, p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
             Operadores asignados a la orden
           </Typography>
@@ -133,15 +153,29 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                          sx={{
-                            mb: 1,
-                            borderRadius: 2,
-                            backgroundColor: 'background.paper',
-                            boxShadow: 1,
-                            '&:hover': {
-                              backgroundColor: 'action.hover',
-                            },
-                          }}
+                        sx={{
+                          mb: 1,
+                          borderRadius: 2,
+                          backgroundColor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
+                          },
+                        }}
+                        secondaryAction={
+                          <Select
+                            size="small"
+                            value={op.rol}
+                            onChange={(e) => handleChangeRole(op, e.target.value)}
+                            sx={{ minWidth: 120, mr: 1 }}
+                          >
+                            {ROLES.map((role) => (
+                              <MenuItem key={role} value={role}>
+                                {role}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        }
                       >
                         <ListItemText
                           primary={`${op.first_name} ${op.last_name}`}
@@ -157,7 +191,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
           </Droppable>
         </Paper>
         {/* Operadores disponibles */}
-        <Paper sx={{ width: 350, minHeight: 400, p: 2 }}>
+        <Paper sx={{ width: 500, minHeight: 600, p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
             Operadores disponibles
           </Typography>
@@ -170,13 +204,13 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                   </ListItem>
                 )}
                 {availableOperators.map((op, idx) => (
-                <Draggable key={getOperatorId(op)} draggableId={`available-${getOperatorId(op)}`} index={idx}>
-                  {(provided) => (
-                    <ListItem
-                      key={getOperatorId(op)}
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
+                  <Draggable key={getOperatorId(op)} draggableId={`available-${getOperatorId(op)}`} index={idx}>
+                    {(provided) => (
+                      <ListItem
+                        key={getOperatorId(op)}
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
                         sx={{
                           mb: 1,
                           borderRadius: 2,
@@ -186,14 +220,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                             backgroundColor: 'action.hover',
                           },
                         }}
-                    >
-                      <ListItemText
-                        primary={`${op.first_name} ${op.last_name}`}
-                      />
-                    </ListItem>
-                  )}
-                </Draggable>
-              ))}
+                      >
+                        <ListItemText
+                          primary={`${op.first_name} ${op.last_name}`}
+                        />
+                      </ListItem>
+                    )}
+                  </Draggable>
+                ))}
                 {provided.placeholder}
               </List>
             )}

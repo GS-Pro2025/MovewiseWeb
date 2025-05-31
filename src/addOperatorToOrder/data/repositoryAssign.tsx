@@ -89,4 +89,32 @@ export async function fetchAssignmentsByOrderKey(orderKey: string): Promise<Assi
         console.error('Error fetching assignments:', error);
         throw error;
     }
+}
+
+export async function patchRoleAssignment(
+    assignmentId: number,
+    newRole: string,
+): Promise<void> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+    try {
+        const response = await fetch(`${BASE_URL_API}/assigns/${assignmentId}/update/`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rol: newRole }),
+        });
+    
+        if (!response.ok) {
+        throw new Error('Error al actualizar el rol de la asignación');
+        }
+    } catch (error) {
+        console.error('Error updating role assignment:', error);
+        throw error;
     }
+}
