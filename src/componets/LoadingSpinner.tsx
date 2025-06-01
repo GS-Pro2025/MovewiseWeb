@@ -50,7 +50,7 @@ const StyledWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: white; /* Opcional, para que se vea mejor el loader */
+  background-color: #f3f4f6; /* Opcional, para que se vea mejor el loader */
 
   .loader {
     width: fit-content;

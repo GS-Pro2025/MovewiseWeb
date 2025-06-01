@@ -20,8 +20,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
   const handleAddOperator = () => {
     navigate(`/add-operators-to-order/${orderKey}`);
   };
-
-
+  
   const columns = [
     columnHelper.accessor('first_name', {
       header: 'Nombre',
@@ -53,15 +52,17 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
       },
     }),
     columnHelper.accessor('date', {
-    //Parsing date to a readable format
-        Cell: ({ cell }) => {
-            const date = new Date(cell.getValue<string>());
-            return date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            });
-        },
+      // SOLUCION: Agregar T00:00:00 para forzar interpretación como hora local
+      Cell: ({ cell }) => {
+        const dateString = cell.getValue<string>();
+        // Agregar T00:00:00 evita problemas de zona horaria
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+      },
       header: 'Fecha',
       size: 120,
     }),

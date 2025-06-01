@@ -308,6 +308,7 @@ const Example = () => {
       });
       setData(mappedData);
       setTotalRows(response.count);
+      console.log(mappedData)
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
