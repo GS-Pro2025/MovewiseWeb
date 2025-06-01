@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
-import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button } from '@mui/material';
+import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button, TextField } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
@@ -26,13 +26,30 @@ const AddOperatorsToOrder: React.FC = () => {
   const [assignedOperators, setAssignedOperators] = useState<OperatorAssigned[]>([]);
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
+  
+  const [searchAssigned, setSearchAssigned] = useState('');
+  const [searchAvailable, setSearchAvailable] = useState('');
 
   const navigate = useNavigate();
 
   const [truckModalOpen, setTruckModalOpen] = useState(false);
 
   const [detailOpen, setDetailOpen] = useState(false);
+  // Filtrado de operadores asignados
+  const filteredAssignedOperators = assignedOperators.filter(
+    (op) =>
+      (`${op.first_name} ${op.last_name}`.toLowerCase().includes(searchAssigned.toLowerCase()) ||
+      (op.identification && op.identification.toString().includes(searchAssigned)) ||
+      (op.code && op.code.toString().includes(searchAssigned)))
+  );
 
+  // Filtrado de operadores disponibles
+  const filteredAvailableOperators = availableOperators.filter(
+    (op) =>
+      (`${op.first_name} ${op.last_name}`.toLowerCase().includes(searchAvailable.toLowerCase()) ||
+      (op.id_number && op.id_number.toString().includes(searchAvailable)) ||
+      (op.code && op.code.toString().includes(searchAvailable)))
+  );
   function getOperatorId(op: OperatorAssigned | OperatorAvailable) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (op as any).id_operator ?? (op as any).id;
@@ -196,6 +213,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
             Operadores asignados a la orden
           </Typography>
+          <TextField
+              label="Buscar por nombre o identificación"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              value={searchAssigned}
+              onChange={(e) => setSearchAssigned(e.target.value)}
+            />
           <Droppable droppableId="assigned">
             {(provided) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
@@ -204,7 +229,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                     <ListItemText primary="No hay operadores asignados" />
                   </ListItem>
                 )}
-                {assignedOperators.map((op, idx) => (
+                {filteredAssignedOperators.map((op, idx) =>  (
                   <Draggable key={getOperatorId(op)} draggableId={`assigned-${getOperatorId(op)}`} index={idx}>
                     {(provided) => (
                       <ListItem
@@ -272,6 +297,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
             Operadores disponibles
           </Typography>
+          <TextField
+              label="Buscar por nombre o identificación"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              value={searchAvailable}
+              onChange={(e) => setSearchAvailable(e.target.value)}
+            />
           <Droppable droppableId="available">
             {(provided) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
@@ -280,7 +313,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                     <ListItemText primary="No hay operadores disponibles" />
                   </ListItem>
                 )}
-                {availableOperators.map((op, idx) => (
+                {filteredAvailableOperators.map((op, idx) => (
                   <Draggable key={getOperatorId(op)} draggableId={`available-${getOperatorId(op)}`} index={idx}>
                     {(provided) => (
                       <ListItem
