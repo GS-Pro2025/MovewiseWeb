@@ -16,7 +16,8 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import CheckIcon from '@mui/icons-material/Check';
-
+import Avatar from '@mui/material/Avatar';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
 
@@ -277,9 +278,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                           </>
                         }
                       >
+                        <ListItemAvatar>
+                          <Avatar src={op.photo || undefined}>
+                            {(!op.photo && op.first_name) ? op.first_name[0] : ''}
+                          </Avatar>
+                        </ListItemAvatar>
                         <ListItemText
-                          primary={`${op.first_name} ${op.last_name}`}
-                          secondary={op.rol}
+                          primary={`${op.first_name} ${op.last_name} - Rol:${op.rol}`}
+                          secondary={`ID: ${op.identification} - Código: ${op.code}`}
                         />
                       </ListItem>
                     )}
@@ -331,8 +337,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                           },
                         }}
                       >
+                        <ListItemAvatar>
+                          <Avatar src={op.photo || undefined}>
+                            {(!op.photo && op.first_name) ? op.first_name[0] : ''}
+                          </Avatar>
+                        </ListItemAvatar>
                         <ListItemText
                           primary={`${op.first_name} ${op.last_name}`}
+                          secondary={`ID: ${op.id_number} - Código: ${op.code}`}
                         />
                       </ListItem>
                     )}
