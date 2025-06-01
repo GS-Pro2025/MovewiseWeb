@@ -5,6 +5,7 @@ import {
   WeekInfo,
 } from '../../service/PayrollService';
 import { PayrollModal } from '../components/PayrollModal';
+import LoaderSpinner from '../../componets/LoadingSpinner';
 
 interface WeekAmounts { Mon?: number; Tue?: number; Wed?: number; Thu?: number; Fri?: number; Sat?: number; Sun?: number; }
 
@@ -124,19 +125,18 @@ export default function PayrollPage() {
       
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(week_info.start_date, week_info.end_date);
-      console.log('Week info recibido:', week_info);
-      console.log('Fechas generadas para encabezados:', dates);
       setWeekDates(dates);
       
       const map = new Map<string, OperatorRow>();
 
-      // PASO 1: Crear la estructura básica de cada operador (sin días trabajados)
+      // PASO 1: Crear la estructura básica de cada operador y obtener bonus único
       allData.forEach(d => {
         const key = d.code;
         const assignId = d.id_assign;
         const payId = d.id_payment;
 
         if (!map.has(key)) {
+          // Al crear el operador por primera vez, tomar el bonus del primer registro
           map.set(key, {
             code: d.code,
             name: d.first_name,
@@ -145,7 +145,7 @@ export default function PayrollPage() {
             cost: d.salary,
             pay: payId ? payId.toString() : null, 
             total: 0,
-            additionalBonuses: 0,
+            additionalBonuses: Number(d.bonus || 0), // Solo tomar el bonus una vez
             grandTotal: 0,
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
@@ -156,11 +156,8 @@ export default function PayrollPage() {
           if (payId != null && !ex.paymentIds.includes(payId)) {
             ex.paymentIds.push(payId);
           }
+          // NO acumular bonus aquí - solo se toma una vez por operador
         }
-
-        // Acumular bonos
-        const row = map.get(key)!;
-        row.additionalBonuses = (row.additionalBonuses || 0) + Number(d.bonus || 0);
       });
 
       // PASO 2: Función para buscar si un operador trabajó en una fecha específica
@@ -177,6 +174,7 @@ export default function PayrollPage() {
       // PASO 3: Mapear cada día de la semana para cada operador
       const operators = Array.from(map.values()).map(row => {
         console.log(`Mapeando días para ${row.name} ${row.lastName} (${row.code})`);
+        console.log(`Bonus para ${row.code}: ${row.additionalBonuses}`);
         
         // Para cada día de la semana, buscar si trabajó
         weekdayKeys.forEach(dayKey => {
@@ -194,6 +192,8 @@ export default function PayrollPage() {
         const daysWorked = weekdayKeys.filter(day => row[day] != null && row[day]! > 0).length;
         row.total = daysWorked * row.cost;
         row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
+        
+        console.log(`Total para ${row.code}: Días=${daysWorked}, Salario=${row.total}, Bonus=${row.additionalBonuses}, Gran Total=${row.grandTotal}`);
         
         return row;
       });
@@ -248,6 +248,23 @@ export default function PayrollPage() {
     () => filteredOperators.reduce((sum, r) => sum + (r.grandTotal || 0), 0),
     [filteredOperators]
   );
+
+  // Contadores de pago para operadores filtrados
+  const paymentStats = useMemo(() => {
+    const paidOperators = filteredOperators.filter(r => r.pay != null);
+    const unpaidOperators = filteredOperators.filter(r => r.pay == null);
+    
+    const paidAmount = paidOperators.reduce((sum, r) => sum + (r.grandTotal || 0), 0);
+    const unpaidAmount = unpaidOperators.reduce((sum, r) => sum + (r.grandTotal || 0), 0);
+    
+    return { 
+      paid: paidOperators.length, 
+      unpaid: unpaidOperators.length, 
+      total: paidOperators.length + unpaidOperators.length,
+      paidAmount,
+      unpaidAmount
+    };
+  }, [filteredOperators]);
 
   const changeWeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const w = parseInt(e.target.value, 10);
@@ -304,11 +321,15 @@ export default function PayrollPage() {
         </div>
       )}
       {loading ? (
-        <div className="text-center py-8">Loading data…</div>
+        <div className="flex justify-center items-center py-8" style={{ height: '400px' }}>
+          <div style={{ transform: 'scale(0.5)' }}>
+            <LoaderSpinner />
+          </div>
+        </div>
       ) : (
         <>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
               <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
                 <div className="text-2xl font-bold text-blue-600">{countDays}</div>
                 <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">Working Days</div>
@@ -323,6 +344,35 @@ export default function PayrollPage() {
                 </div>
                 <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
                   {searchTerm ? 'Filtered Operators' : 'Total Operators'}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 shadow-sm border border-orange-100">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">{paymentStats.paid}</div>
+                    <div className="text-xs text-green-600">Paid</div>
+                  </div>
+                  <div className="text-gray-400">/</div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-red-600">{paymentStats.unpaid}</div>
+                    <div className="text-xs text-red-600">Pending</div>
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide mt-1">Payment Status</div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 shadow-sm border border-red-100">
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(paymentStats.unpaidAmount)}
+                </div>
+                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Pending Amount
+                  {paymentStats.unpaid > 0 && (
+                    <div className="text-xs text-red-500 mt-1">
+                      {paymentStats.unpaid} operator{paymentStats.unpaid !== 1 ? 's' : ''} pending
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -374,7 +424,7 @@ export default function PayrollPage() {
                     <td className="py-2 px-4 border-b">{r.lastName}</td>
                     {weekdayKeys.map(day => {
                       const value = r[day];
-                      console.log(`Fila ${r.code}, Columna ${day}: valor=${value}`);
+                      
                       return (
                         <td key={day} className="py-2 px-4 border-b text-right">
                           {value ? formatCurrency(value) : '—'}
