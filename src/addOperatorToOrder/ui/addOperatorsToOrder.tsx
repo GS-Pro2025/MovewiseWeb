@@ -18,6 +18,8 @@ import { useNavigate } from 'react-router-dom';
 import CheckIcon from '@mui/icons-material/Check';
 import Avatar from '@mui/material/Avatar';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
+import { useRef } from 'react';
+
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
 
@@ -27,7 +29,11 @@ const AddOperatorsToOrder: React.FC = () => {
   const [assignedOperators, setAssignedOperators] = useState<OperatorAssigned[]>([]);
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
-  
+  const [availablePage, setAvailablePage] = useState(1);
+  const [hasMoreAvailable, setHasMoreAvailable] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const listAvailableRef = useRef<HTMLUListElement>(null);
+
   const [searchAssigned, setSearchAssigned] = useState('');
   const [searchAvailable, setSearchAvailable] = useState('');
 
@@ -80,12 +86,18 @@ const AddOperatorsToOrder: React.FC = () => {
     }
   };
 
+  const fetchAvailable = async (page = 1) => {
+    const pageSize = 50; 
+    const data = await fetchAvailableOperators(page, pageSize);
+    return data;
+  };
+
   useEffect(() => {
     const loadOperators = async () => {
       try {
         if (!orderKey) return;
         const assigned = await fetchOperatorsAssignedToOrder(orderKey);
-        const available = await fetchAvailableOperators();
+        const available = await fetchAvailable(1);
         const assignedIds = new Set(assigned.map(op => getOperatorId(op)));
         const filteredAvailable = available.filter(op => !assignedIds.has(getOperatorId(op)));
         setAssignedOperators(assigned);
@@ -118,7 +130,7 @@ const handleAssign = async (operator: OperatorAvailable) => {
     enqueueSnackbar('Operador asignado correctamente', { variant: 'success' });
     // Refresca las listas
     const assigned = await fetchOperatorsAssignedToOrder(orderKey);
-    const available = await fetchAvailableOperators();
+    const available = await fetchAvailable(1);
     const assignedIds = new Set(assigned.map(op => op.id));
     const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
     setAssignedOperators(assigned);
@@ -153,7 +165,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
     // Refresca las listas
     if (!orderKey) return;
     const assigned = await fetchOperatorsAssignedToOrder(orderKey);
-    const available = await fetchAvailableOperators();
+    const available = await fetchAvailable(1);
     const assignedIds = new Set(assigned.map(op => op.id));
     const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
     setAssignedOperators(assigned);
@@ -186,6 +198,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
       </Box>
     );
   }
+
   return (
     <>
       {/* Botón de volver */}
