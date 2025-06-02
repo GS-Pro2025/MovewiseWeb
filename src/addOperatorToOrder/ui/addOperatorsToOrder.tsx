@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import CheckIcon from '@mui/icons-material/Check';
 import Avatar from '@mui/material/Avatar';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
-import { useRef } from 'react';
+
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -29,10 +29,6 @@ const AddOperatorsToOrder: React.FC = () => {
   const [assignedOperators, setAssignedOperators] = useState<OperatorAssigned[]>([]);
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
-  const [availablePage, setAvailablePage] = useState(1);
-  const [hasMoreAvailable, setHasMoreAvailable] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const listAvailableRef = useRef<HTMLUListElement>(null);
 
   const [searchAssigned, setSearchAssigned] = useState('');
   const [searchAvailable, setSearchAvailable] = useState('');
@@ -103,7 +99,6 @@ const AddOperatorsToOrder: React.FC = () => {
         setAssignedOperators(assigned);
         setAvailableOperators(filteredAvailable);
         setLoading(false);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         enqueueSnackbar('Error al cargar operadores', { variant: 'error' });
         setLoading(false);
@@ -135,7 +130,6 @@ const handleAssign = async (operator: OperatorAvailable) => {
     const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
     setAssignedOperators(assigned);
     setAvailableOperators(filteredAvailable);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     enqueueSnackbar('Error al asignar operador', { variant: 'error' });
   }
@@ -170,7 +164,6 @@ const handleUnassign = async (operator: OperatorAssigned) => {
     const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
     setAssignedOperators(assigned);
     setAvailableOperators(filteredAvailable);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     enqueueSnackbar('Error al desasignar operador', { variant: 'error' });
   }

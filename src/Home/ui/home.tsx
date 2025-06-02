@@ -21,7 +21,6 @@ import OperatorsTable from './operatorsTable';
 
 import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useRef } from 'react';
 import FinishOrderDialog from './FinishOrderDialog';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
