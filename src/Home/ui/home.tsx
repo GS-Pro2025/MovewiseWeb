@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   MaterialReactTable,
@@ -5,11 +6,11 @@ import {
   type MRT_Row,
   createMRTColumnHelper,
 } from 'material-react-table';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
-import { updateOrder } from '../data/repositoryOrders';
+import { finishOrderRepo, updateOrder } from '../data/repositoryOrders';
 import { useSnackbar } from 'notistack';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -17,6 +18,10 @@ import EditOrderDialog from './editOrderModal';
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import { TableData, TableDataExport } from '../domain/TableData';
 import OperatorsTable from './operatorsTable';
+
+import CheckIcon from '@mui/icons-material/Check';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import FinishOrderDialog from './FinishOrderDialog';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -136,25 +141,51 @@ const Example = () => {
 
   const [editModalOpen, setEditModalOpen] = useState(false);
 
+  const [finishModalOpen, setFinishModalOpen] = useState(false);
+  const [finishImage, setFinishImage] = useState<File | null>(null);
+  const [finishLoading, setFinishLoading] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
   const columns = [
     {
       header: 'Actions',
       id: 'actions',
-      size: 60,
-      Cell: ({ row }: { row: MRT_Row<TableData> }) => (
-        <Button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEditOrder(row.original);
-          }}
-          size="small"
-          color="primary"
-          startIcon={<EditIcon />}
-        >
-          Editar
-        </Button>
-      ),
+      size: 90,
+      Cell: ({ row }: { row: MRT_Row<TableData> }) => {
+        const isFinished = row.original.status === 'finished';
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditOrder(row.original);
+              }}
+              size="small"
+              color="primary"
+              startIcon={<EditIcon />}
+            >
+              Editar
+            </Button>
+            <IconButton
+              color={isFinished ? 'default' : 'success'}
+              size="small"
+              disabled={isFinished}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isFinished) handleOpenFinishModal(row.original.id);
+              }}
+              title={isFinished ? "Orden finalizada" : "Terminar orden"}
+            >
+              {isFinished ? (
+                <CheckCircleIcon sx={{ color: '#8bc34a' }} />
+              ) : (
+                <CheckIcon />
+              )}
+            </IconButton>
+          </Box>
+        );
+      },
       enableSorting: false,
       enableColumnFilter: false,
     },
@@ -266,6 +297,41 @@ const Example = () => {
       size: 100,
     }),
   ];
+  const finishOrder = async (orderId: string, image?: File) => {
+    try{
+      await finishOrderRepo(orderId, image);
+      enqueueSnackbar('Orden finalizada correctamente', { variant: 'success' });
+      setFinishModalOpen(false);
+      setFinishImage(null);
+    } catch (error) {
+      enqueueSnackbar('Error al finalizar la orden', { variant: 'error' });
+      console.error('Error finishing order:', error);
+      throw error;
+    }
+  };
+
+  const handleOpenFinishModal = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setFinishModalOpen(true);
+    setFinishImage(null);
+  };
+
+  const handleFinishOrder = async () => {
+    if (!selectedOrderId) return;
+    setFinishLoading(true);
+    try {
+      await finishOrder(selectedOrderId, finishImage || undefined);
+      enqueueSnackbar('Orden finalizada correctamente', { variant: 'success' });
+      setFinishModalOpen(false);
+      setFinishImage(null);
+      setSelectedOrderId(null);
+      loadData(); // refresca la tabla
+    } catch (e) {
+      enqueueSnackbar('Error al finalizar la orden', { variant: 'error' });
+    }
+    setFinishLoading(false);
+  };
+
   // Función para cargar los datos desde el servicio
   const loadData = useCallback(async () => {
     try {
@@ -515,6 +581,14 @@ const Example = () => {
         onClose={handleCloseEditModal}
         onSave={(order) => handleSaveEdit(order.key, order)}
         onChange={handleChangeOrder}
+      />
+      <FinishOrderDialog
+        open={finishModalOpen}
+        loading={finishLoading}
+        image={finishImage}
+        onClose={() => setFinishModalOpen(false)}
+        onOk={handleFinishOrder}
+        onImageChange={setFinishImage}
       />
     </>
   );

@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
-import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button } from '@mui/material';
+import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button, TextField } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
@@ -16,6 +16,9 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import CheckIcon from '@mui/icons-material/Check';
+import Avatar from '@mui/material/Avatar';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -27,12 +30,29 @@ const AddOperatorsToOrder: React.FC = () => {
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
 
+  const [searchAssigned, setSearchAssigned] = useState('');
+  const [searchAvailable, setSearchAvailable] = useState('');
+
   const navigate = useNavigate();
 
   const [truckModalOpen, setTruckModalOpen] = useState(false);
 
   const [detailOpen, setDetailOpen] = useState(false);
+  // Filtrado de operadores asignados
+  const filteredAssignedOperators = assignedOperators.filter(
+    (op) =>
+      (`${op.first_name} ${op.last_name}`.toLowerCase().includes(searchAssigned.toLowerCase()) ||
+      (op.identification && op.identification.toString().includes(searchAssigned)) ||
+      (op.code && op.code.toString().includes(searchAssigned)))
+  );
 
+  // Filtrado de operadores disponibles
+  const filteredAvailableOperators = availableOperators.filter(
+    (op) =>
+      (`${op.first_name} ${op.last_name}`.toLowerCase().includes(searchAvailable.toLowerCase()) ||
+      (op.id_number && op.id_number.toString().includes(searchAvailable)) ||
+      (op.code && op.code.toString().includes(searchAvailable)))
+  );
   function getOperatorId(op: OperatorAssigned | OperatorAvailable) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (op as any).id_operator ?? (op as any).id;
@@ -62,18 +82,23 @@ const AddOperatorsToOrder: React.FC = () => {
     }
   };
 
+  const fetchAvailable = async (page = 1) => {
+    const pageSize = 50; 
+    const data = await fetchAvailableOperators(page, pageSize);
+    return data;
+  };
+
   useEffect(() => {
     const loadOperators = async () => {
       try {
         if (!orderKey) return;
         const assigned = await fetchOperatorsAssignedToOrder(orderKey);
-        const available = await fetchAvailableOperators();
+        const available = await fetchAvailable(1);
         const assignedIds = new Set(assigned.map(op => getOperatorId(op)));
         const filteredAvailable = available.filter(op => !assignedIds.has(getOperatorId(op)));
         setAssignedOperators(assigned);
         setAvailableOperators(filteredAvailable);
         setLoading(false);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         enqueueSnackbar('Error al cargar operadores', { variant: 'error' });
         setLoading(false);
@@ -100,12 +125,11 @@ const handleAssign = async (operator: OperatorAvailable) => {
     enqueueSnackbar('Operador asignado correctamente', { variant: 'success' });
     // Refresca las listas
     const assigned = await fetchOperatorsAssignedToOrder(orderKey);
-    const available = await fetchAvailableOperators();
+    const available = await fetchAvailable(1);
     const assignedIds = new Set(assigned.map(op => op.id));
     const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
     setAssignedOperators(assigned);
     setAvailableOperators(filteredAvailable);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     enqueueSnackbar('Error al asignar operador', { variant: 'error' });
   }
@@ -135,12 +159,11 @@ const handleUnassign = async (operator: OperatorAssigned) => {
     // Refresca las listas
     if (!orderKey) return;
     const assigned = await fetchOperatorsAssignedToOrder(orderKey);
-    const available = await fetchAvailableOperators();
+    const available = await fetchAvailable(1);
     const assignedIds = new Set(assigned.map(op => op.id));
     const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
     setAssignedOperators(assigned);
     setAvailableOperators(filteredAvailable);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     enqueueSnackbar('Error al desasignar operador', { variant: 'error' });
   }
@@ -168,6 +191,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
       </Box>
     );
   }
+
   return (
     <>
       {/* Botón de volver */}
@@ -196,6 +220,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
             Operadores asignados a la orden
           </Typography>
+          <TextField
+              label="Buscar por nombre o identificación"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              value={searchAssigned}
+              onChange={(e) => setSearchAssigned(e.target.value)}
+            />
           <Droppable droppableId="assigned">
             {(provided) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
@@ -204,7 +236,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                     <ListItemText primary="No hay operadores asignados" />
                   </ListItem>
                 )}
-                {assignedOperators.map((op, idx) => (
+                {filteredAssignedOperators.map((op, idx) =>  (
                   <Draggable key={getOperatorId(op)} draggableId={`assigned-${getOperatorId(op)}`} index={idx}>
                     {(provided) => (
                       <ListItem
@@ -252,9 +284,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                           </>
                         }
                       >
+                        <ListItemAvatar>
+                          <Avatar src={op.photo || undefined}>
+                            {(!op.photo && op.first_name) ? op.first_name[0] : ''}
+                          </Avatar>
+                        </ListItemAvatar>
                         <ListItemText
-                          primary={`${op.first_name} ${op.last_name}`}
-                          secondary={op.rol}
+                          primary={`${op.first_name} ${op.last_name} - Rol:${op.rol}`}
+                          secondary={`ID: ${op.identification} - Código: ${op.code}`}
                         />
                       </ListItem>
                     )}
@@ -272,6 +309,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
             Operadores disponibles
           </Typography>
+          <TextField
+              label="Buscar por nombre o identificación"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              value={searchAvailable}
+              onChange={(e) => setSearchAvailable(e.target.value)}
+            />
           <Droppable droppableId="available">
             {(provided) => (
               <List ref={provided.innerRef} {...provided.droppableProps}>
@@ -280,7 +325,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                     <ListItemText primary="No hay operadores disponibles" />
                   </ListItem>
                 )}
-                {availableOperators.map((op, idx) => (
+                {filteredAvailableOperators.map((op, idx) => (
                   <Draggable key={getOperatorId(op)} draggableId={`available-${getOperatorId(op)}`} index={idx}>
                     {(provided) => (
                       <ListItem
@@ -298,8 +343,14 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                           },
                         }}
                       >
+                        <ListItemAvatar>
+                          <Avatar src={op.photo || undefined}>
+                            {(!op.photo && op.first_name) ? op.first_name[0] : ''}
+                          </Avatar>
+                        </ListItemAvatar>
                         <ListItemText
                           primary={`${op.first_name} ${op.last_name}`}
+                          secondary={`ID: ${op.id_number} - Código: ${op.code}`}
                         />
                       </ListItem>
                     )}

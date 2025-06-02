@@ -32,7 +32,7 @@ export async function fetchOperatorsAssignedToOrder(orderKey: string): Promise<O
   }
 }
 
-export async function fetchAvailableOperators(): Promise<OperatorAvailable[]> {
+export async function fetchAvailableOperators(page: number, pageSize: number): Promise<OperatorAvailable[]> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -40,7 +40,7 @@ export async function fetchAvailableOperators(): Promise<OperatorAvailable[]> {
   }
 
   try {
-    const response = await fetch(`${BASE_URL_API}/operators/`, {
+    const response = await fetch(`${BASE_URL_API}/operators/?page=${page}&page_size=${pageSize}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
