@@ -144,7 +144,6 @@ export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> 
       formData.append('image', image);
     }
     formData.append('status', 'finished');
-    formData.append('payStatus', '1'); // o el valor que corresponda
 
     try {
       const response = await fetch(`${BASE_URL_API}/orders/status/${orderKey}/`, {
