@@ -86,6 +86,9 @@ const CreateOrder: React.FC = () => {
         setLoading(true);
         setSuccessMsg('');
         setErrorMsg('');
+        //The same address for the person and the order
+        order.person.address = order.address;
+        
         const result = await createOrder(order);
         setLoading(false);
 
@@ -234,13 +237,6 @@ const CreateOrder: React.FC = () => {
               fullWidth
               value={order.person.last_name}
               onChange={(e) => handlePersonChange('last_name', e.target.value)}
-              required
-            />
-            <TextField
-              label="Dirección del cliente"
-              fullWidth
-              value={order.person.address}
-              onChange={(e) => handlePersonChange('address', e.target.value)}
               required
             />
             <TextField
