@@ -293,9 +293,21 @@ const handleUnassign = async (operator: OperatorAssigned) => {
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                          primary={`${op.first_name} ${op.last_name} - Rol:${op.rol}`}
-                          secondary={`ID: ${op.identification} - Código: ${op.code}`}
-                        />
+                        primary={
+                          <Typography
+                            sx={{
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              maxWidth: 200, // Ajusta el ancho máximo según tu diseño
+                              display: 'inline-block',
+                            }}
+                            variant="body1"
+                          >
+                            {`${op.first_name} ${op.last_name} - Rol:${op.rol}`}
+                          </Typography>
+                        }
+                        secondary={`ID: ${op.identification} - Código: ${op.code}`}
+                      />
                       </ListItem>
                     )}
                   </Draggable>
