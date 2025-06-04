@@ -113,14 +113,17 @@ const handleAssign = async (operator: OperatorAvailable) => {
   if (!orderKey) return;
   console.log('Asignando operador:', operator);
   try {
-    const now = new Date().toISOString();
+        const now = new Date();
+    const assignedAt = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
     const data: CreateAssignmentData = {
       operator: operator.id_operator,
       order: orderKey,
-      assigned_at: now,
+      assigned_at: assignedAt,
       rol: "operator",
       additional_costs: "",
     };
+    console.log('Datos de asignación:', data);
     await assignOperatorToOrder(data);
     enqueueSnackbar('Operador asignado correctamente', { variant: 'success' });
     // Refresca las listas
