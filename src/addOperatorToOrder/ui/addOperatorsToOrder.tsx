@@ -234,7 +234,17 @@ const onDragEnd = (result: DropResult) => {
             />
           <Droppable droppableId="assigned">
             {(provided) => (
-              <List ref={provided.innerRef} {...provided.droppableProps}>
+              <List
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                sx={{
+                  minHeight: 400, // o el valor que prefieras
+                  backgroundColor: '#f9f9f9', // color suave para ver el área
+                  borderRadius: 2,
+                  border: '1px dashed #ccc', // opcional, para mayor visibilidad
+                  p: 1,
+                }}
+              >
                 {assignedOperators.length === 0 && (
                   <ListItem>
                     <ListItemText primary="No hay operadores asignados" />
@@ -335,7 +345,17 @@ const onDragEnd = (result: DropResult) => {
             />
           <Droppable droppableId="available">
             {(provided) => (
-              <List ref={provided.innerRef} {...provided.droppableProps}>
+              <List
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                sx={{
+                  minHeight: 400,
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: 2,
+                  border: '1px dashed #ccc',
+                  p: 1,
+                }}
+              >
                 {availableOperators.length === 0 && (
                   <ListItem>
                     <ListItemText primary="No hay operadores disponibles" />
