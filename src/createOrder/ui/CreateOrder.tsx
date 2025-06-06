@@ -173,6 +173,7 @@ const CreateOrder: React.FC = () => {
               value={order.weight}
               onChange={(e) => handleChange('weight', Number(e.target.value))}
               required
+              inputProps={{ step: "any" }} 
             />
             <Autocomplete
               options={jobs}
