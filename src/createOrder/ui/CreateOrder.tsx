@@ -167,7 +167,7 @@ const CreateOrder: React.FC = () => {
                 )}
             />
             <TextField
-              label="Peso (kg)"
+              label="Peso (lb)"
               type="number"
               fullWidth
               value={order.weight}
