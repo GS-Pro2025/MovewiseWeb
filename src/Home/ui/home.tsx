@@ -450,7 +450,7 @@ const Example = () => {
       person: {
         email: order.person.email, 
         first_name: order.person.first_name,
-        last_name: order.person.first_name,
+        last_name: order.person.last_name,
         phone: order.person.phone,
         address: order.person.address
       },
