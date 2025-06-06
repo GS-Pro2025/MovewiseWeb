@@ -260,7 +260,7 @@ const Example = () => {
       size: 120,
     }),
     columnHelper.accessor('weight', {
-      header: 'Weight (kg)',
+      header: 'Weight (lb)',
       size: 100,
     }),
     columnHelper.accessor('distance', {

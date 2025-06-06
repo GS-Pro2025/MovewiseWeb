@@ -113,7 +113,7 @@ const handleAssign = async (operator: OperatorAvailable) => {
   if (!orderKey) return;
   console.log('Asignando operador:', operator);
   try {
-        const now = new Date();
+    const now = new Date();
     const assignedAt = now.toISOString().split('T')[0]; // YYYY-MM-DD
 
     const data: CreateAssignmentData = {
@@ -171,21 +171,22 @@ const handleUnassign = async (operator: OperatorAssigned) => {
     enqueueSnackbar('Error al desasignar operador', { variant: 'error' });
   }
 };
+const onDragEnd = (result: DropResult) => {
+  const { source, destination } = result;
+  if (!destination) return;
 
-  const onDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
+  if (source.droppableId === 'available' && destination.droppableId === 'assigned') {
+    // Usa la lista filtrada
+    const operator = filteredAvailableOperators[source.index];
+    handleAssign(operator);
+  }
 
-    if (source.droppableId === 'available' && destination.droppableId === 'assigned') {
-      const operator = availableOperators[source.index];
-      handleAssign(operator);
-    }
-
-    if (source.droppableId === 'assigned' && destination.droppableId === 'available') {
-      const operator = assignedOperators[source.index];
-      handleUnassign(operator);
-    }
-  };
+  if (source.droppableId === 'assigned' && destination.droppableId === 'available') {
+    // Usa la lista filtrada
+    const operator = filteredAssignedOperators[source.index];
+    handleUnassign(operator);
+  }
+};
 
   if (loading) {
     return (

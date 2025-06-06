@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -29,7 +30,7 @@ const columns = [
     size: 100,
   }),
   columnHelper.accessor('weight', {
-    header: 'Peso (kg)',
+    header: 'Peso (lb)',
     size: 100,
   }),
   columnHelper.accessor('status', {
