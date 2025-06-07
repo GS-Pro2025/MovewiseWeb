@@ -58,7 +58,7 @@ const columns = [
   columnHelper.accessor('order.weight', {
     header: 'Peso',
     size: 100,
-    Cell: ({ cell }) => `${cell.getValue<string>()} kg`,
+    Cell: ({ cell }) => `${cell.getValue<string>()} lb`,
   }),
   columnHelper.accessor('order.person.first_name', {
     header: 'Conductor',
