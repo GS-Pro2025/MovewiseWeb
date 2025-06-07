@@ -321,6 +321,18 @@ const CreateOrder: React.FC = () => {
                 style={{ maxWidth: 200, marginTop: 8, borderRadius: 8 }}
               />
             )}
+            {/** Quitar la imagen */}
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => {
+                setDispatchTicketFile(null);
+                setDispatchTicketPreview(null);
+              }}
+              sx={{ mt: 1 }}>
+              Quitar imagen de ticket
+              <span style={{ marginLeft: 8 }}></span>
+            </Button>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
               <Button
                 type="submit"
