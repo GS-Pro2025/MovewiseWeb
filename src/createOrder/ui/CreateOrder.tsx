@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Button,
@@ -48,6 +48,11 @@ const CreateOrder: React.FC = () => {
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
   const [loadingCf, setLoadingCf] = useState(false);
+
+  const [dispatchTicketFile, setDispatchTicketFile] = useState<File | null>(null);
+  const [dispatchTicketPreview, setDispatchTicketPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const navigate = useNavigate();
   useEffect(() => {
     setLoadingStates(true);
@@ -80,34 +85,63 @@ const CreateOrder: React.FC = () => {
       },
     }));
   };
+  const handleDispatchTicketChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setDispatchTicketFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setDispatchTicketPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setDispatchTicketPreview(null);
+    }
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setSuccessMsg('');
-        setErrorMsg('');
-        //The same address for the person and the order
-        order.person.address = order.address;
-        
-        const result = await createOrder(order);
-        setLoading(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccessMsg('');
+    setErrorMsg('');
+    order.person.address = order.address;
 
-        // El repository retorna un objeto OrderCreated (con key) si es éxito, o { success: false, errorMessage }
-        if ('key' in result && result.key) {
-            enqueueSnackbar('Orden creada correctamente', { variant: 'success' });
-            setSuccessMsg('Orden creada correctamente');
-            setOrder(initialOrder);
-            // Redirigir a addOperatorToOrder con el key de la orden creada
-            navigate(`/add-operators-to-order/${result.key}`);
-        } else {
-            enqueueSnackbar('Error al crear la orden', { variant: 'error' });
-            setErrorMsg(
-            'errorMessage' in result && result.errorMessage
-                ? result.errorMessage
-                : 'Error al crear la orden'
-            );
-        }
-    };
+    // Validación de tamaño
+    if (dispatchTicketFile && dispatchTicketFile.size > 5 * 1024 * 1024) {
+      setLoading(false);
+      enqueueSnackbar('El archivo del ticket no puede ser mayor a 5MB', { variant: 'error' });
+      return;
+    }
+
+    let dispatchTicketString = '';
+    if (dispatchTicketFile) {
+      dispatchTicketString = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(dispatchTicketFile);
+      });
+    }
+
+    const orderToSend = { ...order, dispatch_ticket: dispatchTicketString };
+
+    const result = await createOrder(orderToSend);
+    setLoading(false);
+
+    if ('key' in result && result.key) {
+      enqueueSnackbar('Orden creada correctamente', { variant: 'success' });
+      setSuccessMsg('Orden creada correctamente');
+      setOrder(initialOrder);
+      setDispatchTicketFile(null);
+      setDispatchTicketPreview(null);
+      navigate(`/add-operators-to-order/${result.key}`);
+    } else {
+      enqueueSnackbar('Error al crear la orden', { variant: 'error' });
+      setErrorMsg(
+        'errorMessage' in result && result.errorMessage
+          ? result.errorMessage
+          : 'Error al crear la orden'
+      );
+    }
+  };
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -265,6 +299,40 @@ const CreateOrder: React.FC = () => {
                 {errorMsg}
               </Typography>
             )}
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{ mt: 1 }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {dispatchTicketFile ? 'Cambiar imagen de ticket' : 'Subir imagen de ticket (opcional)'}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleDispatchTicketChange}
+              />
+            </Button>
+            {dispatchTicketPreview && (
+              <img
+                src={dispatchTicketPreview}
+                alt="Dispatch Ticket"
+                style={{ maxWidth: 200, marginTop: 8, borderRadius: 8 }}
+              />
+            )}
+            {/** Quitar la imagen */}
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => {
+                setDispatchTicketFile(null);
+                setDispatchTicketPreview(null);
+              }}
+              sx={{ mt: 1 }}>
+              Quitar imagen de ticket
+              <span style={{ marginLeft: 8 }}></span>
+            </Button>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
               <Button
                 type="submit"
@@ -276,6 +344,7 @@ const CreateOrder: React.FC = () => {
                 Crear orden
               </Button>
             </Box>
+            
           </Box>
         </form>
       </Paper>
