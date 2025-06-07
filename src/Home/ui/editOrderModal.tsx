@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Autocomplete, CircularProgress } from '@mui/material';
 import type { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import { fetchCustomerFactories, fetchJobs, fetchOrderStates } from '../data/repositoryOrders';
@@ -22,6 +22,9 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
   const [loadingCf, setLoadingCf] = useState(false);
+  const [dispatchTicketFile, setDispatchTicketFile] = useState<File | null>(null);
+  const [dispatchTicketPreview, setDispatchTicketPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -38,6 +41,34 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
     }
   }, [open]);
 
+  useEffect(() => {
+    // Si abres el modal y hay imagen previa, muéstrala
+    if (open && order?.dispatch_ticket && !dispatchTicketFile) {
+      setDispatchTicketPreview(order.dispatch_ticket);
+    }
+    if (!open) {
+      setDispatchTicketFile(null);
+      setDispatchTicketPreview(null);
+    }
+  }, [open, order, dispatchTicketFile]);
+
+  const handleDispatchTicketChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setDispatchTicketFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setDispatchTicketPreview(reader.result as string);
+        onChange('dispatch_ticket', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleRemoveDispatchTicket = () => {
+    setDispatchTicketFile(null);
+    setDispatchTicketPreview(null);
+    onChange('dispatch_ticket', '');
+  };
 
   if (!order) return null;
   console.log('cf', cf);
@@ -208,7 +239,41 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             )}
             isOptionEqualToValue={(option, value) => Number(option.id_factory) === Number(value.id_factory)}
           />
-        {/* dispatch ticket missing */}
+        {/* Campo para editar el dispatch_ticket */}
+          <Button
+            variant="outlined"
+            component="label"
+            sx={{ mt: 2 }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {dispatchTicketFile || dispatchTicketPreview
+              ? 'Cambiar imagen de ticket'
+              : 'Subir imagen de ticket (opcional)'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleDispatchTicketChange}
+            />
+          </Button>
+          {dispatchTicketPreview && (
+            <img
+              src={dispatchTicketPreview}
+              alt="Dispatch Ticket"
+              style={{ maxWidth: 200, marginTop: 8, borderRadius: 8 }}
+            />
+          )}
+          {(dispatchTicketFile || dispatchTicketPreview) && (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleRemoveDispatchTicket}
+              sx={{ mt: 1 }}
+            >
+              Quitar imagen de ticket
+            </Button>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
