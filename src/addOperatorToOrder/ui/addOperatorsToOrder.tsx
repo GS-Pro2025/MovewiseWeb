@@ -29,7 +29,6 @@ const AddOperatorsToOrder: React.FC = () => {
   const [assignedOperators, setAssignedOperators] = useState<OperatorAssigned[]>([]);
   const [availableOperators, setAvailableOperators] = useState<OperatorAvailable[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<OperatorAssigned | null>(null);
-  const [freelanceOperators, setFreelanceOperators] = useState<OperatorAvailable[]>([]);
 
   const [searchAssigned, setSearchAssigned] = useState('');
   const [searchAvailable, setSearchAvailable] = useState('');
@@ -88,7 +87,7 @@ const AddOperatorsToOrder: React.FC = () => {
     const data = await fetchAvailableOperators(page, pageSize);
     return data;
   };
-  
+
   useEffect(() => {
     const loadOperators = async () => {
       try {
