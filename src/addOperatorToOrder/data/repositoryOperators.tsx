@@ -58,3 +58,30 @@ export async function fetchAvailableOperators(page: number, pageSize: number): P
     throw error;
   }
 }
+
+export async function fetchFreelancesOperators(): Promise<OperatorAvailable[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/list-operators-freelance/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener los operadores freelance disponibles');
+    }
+    const data: OperatorsAvaliableAPIResponse = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('Error fetching freelance operators:', error);
+    throw error;
+  }
+}
