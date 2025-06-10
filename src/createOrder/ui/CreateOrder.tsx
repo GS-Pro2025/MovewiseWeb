@@ -16,7 +16,8 @@ import { enqueueSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import 'react-phone-input-2/lib/material.css';
 import PhoneInput from 'react-phone-input-2';
-
+import { fetchCountries, fetchStates, fetchCities} from '../repository/repositoryLocation';
+import { Country, State } from '../models/LocationModels';
 const initialPerson: Person = {
   first_name: '',
   last_name: '',
@@ -55,6 +56,18 @@ const CreateOrder: React.FC = () => {
   const [dispatchTicketPreview, setDispatchTicketPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [country, setCountry] = useState<Country | null>(null);
+  const [state, setState] = useState<State | null>(null);
+  const [city, setCity] = useState<string | null>(null);
+
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [statesList, setStatesList] = useState<State[]>([]);
+  const [citiesList, setCitiesList] = useState<string[]>([]);
+
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStatesList, setLoadingStatesList] = useState(false);
+  const [loadingCitiesList, setLoadingCitiesList] = useState(false);
+
   const navigate = useNavigate();
   useEffect(() => {
     setLoadingStates(true);
@@ -70,6 +83,48 @@ const CreateOrder: React.FC = () => {
       .then(setCf)
       .finally(() => setLoadingCf(false));
   }, []);
+
+  // Cargar países al montar
+  useEffect(() => {
+    setLoadingCountries(true);
+    fetchCountries()
+      .then(setCountries)
+      .finally(() => setLoadingCountries(false));
+    console.log('Countries loaded:', countries);
+    console.log('States loaded:', states);
+    console.log('Loading states:', loadingStates);
+  }, []);
+
+  // Cargar estados cuando cambia el país
+  useEffect(() => {
+    if (country) {
+      setLoadingStatesList(true);
+      fetchStates(country.name)
+        .then(setStatesList)
+        .finally(() => setLoadingStatesList(false));
+      setState(null);
+      setCity(null);
+      setCitiesList([]);
+    }
+  }, [country]);
+
+  // Cargar ciudades cuando cambia el estado
+  useEffect(() => {
+    if (country && state) {
+      setLoadingCitiesList(true);
+      fetchCities(country.name, state.name)
+        .then(setCitiesList)
+        .finally(() => setLoadingCitiesList(false));
+      setCity(null);
+    }
+  }, [country, state]);
+
+  // Actualizar state_usa cuando cambia la selección
+  useEffect(() => {
+    if (country && state && city) {
+      handleChange('state_usa', `${country.name}, ${state.name}, ${city}`);
+    }
+  }, [country, state, city]);
 
   const handleChange = (field: keyof CreateOrderModel, value: any) => {
     setOrder((prev) => ({
@@ -179,29 +234,81 @@ const CreateOrder: React.FC = () => {
               required
             />
             <Autocomplete
-                options={states}
-                getOptionLabel={(option) => option.name || ''}
-                loading={loadingStates}
-                value={states.find((s) => s.code === order.state_usa) || null}
-                onChange={(_, value) => handleChange('state_usa', value ? value.code : '')}
-                renderInput={(params) => (
-                    <TextField
+                options={countries}
+                getOptionLabel={option => option.name}
+                loading={loadingCountries}
+                value={country}
+                onChange={(_, value) => setCountry(value)}
+                renderInput={params => (
+                  <TextField
                     {...params}
-                    label="Estado (USA)"
+                    label="País"
                     fullWidth
                     required
                     InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
+                      ...params.InputProps,
+                      endAdornment: (
                         <>
-                            {loadingStates ? <CircularProgress color="inherit" size={20} /> : null}
-                            {params.InputProps.endAdornment}
+                          {loadingCountries ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
                         </>
-                        ),
+                      ),
                     }}
-                    />
+                  />
                 )}
             />
+            {country && (
+              <Autocomplete
+                options={statesList}
+                getOptionLabel={option => option.name}
+                loading={loadingStatesList}
+                value={state}
+                onChange={(_, value) => setState(value)}
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    label="Estado/Provincia"
+                    fullWidth
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingStatesList ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            )}
+            {country && state && (
+              <Autocomplete
+                options={citiesList}
+                getOptionLabel={option => option}
+                loading={loadingCitiesList}
+                value={city}
+                onChange={(_, value) => setCity(value)}
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    label="Ciudad"
+                    fullWidth
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingCitiesList ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            )}
             <TextField
               label="Peso (lb)"
               type="number"

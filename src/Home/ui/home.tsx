@@ -244,7 +244,7 @@ const Example = () => {
       size: 120,
     }),
     columnHelper.accessor('state', {//USA state
-      header: 'State',
+      header: 'Location',
       size: 120,
     }),
     columnHelper.accessor('weekday', {
