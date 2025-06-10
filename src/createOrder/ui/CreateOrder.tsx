@@ -14,6 +14,8 @@ import { CreateOrderModel, CustomerFactoryModel, OrderState, Person } from '../m
 import { JobModel } from '../models/JobModel';
 import { enqueueSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
+import 'react-phone-input-2/lib/material.css';
+import PhoneInput from 'react-phone-input-2';
 
 const initialPerson: Person = {
   first_name: '',
@@ -282,12 +284,17 @@ const CreateOrder: React.FC = () => {
               onChange={(e) => handlePersonChange('email', e.target.value)}
               required
             />
-            <TextField
-              label="Teléfono"
-              fullWidth
+            <PhoneInput
+              country={'us'}
               value={order.person.phone}
-              onChange={(e) => handlePersonChange('phone', e.target.value)}
-              required
+              onChange={phone => handlePersonChange('phone', phone)}
+              inputProps={{
+                name: 'phone',
+                required: true,
+                autoFocus: false,
+              }}
+              inputStyle={{ width: '100%' }}
+              specialLabel="Teléfono"
             />
             {successMsg && (
               <Typography color="success.main" sx={{ mt: 2 }}>
