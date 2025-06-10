@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import CheckIcon from '@mui/icons-material/Check';
 import Avatar from '@mui/material/Avatar';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
-
+import { fetchFreelancesOperators } from '../data/repositoryOperators'; 
 
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["team leader", "operator", "driver"];
@@ -94,10 +94,18 @@ const AddOperatorsToOrder: React.FC = () => {
         if (!orderKey) return;
         const assigned = await fetchOperatorsAssignedToOrder(orderKey);
         const available = await fetchAvailable(1);
+        const freelances = await fetchFreelancesOperators();
         const assignedIds = new Set(assigned.map(op => getOperatorId(op)));
-        const filteredAvailable = available.filter(op => !assignedIds.has(getOperatorId(op)));
+        // Marca todos los disponibles como is_freelance: false
+        const filteredAvailable = available
+          .filter(op => !assignedIds.has(getOperatorId(op)))
+          .map(op => ({ ...op, is_freelance: false }));
+        // Marca todos los freelance como is_freelance: true
+        const filteredFreelances = freelances
+          .filter(op => !assignedIds.has(getOperatorId(op)))
+          .map(op => ({ ...op, is_freelance: true }));
         setAssignedOperators(assigned);
-        setAvailableOperators(filteredAvailable);
+        setAvailableOperators([...filteredAvailable, ...filteredFreelances]);
         setLoading(false);
       } catch (error) {
         enqueueSnackbar('Error al cargar operadores', { variant: 'error' });
@@ -385,7 +393,16 @@ const onDragEnd = (result: DropResult) => {
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                          primary={`${op.first_name} ${op.last_name}`}
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {`${op.first_name} ${op.last_name}`}
+                              {op.is_freelance && (
+                                <Typography variant="caption" sx={{ color: 'blue', fontWeight: 'bold' }}>
+                                  freelance
+                                </Typography>
+                              )}
+                            </Box>
+                          }
                           secondary={`ID: ${op.id_number} - Código: ${op.code}`}
                         />
                       </ListItem>

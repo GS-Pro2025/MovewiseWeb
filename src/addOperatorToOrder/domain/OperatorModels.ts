@@ -52,6 +52,7 @@ export interface OperatorAvailable {
   email: string;
   id_company: number;
   sons: Son[];
+  is_freelance: boolean;
 }
 export interface Son {
   name: string;
