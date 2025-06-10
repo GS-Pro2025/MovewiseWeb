@@ -5,6 +5,7 @@ import { fetchCustomerFactories, fetchJobs, fetchOrderStates } from '../data/rep
 import type { OrderState } from '../domain/OrderState';
 import { JobModel } from '../domain/JobModel';
 import { CustomerFactoryModel } from '../domain/CustomerFactoryModel';
+import PhoneInput from 'react-phone-input-2';
 
 interface EditOrderDialogProps {
   open: boolean;
@@ -75,6 +76,8 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
   console.log('order.customer_factory', order.customer_factory);
   console.log('order.status', order.status, typeof order.status);
   console.log('order.payStatus', order.payStatus, typeof order.payStatus);
+
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Editar Orden</DialogTitle>
@@ -171,13 +174,18 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             value={order.person?.email ?? ''}
             onChange={e => onChange('person.email', e.target.value)}
           />
-          <TextField
-            label="Phone"
-            fullWidth
-            margin="normal"
-            value={order.person?.phone ?? ''}
-            onChange={e => onChange('person.phone', e.target.value)}
-          />
+          <PhoneInput
+              country={'us'}
+              value={order.person.phone}
+              onChange={phone => onChange('person.phone', phone)}
+              inputProps={{
+                name: 'phone',
+                required: true,
+                autoFocus: false,
+              }}
+              inputStyle={{ width: '100%' }}
+              specialLabel="Teléfono"
+            />
           <TextField
             label="Address"
             fullWidth
