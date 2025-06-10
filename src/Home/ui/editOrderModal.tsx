@@ -5,6 +5,7 @@ import { fetchCustomerFactories, fetchJobs, fetchOrderStates } from '../data/rep
 import type { OrderState } from '../domain/OrderState';
 import { JobModel } from '../domain/JobModel';
 import { CustomerFactoryModel } from '../domain/CustomerFactoryModel';
+import 'react-phone-input-2/lib/material.css';
 import PhoneInput from 'react-phone-input-2';
 
 interface EditOrderDialogProps {
