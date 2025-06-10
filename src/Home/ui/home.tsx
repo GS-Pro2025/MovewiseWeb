@@ -39,7 +39,7 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
     email: item.email, 
     first_name: item.firstName,
     last_name: item.lastName,
-    phone: Number(item.phone),
+    phone: item.phone,
     address: item.city,
   },
   job: item.job_id 
