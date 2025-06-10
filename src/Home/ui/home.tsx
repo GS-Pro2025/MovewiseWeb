@@ -151,7 +151,7 @@ const Example = () => {
     {
       header: 'Actions',
       id: 'actions',
-      size: 90,
+      size: 160,
       Cell: ({ row }: { row: MRT_Row<TableData> }) => {
         const isFinished = row.original.status === 'finished';
         return (
@@ -189,19 +189,7 @@ const Example = () => {
       enableSorting: false,
       enableColumnFilter: false,
     },
-    columnHelper.accessor('payStatus', {
-      header: 'Pay Status',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<number>();
-        const color = value === 0 ? 'red' : 'green';
-        return (
-          <Typography sx={{ color, fontWeight: 600 }}>
-            {value === 0 ? 'Unpaid' : 'Paid'}
-          </Typography>
-        );
-      },
-    }),
+
     columnHelper.accessor('status', {
       header: 'Status',
       size: 100,
@@ -295,6 +283,19 @@ const Example = () => {
     columnHelper.accessor('week', {
       header: 'Week of Year',
       size: 100,
+    }),
+    columnHelper.accessor('payStatus', {
+      header: 'Pay Status',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<number>();
+        const color = value === 0 ? 'red' : 'green';
+        return (
+          <Typography sx={{ color, fontWeight: 600 }}>
+            {value === 0 ? 'Unpaid' : 'Paid'}
+          </Typography>
+        );
+      },
     }),
   ];
   const finishOrder = async (orderId: string, image?: File) => {
