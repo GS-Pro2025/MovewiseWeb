@@ -136,11 +136,42 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       {/* NavItems */}
       <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />
       <NavItem icon="fa-solid fa-box" text="Create daily" isCollapsed={isCollapsed} to="/create-daily" />
-      <NavItem icon="fa-solid fa-gas-pump" text="Resume Fuel" isCollapsed={isCollapsed} to="/resume-fuel" />
-      <NavItem icon="fa-solid fa-calculator" text="Summary Costs" isCollapsed={isCollapsed} to="/summary-cost" />
-      <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
-      <NavItem icon="fa-solid fa-dollar-sign" text="Extra Cost" isCollapsed={isCollapsed} to="/extra-cost" />
 
+      {/* Nuevo Dropdown Cost */}
+      <li className={`relative ${activeDropdown === 1 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
+        <button
+          className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-300 
+          ease-in-out relative hover:bg-[#575b8a] hover:pl-10 text-lg"
+          onClick={() => toggleDropdown(1)}
+          disabled={isCollapsed}
+        >
+          <div className="flex items-center">
+            <span className="w-9 h-9 leading-9 text-center inline-block mr-4 rounded-sm text-lg">
+              <i className="fas fa-coins"></i>
+            </span>
+            {!isCollapsed && <span className="text-white text-lg">Cost</span>}
+          </div>
+          {!isCollapsed && (
+            <i
+              className={`fas text-lg transition-transform duration-300 ease-in-out 
+              ${activeDropdown === 1 ? 'fa-chevron-down' : 'fa-chevron-right'} text-white`}
+            ></i>
+          )}
+          <span className="relative left-0 top-0 w-1 h-full bg-[#6c63ff] transition-transform duration-300 
+            ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top"></span>
+        </button>
+        {!isCollapsed && activeDropdown === 1 && (
+          <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
+            <DropdownLink icon="fa-calculator" text="Summary Costs" to="/summary-cost" />
+            <DropdownLink icon="fa-gas-pump" text="Resume Fuel" to="/resume-fuel" />
+            <DropdownLink icon="fa-dollar-sign" text="Extra Cost" to="/extra-cost" />
+          </ul>
+        )}
+      </li>
+
+      <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
+
+      {/* Dropdown Settings */}
       <li className={`relative ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
         <button
           className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-300 
@@ -223,6 +254,22 @@ const DropdownItem: FC<DropdownItemProps> = ({ text }) => {
     </li>
   );
 };
+
+// Nuevo componente para links en dropdown con icono
+const DropdownLink: FC<{ icon: string; text: string; to: string }> = ({ icon, text, to }) => (
+  <li>
+    <Link
+      to={to}
+      className="flex items-center py-3 px-6 pl-14 no-underline transition-all duration-300 
+      ease-in-out hover:bg-[#051537] hover:pl-16 text-lg !text-white"
+    >
+      <span className="w-7 h-7 leading-7 text-center inline-block mr-3 rounded-sm text-lg">
+        <i className={`fas ${icon} text-white`}></i>
+      </span>
+      <span>{text}</span>
+    </Link>
+  </li>
+);
 
 const MainContent: FC<MainContentProps> = ({ isCollapsed }) => {
   return (
