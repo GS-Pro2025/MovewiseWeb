@@ -74,7 +74,7 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Editar Orden</DialogTitle>
+      <DialogTitle>Update Order</DialogTitle>
       <DialogContent>
         <Box component="form" sx={{ mt: 2 }}>
           <TextField
@@ -224,8 +224,8 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             onClick={() => fileInputRef.current?.click()}
           >
             {dispatchTicketFile || dispatchTicketPreview
-              ? 'Cambiar imagen de ticket'
-              : 'Subir imagen de ticket (opcional)'}
+              ? 'Change image of dispatch ticket'
+              : 'Upload image of dispatch ticket (optional)'}
             <input
               ref={fileInputRef}
               type="file"
@@ -248,15 +248,15 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
               onClick={handleRemoveDispatchTicket}
               sx={{ mt: 1 }}
             >
-              Quitar imagen de ticket
+              Remove Dispatch Ticket
             </Button>
           )}
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" color="primary" onClick={() => onSave(order)}>
-          Guardar
+          Save
         </Button>
       </DialogActions>
     </Dialog>
