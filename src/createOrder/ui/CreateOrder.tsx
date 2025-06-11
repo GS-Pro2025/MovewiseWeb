@@ -164,7 +164,7 @@ const CreateOrder: React.FC = () => {
     // Validación de tamaño
     if (dispatchTicketFile && dispatchTicketFile.size > 5 * 1024 * 1024) {
       setLoading(false);
-      enqueueSnackbar('El archivo del ticket no puede ser mayor a 5MB', { variant: 'error' });
+      enqueueSnackbar('Sorry, the image cannot be larger than 5mb.', { variant: 'error' });
       return;
     }
 
@@ -184,18 +184,18 @@ const CreateOrder: React.FC = () => {
     setLoading(false);
 
     if ('key' in result && result.key) {
-      enqueueSnackbar('Orden creada correctamente', { variant: 'success' });
-      setSuccessMsg('Orden creada correctamente');
+      enqueueSnackbar('Order created successfully', { variant: 'success' });
+      setSuccessMsg('Order created successfully');
       setOrder(initialOrder);
       setDispatchTicketFile(null);
       setDispatchTicketPreview(null);
       navigate(`/add-operators-to-order/${result.key}`);
     } else {
-      enqueueSnackbar('Error al crear la orden', { variant: 'error' });
+      enqueueSnackbar('Sorry there was an error creating the order', { variant: 'error' });
       setErrorMsg(
         'errorMessage' in result && result.errorMessage
           ? result.errorMessage
-          : 'Error al crear la orden'
+          : 'Error creating order, please try again later.',
       );
     }
   };
@@ -204,19 +204,19 @@ const CreateOrder: React.FC = () => {
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
       <Paper sx={{ p: 4, width: 600 }}>
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Crear nueva orden
+          Create Order
         </Typography>
         <form onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
-              label="Referencia"
+              label="Reference"
               fullWidth
               value={order.key_ref}
               onChange={(e) => handleChange('key_ref', e.target.value)}
               required
             />
             <TextField
-              label="Fecha"
+              label="Date"
               type="date"
               fullWidth
               value={order.date}
@@ -227,7 +227,7 @@ const CreateOrder: React.FC = () => {
               }}
             />
             <TextField
-              label="Dirección"
+              label="Adress"
               fullWidth
               value={order.address}
               onChange={(e) => handleChange('address', e.target.value)}
@@ -242,7 +242,7 @@ const CreateOrder: React.FC = () => {
                 renderInput={params => (
                   <TextField
                     {...params}
-                    label="País"
+                    label="Country"
                     fullWidth
                     required
                     InputProps={{
@@ -267,7 +267,7 @@ const CreateOrder: React.FC = () => {
                 renderInput={params => (
                   <TextField
                     {...params}
-                    label="Estado/Provincia"
+                    label="State/Province"
                     fullWidth
                     required
                     InputProps={{
@@ -293,7 +293,7 @@ const CreateOrder: React.FC = () => {
                 renderInput={params => (
                   <TextField
                     {...params}
-                    label="Ciudad"
+                    label="City"
                     fullWidth
                     required
                     InputProps={{
@@ -310,7 +310,7 @@ const CreateOrder: React.FC = () => {
               />
             )}
             <TextField
-              label="Peso (lb)"
+              label="Weigth (lb)"
               type="number"
               fullWidth
               value={order.weight}
@@ -327,7 +327,7 @@ const CreateOrder: React.FC = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Trabajo"
+                  label="Job"
                   fullWidth
                   required
                   InputProps={{
@@ -351,7 +351,7 @@ const CreateOrder: React.FC = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Cliente"
+                  label="Customer"
                   fullWidth
                   required
                   InputProps={{
@@ -367,17 +367,17 @@ const CreateOrder: React.FC = () => {
               )}
             />
             <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-              Datos del cliente
+              Customer data
             </Typography>
             <TextField
-              label="Nombre"
+              label="Firts Name"
               fullWidth
               value={order.person.first_name}
               onChange={(e) => handlePersonChange('first_name', e.target.value)}
               required
             />
             <TextField
-              label="Apellido"
+              label="Last Name"
               fullWidth
               value={order.person.last_name}
               onChange={(e) => handlePersonChange('last_name', e.target.value)}
@@ -385,7 +385,7 @@ const CreateOrder: React.FC = () => {
             />
             <TextField
               label="Email"
-              type="email"
+              type="Email"
               fullWidth
               value={order.person.email}
               onChange={(e) => handlePersonChange('email', e.target.value)}
@@ -401,7 +401,7 @@ const CreateOrder: React.FC = () => {
                 autoFocus: false,
               }}
               inputStyle={{ width: '100%' }}
-              specialLabel="Teléfono"
+              specialLabel="Phone"
             />
             {successMsg && (
               <Typography color="success.main" sx={{ mt: 2 }}>
@@ -419,7 +419,7 @@ const CreateOrder: React.FC = () => {
               sx={{ mt: 1 }}
               onClick={() => fileInputRef.current?.click()}
             >
-              {dispatchTicketFile ? 'Cambiar imagen de ticket' : 'Subir imagen de ticket (opcional)'}
+              {dispatchTicketFile ? 'Change ticket image' : 'Upload ticket image (optional)'}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -444,7 +444,7 @@ const CreateOrder: React.FC = () => {
                 setDispatchTicketPreview(null);
               }}
               sx={{ mt: 1 }}>
-              Quitar imagen de ticket
+              Remove dispatch ticket
               <span style={{ marginLeft: 8 }}></span>
             </Button>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
@@ -455,7 +455,7 @@ const CreateOrder: React.FC = () => {
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} /> : null}
               >
-                Crear orden
+                Create order
               </Button>
             </Box>
             
