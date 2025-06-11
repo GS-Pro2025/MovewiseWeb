@@ -18,39 +18,39 @@ const columns = [
     size: 40,
   }),
   columnHelper.accessor('key_ref', {
-    header: 'Referencia',
+    header: 'Reference',
     size: 100,
   }),
   columnHelper.accessor('date', {
-    header: 'Fecha',
+    header: 'Date',
     size: 120,
   }),
   columnHelper.accessor('distance', {
-    header: 'Distancia',
+    header: 'Distance (mi)',
     size: 100,
   }),
   columnHelper.accessor('weight', {
-    header: 'Peso (lb)',
+    header: 'Weight (lb)',
     size: 100,
   }),
   columnHelper.accessor('status', {
-    header: 'Estado',
+    header: 'Status',
     size: 120,
   }),
   columnHelper.accessor('state_usa', {
-    header: 'Estado USA',
+    header: 'Location',
     size: 120,
   }),
   columnHelper.accessor('person.first_name', {
-    header: 'Nombre',
+    header: 'First Name',
     size: 100,
   }),
   columnHelper.accessor('person.last_name', {
-    header: 'Apellido',
+    header: 'Last Name',
     size: 100,
   }),
   columnHelper.accessor('job', {
-    header: 'Trabajo',
+    header: 'Job',
     size: 100,
   }),
   columnHelper.accessor('fuelCost', {
@@ -65,7 +65,7 @@ const columns = [
   }),
   columnHelper.accessor('fuelCost', {
     id: 'cantidadCombustible',
-    header: 'Cantidad de Combustible',
+    header: 'Fuel Quantity',
     size: 120,
     Cell: ({ cell }) => {
       const fuelCost = cell.getValue<any[]>();
@@ -75,7 +75,7 @@ const columns = [
   }),
   columnHelper.accessor('fuelCost', {
     id: 'distanciaRecorrida',
-    header: 'Distancia Recorrida',
+    header:'Driven Distance',
     size: 120,
     Cell: ({ cell }) => {
       const fuelCost = cell.getValue<any[]>();
@@ -85,7 +85,7 @@ const columns = [
   }),
   columnHelper.accessor('fuelCost', {
     id: 'numeroCamion',
-    header: 'Número de Camión',
+    header: 'Truck Number',
     size: 120,
     Cell: ({ cell }) => {
       const fuelCost = cell.getValue<any[]>();
@@ -95,7 +95,7 @@ const columns = [
   }),
   columnHelper.accessor('fuelCost', {
     id: 'tipoCamion',
-    header: 'Tipo de Camión',
+    header: 'Truck Type', 
     size: 120,
     Cell: ({ cell }) => {
       const fuelCost = cell.getValue<any[]>();
@@ -105,7 +105,7 @@ const columns = [
   }),
   columnHelper.accessor('fuelCost', {
     id: 'categoria',
-    header: 'Categoría',
+    header: 'Category',
     size: 120,
     Cell: ({ cell }) => {
       const fuelCost = cell.getValue<any[]>();
