@@ -22,7 +22,8 @@ import OperatorsTable from './operatorsTable';
 import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FinishOrderDialog from './FinishOrderDialog';
-
+import PaymentDialog from './PaymentDialog';
+import PaymentIcon from '@mui/icons-material/AttachMoney';
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
   key_ref: item.key_ref,
@@ -39,7 +40,7 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
     email: item.email, 
     first_name: item.firstName,
     last_name: item.lastName,
-    phone: Number(item.phone),
+    phone: item.phone,
     address: item.city,
   },
   job: item.job_id 
@@ -145,15 +146,18 @@ const Example = () => {
   const [finishImage, setFinishImage] = useState<File | null>(null);
   const [finishLoading, setFinishLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState<TableData | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
   const columns = [
     {
       header: 'Actions',
       id: 'actions',
-      size: 90,
+      size: 160,
+      headerProps: { style: { textAlign: 'center' } },
       Cell: ({ row }: { row: MRT_Row<TableData> }) => {
         const isFinished = row.original.status === 'finished';
+        const isPaid = row.original.payStatus === 1;
         return (
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
@@ -166,6 +170,19 @@ const Example = () => {
               startIcon={<EditIcon />}
             >
               Editar
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setPaymentOrder(row.original);
+                setPaymentDialogOpen(true);
+              }}
+              size="small"
+              color="success"
+              startIcon={<PaymentIcon />}
+              disabled={isPaid}
+            >
+              Pagar
             </Button>
             <IconButton
               color={isFinished ? 'default' : 'success'}
@@ -189,19 +206,6 @@ const Example = () => {
       enableSorting: false,
       enableColumnFilter: false,
     },
-    columnHelper.accessor('payStatus', {
-      header: 'Pay Status',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<number>();
-        const color = value === 0 ? 'red' : 'green';
-        return (
-          <Typography sx={{ color, fontWeight: 600 }}>
-            {value === 0 ? 'Unpaid' : 'Paid'}
-          </Typography>
-        );
-      },
-    }),
     columnHelper.accessor('status', {
       header: 'Status',
       size: 100,
@@ -244,7 +248,7 @@ const Example = () => {
       size: 120,
     }),
     columnHelper.accessor('state', {//USA state
-      header: 'State',
+      header: 'Location',
       size: 120,
     }),
     columnHelper.accessor('weekday', {
@@ -296,6 +300,19 @@ const Example = () => {
       header: 'Week of Year',
       size: 100,
     }),
+    columnHelper.accessor('payStatus', {
+      header: 'Pay Status',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<number>();
+        const color = value === 0 ? 'red' : 'green';
+        return (
+          <Typography sx={{ color, fontWeight: 600 }}>
+            {value === 0 ? 'Unpaid' : 'Paid'}
+          </Typography>
+        );
+      },
+    }),
   ];
   const finishOrder = async (orderId: string, image?: File) => {
     try{
@@ -308,6 +325,23 @@ const Example = () => {
       console.error('Error finishing order:', error);
       throw error;
     }
+  };
+
+  const handleConfirmPayment = async (expense: number, income: number) => {
+    if (!expense) return;
+    if (!paymentOrder) return;
+    paymentOrder.expense = expense;
+    paymentOrder.income = income;
+    await updateOrder(paymentOrder.id, {
+      ...mapTableDataToUpdateOrderData(paymentOrder),
+      expense,
+      income,
+      payStatus: 1, 
+    });
+    enqueueSnackbar('Pago registrado correctamente', { variant: 'success' });
+    loadData(); // refresca la tabla
+    setPaymentDialogOpen(false);
+    setPaymentOrder(null);
   };
 
   const handleOpenFinishModal = (orderId: string) => {
@@ -501,6 +535,7 @@ const Example = () => {
     muiTableBodyRowProps: ({ row }) => ({
       onClick: () => handleRowClick(row),
       sx: { cursor: 'pointer' },
+      style: { textAlign: 'center' }, 
     }),
     renderTopToolbarCustomActions: ({ table }) => (
       <Box
@@ -589,6 +624,13 @@ const Example = () => {
         onClose={() => setFinishModalOpen(false)}
         onOk={handleFinishOrder}
         onImageChange={setFinishImage}
+      />
+      <PaymentDialog
+        open={paymentDialogOpen}
+        expense={paymentOrder?.expense ?? 0}
+        income={paymentOrder?.income ?? 0}
+        onClose={() => setPaymentDialogOpen(false)}
+        onConfirm={handleConfirmPayment}
       />
     </>
   );

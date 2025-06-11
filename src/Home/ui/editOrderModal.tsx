@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Autocomplete, CircularProgress } from '@mui/material';
 import type { UpdateOrderData } from '../domain/ModelOrderUpdate';
-import { fetchCustomerFactories, fetchJobs, fetchOrderStates } from '../data/repositoryOrders';
-import type { OrderState } from '../domain/OrderState';
+import { fetchCustomerFactories, fetchJobs } from '../data/repositoryOrders';
 import { JobModel } from '../domain/JobModel';
 import { CustomerFactoryModel } from '../domain/CustomerFactoryModel';
+import 'react-phone-input-2/lib/material.css';
+import PhoneInput from 'react-phone-input-2';
 
 interface EditOrderDialogProps {
   open: boolean;
@@ -16,8 +17,6 @@ interface EditOrderDialogProps {
 
 const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose, onSave, onChange }) => {
   console.log('EditOrderDialog rendered with order:', order);
-  const [states, setStates] = useState<OrderState[]>([]);
-  const [loadingStates, setLoadingStates] = useState(false);
   const [jobs, setJobs] = useState<JobModel[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
@@ -28,10 +27,6 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
 
   useEffect(() => {
     if (open) {
-      setLoadingStates(true);
-      fetchOrderStates()
-        .then(setStates)
-        .finally(() => setLoadingStates(false));
       fetchJobs()
         .then(setJobs)
         .finally(() => setLoadingJobs(false));
@@ -75,6 +70,8 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
   console.log('order.customer_factory', order.customer_factory);
   console.log('order.status', order.status, typeof order.status);
   console.log('order.payStatus', order.payStatus, typeof order.payStatus);
+
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Editar Orden</DialogTitle>
@@ -124,31 +121,6 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             value={order.weight}
             onChange={e => onChange('weight', e.target.value)}
           />
-          <Autocomplete
-            options={states}
-            loading={loadingStates}
-            getOptionLabel={option => `${option.code} - ${option.name}`}
-            value={states.find(s => s.code === order.state_usa) || null}
-            onChange={(_, value) => onChange('state_usa', value ? value.code : '')}
-            renderInput={params => (
-              <TextField
-                {...params}
-                label="State USA"
-                margin="normal"
-                fullWidth
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loadingStates ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            isOptionEqualToValue={(option, value) => option.code === value.code}
-          />
           {/* Campos de la persona */}
           <TextField
             label="First Name"
@@ -171,13 +143,18 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             value={order.person?.email ?? ''}
             onChange={e => onChange('person.email', e.target.value)}
           />
-          <TextField
-            label="Phone"
-            fullWidth
-            margin="normal"
-            value={order.person?.phone ?? ''}
-            onChange={e => onChange('person.phone', e.target.value)}
-          />
+          <PhoneInput
+              country={'us'}
+              value={order.person.phone}
+              onChange={phone => onChange('person.phone', phone)}
+              inputProps={{
+                name: 'phone',
+                required: true,
+                autoFocus: false,
+              }}
+              inputStyle={{ width: '100%' }}
+              specialLabel="Teléfono"
+            />
           <TextField
             label="Address"
             fullWidth

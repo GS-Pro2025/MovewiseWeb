@@ -38,7 +38,8 @@ export async function fetchAvailableOperators(page: number, pageSize: number): P
     window.location.href = '/login';
     throw new Error('No hay token de autenticación');
   }
-
+  console.log('BASE_URL_API', BASE_URL_API);
+  console.log('Token', token);
   try {
     const response = await fetch(`${BASE_URL_API}/operators/?page=${page}&page_size=${pageSize}`, {
       method: 'GET',
@@ -51,6 +52,8 @@ export async function fetchAvailableOperators(page: number, pageSize: number): P
     if (!response.ok) {
       throw new Error('Error al obtener los operadores disponibles');
     }
+    console.log('Status:', response.status);
+    console.log('Response:', await response.clone().text());
     const data: OperatorsAvaliableAPIResponse = await response.json();
     return data.results;
   } catch (error) {
@@ -58,7 +61,6 @@ export async function fetchAvailableOperators(page: number, pageSize: number): P
     throw error;
   }
 }
-
 export async function fetchFreelancesOperators(): Promise<OperatorAvailable[]> {
   const token = Cookies.get('authToken');
   if (!token) {
@@ -76,6 +78,15 @@ export async function fetchFreelancesOperators(): Promise<OperatorAvailable[]> {
     });
 
     if (!response.ok) {
+      // Intenta leer el body para ver si es el error esperado
+      const errorBody = await response.json();
+      if (
+        errorBody &&
+        errorBody.error === "No existe la página solicitada"
+      ) {
+        // Devuelve array vacío si es el error esperado
+        return [];
+      }
       throw new Error('Error al obtener los operadores freelance disponibles');
     }
     const data: OperatorsAvaliableAPIResponse = await response.json();
