@@ -351,7 +351,7 @@ const CreateOrder: React.FC = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Customer"
+                  label="Company"
                   fullWidth
                   required
                   InputProps={{
