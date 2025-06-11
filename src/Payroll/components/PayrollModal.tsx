@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { createPayment } from '../../service/PayrollService';
 import { toast, ToastContainer } from 'react-toastify';
@@ -292,7 +293,6 @@ const PayrollPDF: React.FC<{
 );
 
 export const PayrollModal: React.FC<PayrollModalProps> = ({
-  isOpen,
   onClose,
   operatorData,
   onPaymentComplete,
@@ -315,8 +315,13 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     Sat: 0,
     Sun: 0,
   });
-
-  if (!isOpen) return null;
+  // Efecto para recalcular cuando cambien los bonos
+  useEffect(() => {
+  const baseTotal = operatorData.total || 0;
+  const dailyBonusTotal = Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
+  const newGrandTotal = baseTotal + dailyBonusTotal + (additionalBonus || 0);
+  setGrandTotal(newGrandTotal);
+}, [dailyBonuses, additionalBonus, operatorData.total]);
 
   const days: DayInfo[] = [
     { key: 'Mon', label: 'Monday' },
@@ -341,17 +346,8 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     return Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
   };
 
-  // Función para recalcular el gran total
-  const recalculateGrandTotal = () => {
-    const dailyBonusTotal = calculateDailyBonusTotal();
-    const newGrandTotal = (operatorData.total || 0) + dailyBonusTotal + additionalBonus;
-    setGrandTotal(newGrandTotal);
-  };
 
-  // Efecto para recalcular cuando cambien los bonos
-  React.useEffect(() => {
-    recalculateGrandTotal();
-  }, [dailyBonuses, additionalBonus, operatorData.total]);
+
 
   const handleBonusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;
@@ -649,4 +645,4 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       </div>
     </>
   );
-};
+}
