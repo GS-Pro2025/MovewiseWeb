@@ -24,14 +24,14 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({ open, expense, income, on
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField
-            label="Gastos"
+            label="Expense"
             type="number"
             value={localExpense}
             onChange={e => setLocalExpense(Number(e.target.value))}
             fullWidth
           />
           <TextField
-            label="Ingresos"
+            label="Income"
             type="number"
             value={localIncome}
             onChange={e => setLocalIncome(Number(e.target.value))}
@@ -40,9 +40,9 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({ open, expense, income, on
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" color="primary" onClick={() => onConfirm(localExpense, localIncome)}>
-          Confirmar Pago
+          Confirm payment
         </Button>
       </DialogActions>
     </Dialog>

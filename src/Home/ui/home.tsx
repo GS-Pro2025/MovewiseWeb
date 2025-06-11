@@ -182,7 +182,7 @@ const Example = () => {
               startIcon={<PaymentIcon />}
               disabled={isPaid}
             >
-              Pagar
+              Pay
             </Button>
             <IconButton
               color={isFinished ? 'default' : 'success'}
@@ -192,7 +192,7 @@ const Example = () => {
                 e.stopPropagation();
                 if (!isFinished) handleOpenFinishModal(row.original.id);
               }}
-              title={isFinished ? "Orden finalizada" : "Terminar orden"}
+              title={isFinished ? "Order finished" : "Finish Order"}
             >
               {isFinished ? (
                 <CheckCircleIcon sx={{ color: '#8bc34a' }} />
@@ -292,7 +292,7 @@ const Example = () => {
       },
     }),
     columnHelper.accessor('totalCost', {
-      header: 'Costo Total',
+      header: 'Total Cost',
       size: 120,
       Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
@@ -317,11 +317,11 @@ const Example = () => {
   const finishOrder = async (orderId: string, image?: File) => {
     try{
       await finishOrderRepo(orderId, image);
-      enqueueSnackbar('Orden finalizada correctamente', { variant: 'success' });
+      enqueueSnackbar('Order finished', { variant: 'success' });
       setFinishModalOpen(false);
       setFinishImage(null);
     } catch (error) {
-      enqueueSnackbar('Error al finalizar la orden', { variant: 'error' });
+      enqueueSnackbar('Sorry there was an error finishing the order', { variant: 'error' });
       console.error('Error finishing order:', error);
       throw error;
     }
@@ -338,7 +338,7 @@ const Example = () => {
       income,
       payStatus: 1, 
     });
-    enqueueSnackbar('Pago registrado correctamente', { variant: 'success' });
+    enqueueSnackbar('Payment registered', { variant: 'success' });
     loadData(); // refresca la tabla
     setPaymentDialogOpen(false);
     setPaymentOrder(null);
@@ -355,13 +355,13 @@ const Example = () => {
     setFinishLoading(true);
     try {
       await finishOrder(selectedOrderId, finishImage || undefined);
-      enqueueSnackbar('Orden finalizada correctamente', { variant: 'success' });
+      enqueueSnackbar('Order finished', { variant: 'success' });
       setFinishModalOpen(false);
       setFinishImage(null);
       setSelectedOrderId(null);
       loadData(); // refresca la tabla
     } catch (e) {
-      enqueueSnackbar('Error al finalizar la orden', { variant: 'error' });
+      enqueueSnackbar('Sorry there was an error finishing the order', { variant: 'error' });
     }
     setFinishLoading(false);
   };
@@ -453,7 +453,7 @@ const Example = () => {
 
   const handleRowClick = (row: MRT_Row<TableData>) => {
     if (!row.original.operators || row.original.operators.length === 0) {
-      enqueueSnackbar('Sin operadores asignados a esta orden.', { variant: 'info' });
+      enqueueSnackbar('There are not operators assigned to the order.', { variant: 'info' });
     }
     setExpandedRowId((prev) => (prev === row.original.id ? null : row.original.id));
   };
@@ -493,11 +493,11 @@ const Example = () => {
     console.log('Order Data to Update:', orderData);
     const result = await updateOrder(key, orderData);
     if (result.success) {
-      enqueueSnackbar('Orden actualizada correctamente', { variant: 'success' });
+      enqueueSnackbar('Order updated', { variant: 'success' });
       loadData(); // Recarga los datos después de la edición
     } else {
       // Muestra el error
-      enqueueSnackbar(`Error al actualizar la orden: ${result.errorMessage}`, { variant: 'error' });
+      enqueueSnackbar(`Sorry there was an error updating the order: ${result.errorMessage}`, { variant: 'error' });
     }
     setEditModalOpen(false);
     setOrderToEdit(null);

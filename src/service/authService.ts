@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Cookies from 'js-cookie';
 
 const API_URL = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -30,13 +31,13 @@ export const login = async (email: string, password: string): Promise<LoginResul
         secure: true,
         sameSite: 'strict'
       });
-      return { success: true, message: 'Login exitoso' };
+      return { success: true, message: 'Login success' };
     } else {
-      return { success: false, message: data.message || 'Credenciales incorrectas' };
+      return { success: false, message: data.message || 'Incorrect email or password' };
     }
   } catch (error) {
     console.error('Error de conexión:', error);
-    return { success: false, message: 'Error de conexión con el servidor' };
+    return { success: false, message: 'Sorry, connection lost' };
   }
 };
 

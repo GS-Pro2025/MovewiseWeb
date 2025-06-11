@@ -23,28 +23,28 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
   
   const columns = [
     columnHelper.accessor('first_name', {
-      header: 'Nombre',
+      header: 'First Name',
       size: 150,
     }),
     columnHelper.accessor('last_name', {
-      header: 'Apellido',
+      header: 'Last Name',
       size: 150,
     }),
     columnHelper.accessor('role', {
-      header: 'Rol',
+      header: 'Role',
       size: 120,
     }),
     columnHelper.accessor('code', {
-      header: 'Código',
+      header: 'Code',
       size: 100,
     }),
     columnHelper.accessor('salary', {
-      header: 'Salario',
+      header: 'Salary',
       size: 120,
       Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('bonus', {
-      header: 'Bono',
+      header: 'Bonus',
       size: 120,
       Cell: ({ cell }) => {
         const value = cell.getValue<number | null>();
@@ -63,7 +63,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
           day: '2-digit',
         });
       },
-      header: 'Fecha',
+      header: 'Date',
       size: 120,
     }),
   ];
@@ -88,7 +88,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
     renderTopToolbarCustomActions: () => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#333' }}>
-          Operadores asignados
+          Assigned operators
         </Typography>
         <Button
           variant="outlined"

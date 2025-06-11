@@ -38,7 +38,7 @@ const FinishOrderDialog: React.FC<FinishOrderDialogProps> = ({
     if (target.files && target.files[0]) {
       const file = target.files[0];
       if (file.size > 5 * 1024 * 1024) {
-        enqueueSnackbar('La imagen debe pesar menos de 5MB', { variant: 'warning' });
+        enqueueSnackbar('Sorry, the image cannot be larger than 5mb.', { variant: 'warning' });
         return;
       }
       onImageChange(file);
@@ -55,7 +55,7 @@ const FinishOrderDialog: React.FC<FinishOrderDialogProps> = ({
             startIcon={<PhotoCamera />}
             onClick={() => fileInputRef.current?.click()}
           >
-            {image ? 'Cambiar imagen' : 'Subir imagen  de evidencia (opcional)'}
+            {image ? 'Change image' : 'Upload image of closure(optional)'}
           </Button>
           <Input
             inputRef={fileInputRef}
@@ -67,7 +67,7 @@ const FinishOrderDialog: React.FC<FinishOrderDialogProps> = ({
           {image && (
             <img
               src={URL.createObjectURL(image)}
-              alt="Imagen de cierre"
+              alt="Image preview"
               style={{ maxWidth: 200, marginTop: 8, borderRadius: 8 }}
             />
           )}
