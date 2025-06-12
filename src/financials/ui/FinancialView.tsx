@@ -22,7 +22,7 @@ const FinancialView = () => {
   const [page, setPage] = useState(0);
   const [rowCount, setRowCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [groupBy, setGroupBy] = useState(false);
+  const [groupBy, setGroupBy] = useState(true);
 
   // Estado para PaymentDialog
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -59,6 +59,38 @@ const columns: MRT_ColumnDef<OrderSummary>[] = [
     enableColumnFilter: false,
   },
   {
+    accessorKey: "summary.totalCost",
+    header: "Total Cost",
+    Cell: ({ row }) => row.original.summary?.totalCost ?? 0,
+  },
+  {
+    header: "Profit",
+    id: "profit",
+    Cell: ({ row }: { row: MRT_Row<OrderSummary> }) => {
+      const income = row.original.income ?? 0;
+      const totalCost = row.original.summary?.totalCost ?? 0;
+      const profit = income - totalCost;
+      const color = profit >= 0 ? "#4caf50" : "#f44336"; // verde o rojo
+      return (
+        <span
+          style={{
+            color: "#fff",
+            background: color,
+            padding: "4px 12px",
+            borderRadius: "16px",
+            fontWeight: 600,
+            display: "inline-block",
+            minWidth: 60,
+            textAlign: "center",
+          }}
+        >
+          {profit}
+        </span>
+      );
+    },
+    size: 120,
+  },
+  {
     header: "Paystatus",
     accessorKey: "payStatus",
     Cell: ({ row }) => {
@@ -81,11 +113,6 @@ const columns: MRT_ColumnDef<OrderSummary>[] = [
     accessorKey: "summary.expense",
     header: "Expense",
     Cell: ({ row }) => row.original.summary?.expense ?? 0,
-  },
-  {
-    accessorKey: "summary.rentingCost",
-    header: "Renting Cost",
-    Cell: ({ row }) => row.original.summary?.rentingCost ?? 0,
   },
   {
     accessorKey: "summary.fuelCost",
