@@ -63,3 +63,9 @@ export interface ErrorResponse {
   messUser: string;
   status: string;
 }
+
+export interface UpdatePaymentData{
+  expense: number;
+  income: number;
+  payStatus: number;
+}

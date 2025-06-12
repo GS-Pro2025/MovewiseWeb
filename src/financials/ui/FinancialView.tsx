@@ -1,19 +1,26 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useMemo, useCallback } from "react";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-  type MRT_Row,
-} from "material-react-table";
-import { Box, Typography, CircularProgress, Button } from "@mui/material";
-import PaymentIcon from "@mui/icons-material/AttachMoney";
-import { SummaryCostRepository, updateOrder } from "../data/SummaryCostRepository";
+import { useEffect, useMemo, useState } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
+import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
-import PaymentDialog from "./PaymentDialog";
-import { UpdateOrderData } from "../domain/ModelOrderUpdate";
-import { enqueueSnackbar } from "notistack";
+import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
+import OrdersByKeyRefTable from "./OrdersByKeyRefTable";
 
+interface SuperOrder {
+  key_ref: string;
+  orders: OrderSummary[];
+  client: string;
+  expense: number;
+  fuelCost: number;
+  workCost: number;
+  driverSalaries: number;
+  otherSalaries: number;
+  totalIncome: number;
+  totalCost: number;
+  totalProfit: number;
+  payStatus: number;
+}
 
 const FinancialView = () => {
   const repository = new SummaryCostRepository();
@@ -22,156 +29,47 @@ const FinancialView = () => {
   const [page, setPage] = useState(0);
   const [rowCount, setRowCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [groupBy, setGroupBy] = useState(true);
 
-  // Estado para PaymentDialog
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentOrder, setPaymentOrder] = useState<UpdateOrderData | null>(null);
-  const handlePay = useCallback((order: OrderSummary) => {
-    setPaymentOrder({
-      key: order.key,
-      expense: order.summary?.expense ?? 0,
-      income: order.income ?? 0,
-      payStatus: order.payStatus,
-    } as UpdateOrderData);
-    setPaymentDialogOpen(true);
-  }, []);
-const columns: MRT_ColumnDef<OrderSummary>[] = [
-    {
-    header: "Pay",
-    id: "pay",
-    size: 120,
-    Cell: ({ row }: { row: MRT_Row<OrderSummary> }) => {
-      const isPaid = row.original.payStatus === 1;
-      return (
-        <Button
-          size="small"
-          color="success"
-          startIcon={<PaymentIcon />}
-          disabled={isPaid}
-          onClick={() => handlePay(row.original)}
-        >
-          Pay
-        </Button>
-      );
-    },
-    enableSorting: false,
-    enableColumnFilter: false,
-  },
-  {
-    accessorKey: "summary.totalCost",
-    header: "Total Cost",
-    Cell: ({ row }) => row.original.summary?.totalCost ?? 0,
-  },
-  {
-    header: "Profit",
-    id: "profit",
-    Cell: ({ row }: { row: MRT_Row<OrderSummary> }) => {
-      const income = row.original.income ?? 0;
-      const totalCost = row.original.summary?.totalCost ?? 0;
-      const profit = income - totalCost;
-      const color = profit >= 0 ? "#4caf50" : "#f44336"; // verde o rojo
-      return (
-        <span
-          style={{
-            color: "#fff",
-            background: color,
-            padding: "4px 12px",
-            borderRadius: "16px",
-            fontWeight: 600,
-            display: "inline-block",
-            minWidth: 60,
-            textAlign: "center",
-          }}
-        >
-          {profit}
-        </span>
-      );
-    },
-    size: 120,
-  },
-  {
-    header: "Paystatus",
-    accessorKey: "payStatus",
-    Cell: ({ row }) => {
-      const value = row.original.payStatus;
-      const color = value === 1 ? "green" : "orange";
-      return (
-        <Typography sx={{ color, fontWeight: 600 }}>
-          {value === 1 ? "Paid" : "Unpaid"}
-        </Typography>
-      );
-    },
-    size: 160,
-  },
-  { accessorKey: "key_ref", header: "Reference" },
-  { accessorKey: "client", header: "Customer" },
-  { accessorKey: "date", header: "Date" },
-  { accessorKey: "state", header: "State" },
-  { accessorKey: "income", header: "Income" },
-  {
-    accessorKey: "summary.expense",
-    header: "Expense",
-    Cell: ({ row }) => row.original.summary?.expense ?? 0,
-  },
-  {
-    accessorKey: "summary.fuelCost",
-    header: "Fuel Cost",
-    Cell: ({ row }) => row.original.summary?.fuelCost ?? 0,
-  },
-  {
-    accessorKey: "summary.workCost",
-    header: "Work Cost",
-    Cell: ({ row }) => row.original.summary?.workCost ?? 0,
-  },
-  {
-    accessorKey: "summary.driverSalaries",
-    header: "Driver Salaries",
-    Cell: ({ row }) => row.original.summary?.driverSalaries ?? 0,
-  },
-  {
-    accessorKey: "summary.otherSalaries",
-    header: "Other Salaries",
-    Cell: ({ row }) => row.original.summary?.otherSalaries ?? 0,
-  },
-  {
-    accessorKey: "summary.totalCost",
-    header: "Total Cost",
-    Cell: ({ row }) => row.original.summary?.totalCost ?? 0,
-  },
-];
-
-
-
-// Agrupa las órdenes por key_ref y suma los valores numéricos
-function groupByKeyRef(data: OrderSummary[]): OrderSummary[] {
-  const map = new Map<string, OrderSummary>();
-  data.forEach((item) => {
-    if (!map.has(item.key_ref)) {
-      map.set(item.key_ref, { ...item });
-    } else {
-      const existing = map.get(item.key_ref)!;
-      existing.income += item.income;
-      if (existing.summary && item.summary) {
-        existing.summary.expense += item.summary.expense;
-        existing.summary.rentingCost += item.summary.rentingCost;
-        existing.summary.fuelCost += item.summary.fuelCost;
-        existing.summary.workCost += item.summary.workCost;
-        existing.summary.driverSalaries += item.summary.driverSalaries;
-        existing.summary.otherSalaries += item.summary.otherSalaries;
-        existing.summary.totalCost += item.summary.totalCost;
+  // Agrupa las órdenes por key_ref y calcula totales
+  function groupByKeyRef(data: OrderSummary[]): SuperOrder[] {
+    const map = new Map<string, SuperOrder>();
+    data.forEach((item) => {
+      if (!map.has(item.key_ref)) {
+        map.set(item.key_ref, {
+          key_ref: item.key_ref,
+          orders: [],
+          totalIncome: 0,
+          totalCost: 0,
+          totalProfit: 0,
+          payStatus: 1,
+          client: item.client,
+          expense: 0,
+          fuelCost: 0,
+          workCost: 0,
+          driverSalaries: 0,
+          otherSalaries: 0,
+        });
       }
-    }
-  });
-  return Array.from(map.values());
-}
+      const superOrder = map.get(item.key_ref)!;
+      superOrder.orders.push(item);
+      superOrder.totalIncome += item.income ?? 0;
+      superOrder.totalCost += item.summary?.totalCost ?? 0;
+      superOrder.expense += item.summary?.expense ?? 0;
+      superOrder.fuelCost += item.summary?.fuelCost ?? 0;
+      superOrder.workCost += item.summary?.workCost ?? 0;
+      superOrder.driverSalaries += item.summary?.driverSalaries ?? 0;
+      superOrder.otherSalaries += item.summary?.otherSalaries ?? 0;
+      superOrder.payStatus = superOrder.payStatus && item.payStatus === 1 ? 1 : 0;
+    });
+    map.forEach((superOrder) => {
+      superOrder.totalProfit = superOrder.totalIncome - superOrder.totalCost;
+    });
+    return Array.from(map.values());
+  }
 
-
-  
   const fetchData = async (pageNumber: number) => {
     setLoading(true);
     setError(null);
-    console.log("rowCount", rowCount);
     try {
       const result = await repository.getSummaryCost(pageNumber + 1);
       setData(result.results);
@@ -188,101 +86,83 @@ function groupByKeyRef(data: OrderSummary[]): OrderSummary[] {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  const filteredData = useMemo(
-    () => (groupBy ? groupByKeyRef(data) : data),
-    [data, groupBy]
-  );
-    function mapTableDataToUpdateOrderData(paymentOrder: UpdateOrderData): any {
-        // Map only the fields relevant for updating the order
-        return {
-            key: paymentOrder.key,
-            expense: paymentOrder.expense,
-            income: paymentOrder.income,
-            payStatus: paymentOrder.payStatus,
-            // Add other fields if needed for the update API
-        };
-    }
+  const superOrders = useMemo(() => groupByKeyRef(data), [data]);
 
-  // Handler para confirmar el pago
-  async function handleConfirmPayment(expense: number, income: number) {
-       if (!expense) return;
-       if (!paymentOrder) return;
-       paymentOrder.expense = expense;
-       paymentOrder.income = income;
-       await updateOrder(paymentOrder.key, {
-         ...mapTableDataToUpdateOrderData(paymentOrder),
-         expense,
-         income,
-         payStatus: 1, 
-       });
-       enqueueSnackbar('Payment registered', { variant: 'success' });
-       fetchData(1); // refresca la tabla
-       setPaymentDialogOpen(false);
-       setPaymentOrder(null);
-  }
-
-  const table = useMaterialReactTable({
-    columns,
-    data: filteredData,
-    manualPagination: true,
-    rowCount: filteredData.length,
-    state: { isLoading: loading, pagination: { pageIndex: page, pageSize: 10 } },
-    onPaginationChange: (updater) => {
-      if (typeof updater === "function") {
-        const newState = updater({ pageIndex: page, pageSize: 10 });
-        setPage(newState.pageIndex);
-      } else {
-        setPage(updater.pageIndex);
-      }
-    },
-    enableColumnResizing: true,
-    enableStickyHeader: true,
-    muiTableContainerProps: { sx: { maxHeight: 600 } },
-    muiTableBodyRowProps: ({ row }) => ({
-      sx: {
-        backgroundColor:
-          row.original.payStatus === 1
-            ? "#cce7ff" // Azul suave
-            : "#fae4e0", // naranja suave
+  const columns = useMemo<MRT_ColumnDef<SuperOrder>[]>(
+    () => [
+      { accessorKey: "key_ref", header: "Reference" },
+            {
+        accessorKey: "totalProfit",
+        header: "Profit",
+        Cell: ({ cell }) => {
+          const value = cell.getValue<number>();
+          return (
+            <span
+              style={{
+                color: "#fff",
+                background: value >= 0 ? "#4caf50" : "#f44336",
+                padding: "4px 12px",
+                borderRadius: "16px",
+                fontWeight: 600,
+                display: "inline-block",
+                minWidth: 60,
+                textAlign: "center",
+              }}
+            >
+              {value}
+            </span>
+          );
+        },
       },
-    }),
-  });
+      {
+        accessorKey: "payStatus",
+        header: "Paystatus",
+        Cell: ({ cell }) => (
+          <Typography sx={{ color: cell.getValue<number>() === 1 ? "green" : "orange", fontWeight: 600 }}>
+            {cell.getValue<number>() === 1 ? "Paid" : "Unpaid"}
+          </Typography>
+        ),
+      },
+      
+      { accessorKey: "totalIncome", header: "Income" },
+      { accessorKey: "totalCost", header: "Total Cost" },
+      { accessorKey: "expense", header: "Expense" },
+      { accessorKey: "fuelCost", header: "Fuel Cost" },
+      { accessorKey: "workCost", header: "Work Cost" },
+      { accessorKey: "driverSalaries", header: "Driver Salaries" },
+      { accessorKey: "otherSalaries", header: "Operator Salaries" },
+      { accessorKey: "client", header: "Client" },
+    ],
+    []
+  );
 
   return (
-    <>
-      <Box p={2}>
-        <Typography variant="h5" gutterBottom>
-          Cost Summary
-        </Typography>
-        <Box mb={2}>
-          <label>
-            <input
-              type="checkbox"
-              checked={groupBy}
-              onChange={() => setGroupBy((v) => !v)}
-              style={{ marginRight: 8 }}
-            />
-            Group by Reference
-          </label>
+    <Box p={2}>
+      <Typography variant="h5" gutterBottom>
+        Financial Summary
+      </Typography>
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+          <CircularProgress />
         </Box>
-        {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Typography color="error">{error}</Typography>
-        ) : (
-          <MaterialReactTable table={table} />
-        )}
-      </Box>
-      <PaymentDialog
-        open={paymentDialogOpen}
-        expense={paymentOrder?.expense ?? 0}
-        income={paymentOrder?.income ?? 0}
-        onClose={() => setPaymentDialogOpen(false)}
-        onConfirm={handleConfirmPayment}
-      />
-    </>
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : (
+        <MaterialReactTable
+          columns={columns}
+          data={superOrders}
+          enableStickyHeader
+          muiTableContainerProps={{ sx: { maxHeight: 600 } }}
+          renderDetailPanel={({ row }) => (
+            <OrdersByKeyRefTable
+              orders={row.original.orders}
+              keyRef={row.original.key_ref}
+              onOrderPaid={() => fetchData(page)}
+            />
+          )}
+        />
+      )}
+    </Box>
   );
 };
 

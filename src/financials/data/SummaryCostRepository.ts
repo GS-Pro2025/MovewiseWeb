@@ -1,4 +1,4 @@
-import { UpdateOrderData } from "../domain/ModelOrderUpdate";
+import { UpdatePaymentData } from "../domain/ModelOrderUpdate";
 import { PaginatedOrderSummaryResult } from "../domain/OrderSummaryModel";
 import Cookies from 'js-cookie';
 
@@ -51,7 +51,7 @@ const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 export async function updateOrder(
   orderKey: string,
-  orderData: UpdateOrderData
+  orderData: UpdatePaymentData
 ): Promise<{ success: boolean; data?: unknown; errorMessage?: string }> {
 
   const token = Cookies.get('authToken');
