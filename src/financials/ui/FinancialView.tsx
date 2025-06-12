@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -8,12 +8,34 @@ import {
 } from "material-react-table";
 import { Box, Typography, CircularProgress, Button } from "@mui/material";
 import PaymentIcon from "@mui/icons-material/AttachMoney";
-import { SummaryCostRepository } from "../data/SummaryCostRepository";
+import { SummaryCostRepository, updateOrder } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import PaymentDialog from "./PaymentDialog";
+import { UpdateOrderData } from "../domain/ModelOrderUpdate";
+import { enqueueSnackbar } from "notistack";
 
-const repository = new SummaryCostRepository();
 
+const FinancialView = () => {
+  const repository = new SummaryCostRepository();
+  const [data, setData] = useState<OrderSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowCount, setRowCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [groupBy, setGroupBy] = useState(false);
+
+  // Estado para PaymentDialog
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState<UpdateOrderData | null>(null);
+  const handlePay = useCallback((order: OrderSummary) => {
+    setPaymentOrder({
+      key: order.key,
+      expense: order.summary?.expense ?? 0,
+      income: order.income ?? 0,
+      payStatus: order.payStatus,
+    } as UpdateOrderData);
+    setPaymentDialogOpen(true);
+  }, []);
 const columns: MRT_ColumnDef<OrderSummary>[] = [
   { accessorKey: "key_ref", header: "Reference" },
   { accessorKey: "client", header: "Customer" },
@@ -92,6 +114,8 @@ const columns: MRT_ColumnDef<OrderSummary>[] = [
   },
 ];
 
+
+
 // Agrupa las órdenes por key_ref y suma los valores numéricos
 function groupByKeyRef(data: OrderSummary[]): OrderSummary[] {
   const map = new Map<string, OrderSummary>();
@@ -115,21 +139,12 @@ function groupByKeyRef(data: OrderSummary[]): OrderSummary[] {
   return Array.from(map.values());
 }
 
-const FinancialView = () => {
-  const [data, setData] = useState<OrderSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowCount, setRowCount] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [groupBy, setGroupBy] = useState(false);
 
-  // Estado para PaymentDialog
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentOrder, setPaymentOrder] = useState<{ expense: number; income: number } | null>(null);
-
+  
   const fetchData = async (pageNumber: number) => {
     setLoading(true);
     setError(null);
+    console.log("rowCount", rowCount);
     try {
       const result = await repository.getSummaryCost(pageNumber + 1);
       setData(result.results);
@@ -150,23 +165,33 @@ const FinancialView = () => {
     () => (groupBy ? groupByKeyRef(data) : data),
     [data, groupBy]
   );
-
-  // Handler para abrir el PaymentDialog
-  function handlePay(order: OrderSummary) {
-    setPaymentOrder({
-      expense: order.summary?.expense ?? 0,
-      income: order.income ?? 0,
-    });
-    setPaymentDialogOpen(true);
-  }
+    function mapTableDataToUpdateOrderData(paymentOrder: UpdateOrderData): any {
+        // Map only the fields relevant for updating the order
+        return {
+            key: paymentOrder.key,
+            expense: paymentOrder.expense,
+            income: paymentOrder.income,
+            payStatus: paymentOrder.payStatus,
+            // Add other fields if needed for the update API
+        };
+    }
 
   // Handler para confirmar el pago
-  function handleConfirmPayment(expense: number, income: number) {
-    
-    setPaymentDialogOpen(false);
-    setPaymentOrder(null);
-    // Opcional: recargar datos
-    fetchData(page);
+  async function handleConfirmPayment(expense: number, income: number) {
+       if (!expense) return;
+       if (!paymentOrder) return;
+       paymentOrder.expense = expense;
+       paymentOrder.income = income;
+       await updateOrder(paymentOrder.key, {
+         ...mapTableDataToUpdateOrderData(paymentOrder),
+         expense,
+         income,
+         payStatus: 1, 
+       });
+       enqueueSnackbar('Payment registered', { variant: 'success' });
+       fetchData(1); // refresca la tabla
+       setPaymentDialogOpen(false);
+       setPaymentOrder(null);
   }
 
   const table = useMaterialReactTable({
@@ -227,3 +252,5 @@ const FinancialView = () => {
 };
 
 export default FinancialView;
+
+
