@@ -37,6 +37,41 @@ const FinancialView = () => {
     setPaymentDialogOpen(true);
   }, []);
 const columns: MRT_ColumnDef<OrderSummary>[] = [
+    {
+    header: "Pay",
+    id: "pay",
+    size: 120,
+    Cell: ({ row }: { row: MRT_Row<OrderSummary> }) => {
+      const isPaid = row.original.payStatus === 1;
+      return (
+        <Button
+          size="small"
+          color="success"
+          startIcon={<PaymentIcon />}
+          disabled={isPaid}
+          onClick={() => handlePay(row.original)}
+        >
+          Pay
+        </Button>
+      );
+    },
+    enableSorting: false,
+    enableColumnFilter: false,
+  },
+  {
+    header: "Paystatus",
+    accessorKey: "payStatus",
+    Cell: ({ row }) => {
+      const value = row.original.payStatus;
+      const color = value === 1 ? "green" : "orange";
+      return (
+        <Typography sx={{ color, fontWeight: 600 }}>
+          {value === 1 ? "Paid" : "Unpaid"}
+        </Typography>
+      );
+    },
+    size: 160,
+  },
   { accessorKey: "key_ref", header: "Reference" },
   { accessorKey: "client", header: "Customer" },
   { accessorKey: "date", header: "Date" },
@@ -76,41 +111,6 @@ const columns: MRT_ColumnDef<OrderSummary>[] = [
     accessorKey: "summary.totalCost",
     header: "Total Cost",
     Cell: ({ row }) => row.original.summary?.totalCost ?? 0,
-  },
-  {
-    header: "Paystatus",
-    accessorKey: "payStatus",
-    Cell: ({ row }) => {
-      const value = row.original.payStatus;
-      const color = value === 1 ? "green" : "red";
-      return (
-        <Typography sx={{ color, fontWeight: 600 }}>
-          {value === 1 ? "Paid" : "Unpaid"}
-        </Typography>
-      );
-    },
-    size: 120,
-  },
-  {
-    header: "Pay",
-    id: "pay",
-    size: 120,
-    Cell: ({ row }: { row: MRT_Row<OrderSummary> }) => {
-      const isPaid = row.original.payStatus === 1;
-      return (
-        <Button
-          size="small"
-          color="success"
-          startIcon={<PaymentIcon />}
-          disabled={isPaid}
-          onClick={() => handlePay(row.original)}
-        >
-          Pay
-        </Button>
-      );
-    },
-    enableSorting: false,
-    enableColumnFilter: false,
   },
 ];
 
@@ -211,6 +211,14 @@ function groupByKeyRef(data: OrderSummary[]): OrderSummary[] {
     enableColumnResizing: true,
     enableStickyHeader: true,
     muiTableContainerProps: { sx: { maxHeight: 600 } },
+    muiTableBodyRowProps: ({ row }) => ({
+      sx: {
+        backgroundColor:
+          row.original.payStatus === 1
+            ? "#cce7ff" // Azul suave
+            : "#fae4e0", // naranja suave
+      },
+    }),
   });
 
   return (
