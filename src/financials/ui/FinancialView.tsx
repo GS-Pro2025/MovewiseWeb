@@ -92,7 +92,7 @@ const FinancialView = () => {
   }
 
   // fetchData adaptado para semana y año
-  const fetchData = useCallback(async (pageNumber: number, week: number, year: number) => {
+  const fetchData = useCallback(async (pageNumber: number, week: number) => {
     const currentYear = new Date().getFullYear();
     setLoading(true);
     setError(null);
@@ -108,7 +108,7 @@ const FinancialView = () => {
   }, [repository]);
 
   useEffect(() => {
-    fetchData(page, week, year);
+    fetchData(page, week);
   }, [page, week, year]);
 
   const superOrders = useMemo(() => groupByKeyRef(data), [data]);
@@ -200,7 +200,7 @@ const FinancialView = () => {
             <OrdersByKeyRefTable
               orders={row.original.orders}
               keyRef={row.original.key_ref}
-              onOrderPaid={() => fetchData(page, week, year)}
+              onOrderPaid={() => fetchData(page, week)}
             />
           )}
         />
