@@ -12,10 +12,6 @@ import { PaginatedOrderSummaryResult, OrderSummary } from '../../domain/OrderSum
 const columnHelper = createMRTColumnHelper<OrderSummary>();
 
 const columns = [
-    columnHelper.accessor('key', {
-        header: 'Key',
-        size: 40,
-    }),
     columnHelper.accessor('key_ref', {
         header: 'Reference',
         size: 100,
@@ -29,7 +25,7 @@ const columns = [
         size: 100,
     }),
     columnHelper.accessor('state', {
-        header: 'Status',
+        header: 'Location',
         size: 100,
     }),
     columnHelper.accessor('summary.expense', {

@@ -200,7 +200,7 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             renderInput={params => (
               <TextField
                 {...params}
-                label="Customer Factory"
+                label="Company"
                 margin="normal"
                 fullWidth
                 InputProps={{
