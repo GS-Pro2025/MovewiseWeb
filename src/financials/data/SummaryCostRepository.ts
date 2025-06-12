@@ -3,14 +3,14 @@ import { PaginatedOrderSummaryResult } from "../domain/OrderSummaryModel";
 import Cookies from 'js-cookie';
 
 export interface SummaryCostRepositoryInterface {
-    getSummaryCost(pages: number): Promise<PaginatedOrderSummaryResult>;
+    getSummaryCost(pageNumber: number, week: number, year: number): Promise<PaginatedOrderSummaryResult>;
 }
 
 export class SummaryCostRepository implements SummaryCostRepositoryInterface {
     private baseUrl: string =
         import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-    async getSummaryCost(pages: number): Promise<PaginatedOrderSummaryResult> {
+    async getSummaryCost(pageNumber: number, week: number, year: number): Promise<PaginatedOrderSummaryResult> {
         const token = Cookies.get('authToken');
         
         if (!token) {
@@ -19,7 +19,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
         }
 
         try {
-            const response = await fetch(`${this.baseUrl}/summary-list/?page=${pages}&page_size=100`, {
+            const response = await fetch(`${this.baseUrl}/summary-list/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,

@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Box, Typography, CircularProgress, TextField } from "@mui/material";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
@@ -22,13 +23,36 @@ interface SuperOrder {
   payStatus: number;
 }
 
+// Utilidad para calcular el rango de fechas de la semana
+function getWeekRange(year: number, week: number): { start: string; end: string } {
+  const firstDayOfYear = new Date(year, 0, 1);
+  const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+  const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
+  const endDate = new Date(startDate.getTime() + 6 * 86400000);
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0],
+  };
+}
+
 const FinancialView = () => {
   const repository = new SummaryCostRepository();
   const [data, setData] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
+  const [page] = useState(0);
   const [rowCount, setRowCount] = useState(0);
+  console.log("rowCount", rowCount);
   const [error, setError] = useState<string | null>(null);
+
+  // Semana y año seleccionados
+  const [week, setWeek] = useState<number>(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
+  });
+  const [year] = useState<number>(new Date().getFullYear());
+
+  const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
 
   // Agrupa las órdenes por key_ref y calcula totales
   function groupByKeyRef(data: OrderSummary[]): SuperOrder[] {
@@ -67,11 +91,13 @@ const FinancialView = () => {
     return Array.from(map.values());
   }
 
-  const fetchData = async (pageNumber: number) => {
+  // fetchData adaptado para semana y año
+  const fetchData = useCallback(async (pageNumber: number, week: number, year: number) => {
+    const currentYear = new Date().getFullYear();
     setLoading(true);
     setError(null);
     try {
-      const result = await repository.getSummaryCost(pageNumber + 1);
+      const result = await repository.getSummaryCost(pageNumber, week, currentYear);
       setData(result.results);
       setRowCount(result.count);
     } catch (err: any) {
@@ -79,19 +105,26 @@ const FinancialView = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [repository]);
 
   useEffect(() => {
-    fetchData(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+    fetchData(page, week, year);
+  }, [page, week, year]);
 
   const superOrders = useMemo(() => groupByKeyRef(data), [data]);
 
   const columns = useMemo<MRT_ColumnDef<SuperOrder>[]>(
     () => [
       { accessorKey: "key_ref", header: "Reference" },
-            {
+      { accessorKey: "client", header: "Client" },
+      { accessorKey: "totalIncome", header: "Income" },
+      { accessorKey: "totalCost", header: "Total Cost" },
+      { accessorKey: "expense", header: "Expense" },
+      { accessorKey: "fuelCost", header: "Fuel Cost" },
+      { accessorKey: "workCost", header: "Work Cost" },
+      { accessorKey: "driverSalaries", header: "Driver Salaries" },
+      { accessorKey: "otherSalaries", header: "Operator Salaries" },
+      {
         accessorKey: "totalProfit",
         header: "Profit",
         Cell: ({ cell }) => {
@@ -123,24 +156,34 @@ const FinancialView = () => {
           </Typography>
         ),
       },
-      
-      { accessorKey: "totalIncome", header: "Income" },
-      { accessorKey: "totalCost", header: "Total Cost" },
-      { accessorKey: "expense", header: "Expense" },
-      { accessorKey: "fuelCost", header: "Fuel Cost" },
-      { accessorKey: "workCost", header: "Work Cost" },
-      { accessorKey: "driverSalaries", header: "Driver Salaries" },
-      { accessorKey: "otherSalaries", header: "Operator Salaries" },
-      { accessorKey: "client", header: "Client" },
     ],
     []
   );
+
+  // Inputs para cambiar semana y año
+  const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newWeek = parseInt(event.target.value, 10);
+    if (newWeek >= 1 && newWeek <= 53) setWeek(newWeek);
+  };
 
   return (
     <Box p={2}>
       <Typography variant="h5" gutterBottom>
         Financial Summary
       </Typography>
+      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+        <TextField
+          label="Week"
+          type="number"
+          value={week}
+          onChange={handleWeekChange}
+          inputProps={{ min: 1, max: 53 }}
+          size="small"
+        />
+        <Typography variant="body1" sx={{ alignSelf: 'center' }}>
+          Period: {weekRange.start} → {weekRange.end}
+        </Typography>
+      </Box>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
           <CircularProgress />
@@ -157,7 +200,7 @@ const FinancialView = () => {
             <OrdersByKeyRefTable
               orders={row.original.orders}
               keyRef={row.original.key_ref}
-              onOrderPaid={() => fetchData(page)}
+              onOrderPaid={() => fetchData(page, week, year)}
             />
           )}
         />
