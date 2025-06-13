@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   payrollService,
-  AssignmentData,
   WeekInfo,
 } from '../../service/PayrollService';
 import { PayrollModal } from '../components/PayrollModal';
@@ -99,43 +98,25 @@ export default function PayrollPage() {
     try {
       setLoading(true);
       
-      // Función para obtener todos los datos de todas las páginas
-      const fetchAllAssignments = async (week: number): Promise<{ data: AssignmentData[], week_info: WeekInfo }> => {
-        let allData: AssignmentData[] = [];
-        let currentPage = 1;
-        let weekInfo: WeekInfo;
-        
-        do {
-          const response = await payrollService(week, currentPage);
-          allData = [...allData, ...response.data];
-          weekInfo = response.week_info;
-          
-          // Si no hay página siguiente, terminar
-          if (!response.pagination.next) {
-            break;
-          }
-          
-          currentPage++;
-        } while (true);
-        
-        return { data: allData, week_info: weekInfo! };
-      };
+      // Obtener el año actual para la consulta
+      const currentYear = new Date().getFullYear();
       
-      const { data: allData, week_info } = await fetchAllAssignments(week);
-      console.log('Todos los datos:', allData);
+      // Llamada directa al servicio sin paginación
+      const response = await payrollService(week, currentYear);
+      console.log('Datos recibidos:', response.data);
       
       // Generar mapeo de fechas para los encabezados
-      const dates = generateWeekDates(week_info.start_date, week_info.end_date);
+      const dates = generateWeekDates(response.week_info.start_date, response.week_info.end_date);
       setWeekDates(dates);
       
       const map = new Map<string, OperatorRow>();
-
+  
       // PASO 1: Crear la estructura básica de cada operador y obtener bonus único
-      allData.forEach(d => {
+      response.data.forEach(d => {
         const key = d.code;
         const assignId = d.id_assign;
         const payId = d.id_payment;
-
+  
         if (!map.has(key)) {
           // Al crear el operador por primera vez, tomar el bonus del primer registro
           map.set(key, {
@@ -160,18 +141,18 @@ export default function PayrollPage() {
           // NO acumular bonus aquí - solo se toma una vez por operador
         }
       });
-
+  
       // PASO 2: Función para buscar si un operador trabajó en una fecha específica
       const findWorkDay = (operatorCode: string, targetDate: string): number | null => {
         // Buscar en todos los datos si este operador trabajó en esta fecha
-        const workRecord = allData.find(d => {
+        const workRecord = response.data.find(d => {
           const dataDate = d.date.split('T')[0]; // "2025-05-19T00:00:00Z" -> "2025-05-19"
           return d.code === operatorCode && dataDate === targetDate;
         });
         
         return workRecord ? workRecord.salary : null;
       };
-
+  
       // PASO 3: Mapear cada día de la semana para cada operador
       const operators = Array.from(map.values()).map(row => {
         console.log(`Mapeando días para ${row.name} ${row.lastName} (${row.code})`);
@@ -188,7 +169,7 @@ export default function PayrollPage() {
             }
           }
         });
-
+  
         // Calcular totales
         const daysWorked = weekdayKeys.filter(day => row[day] != null && row[day]! > 0).length;
         row.total = daysWorked * row.cost;
@@ -198,9 +179,9 @@ export default function PayrollPage() {
         
         return row;
       });
-
+  
       setGrouped(operators);
-      setWeekInfo(week_info);
+      setWeekInfo(response.week_info);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
@@ -275,187 +256,279 @@ export default function PayrollPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Operators Payroll</h1>
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="flex items-center">
-          <label htmlFor="weekInput" className="mr-2">Week:</label>
-          <input
-            id="weekInput"
-            type="number"
-            min="1"
-            max="53"
-            value={week}
-            onChange={changeWeek}
-            className="border rounded px-2 py-1 w-20"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="container mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Operators Payroll</h1>
+          <p className="text-gray-600">Manage and track operator payments efficiently</p>
         </div>
-        <div className="flex items-center">
-          <label htmlFor="searchInput" className="mr-2">Search:</label>
-          <input
-            id="searchInput"
-            type="text"
-            placeholder="Search by code, name, or last name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border rounded px-3 py-1 w-64"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="ml-2 text-gray-500 hover:text-gray-700"
-              title="Clear search"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-        {weekInfo && (
-          <span className="text-sm text-gray-600">
-            Period: {weekInfo.start_date} → {weekInfo.end_date}
-          </span>
-        )}
-      </div>
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-      {loading ? (
-        <div className="flex justify-center items-center py-8" style={{ height: '400px' }}>
-          <div style={{ transform: 'scale(0.5)' }}>
-            <LoaderSpinner />
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
-                <div className="text-2xl font-bold text-blue-600">{countDays}</div>
-                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">Working Days</div>
-              </div>
-              
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-green-100">
-                <div className="text-2xl font-bold text-green-600">
-                  {filteredOperators.length}
-                  {filteredOperators.length !== grouped.length && (
-                    <span className="text-lg text-gray-400"> / {grouped.length}</span>
-                  )}
-                </div>
-                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                  {searchTerm ? 'Filtered Operators' : 'Total Operators'}
-                </div>
-              </div>
 
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-orange-100">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-green-600">{paymentStats.paid}</div>
-                    <div className="text-xs text-green-600">Paid</div>
-                  </div>
-                  <div className="text-gray-400">/</div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-red-600">{paymentStats.unpaid}</div>
-                    <div className="text-xs text-red-600">Pending</div>
-                  </div>
-                </div>
-                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide mt-1">Payment Status</div>
+        {/* Controls Section */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+          <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+            {/* Week Input */}
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
               </div>
+              <div>
+                <label htmlFor="weekInput" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Week Number
+                </label>
+                <input
+                  id="weekInput"
+                  type="number"
+                  min="1"
+                  max="53"
+                  value={week}
+                  onChange={changeWeek}
+                  className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 font-medium text-center"
+                />
+              </div>
+            </div>
 
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-red-100">
-                <div className="text-2xl font-bold text-red-600">
-                  {formatCurrency(paymentStats.unpaidAmount)}
-                </div>
-                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                  Pending Amount
-                  {paymentStats.unpaid > 0 && (
-                    <div className="text-xs text-red-500 mt-1">
-                      {paymentStats.unpaid} operator{paymentStats.unpaid !== 1 ? 's' : ''} pending
-                    </div>
-                  )}
-                </div>
+            {/* Search Input */}
+            <div className="flex items-center gap-3 flex-1 max-w-md">
+              <div className="bg-emerald-50 rounded-lg p-3">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
               </div>
-              
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-emerald-100">
-                <div className="text-2xl font-bold text-emerald-600">
-                  {formatCurrency(filteredTotalGrand)}
-                </div>
-                <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                  Grand Total
+              <div className="flex-1">
+                <label htmlFor="searchInput" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Search Operators
+                </label>
+                <div className="relative">
+                  <input
+                    id="searchInput"
+                    type="text"
+                    placeholder="Search by code, name, or last name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
+                  />
                   {searchTerm && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Full Total: {formatCurrency(totalGrand)}
-                    </div>
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                      title="Clear search"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Period Display */}
+            {weekInfo && (
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-50 rounded-lg p-3">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-700">Period</div>
+                  <div className="text-sm text-gray-600 font-medium">
+                    {weekInfo.start_date} → {weekInfo.end_date}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-2 px-4 border-b text-left">Pay</th>
-                  <th className="py-2 px-4 border-b text-left">Code</th>
-                  <th className="py-2 px-4 border-b text-left">Cost</th>
-                  <th className="py-2 px-4 border-b text-left">Name</th>
-                  <th className="py-2 px-4 border-b text-left">Last Name</th>
-                  {weekdayKeys.map(day => {
-                    const dateStr = weekDates[day];
-                    const displayDate = dateStr ? formatDateForHeader(dateStr) : day;
-                    console.log(`Columna ${day}: fecha=${dateStr}, display=${displayDate}`);
-                    return (
-                      <th key={day} className="py-2 px-4 border-b text-right">
-                        {displayDate}
-                      </th>
-                    );
-                  })}
-                  <th className="py-2 px-4 border-b text-right">Additional Bonuses</th>
-                  <th className="py-2 px-4 border-b text-right">Grand Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOperators.length ? filteredOperators.map(r => (
-                  <tr key={r.code} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedOperator(r)}>
-                    <td className="py-2 px-4 border-b text-center">{r.pay != null ? '✅' : '⚠️'}</td>
-                    <td className="py-2 px-4 border-b">{r.code}</td>
-                    <td className="py-2 px-4 border-b">{formatCurrency(r.cost)}</td>
-                    <td className="py-2 px-4 border-b">{r.name}</td>
-                    <td className="py-2 px-4 border-b">{r.lastName}</td>
-                    {weekdayKeys.map(day => {
-                      const value = r[day];
-                      
-                      return (
-                        <td key={day} className="py-2 px-4 border-b text-right">
-                          {value ? formatCurrency(value) : '—'}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-r-lg">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <p className="text-red-700 font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-12">
+            <div className="flex flex-col items-center justify-center">
+              <div className="transform scale-75">
+                <LoaderSpinner />
+              </div>
+              <p className="text-gray-500 mt-4 font-medium">Loading payroll data...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Stats Cards */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8 shadow-lg">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+                <div className="bg-white rounded-xl p-5 shadow-md border border-blue-100 hover:shadow-lg transition-shadow duration-200">
+                  <div className="text-3xl font-bold text-blue-600 mb-1">{countDays}</div>
+                  <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Working Days</div>
+                </div>
+                
+                <div className="bg-white rounded-xl p-5 shadow-md border border-green-100 hover:shadow-lg transition-shadow duration-200">
+                  <div className="text-3xl font-bold text-green-600 mb-1">
+                    {filteredOperators.length}
+                    {filteredOperators.length !== grouped.length && (
+                      <span className="text-xl text-gray-400"> / {grouped.length}</span>
+                    )}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                    {searchTerm ? 'Filtered Operators' : 'Total Operators'}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-5 shadow-md border border-orange-100 hover:shadow-lg transition-shadow duration-200">
+                  <div className="flex items-center justify-center gap-3 mb-1">
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-green-600">{paymentStats.paid}</div>
+                      <div className="text-xs text-green-600 font-medium">Paid</div>
+                    </div>
+                    <div className="text-gray-400 font-bold">/</div>
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-red-600">{paymentStats.unpaid}</div>
+                      <div className="text-xs text-red-600 font-medium">Pending</div>
+                    </div>
+                  </div>
+                  <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Payment Status</div>
+                </div>
+
+                <div className="bg-white rounded-xl p-5 shadow-md border border-red-100 hover:shadow-lg transition-shadow duration-200">
+                  <div className="text-2xl font-bold text-red-600 mb-1">
+                    {formatCurrency(paymentStats.unpaidAmount)}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                    Pending Amount
+                    {paymentStats.unpaid > 0 && (
+                      <div className="text-xs text-red-500 mt-1 font-medium">
+                        {paymentStats.unpaid} operator{paymentStats.unpaid !== 1 ? 's' : ''} pending
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-xl p-5 shadow-md border border-emerald-100 hover:shadow-lg transition-shadow duration-200">
+                  <div className="text-2xl font-bold text-emerald-600 mb-1">
+                    {formatCurrency(filteredTotalGrand)}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                    Grand Total
+                    {searchTerm && (
+                      <div className="text-xs text-gray-400 mt-1 font-medium">
+                        Full Total: {formatCurrency(totalGrand)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                      <th className="py-2 px-4 text-left font-semibold text-gray-700 uppercase tracking-wide text-xs">Pay</th>
+                      <th className="py-2 px-4 text-left font-semibold text-gray-700 uppercase tracking-wide text-xs">Code</th>
+                      <th className="py-2 px-4 text-left font-semibold text-gray-700 uppercase tracking-wide text-xs">Cost</th>
+                      <th className="py-2 px-4 text-left font-semibold text-gray-700 uppercase tracking-wide text-xs">Name</th>
+                      <th className="py-2 px-4 text-left font-semibold text-gray-700 uppercase tracking-wide text-xs">Last Name</th>
+                      {weekdayKeys.map(day => {
+                        const dateStr = weekDates[day];
+                        const displayDate = dateStr ? formatDateForHeader(dateStr) : day;
+                        return (
+                          <th key={day} className="py-2 px-4 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l border-gray-200">
+                            <div className="text-xs text-gray-500 font-medium">{day}</div>
+                            <div className="font-bold">{displayDate}</div>
+                          </th>
+                        );
+                      })}
+                      <th className="py-4 px-6 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l-2 border-blue-200">Additional Bonuses</th>
+                      <th className="py-4 px-6 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l border-gray-200">Grand Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredOperators.length ? filteredOperators.map((r, index) => (
+                      <tr 
+                        key={r.code} 
+                        className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 cursor-pointer transition-all duration-200 ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedOperator(r)}
+                      >
+                        <td className="py-2 px-4 text-center">
+                          {r.pay != null ? (
+                            <span className="text-green-500 text-xl">✅</span>
+                          ) : (
+                            <span className="text-amber-500 text-xl">⚠️</span>
+                          )}
                         </td>
-                      );
-                    })}
-                    <td className="py-2 px-4 border-b text-right">{formatCurrency(r.additionalBonuses || 0)}</td>
-                    <td className="py-2 px-4 border-b text-right font-semibold">{formatCurrency(r.grandTotal || 0)}</td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={weekdayKeys.length + 7} className="py-4 text-center text-gray-500">
-                      {searchTerm ? `No operators found matching "${searchTerm}"` : 'No data available'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-      {selectedOperator && weekInfo && (
-        <PayrollModal
-          isOpen={!!selectedOperator}
-          onClose={handleModalClose}
-          operatorData={selectedOperator}
-          periodStart={weekInfo.start_date}
-          periodEnd={weekInfo.end_date}
-        />
-      )}
+                        <td className="py-2 px-4 font-semibold text-gray-800">{r.code}</td>
+                        <td className="py-2 px-4 font-medium text-gray-700">{formatCurrency(r.cost)}</td>
+                        <td className="py-2 px-4 font-medium text-gray-700">{r.name}</td>
+                        <td className="py-2 px-4 font-medium text-gray-700">{r.lastName}</td>
+                        {weekdayKeys.map(day => {
+                          const value = r[day];
+                          return (
+                            <td key={day} className="py-4 px-6 text-right border-l border-gray-200">
+                              {value ? (
+                                <span className="font-semibold text-green-600">{formatCurrency(value)}</span>
+                              ) : (
+                                <span className="text-gray-400 font-medium">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="py-2 px-4 text-right font-semibold text-blue-600 border-l-2 border-blue-200">
+                          {formatCurrency(r.additionalBonuses || 0)}
+                        </td>
+                        <td className="py-2 px-4 text-right font-bold text-emerald-600 text-lg border-l border-gray-200">
+                          {formatCurrency(r.grandTotal || 0)}
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={weekdayKeys.length + 7} className="py-12 text-center">
+                          <div className="flex flex-col items-center">
+                            <svg className="w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p className="text-gray-500 font-medium">
+                              {searchTerm ? `No operators found matching "${searchTerm}"` : 'No data available'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Modal */}
+        {selectedOperator && weekInfo && (
+          <PayrollModal
+            isOpen={!!selectedOperator}
+            onClose={handleModalClose}
+            operatorData={selectedOperator}
+            periodStart={weekInfo.start_date}
+            periodEnd={weekInfo.end_date}
+          />
+        )}
+      </div>
     </div>
   );
 }
