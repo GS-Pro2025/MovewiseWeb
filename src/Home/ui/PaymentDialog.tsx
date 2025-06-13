@@ -20,7 +20,7 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({ open, expense, income, on
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Registrar Pago</DialogTitle>
+      <DialogTitle>Register Payment</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField

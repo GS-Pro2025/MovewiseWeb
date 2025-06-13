@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UpdatePaymentData } from "../domain/ModelOrderUpdate";
 import { PaginatedOrderSummaryResult } from "../domain/OrderSummaryModel";
 import Cookies from 'js-cookie';
@@ -84,4 +85,50 @@ export async function updateOrder(
       errorMessage: err?.message || 'An unexpected error occurred',
     };
   }
+
 }
+  /**
+   * expected body 
+   * {
+      "key_ref": "key1",
+      "expense": 100.50,
+      "income": 200.75
+    }
+   */
+
+export async function payByKey_ref(
+    key_ref: string,
+    expense: number,
+    income: number
+  ): Promise<{ success: boolean; data?: unknown; errorMessage?: string }> {
+
+    const token = Cookies.get('authToken');
+    if (!token) {
+      window.location.href = '/login';
+      throw new Error('No hay token de autenticación');
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL_API}/orders-payByKey_ref/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ key_ref, expense, income }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, errorMessage: data.messDev || 'Error processing payment' };
+      }
+
+      return { success: true, data };
+    } catch (err: any) {
+      return {
+        success: false,
+        errorMessage: err?.message || 'An unexpected error occurred',
+      };
+    }
+  }

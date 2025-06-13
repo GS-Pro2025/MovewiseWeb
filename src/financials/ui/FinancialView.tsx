@@ -2,11 +2,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Box, Typography, CircularProgress, TextField } from "@mui/material";
-import { SummaryCostRepository } from "../data/SummaryCostRepository";
+import { Box, Typography, CircularProgress, TextField, Button } from "@mui/material";
+import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import OrdersByKeyRefTable from "./OrdersByKeyRefTable";
+import PaymentDialog from "./PaymentDialog";
+import PaymentIcon from "@mui/icons-material/AttachMoney";
+import { enqueueSnackbar } from "notistack";
 
 interface SuperOrder {
   key_ref: string;
@@ -41,7 +44,6 @@ const FinancialView = () => {
   const [loading, setLoading] = useState(true);
   const [page] = useState(0);
   const [rowCount, setRowCount] = useState(0);
-  console.log("rowCount", rowCount);
   const [error, setError] = useState<string | null>(null);
 
   // Semana y año seleccionados
@@ -113,17 +115,38 @@ const FinancialView = () => {
 
   const superOrders = useMemo(() => groupByKeyRef(data), [data]);
 
+  // Estado para el PaymentDialog
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [paySuperOrder, setPaySuperOrder] = useState<SuperOrder | null>(null);
+
+  // Abre el modal y guarda el superOrder a pagar
+  const handleOpenPayDialog = (superOrder: SuperOrder) => {
+    setPaySuperOrder(superOrder);
+    setPayDialogOpen(true);
+  };
+
+  // Cuando se confirma el pago en el modal
+  const handleConfirmPay = async (expense: number, income: number) => {
+    if (!paySuperOrder) return;
+    const res = await payByKey_ref(
+      paySuperOrder.key_ref,
+      expense,
+      income
+    );
+    setPayDialogOpen(false);
+    setPaySuperOrder(null);
+    if (res.success) {
+      enqueueSnackbar("Payment registered successfully", { variant: "success" });
+      fetchData(page, week);
+    } else {
+      enqueueSnackbar (res.errorMessage || "Error processing payment", { variant: "error" });
+      alert(res.errorMessage || "Error processing payment");
+    }
+  };
+
   const columns = useMemo<MRT_ColumnDef<SuperOrder>[]>(
     () => [
       { accessorKey: "key_ref", header: "Reference" },
-      { accessorKey: "client", header: "Client" },
-      { accessorKey: "totalIncome", header: "Income" },
-      { accessorKey: "totalCost", header: "Total Cost" },
-      { accessorKey: "expense", header: "Expense" },
-      { accessorKey: "fuelCost", header: "Fuel Cost" },
-      { accessorKey: "workCost", header: "Work Cost" },
-      { accessorKey: "driverSalaries", header: "Driver Salaries" },
-      { accessorKey: "otherSalaries", header: "Operator Salaries" },
       {
         accessorKey: "totalProfit",
         header: "Profit",
@@ -156,8 +179,38 @@ const FinancialView = () => {
           </Typography>
         ),
       },
+      {
+        header: "Pay",
+        id: "pay",
+        size: 120,
+        Cell: ({ row }) => {
+          const isPaid = row.original.payStatus === 1;
+          return (
+            <Button
+              size="small"
+              variant="contained"
+              color="success"
+              startIcon={<PaymentIcon />}
+              disabled={isPaid}
+              onClick={() => handleOpenPayDialog(row.original)}
+            >
+              Pay
+            </Button>
+          );
+        },
+        enableSorting: false,
+        enableColumnFilter: false,
+      },
+      { accessorKey: "totalIncome", header: "Income" },
+      { accessorKey: "totalCost", header: "Total Cost" },
+      { accessorKey: "expense", header: "Expense" },
+      { accessorKey: "fuelCost", header: "Fuel Cost" },
+      { accessorKey: "workCost", header: "Work Cost" },
+      { accessorKey: "driverSalaries", header: "Driver Salaries" },
+      { accessorKey: "otherSalaries", header: "Operator Salaries" },
+      { accessorKey: "client", header: "Client" },
     ],
-    []
+    [week]
   );
 
   // Inputs para cambiar semana y año
@@ -191,19 +244,28 @@ const FinancialView = () => {
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
-        <MaterialReactTable
-          columns={columns}
-          data={superOrders}
-          enableStickyHeader
-          muiTableContainerProps={{ sx: { maxHeight: 600 } }}
-          renderDetailPanel={({ row }) => (
-            <OrdersByKeyRefTable
-              orders={row.original.orders}
-              keyRef={row.original.key_ref}
-              onOrderPaid={() => fetchData(page, week)}
-            />
-          )}
-        />
+        <>
+          <MaterialReactTable
+            columns={columns}
+            data={superOrders}
+            enableStickyHeader
+            muiTableContainerProps={{ sx: { maxHeight: 600 } }}
+            renderDetailPanel={({ row }) => (
+              <OrdersByKeyRefTable
+                orders={row.original.orders}
+                keyRef={row.original.key_ref}
+                onOrderPaid={() => fetchData(page, week)}
+              />
+            )}
+          />
+          <PaymentDialog
+            open={payDialogOpen}
+            expense={paySuperOrder?.expense ?? 0}
+            income={paySuperOrder?.totalIncome ?? 0}
+            onClose={() => setPayDialogOpen(false)}
+            onConfirm={handleConfirmPay}
+          />
+        </>
       )}
     </Box>
   );
