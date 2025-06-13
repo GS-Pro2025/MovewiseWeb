@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-condition */
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   payrollService,

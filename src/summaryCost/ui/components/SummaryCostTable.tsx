@@ -12,58 +12,54 @@ import { PaginatedOrderSummaryResult, OrderSummary } from '../../domain/OrderSum
 const columnHelper = createMRTColumnHelper<OrderSummary>();
 
 const columns = [
-    columnHelper.accessor('key', {
-        header: 'Key',
-        size: 40,
-    }),
     columnHelper.accessor('key_ref', {
-        header: 'Referencia',
+        header: 'Reference',
         size: 100,
     }),
     columnHelper.accessor('client', {
-        header: 'Cliente',
+        header: 'Customer',
         size: 120,
     }),
     columnHelper.accessor('date', {
-        header: 'Fecha',
+        header: 'Date',
         size: 100,
     }),
     columnHelper.accessor('state', {
-        header: 'Estado',
+        header: 'Location',
         size: 100,
     }),
     columnHelper.accessor('summary.expense', {
-        header: 'Gastos',
+        header: 'Expense',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('summary.rentingCost', {
-        header: 'Costo de Renta',
+        header: 'Renting Cost',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('summary.fuelCost', {
-        header: 'Costo de Combustible',
+        header: 'Fuel Cost',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('summary.workCost', {
-        header: 'Costo de Trabajo',
+        header: 'Work Cost',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('summary.driverSalaries', {
-        header: 'Salarios de Conductores',
+        header: 'Driver Salaries',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('summary.otherSalaries', {
-        header: 'Otros Salarios',
+        header: 'Other Salaries',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
     columnHelper.accessor('summary.totalCost', {
-        header: 'Costo Total',
+        header: 'Total Cost',
         size: 120,
         Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
@@ -131,28 +127,28 @@ const SummaryCostTable = ({ data, isLoading }: { data: PaginatedOrderSummaryResu
         renderTopToolbarCustomActions: ({ table }) => (
             <Box sx={{ display: 'flex', gap: '16px', padding: '8px', flexWrap: 'wrap' }}>
                 <Button onClick={handleExportData} startIcon={<FileDownloadIcon />}>
-                    Exportar Todos los Datos
+                    Export all Data
                 </Button>
                 <Button
                     disabled={table.getPrePaginationRowModel().rows.length === 0}
                     onClick={() => handleExportRows(table.getPrePaginationRowModel().rows)}
                     startIcon={<FileDownloadIcon />}
                 >
-                    Exportar Todas las Filas
+                    Export all Rows
                 </Button>
                 <Button
                     disabled={table.getRowModel().rows.length === 0}
                     onClick={() => handleExportRows(table.getRowModel().rows)}
                     startIcon={<FileDownloadIcon />}
                 >
-                    Exportar Filas de la Página
+                    Export Rows on Page
                 </Button>
                 <Button
                     disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
                     onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
                     startIcon={<FileDownloadIcon />}
                 >
-                    Exportar Filas Seleccionadas
+                    Export Selected Rows
                 </Button>
             </Box>
         ),

@@ -8,6 +8,7 @@ export interface OrderSummary {
     date: string;
     state: string;
     income: number;
+    payStatus: number;
     summary: Summary;
 }
 
