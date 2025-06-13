@@ -44,6 +44,7 @@ const FinancialView = () => {
   const [loading, setLoading] = useState(true);
   const [page] = useState(0);
   const [rowCount, setRowCount] = useState(0);
+  console.log("rowCount", rowCount);
   const [error, setError] = useState<string | null>(null);
 
   // Semana y año seleccionados
