@@ -17,9 +17,9 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
             window.location.href = '/login';
             throw new Error('No hay token de autenticación');
         }
-
+        console.log(`Fetching summary cost for week ${week}, year ${year}, page ${pageNumber + 1}`);
         try {
-            const response = await fetch(`${this.baseUrl}/summary-list/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100`, {
+            const response = await fetch(`${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
