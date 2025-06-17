@@ -172,6 +172,37 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
 
       <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
 
+      {/* Nuevo Dropdown Warehouse */}
+      <li className={`relative ${activeDropdown === 2 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
+        <button
+          className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-300 
+          ease-in-out relative hover:bg-[#575b8a] hover:pl-10 text-lg"
+          onClick={() => toggleDropdown(2)}
+          disabled={isCollapsed}
+        >
+          <div className="flex items-center">
+            <span className="w-9 h-9 leading-9 text-center inline-block mr-4 rounded-sm text-lg">
+              <i className="fas fa-warehouse"></i>
+            </span>
+            {!isCollapsed && <span className="text-white text-lg">Warehouse</span>}
+          </div>
+          {!isCollapsed && (
+            <i
+              className={`fas text-lg transition-transform duration-300 ease-in-out 
+              ${activeDropdown === 2 ? 'fa-chevron-down' : 'fa-chevron-right'} text-white`}
+            ></i>
+          )}
+          <span className="relative left-0 top-0 w-1 h-full bg-[#6c63ff] transition-transform duration-300 
+            ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top"></span>
+        </button>
+        {!isCollapsed && activeDropdown === 2 && (
+          <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
+            <DropdownLink icon="fa-plus" text="Create Warehouse" to="/create-warehouse" />
+            <DropdownLink icon="fa-list" text="Warehouse List" to="/warehouse" />
+          </ul>
+        )}
+      </li>
+
       {/* Dropdown Settings */}
       <li className={`relative ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
         <button
