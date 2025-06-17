@@ -13,26 +13,28 @@ export interface WorkhousePerson {
   phone: string;
   address: string;
 }
-
+export interface Person {
+    email: string;
+    first_name: string;
+    last_name: string;
+    phone: number;
+    address: string;
+};
 export interface WorkhouseOrderData {
   key: string;
   key_ref: string;
   date: string;
-  distance: number | null;
-  expense: number | null;
-  income: number | null;
-  weight: number | null;
-  status: string;
-  payStatus: number | null;
-  state_usa: string | null;
-  person: WorkhousePerson;
-  job: number;
-  job_name: string;
-  evidence: string | null;
-  dispatch_ticket?: string | null;
-  dispatch_ticket_url?: string | null;
-  customer_factory: number;
-  customer_factory_name: string;
+  distance: number | undefined;
+  expense: number | undefined;
+  income: number | undefined;
+  weight: string;
+  status: string | undefined;
+  payStatus: number | undefined;
+  state_usa: string;
+  person: Person;
+  job: number |  undefined;
+  dispatch_ticket?: string | undefined;
+  customer_factory: number | undefined;
 }
 
 export interface WorkHouseResponseData {
