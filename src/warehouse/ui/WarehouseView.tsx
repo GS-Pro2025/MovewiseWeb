@@ -1,12 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState, useMemo } from "react";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress, Button } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef, type MRT_Row } from "material-react-table";
 import { fetchWorkhouseOrders, fetchOperatorsInOrder } from "../data/WarehouseRepository";
 import type { WorkhouseOrderData } from "../domain/WarehouseModel";
 import {OperatorAssigned} from "../domain/OperatorModels";
 import { enqueueSnackbar } from "notistack";
-import OperatorsTable from "../../Home/ui/operatorsTable"; // Ajusta la ruta si es necesario
+import OperatorsTable from "../../Home/ui/operatorsTable"; 
+import EditOrderDialog from "../../Home/ui/editOrderModal"; 
+import { parseWarehouseToUpdateOrder } from "../data/parseWarehouse";
+import { updateOrder } from "../../Home/data/repositoryOrders"; 
+import type { UpdateOrderData } from "../../Home/domain/ModelOrderUpdate";
 
 const PAGE_SIZE = 10;
 
@@ -17,6 +22,8 @@ const WarehouseView = () => {
   const [rowCount, setRowCount] = useState(0);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [operatorsByOrder, setOperatorsByOrder] = useState<Record<string, OperatorAssigned[]>>({}); // Nuevo estado
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -41,6 +48,29 @@ const WarehouseView = () => {
 
   const columns = useMemo<MRT_ColumnDef<WorkhouseOrderData>[]>(
     () => [
+      {
+        header: "Actions",
+        id: "actions",
+        size: 160,
+        headerProps: { style: { textAlign: 'center' } },
+        Cell: ({ row }) => (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              onClick={e => {
+                e.stopPropagation();
+                handleEditOrder(row.original);
+              }}
+              size="small"
+              color="primary"
+              startIcon={<EditIcon />}
+            >
+              Editar
+            </Button>
+          </Box>
+        ),
+        enableSorting: false,
+        enableColumnFilter: false,
+      },
       { accessorKey: "key_ref", header: "Reference", size: 120 },
       { accessorKey: "date", header: "Date", size: 120 },
       { accessorKey: "status", header: "Status", size: 100 },
@@ -69,11 +99,12 @@ const WarehouseView = () => {
       },
       { accessorKey: "income", header: "Income", size: 100 },
       { accessorKey: "expense", header: "Expense", size: 100 },
-      { accessorKey: "weight", header: "Weight", size: 100 },
-      { accessorKey: "distance", header: "Distance", size: 100 },
+      { accessorKey: "weight", header: "Weight(lb)", size: 100 },
+      { accessorKey: "distance", header: "Distance(mi)", size: 100 },
       { accessorKey: "job_name", header: "Job", size: 120 },
       { accessorKey: "customer_factory_name", header: "Customer Factory", size: 160 },
-      { accessorKey: "state_usa", header: "State", size: 80 },
+      { accessorKey: "state_usa", header: "Location", size: 80 },
+
     ],
     []
   );
@@ -150,6 +181,59 @@ const WarehouseView = () => {
       ) : null,
   });
 
+  // Cuando abres el modal, parsea a UpdateOrderData:
+  const handleEditOrder = (order: WorkhouseOrderData) => {
+    setOrderToEdit(parseWarehouseToUpdateOrder(order));
+    setEditDialogOpen(true);
+  };
+
+  // Cuando guardas la edición:
+  const handleSaveEdit = async (key: string, order: UpdateOrderData) => {
+    try {
+      const result = await updateOrder(key, order);
+      if (result.success) {
+        enqueueSnackbar('Order updated', { variant: 'success' });
+        // Refresca la tabla
+        fetchWorkhouseOrders(page, PAGE_SIZE)
+          .then((data) => {
+            setOrders(data.results);
+            setRowCount(data.count);
+          })
+          .catch((err) => {
+            console.error("Error reloading warehouse orders:", err);
+            enqueueSnackbar("Error reloading orders", { variant: "error" });
+          })
+          .finally(() => setLoading(false));
+      } else {
+        enqueueSnackbar(`Sorry there was an error updating the order: ${result.errorMessage}`, { variant: 'error' });
+      }
+    } catch (e) {
+      enqueueSnackbar('Sorry there was an error updating the order', { variant: 'error' });
+    }
+    setEditDialogOpen(false);
+    setOrderToEdit(null);
+  };
+
+  // Para manejar los cambios en el modal:
+  const handleChangeOrder = (field: keyof UpdateOrderData | `person.${string}`, value: unknown) => {
+    if (!orderToEdit) return;
+    if (field.startsWith('person.')) {
+      const personField = field.split('.')[1];
+      setOrderToEdit({
+        ...orderToEdit,
+        person: {
+          ...orderToEdit.person,
+          [personField]: value,
+        },
+      });
+    } else {
+      setOrderToEdit({
+        ...orderToEdit,
+        [field]: value,
+      });
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
@@ -165,6 +249,16 @@ const WarehouseView = () => {
       ) : (
         <MaterialReactTable table={table} />
       )}
+      <EditOrderDialog
+        open={editDialogOpen}
+        order={orderToEdit}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setOrderToEdit(null);
+        }}
+        onSave={(order) => handleSaveEdit(order.key, order)}
+        onChange={handleChangeOrder}
+      />
     </Box>
   );
 };
