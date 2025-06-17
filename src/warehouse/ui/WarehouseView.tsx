@@ -3,45 +3,61 @@ import { useEffect, useState, useMemo } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import { fetchWorkhouseOrders } from "../data/WarehouseRepository";
-import type { WorkhouseOrderData, WorkHouseResponse } from "../domain/WarehouseModel";
+import type { WorkhouseOrderData } from "../domain/WarehouseModel";
 import { enqueueSnackbar } from "notistack";
 
 const PAGE_SIZE = 10;
 
-const WarehouseView = () => {
-  const [orders, setOrders] = useState<WorkhouseOrderData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [rowCount, setRowCount] = useState(0);
-
+  const WarehouseView = () => {
+    const [orders, setOrders] = useState<WorkhouseOrderData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [rowCount, setRowCount] = useState(0);
   useEffect(() => {
-    const loadOrders = async () => {
-      setLoading(true);
-      try {
-        const response: WorkHouseResponse = await fetchWorkhouseOrders(page, PAGE_SIZE);
-        setOrders(response.results);
-        setRowCount(response.count);
-        if (response.count === 0) {
+    setLoading(true);
+    fetchWorkhouseOrders(page, PAGE_SIZE)
+      .then((data) => {
+        setOrders(data.results);
+        setRowCount(data.count);
+        if (data.count === 0) {
           enqueueSnackbar("No orders found", { variant: "info" });
         }
-      } catch (err) {
+      })
+      .catch((err) => {
+        console.error("Error loading warehouse orders:", err);
         enqueueSnackbar("Error loading orders", { variant: "error" });
         setOrders([]);
         setRowCount(0);
-      }
-      setLoading(false);
-    };
-    loadOrders();
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [page]);
 
   const columns = useMemo<MRT_ColumnDef<WorkhouseOrderData>[]>(
     () => [
-      { accessorKey: "key", header: "Key", size: 80 },
       { accessorKey: "key_ref", header: "Reference", size: 120 },
       { accessorKey: "date", header: "Date", size: 120 },
       { accessorKey: "status", header: "Status", size: 100 },
       { accessorKey: "payStatus", header: "Pay Status", size: 100,
-        Cell: ({ cell }) => cell.getValue<number>() === 1 ? "Paid" : "Unpaid"
+        Cell: ({ cell }) => {
+          const value = cell.getValue<number>();
+          return (
+            <span
+              style={{
+                color: value === 1 ? "#4caf50" : "#f44336",
+                padding: "4px 12px",
+                borderRadius: "16px",
+                fontWeight: 600,
+                display: "inline-block",
+                minWidth: 60,
+                textAlign: "center",
+              }}
+            >
+              {value === 1 ? "Paid" : "Unpaid"}
+            </span>
+          );
+        }
       },
       { accessorKey: "income", header: "Income", size: 100 },
       { accessorKey: "expense", header: "Expense", size: 100 },

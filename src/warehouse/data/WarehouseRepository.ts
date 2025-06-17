@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { WorkhouseCreationOrderData } from "../domain/WarehouseModel";
+import { WorkhouseCreationOrderData, WorkHouseResponse } from "../domain/WarehouseModel";
+import Cookies from "js-cookie"; // Asegúrate de tener esta dependencia
 
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 
 
 export const createWorkhouseOrder = async (orderData: WorkhouseCreationOrderData) => {
-    const token = localStorage.getItem('authToken');
+    const token = Cookies.get("authToken");
     if (!token) {
         window.location.href = '/login';
         throw new Error('No hay token de autenticación');
@@ -35,29 +36,41 @@ export const createWorkhouseOrder = async (orderData: WorkhouseCreationOrderData
 
 
 export const fetchWorkhouseOrders = async (page: number, pageSize: number) => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        window.location.href = '/login';
-        throw new Error('No hay token de autenticación');
+  const token = Cookies.get("authToken");
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/workhouse/?page=${page}&page_size=${pageSize}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
     }
 
-    try {
-        const response = await fetch(`${BASE_URL_API}/workhouse/?page=${page}&page_size=${pageSize}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.messDev || 'Error fetching workhouse orders');
-        }
-
-        return await response.json();
-    } catch (err: any) {
-        throw new Error(err.message || 'An unexpected error occurred');
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { messDev: 'Respuesta no es JSON' };
+      }
+      throw new Error(errorData.messDev || 'Error fetching workhouse orders');
     }
-}
 
+    // Ajuste: extrae los datos de response.data
+    const apiResponse: WorkHouseResponse = await response.json();
+    return apiResponse.data;
+  } catch (err: any) {
+    throw new Error(err.message || 'An unexpected error occurred');
+  }
+};
