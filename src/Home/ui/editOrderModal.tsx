@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Autocomplete, CircularProgress } from '@mui/material';
 import type { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import { fetchCustomerFactories, fetchJobs } from '../data/repositoryOrders';
@@ -6,6 +7,8 @@ import { JobModel } from '../domain/JobModel';
 import { CustomerFactoryModel } from '../domain/CustomerFactoryModel';
 import 'react-phone-input-2/lib/material.css';
 import PhoneInput from 'react-phone-input-2';
+import { Country, State } from '../../createOrder/models/LocationModels';
+import { fetchCities, fetchCountries, fetchStates } from '../../createOrder/repository/repositoryLocation';
 
 interface EditOrderDialogProps {
   open: boolean;
@@ -24,6 +27,18 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
   const [dispatchTicketFile, setDispatchTicketFile] = useState<File | null>(null);
   const [dispatchTicketPreview, setDispatchTicketPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [country, setCountry] = useState<Country | null>(null);
+  const [state, setState] = useState<State | null>(null);
+  const [city, setCity] = useState<string | null>(null);
+
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [statesList, setStatesList] = useState<State[]>([]);
+  const [citiesList, setCitiesList] = useState<string[]>([]);
+
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStatesList, setLoadingStatesList] = useState(false);
+  const [loadingCitiesList, setLoadingCitiesList] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -46,7 +61,55 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
       setDispatchTicketPreview(null);
     }
   }, [open, order, dispatchTicketFile]);
+  // Cargar países al montar
+    useEffect(() => {
+      setLoadingCountries(true);
+      fetchCountries()
+        .then(setCountries)
+        .finally(() => setLoadingCountries(false));
+      console.log('Countries loaded:', countries);
+    }, [countries]);
+  
+    // Cargar estados cuando cambia el país
+    useEffect(() => {
+      if (country) {
+        setLoadingStatesList(true);
+        fetchStates(country.name)
+          .then(setStatesList)
+          .finally(() => setLoadingStatesList(false));
+        setState(null);
+        setCity(null);
+        setCitiesList([]);
+      }
+    }, [country]);
+  
+    // Cargar ciudades cuando cambia el estado
+    useEffect(() => {
+      if (country && state) {
+        setLoadingCitiesList(true);
+        fetchCities(country.name, state.name)
+          .then(setCitiesList)
+          .finally(() => setLoadingCitiesList(false));
+        setCity(null);
+      }
+    }, [country, state]);
+  // Actualizar state_usa cuando cambia la selección
+  const handleChange = useCallback((field: keyof UpdateOrderData, value: any) => {
+    onChange(field, value);
+  }, [onChange]);
 
+  const prevLocation = useRef<string>("");
+
+  useEffect(() => {
+    if (country && state && city) {
+      const newLocation = `${country.name}, ${state.name}, ${city}`;
+      if (prevLocation.current !== newLocation) {
+        prevLocation.current = newLocation;
+        handleChange('state_usa', newLocation);
+      }
+    }
+  }, [country, state, city, handleChange]);
+  
   const handleDispatchTicketChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setDispatchTicketFile(file);
@@ -121,6 +184,85 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
             value={order.weight}
             onChange={e => onChange('weight', e.target.value)}
           />
+          {/** location */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, my: 2 }}>
+            <Autocomplete
+              options={countries}
+              getOptionLabel={option => option.name}
+              loading={loadingCountries}
+              value={country}
+              onChange={(_, value) => setCountry(value)}
+              renderInput={params => (
+                <TextField
+                  {...params}
+                  label="Country"
+                  fullWidth
+                  required
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingCountries ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+            />
+            {country && (
+              <Autocomplete
+                options={statesList}
+                getOptionLabel={option => option.name}
+                loading={loadingStatesList}
+                value={state}
+                onChange={(_, value) => setState(value)}
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    label="State/Province"
+                    fullWidth
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingStatesList ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            )}
+            {country && state && (
+              <Autocomplete
+                options={citiesList}
+                getOptionLabel={option => option}
+                loading={loadingCitiesList}
+                value={city}
+                onChange={(_, value) => setCity(value)}
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    label="City"
+                    fullWidth
+                    required
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {loadingCitiesList ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
+            )}
+          </Box>
           {/* Campos de la persona */}
           <TextField
             label="First Name"
@@ -262,4 +404,8 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
     </Dialog>
   );
 };
+
+
 export default EditOrderDialog;
+
+
