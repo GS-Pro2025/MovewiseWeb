@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CustomerFactoryModel } from "../domain/CustomerFactoryModel";
+import { OperatorAssigned } from "../domain/OperatorModels";
 import { WorkhouseCreationOrderData, WorkHouseResponse } from "../domain/WarehouseModel";
 import Cookies from "js-cookie"; // Asegúrate de tener esta dependencia
 
@@ -104,5 +105,35 @@ export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> 
     throw new Error(`Error fetching customer factories: ${response.statusText}`);
   }
 
+  return await response.json();
+}
+
+export async function fetchOperatorsInOrder(orderKey: string): Promise<OperatorAssigned[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  const url = `${BASE_URL_API}/assigns/order/${orderKey}/operators/`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.status === 403) {
+    Cookies.remove('authToken');
+    window.location.href = '/login';
+    throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+  }
+
+  if (!response.ok) {
+    throw new Error(`Error fetching operators in order: ${response.statusText}`);
+  }
+
+  // Se espera que el backend retorne un array de operadores asignados
   return await response.json();
 }
