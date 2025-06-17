@@ -60,7 +60,8 @@ const AddOperatorsToOrder: React.FC = () => {
 
   const handleOk = () => {
     enqueueSnackbar('Operación exitosa', { variant: 'success' });
-    navigate('/');
+    //navega hacia atras
+    navigate(-1);
   };
 
   const handleOpenTruckModal = (operator: OperatorAssigned) => {
