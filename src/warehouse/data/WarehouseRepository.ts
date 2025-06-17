@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { CustomerFactoryModel } from "../domain/CustomerFactoryModel";
 import { WorkhouseCreationOrderData, WorkHouseResponse } from "../domain/WarehouseModel";
 import Cookies from "js-cookie"; // Asegúrate de tener esta dependencia
 
@@ -74,3 +75,34 @@ export const fetchWorkhouseOrders = async (page: number, pageSize: number) => {
     throw new Error(err.message || 'An unexpected error occurred');
   }
 };
+
+
+
+export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  const url = `${BASE_URL_API}/customer-factories/`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (response.status === 403) {
+    Cookies.remove('authToken');
+    window.location.href = '/login';
+    throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+  }
+
+  if (!response.ok) {
+    throw new Error(`Error fetching customer factories: ${response.statusText}`);
+  }
+
+  return await response.json();
+}

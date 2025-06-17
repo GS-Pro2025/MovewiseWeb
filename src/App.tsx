@@ -14,6 +14,7 @@ import AddOperatorsToOrder from './addOperatorToOrder/ui/addOperatorsToOrder';
 import CreateOrder from './createOrder/ui/CreateOrder';
 import FinancialView from './financials/ui/FinancialView';
 import WarehouseView from './warehouse/ui/WarehouseView';
+import CreateWarehouseView from './warehouse/ui/CreateWarehouseView';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +69,7 @@ const App = () => {
           <Route path="create-daily" element={<CreateOrder/>} />
           <Route path="/financialsView" element={<FinancialView/>} />
           <Route path="/warehouse" element={<WarehouseView/>}/>
+          <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
         </Route>
 
         {/* Ruta por defecto */}

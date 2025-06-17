@@ -197,7 +197,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         </button>
         {!isCollapsed && activeDropdown === 2 && (
           <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
-            <DropdownLink icon="fa-plus" text="Create Warehouse" to="/warehouse/create" />
+            <DropdownLink icon="fa-plus" text="Create Warehouse" to="/create-warehouse" />
             <DropdownLink icon="fa-list" text="Warehouse List" to="/warehouse" />
           </ul>
         )}
