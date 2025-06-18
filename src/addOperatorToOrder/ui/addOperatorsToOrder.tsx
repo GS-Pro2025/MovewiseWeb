@@ -84,7 +84,7 @@ const AddOperatorsToOrder: React.FC = () => {
   };
 
   const fetchAvailable = async (page = 1) => {
-    const pageSize = 50; 
+    const pageSize = 200; 
     const data = await fetchAvailableOperators(page, pageSize);
     return data;
   };
