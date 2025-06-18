@@ -60,7 +60,8 @@ const AddOperatorsToOrder: React.FC = () => {
 
   const handleOk = () => {
     enqueueSnackbar('Operación exitosa', { variant: 'success' });
-    navigate('/');
+    //navega hacia atras
+    navigate(-1);
   };
 
   const handleOpenTruckModal = (operator: OperatorAssigned) => {
@@ -83,7 +84,7 @@ const AddOperatorsToOrder: React.FC = () => {
   };
 
   const fetchAvailable = async (page = 1) => {
-    const pageSize = 50; 
+    const pageSize = 200; 
     const data = await fetchAvailableOperators(page, pageSize);
     return data;
   };

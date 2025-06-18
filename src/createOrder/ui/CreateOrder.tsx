@@ -93,7 +93,7 @@ const CreateOrder: React.FC = () => {
     console.log('Countries loaded:', countries);
     console.log('States loaded:', states);
     console.log('Loading states:', loadingStates);
-  }, []);
+  }, [countries, loadingStates, states]);
 
   // Cargar estados cuando cambia el país
   useEffect(() => {
