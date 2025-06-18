@@ -65,11 +65,6 @@ const CreateWarehouseView = () => {
         reader.readAsDataURL(dispatchTicket);
       });
     }
-    if (!dispatchTicketString) {
-      enqueueSnackbar('Please upload a dispatch ticket image.', { variant: 'error' });
-      setLoading(false);
-      return;
-    }
     if (!selectedFactory) {
       enqueueSnackbar('Please select a customer factory.', { variant: 'error' });
       setLoading(false);
