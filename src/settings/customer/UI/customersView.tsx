@@ -12,14 +12,13 @@ import {
   InputAdornment,
   Collapse,
   CircularProgress, 
-  Alert, 
-  Snackbar, 
+  Alert
 } from '@mui/material';
 import { AddCircleOutline, DeleteOutline, SearchOutlined } from '@mui/icons-material';
 import { TransitionGroup } from 'react-transition-group';
 import { CustomerFactoriesRepository } from '../data/CompanyRepository';
 import { CustomerModel } from '../domain/companyModel';
-
+import { useSnackbar } from 'notistack'; // <-- Importa useSnackbar
 
 const customerFactoriesRepository = new CustomerFactoriesRepository();
 
@@ -29,9 +28,8 @@ const CustomersView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true); 
   const [error, setError] = useState<string | null>(null); 
-  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+
+  const { enqueueSnackbar } = useSnackbar(); // <-- Hook para notificaciones
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -47,16 +45,13 @@ const CustomersView: React.FC = () => {
     }
   };
 
-
   useEffect(() => {
     fetchCompanies();
   }, []); 
 
   const handleAddCompany = async () => {
     if (newCompanyName.trim() === '') {
-      setSnackbarMessage('Company name cannot be empty.');
-      setSnackbarSeverity('warning');
-      setSnackbarOpen(true);
+      enqueueSnackbar('Company name cannot be empty.', { variant: 'warning' });
       return;
     }
 
@@ -66,15 +61,11 @@ const CustomersView: React.FC = () => {
       const addedCompany = await customerFactoriesRepository.create(newCompanyName.trim());
       setCompanies((prev) => [...prev, addedCompany]); 
       setNewCompanyName('');
-      setSnackbarMessage('Company added successfully.');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+      enqueueSnackbar('Company added successfully.', { variant: 'success' });
     } catch (err) {
       console.error('Error adding company:', err);
       setError(err instanceof Error ? err.message : 'Unknown error adding company.');
-      setSnackbarMessage('Error adding company.');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
+      enqueueSnackbar('Error adding company.', { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -87,15 +78,11 @@ const CustomersView: React.FC = () => {
         try {
             await customerFactoriesRepository.delete(id);
             setCompanies((prev) => prev.filter((company) => company.id_factory !== id)); 
-            setSnackbarMessage('Company deleted successfully.');
-            setSnackbarSeverity('success');
-            setSnackbarOpen(true);
+            enqueueSnackbar('Company deleted successfully.', { variant: 'success' });
         } catch (err) {
             console.error('Error deleting company:', err);
             setError(err instanceof Error ? err.message : 'Unknown error deleting company.');
-            setSnackbarMessage('Error deleting company.');
-            setSnackbarSeverity('error');
-            setSnackbarOpen(true);
+            enqueueSnackbar('Error deleting company.', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -105,13 +92,6 @@ const CustomersView: React.FC = () => {
   const filteredCompanies = companies.filter((company) =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
 
   return (
     <Box
@@ -298,17 +278,6 @@ const CustomersView: React.FC = () => {
         )}
       </Paper>
 
-      {/* Snackbar for temporary notifications */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 };
