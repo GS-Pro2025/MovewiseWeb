@@ -24,7 +24,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DeleteOrderDialog from './DeleteOrderDialog';
+import DeleteOrderDialog from './deleteOrderDialog';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
