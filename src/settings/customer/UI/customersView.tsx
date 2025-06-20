@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { AddCircleOutline, DeleteOutline, SearchOutlined } from '@mui/icons-material';
 import { TransitionGroup } from 'react-transition-group';
-import { CustomerFactoriesRepository } from '../data/companyRepository';
+import { CustomerFactoriesRepository } from '../data/CompanyRepository';
 import { CustomerModel } from '../domain/companyModel';
 
 
@@ -106,7 +106,7 @@ const CustomersView: React.FC = () => {
     company.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSnackbarClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
       return;
     }
