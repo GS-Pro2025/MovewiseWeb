@@ -15,6 +15,7 @@ import CreateOrder from './createOrder/ui/CreateOrder';
 import FinancialView from './financials/ui/FinancialView';
 import WarehouseView from './warehouse/ui/WarehouseView';
 import CreateWarehouseView from './warehouse/ui/CreateWarehouseView';
+import CustomersView from './settings/customer/UI/customersView';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +71,7 @@ const App = () => {
           <Route path="/financialsView" element={<FinancialView/>} />
           <Route path="/warehouse" element={<WarehouseView/>}/>
           <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
+          <Route path="/customers" element={<CustomersView />} />
         </Route>
 
         {/* Ruta por defecto */}

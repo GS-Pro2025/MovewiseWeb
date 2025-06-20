@@ -10,7 +10,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [message, setMessage] = useState<string>('');
 
-
+  console.log('env:', import.meta.env.VITE_URL_BASE);
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const result = await login(email, password);
