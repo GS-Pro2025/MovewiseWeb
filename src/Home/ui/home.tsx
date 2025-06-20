@@ -23,7 +23,6 @@ import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
-import PaymentIcon from '@mui/icons-material/AttachMoney';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOrderDialog from './DeleteOrderDialog';
 
