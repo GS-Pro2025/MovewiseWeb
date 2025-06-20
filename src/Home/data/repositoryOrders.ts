@@ -1,9 +1,5 @@
-<<<<<<< Updated upstream
 
-
-=======
 /* eslint-disable @typescript-eslint/no-explicit-any */
->>>>>>> Stashed changes
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import Cookies from 'js-cookie';
 import { OrderState } from '../domain/OrderState';
