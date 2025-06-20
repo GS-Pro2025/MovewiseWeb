@@ -17,10 +17,6 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
-interface DropdownItemProps {
-  text: string;
-}
-
 interface MainContentProps {
   isCollapsed: boolean;
 }
@@ -228,9 +224,10 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         </button>
         {!isCollapsed && activeDropdown === 0 && (
           <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
-            <DropdownItem text="General" />
-            <DropdownItem text="Privacy" />
-            <DropdownItem text="Notifications" />
+            <DropdownLink icon="fa-user-cog" text="Create Admin" to="/create-admin" />
+            <DropdownLink icon="fa-cog" text="General" to="/settings/general" />
+            <DropdownLink icon="fa-user-shield" text="Privacy" to="/settings/privacy" />
+            <DropdownLink icon="fa-bell" text="Notifications" to="/settings/notifications" />
           </ul>
         )}
       </li>
@@ -269,20 +266,6 @@ const NavItem: FC<NavItemProps> = ({ icon, text, isCollapsed, to }) => {
         <span className="absolute left-0 top-0 w-1 h-full bg-white transition-transform duration-300 
           ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top"></span>
       </Link>
-    </li>
-  );
-};
-
-const DropdownItem: FC<DropdownItemProps> = ({ text }) => {
-  return (
-    <li>
-      <a
-        href="#"
-        className="block py-3 px-6 pl-14 no-underline transition-all duration-300 
-        ease-in-out hover:bg-[#051537] hover:pl-16 text-lg !text-white"
-      >
-        {text}
-      </a>
     </li>
   );
 };
