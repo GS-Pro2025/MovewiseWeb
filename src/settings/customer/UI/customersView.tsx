@@ -18,7 +18,7 @@ import { AddCircleOutline, DeleteOutline, SearchOutlined } from '@mui/icons-mate
 import { TransitionGroup } from 'react-transition-group';
 import { CustomerFactoriesRepository } from '../data/CompanyRepository';
 import { CustomerModel } from '../domain/companyModel';
-import { useSnackbar } from 'notistack'; // <-- Importa useSnackbar
+import { useSnackbar } from 'notistack'; 
 
 const customerFactoriesRepository = new CustomerFactoriesRepository();
 
@@ -29,7 +29,7 @@ const CustomersView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true); 
   const [error, setError] = useState<string | null>(null); 
 
-  const { enqueueSnackbar } = useSnackbar(); // <-- Hook para notificaciones
+  const { enqueueSnackbar } = useSnackbar();
 
   const fetchCompanies = async () => {
     setLoading(true);

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import Cookies from 'js-cookie';
 import { OrderState } from '../domain/OrderState';
@@ -34,7 +34,6 @@ export async function updateOrder(
     }
 
     return { success: true, data };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     return {
       success: false,
@@ -162,7 +161,6 @@ export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> 
       }
 
       return { success: true, data };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       return {
         success: false,
