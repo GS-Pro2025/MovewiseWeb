@@ -376,7 +376,12 @@ const Example = () => {
         currentYear,
         pagination.pageSize
       );const mappedData = response.results.map((item) => {
-        const date = new Date(item.date);
+        const dateParts = item.date.split('-');
+        const date = new Date(
+          Number(dateParts[0]),
+          Number(dateParts[1]) - 1,
+          Number(dateParts[2])
+        );
         return {
           id: item.key,
           status: item.status.toLowerCase(),
