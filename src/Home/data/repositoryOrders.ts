@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
@@ -169,3 +170,39 @@ export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> 
       };
     }
 }
+
+
+export interface DeleteOrderResponse {
+  message: string;
+}
+
+export const deleteOrder = async (key: string): Promise<{ success: boolean; data?: DeleteOrderResponse; errorMessage?: string }> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/orders/${key}/deleteWithStatus/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, errorMessage: data.messDev || 'Error deleting the order' };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
+  }
+};

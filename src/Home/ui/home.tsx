@@ -10,7 +10,7 @@ import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
-import { finishOrderRepo, updateOrder } from '../data/repositoryOrders';
+import { finishOrderRepo, updateOrder, deleteOrder } from '../data/repositoryOrders';
 import { useSnackbar } from 'notistack';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -24,6 +24,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
 import PaymentIcon from '@mui/icons-material/AttachMoney';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteOrderDialog from './DeleteOrderDialog';
+
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
   key_ref: item.key_ref,
@@ -149,6 +152,8 @@ const Example = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState<TableData | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<TableData | null>(null);
   const columns = [
     {
       header: 'Actions',
@@ -157,33 +162,9 @@ const Example = () => {
       headerProps: { style: { textAlign: 'center' } },
       Cell: ({ row }: { row: MRT_Row<TableData> }) => {
         const isFinished = row.original.status === 'finished';
-        const isPaid = row.original.payStatus === 1;
+        //const isPaid = row.original.payStatus === 1;
         return (
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditOrder(row.original);
-              }}
-              size="small"
-              color="primary"
-              startIcon={<EditIcon />}
-            >
-              Editar
-            </Button>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                setPaymentOrder(row.original);
-                setPaymentDialogOpen(true);
-              }}
-              size="small"
-              color="success"
-              startIcon={<PaymentIcon />}
-              disabled={isPaid}
-            >
-              Pay
-            </Button>
             <IconButton
               color={isFinished ? 'default' : 'success'}
               size="small"
@@ -199,6 +180,28 @@ const Example = () => {
               ) : (
                 <CheckIcon />
               )}
+            </IconButton>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditOrder(row.original);
+              }}
+              size="small"
+              color="primary"
+              startIcon={<EditIcon />}
+            >
+              Editar
+            </Button>
+            <IconButton
+              color="error"
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteOrderClick(row.original);
+              }}
+              title="Delete Order"
+            >
+              <DeleteIcon />
             </IconButton>
           </Box>
         );
@@ -527,6 +530,24 @@ const Example = () => {
     }
   };
 
+  const handleDeleteOrderClick = (order: TableData) => {
+    setOrderToDelete(order);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    const result = await deleteOrder(orderToDelete.id);
+    if (result.success) {
+      enqueueSnackbar('Order deleted', { variant: 'success' });
+      loadData();
+    } else {
+      enqueueSnackbar(result.errorMessage || 'Error deleting order', { variant: 'error' });
+    }
+    setDeleteDialogOpen(false);
+    setOrderToDelete(null);
+  };
+
   const table = useMaterialReactTable({
     columns,
     data: filteredData,
@@ -636,6 +657,16 @@ const Example = () => {
         income={paymentOrder?.income ?? 0}
         onClose={() => setPaymentDialogOpen(false)}
         onConfirm={handleConfirmPayment}
+      />
+      <DeleteOrderDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setOrderToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteOrder}
+        orderRef={orderToDelete?.key_ref}
+        orderDate={orderToDelete?.dateReference}
       />
     </>
   );
