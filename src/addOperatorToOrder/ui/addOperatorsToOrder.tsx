@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -110,6 +109,7 @@ const AddOperatorsToOrder: React.FC = () => {
         setLoading(false);
       } catch (error) {
         enqueueSnackbar('Error al cargar operadores', { variant: 'error' });
+        console.error('Error loading operators:', error);
         setLoading(false);
       }
     };
@@ -143,6 +143,7 @@ const handleAssign = async (operator: OperatorAvailable) => {
     setAssignedOperators(assigned);
     setAvailableOperators(filteredAvailable);
   } catch (error) {
+    console.error('Error assigning operator:', error);
     enqueueSnackbar('Error al asignar operador', { variant: 'error' });
   }
 };
@@ -160,6 +161,7 @@ const handleChangeRole = async (operator: OperatorAssigned, newRole: string) => 
     enqueueSnackbar('Rol actualizado', { variant: 'success' });
     // Si tienes un endpoint, llama aquí y refresca la lista después.
   } catch (error) {
+    console.error('Error updating role:', error);
     enqueueSnackbar('Error al actualizar el rol', { variant: 'error' });
   }
 };
@@ -177,6 +179,7 @@ const handleUnassign = async (operator: OperatorAssigned) => {
     setAssignedOperators(assigned);
     setAvailableOperators(filteredAvailable);
   } catch (error) {
+    console.error('Error unassigning operator:', error);
     enqueueSnackbar('Error al desasignar operador', { variant: 'error' });
   }
 };
