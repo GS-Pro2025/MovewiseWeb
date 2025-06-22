@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import Cookies from 'js-cookie';
 import { OrderState } from '../domain/OrderState';
 import { CustomerFactoryModel } from '../domain/CustomerFactoryModel';
+import { OrderCountPerDayResponse } from '../domain/OrderCount';
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 export async function updateOrder(
@@ -204,3 +203,38 @@ export const deleteOrder = async (key: string): Promise<{ success: boolean; data
     };
   }
 };
+
+
+export async function fetchOrdersCountPerDay(
+  year: number,
+  month: number
+): Promise<{ success: boolean; data?: OrderCountPerDayResponse; errorMessage?: string }> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/orders-count-orders-per-day/${year}/${month}/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, errorMessage: data.messDev || 'Error fetching orders count per day' };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
+  }
+}
