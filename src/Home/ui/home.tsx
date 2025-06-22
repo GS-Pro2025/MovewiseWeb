@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   MaterialReactTable,
@@ -378,8 +377,9 @@ const Example = () => {
       setFinishImage(null);
       setSelectedOrderId(null);
       loadData(); // refresca la tabla
-    } catch (e) {
+    } catch (error) {
       enqueueSnackbar('Sorry there was an error finishing the order', { variant: 'error' });
+      console.error('Error finishing order:', error);
     }
     setFinishLoading(false);
   };
