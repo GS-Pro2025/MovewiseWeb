@@ -662,17 +662,18 @@ const Example = () => {
       ) : null,
       });
 
-
   return (
     <>
       <MaterialReactTable table={table} />
-      <EditOrderDialog
-        open={editModalOpen}
-        order={orderToEdit}
-        onClose={handleCloseEditModal}
-        onSave={(order) => handleSaveEdit(order.key, order)}
-        onChange={handleChangeOrder}
-      />
+      {editModalOpen && (
+        <EditOrderDialog
+          open={editModalOpen}
+          order={orderToEdit}
+          onClose={handleCloseEditModal}
+          onSave={(order) => handleSaveEdit(order.key, order)}
+          onChange={handleChangeOrder}
+        />
+      )}
       <FinishOrderDialog
         open={finishModalOpen}
         loading={finishLoading}
