@@ -92,9 +92,9 @@ const OrdersCalendarDialog: React.FC<OrdersCalendarDialogProps> = ({
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Handler para click en día (lo dejas en handlep)
-  const handleDayClick = () => {
+ // const handleDayClick = () => {
     // TODO: Implementar lógica para manejar el click en un día
-  };
+  //};
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -137,7 +137,7 @@ const OrdersCalendarDialog: React.FC<OrdersCalendarDialogProps> = ({
                   <Button
                     key={dateStr}
                     variant="contained"
-                    onClick={() => handleDayClick()}
+                    onClick={() => { }}
                     sx={{
                       backgroundColor: getDayColor(orderCount),
                       color: orderCount > 4 ? "#fff" : "#222",
