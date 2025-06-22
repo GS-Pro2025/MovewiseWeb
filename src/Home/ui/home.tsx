@@ -6,7 +6,7 @@ import {
   type MRT_Row,
   createMRTColumnHelper,
 } from 'material-react-table';
-import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
+import { Box, Button, IconButton, TextField, Typography, Select, MenuItem } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
@@ -153,6 +153,19 @@ const Example = () => {
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<TableData | null>(null);
+
+  const [weekdayFilter, setWeekdayFilter] = useState<string>('');
+
+  const weekDays = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+
   const columns = [
     {
       header: 'Actions',
@@ -429,8 +442,12 @@ const Example = () => {
   }, [loadData]);
 
   useEffect(() => {
-    setFilteredData(data.filter((item) => item.week === week));
-  }, [data, week]);
+    let filtered = data.filter((item) => item.week === week);
+    if (weekdayFilter) {
+      filtered = filtered.filter((item) => item.weekday === weekdayFilter);
+    }
+    setFilteredData(filtered);
+  }, [data, week, weekdayFilter]);
 
   const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newWeek = parseInt(event.target.value, 10);
@@ -579,6 +596,20 @@ const Example = () => {
           inputProps={{ min: 1, max: 53 }}
           size="small"
         />
+        <Select
+          value={weekdayFilter}
+          onChange={(e) => setWeekdayFilter(e.target.value)}
+          displayEmpty
+          size="small"
+          sx={{ minWidth: 140 }}
+        >
+          <MenuItem value="">All Days</MenuItem>
+          {weekDays.map((day) => (
+            <MenuItem key={day} value={day}>
+              {day}
+            </MenuItem>
+          ))}
+        </Select>
         <Typography variant="body1" sx={{ alignSelf: 'center' }}>
           Period: {weekRange.start} → {weekRange.end}
         </Typography>
