@@ -225,6 +225,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         {!isCollapsed && activeDropdown === 0 && (
           <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
             <DropdownLink icon="fa-building" text="Customers" to="/customers" />
+            <DropdownLink icon="fa-briefcase" text="Jobs & Tools" to="/jobs-tools" />
             <DropdownLink icon="fa-user-cog" text="Create Admin" to="/create-admin" />
             <DropdownLink icon="fa-cog" text="General" to="/settings/general" />
             <DropdownLink icon="fa-user-shield" text="Privacy" to="/settings/privacy" />
