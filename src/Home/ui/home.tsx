@@ -25,6 +25,8 @@ import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOrderDialog from './deleteOrderDialog';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CalendarDialog from './calendarDialog';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -155,6 +157,7 @@ const Example = () => {
   const [orderToDelete, setOrderToDelete] = useState<TableData | null>(null);
 
   const [weekdayFilter, setWeekdayFilter] = useState<string>('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const weekDays = [
     'Sunday',
@@ -610,6 +613,13 @@ const Example = () => {
             </MenuItem>
           ))}
         </Select>
+        <Button
+          variant="outlined"
+          startIcon={<CalendarMonthIcon />}
+          onClick={() => setCalendarOpen(true)}
+        >
+          Calendar View
+        </Button>
         <Typography variant="body1" sx={{ alignSelf: 'center' }}>
           Period: {weekRange.start} → {weekRange.end}
         </Typography>
@@ -655,7 +665,7 @@ const Example = () => {
           }}
         >
           <OperatorsTable 
-            operators={row.original.operators || []} 
+            operators={row.original.operators || []}
             orderKey={row.original.id} 
           />
         </Box>
@@ -698,6 +708,10 @@ const Example = () => {
         onConfirm={handleConfirmDeleteOrder}
         orderRef={orderToDelete?.key_ref}
         orderDate={orderToDelete?.dateReference}
+      />
+      <CalendarDialog
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
       />
     </>
   );
