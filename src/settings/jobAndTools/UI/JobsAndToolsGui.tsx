@@ -172,7 +172,7 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
         setToolToDelete(null);
     };
 
-    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
         setCurrentPage(value);
     };
 
