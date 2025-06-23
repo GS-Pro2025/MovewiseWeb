@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import Cookies from 'js-cookie';
 
 const API_URL = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -64,6 +63,7 @@ export const isAuthenticated = (): boolean => {
         return false;
       }
     } catch (jwtError) {
+      console.warn('Token no es un JWT válido:', jwtError);
       // Si no es un JWT válido, pero existe el token, mantenerlo
       console.warn('Token no es un JWT válido, pero se mantiene');
     }

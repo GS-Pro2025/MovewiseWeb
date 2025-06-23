@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useState, useMemo } from "react";
 import { Box, Typography, CircularProgress, Button } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -119,6 +118,7 @@ const WarehouseView = () => {
         const assignedOperators = await fetchOperatorsInOrder(orderKey);
         setOperatorsByOrder((prev) => ({ ...prev, [orderKey]: assignedOperators }));
       } catch (err) {
+        console.error("Error loading operators for order:", err);
         enqueueSnackbar("Error loading operators for order", { variant: "error" });
       }
     }
@@ -208,6 +208,7 @@ const WarehouseView = () => {
         enqueueSnackbar(`Sorry there was an error updating the order: ${result.errorMessage}`, { variant: 'error' });
       }
     } catch (e) {
+      console.error("Error updating order:", e);
       enqueueSnackbar('Sorry there was an error updating the order', { variant: 'error' });
     }
     setEditDialogOpen(false);
