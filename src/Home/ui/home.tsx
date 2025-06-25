@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   MaterialReactTable,
@@ -366,6 +367,31 @@ const Example = () => {
     }
   };
 
+  // Mapea TableData a CreateOrderModel para continuar orden
+  const mapTableDataToCreateOrderModel = (order: TableData): any => ({
+    date: (() => {
+      const originalDate = new Date(order.dateReference);
+      const nextDay = new Date(originalDate);
+      nextDay.setDate(originalDate.getDate() + 1);
+      return nextDay.toISOString().split('T')[0];
+    })(),
+    key_ref: order.key_ref,
+    address: order.city || '',
+    state_usa: order.state || '',
+    status: 'Pending',
+    paystatus: 0,
+    person: {
+      first_name: order.firstName || '',
+      last_name: order.lastName || '',
+      address: order.city || '',
+      email: order.email || '',
+      phone: order.phone || '',
+    },
+    weight: order.weight || 0,
+    job: order.job || 0,
+    customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
+  });
+  
   const handleConfirmPayment = async (expense: number, income: number) => {
     if (!expense) return;
     if (!paymentOrder) return;
@@ -599,19 +625,9 @@ const Example = () => {
     setOrderToDelete(null);
   };
 
-  // Nueva función para continuar la orden
+  // Continuar la orden
   const handleContinueOrder = (order: TableData) => {
-    console.log('Continuing order:', order);
-    const originalDate = new Date(order.dateReference);
-    const nextDay = new Date(originalDate);
-    nextDay.setDate(originalDate.getDate() + 1);
-
-    // Prepara los datos para el formulario de crear orden
-    const orderData = {
-      ...order,
-      date: nextDay.toISOString().split('T')[0],
-    };
-
+    const orderData = mapTableDataToCreateOrderModel(order);
     navigate('/create-daily', { state: { orderToContinue: orderData } });
   };
 

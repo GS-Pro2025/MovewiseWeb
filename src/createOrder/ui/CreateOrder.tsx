@@ -50,8 +50,8 @@ const CreateOrder: React.FC = () => {
       ? {
           ...initialOrder,
           ...continuedOrder,
-          date: continuedOrder.date, // ya viene adelantada
-          key_ref: '', // limpia referencia si lo deseas
+          date: continuedOrder.date, 
+          key_ref: continuedOrder.key_ref,
           status: 'Pending',
           paystatus: 0,
         }
