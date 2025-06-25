@@ -30,6 +30,8 @@ import { getRegisteredLocations } from '../data/repositoryOrders';
 
 import Autocomplete from '@mui/material/Autocomplete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useNavigate } from 'react-router-dom'; 
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -42,7 +44,7 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   status: item.status,
   payStatus: item.payStatus,
   state_usa: item.state,
-  customer_factory: typeof item.customer_factory === 'number' ? item.customer_factory : 0, // Ajusta si tienes el id
+  customer_factory: typeof item.customer_factory === 'number' ? item.customer_factory : 0,
   person: {
     email: item.email, 
     first_name: item.firstName,
@@ -175,17 +177,30 @@ const Example = () => {
     'Saturday',
   ];
 
+  const navigate = useNavigate();
+
   const columns = [
     {
       header: 'Actions',
       id: 'actions',
-      size: 160,
+      size: 200,
       headerProps: { style: { textAlign: 'center' } },
       Cell: ({ row }: { row: MRT_Row<TableData> }) => {
         const isFinished = row.original.status === 'finished';
-        //const isPaid = row.original.payStatus === 1;
         return (
           <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Botón continuar orden */}
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                handleContinueOrder(row.original);
+              }}
+              title="Continue Order"
+            >
+              <ContentCopyIcon />
+            </IconButton>
             <IconButton
               color={isFinished ? 'default' : 'success'}
               size="small"
@@ -350,6 +365,31 @@ const Example = () => {
       throw error;
     }
   };
+
+  // Mapea TableData a CreateOrderModel para continuar orden
+  const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
+    date: (() => {
+      const originalDate = new Date(order.dateReference);
+      const nextDay = new Date(originalDate);
+      nextDay.setDate(originalDate.getDate() + 1);
+      return nextDay.toISOString().split('T')[0];
+    })(),
+    key_ref: order.key_ref,
+    address: order.city || '',
+    state_usa: order.state || '',
+    status: 'Pending',
+    paystatus: 0,
+    person: {
+      first_name: order.firstName || '',
+      last_name: order.lastName || '',
+      address: order.city || '',
+      email: order.email || '',
+      phone: order.phone || '',
+    },
+    weight: order.weight || 0,
+    job: order.job || 0,
+    customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
+  });
 
   const handleConfirmPayment = async (expense: number, income: number) => {
     if (!expense) return;
@@ -582,6 +622,12 @@ const Example = () => {
     }
     setDeleteDialogOpen(false);
     setOrderToDelete(null);
+  };
+
+  // Continuar la orden
+  const handleContinueOrder = (order: TableData) => {
+    const orderData = mapTableDataToCreateOrderModel(order);
+    navigate('/create-daily', { state: { orderToContinue: orderData } });
   };
 
   const table = useMaterialReactTable({
