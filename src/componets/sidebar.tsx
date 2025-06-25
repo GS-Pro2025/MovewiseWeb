@@ -132,6 +132,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
       {/* NavItems */}
       <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />
       <NavItem icon="fa-solid fa-box" text="Create daily" isCollapsed={isCollapsed} to="/create-daily" />
+      <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
 
       {/* Nuevo Dropdown Cost */}
       <li className={`relative ${activeDropdown === 1 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
@@ -166,7 +167,6 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
         )}
       </li>
 
-      <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
 
       {/* Nuevo Dropdown Warehouse */}
       <li className={`relative ${activeDropdown === 2 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
@@ -227,9 +227,6 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             <DropdownLink icon="fa-building" text="Customers" to="/customers" />
             <DropdownLink icon="fa-briefcase" text="Jobs & Tools" to="/jobs-tools" />
             <DropdownLink icon="fa-user-cog" text="Create Admin" to="/create-admin" />
-            <DropdownLink icon="fa-cog" text="General" to="/settings/general" />
-            <DropdownLink icon="fa-user-shield" text="Privacy" to="/settings/privacy" />
-            <DropdownLink icon="fa-bell" text="Notifications" to="/settings/notifications" />
           </ul>
         )}
       </li>
