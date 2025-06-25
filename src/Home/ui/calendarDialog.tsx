@@ -47,13 +47,14 @@ interface OrdersCalendarDialogProps {
   open: boolean;
   onClose: () => void;
   initialMonth?: Date;
-  // onDayClick: (date: string) => void; // Lo dejamos en handlep
+  onDaySelect?: (date: Date) => void; 
 }
 
 const OrdersCalendarDialog: React.FC<OrdersCalendarDialogProps> = ({
   open,
   onClose,
   initialMonth,
+  onDaySelect,
 }) => {
   const [month, setMonth] = useState<Date>(initialMonth || new Date());
   const [ordersByDate, setOrdersByDate] = useState<Record<string, number>>({});
@@ -137,7 +138,9 @@ const OrdersCalendarDialog: React.FC<OrdersCalendarDialogProps> = ({
                   <Button
                     key={dateStr}
                     variant="contained"
-                    onClick={() => { }}
+                    onClick={() => {
+                      if (onDaySelect) onDaySelect(date);
+                    }}
                     sx={{
                       backgroundColor: getDayColor(orderCount),
                       color: orderCount > 4 ? "#fff" : "#222",

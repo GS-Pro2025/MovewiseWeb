@@ -131,7 +131,7 @@ export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> 
   export async function finishOrderRepo(
     orderKey: string,
     image?: File
-  ): Promise<{ success: boolean; data?: unknown; errorMessage?: string }> {
+  ): Promise<{ success: boolean; data?: string[]; errorMessage?: string }> {
     const token = Cookies.get('authToken');
     if (!token) {
       window.location.href = '/login';
@@ -238,3 +238,33 @@ export async function fetchOrdersCountPerDay(
     };
   }
 }
+
+export const getRegisteredLocations = async (): Promise<{ success: boolean; data?: string[]; errorMessage?: string }> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/orders-registered-locations/`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return { success: false, errorMessage: result.messDev || 'Error fetching registered locations' };
+    }
+
+    // Aquí extraemos solo el array de ubicaciones
+    return { success: true, data: Array.isArray(result.data) ? result.data : [] };
+  } catch (error: any) {
+    console.error("Error fetching registered locations:", error);
+    return { success: false, errorMessage: error?.message || 'An unexpected error occurred' };
+  }
+};

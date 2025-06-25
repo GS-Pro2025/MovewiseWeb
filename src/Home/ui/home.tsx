@@ -26,6 +26,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOrderDialog from './deleteOrderDialog';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CalendarDialog from './calendarDialog';
+import { getRegisteredLocations } from '../data/repositoryOrders';
+
+import Autocomplete from '@mui/material/Autocomplete';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -157,6 +161,9 @@ const Example = () => {
 
   const [weekdayFilter, setWeekdayFilter] = useState<string>('');
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  const [locations, setLocations] = useState<string[]>([]);
 
   const weekDays = [
     'Sunday',
@@ -449,9 +456,19 @@ const Example = () => {
     if (weekdayFilter) {
       filtered = filtered.filter((item) => item.weekday === weekdayFilter);
     }
+    if (locationFilter) {
+      filtered = filtered.filter((item) => item.state === locationFilter);
+    }
     setFilteredData(filtered);
-  }, [data, week, weekdayFilter]);
+  }, [data, week, weekdayFilter, locationFilter]);
 
+  useEffect(() => {
+      getRegisteredLocations().then((res) => {
+        if (res.success && Array.isArray(res.data)) {
+          setLocations(res.data);
+        }
+      });
+  }, []);
   const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newWeek = parseInt(event.target.value, 10);
     if (newWeek >= 1 && newWeek <= 53) {
@@ -613,6 +630,29 @@ const Example = () => {
             </MenuItem>
           ))}
         </Select>
+        <Autocomplete
+          options={locations}
+          value={locationFilter}
+          onChange={(_, newValue) => setLocationFilter(newValue || '')}
+          clearOnEscape
+          size="small"
+          sx={{ minWidth: 200 }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Location"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <LocationOnIcon fontSize="small" sx={{ mr: 1 }} />
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+        />
         <Button
           variant="outlined"
           startIcon={<CalendarMonthIcon />}
@@ -712,6 +752,12 @@ const Example = () => {
       <CalendarDialog
         open={calendarOpen}
         onClose={() => setCalendarOpen(false)}
+        onDaySelect={(date: Date) => {
+          // Cambia la semana y el filtro de día
+          setWeek(getWeekOfYear(date));
+          setWeekdayFilter(date.toLocaleDateString('en-US', { weekday: 'long' }));
+          setCalendarOpen(false);
+        }}
       />
     </>
   );
