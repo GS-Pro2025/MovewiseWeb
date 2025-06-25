@@ -13,7 +13,7 @@ import { createOrder, fetchCustomerFactories, fetchJobs, fetchOrderStates } from
 import { CreateOrderModel, CustomerFactoryModel, OrderState, Person } from '../models/CreateOrderModel';
 import { JobModel } from '../models/JobModel';
 import { enqueueSnackbar } from 'notistack';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import 'react-phone-input-2/lib/material.css';
 import PhoneInput from 'react-phone-input-2';
 import { fetchCountries, fetchStates, fetchCities} from '../repository/repositoryLocation';
@@ -41,7 +41,22 @@ const initialOrder: CreateOrderModel = {
 
 
 const CreateOrder: React.FC = () => {
-  const [order, setOrder] = useState<CreateOrderModel>(initialOrder);
+  const location = useLocation();
+  // Si viene una orden para continuar, úsala como initialOrder
+  const continuedOrder = location.state?.orderToContinue;
+
+  const [order, setOrder] = useState<CreateOrderModel>(
+    continuedOrder
+      ? {
+          ...initialOrder,
+          ...continuedOrder,
+          date: continuedOrder.date, 
+          key_ref: continuedOrder.key_ref,
+          status: 'Pending',
+          paystatus: 0,
+        }
+      : initialOrder
+  );
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
