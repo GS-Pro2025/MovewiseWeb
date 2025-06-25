@@ -30,6 +30,8 @@ import { getRegisteredLocations } from '../data/repositoryOrders';
 
 import Autocomplete from '@mui/material/Autocomplete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useNavigate } from 'react-router-dom'; // Agrega este import
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -175,17 +177,30 @@ const Example = () => {
     'Saturday',
   ];
 
+  const navigate = useNavigate();
+
   const columns = [
     {
       header: 'Actions',
       id: 'actions',
-      size: 160,
+      size: 200,
       headerProps: { style: { textAlign: 'center' } },
       Cell: ({ row }: { row: MRT_Row<TableData> }) => {
         const isFinished = row.original.status === 'finished';
-        //const isPaid = row.original.payStatus === 1;
         return (
           <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Botón continuar orden */}
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                handleContinueOrder(row.original);
+              }}
+              title="Continue Order"
+            >
+              <ContentCopyIcon />
+            </IconButton>
             <IconButton
               color={isFinished ? 'default' : 'success'}
               size="small"
@@ -582,6 +597,22 @@ const Example = () => {
     }
     setDeleteDialogOpen(false);
     setOrderToDelete(null);
+  };
+
+  // Nueva función para continuar la orden
+  const handleContinueOrder = (order: TableData) => {
+    console.log('Continuing order:', order);
+    const originalDate = new Date(order.dateReference);
+    const nextDay = new Date(originalDate);
+    nextDay.setDate(originalDate.getDate() + 1);
+
+    // Prepara los datos para el formulario de crear orden
+    const orderData = {
+      ...order,
+      date: nextDay.toISOString().split('T')[0],
+    };
+
+    navigate('/create-daily', { state: { orderToContinue: orderData } });
   };
 
   const table = useMaterialReactTable({
