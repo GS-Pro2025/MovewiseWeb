@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   MaterialReactTable,
@@ -32,7 +31,7 @@ import { getRegisteredLocations } from '../data/repositoryOrders';
 import Autocomplete from '@mui/material/Autocomplete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { useNavigate } from 'react-router-dom'; // Agrega este import
+import { useNavigate } from 'react-router-dom'; 
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -45,7 +44,7 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   status: item.status,
   payStatus: item.payStatus,
   state_usa: item.state,
-  customer_factory: typeof item.customer_factory === 'number' ? item.customer_factory : 0, // Ajusta si tienes el id
+  customer_factory: typeof item.customer_factory === 'number' ? item.customer_factory : 0,
   person: {
     email: item.email, 
     first_name: item.firstName,
@@ -368,7 +367,7 @@ const Example = () => {
   };
 
   // Mapea TableData a CreateOrderModel para continuar orden
-  const mapTableDataToCreateOrderModel = (order: TableData): any => ({
+  const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
     date: (() => {
       const originalDate = new Date(order.dateReference);
       const nextDay = new Date(originalDate);
@@ -391,7 +390,7 @@ const Example = () => {
     job: order.job || 0,
     customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
   });
-  
+
   const handleConfirmPayment = async (expense: number, income: number) => {
     if (!expense) return;
     if (!paymentOrder) return;
