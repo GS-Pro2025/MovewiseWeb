@@ -752,6 +752,12 @@ const Example = () => {
       <CalendarDialog
         open={calendarOpen}
         onClose={() => setCalendarOpen(false)}
+        onDaySelect={(date: Date) => {
+          // Cambia la semana y el filtro de día
+          setWeek(getWeekOfYear(date));
+          setWeekdayFilter(date.toLocaleDateString('en-US', { weekday: 'long' }));
+          setCalendarOpen(false);
+        }}
       />
     </>
   );
