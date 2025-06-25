@@ -18,7 +18,7 @@ import CreateWarehouseView from './warehouse/ui/CreateWarehouseView';
 
 import CustomersView from './settings/customer/ui/customersView';
 import CreateAdminView from './createAdmin/ui/createAdminView';
-import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
+import JobsAndToolsGUI from './settings/jobAndTools/ui/JobsAndToolsGui';
 
 
 const App = () => {
