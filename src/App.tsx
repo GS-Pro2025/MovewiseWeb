@@ -16,9 +16,9 @@ import FinancialView from './financials/ui/FinancialView';
 import WarehouseView from './warehouse/ui/WarehouseView';
 import CreateWarehouseView from './warehouse/ui/CreateWarehouseView';
 
-import CustomersView from './settings/customer/ui/customersView';
+import CustomersView from './settings/customer/UI/customersView';
 import CreateAdminView from './createAdmin/ui/createAdminView';
-import JobsAndToolsGUI from './settings/jobAndTools/ui/JobsAndToolsGui';
+import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
 
 
 const App = () => {
