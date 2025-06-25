@@ -2,7 +2,7 @@ import React, { useState, FormEvent } from 'react';
 import Logo from '../assets/logo.png';
 import BackgroundIm from '../assets/imagenBg.webp';
 import { login } from '../service/authService';
-
+import RecursoMovewise from '../assets/RecursoMovewise.png';
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -50,7 +50,7 @@ const LoginPage: React.FC = () => {
         <div className="w-full py-6 px-4 sm:px-8 z-20">
           <div className="my-6 flex justify-center items-center gap-4">
             <img src={Logo} alt="Company Logo" className="h-16 object-contain" />
-            <h1 className="text-5xl font-semibold">Movingwise</h1>
+            <img src={RecursoMovewise} alt="Movingwise" className="h-16 object-contain" />
           </div>
 
           <p className="text-xl text-gray-100 mb-6">or use email to sign into your account</p>
