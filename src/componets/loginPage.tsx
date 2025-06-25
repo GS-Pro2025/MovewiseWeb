@@ -1,6 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import Logo from '../assets/logo.png';
 import BackgroundIm from '../assets/imagenBg.webp';
+import patron_modo_oscuro from '../assets/patron_modo_oscuro.png';
 import { login } from '../service/authService';
 import RecursoMovewise from '../assets/RecursoMovewise.png';
 
@@ -39,10 +40,10 @@ const LoginPage: React.FC = () => {
       </div>
 
       {/* Right Side */}
-      <div className="lg:w-2/5 w-full flex items-center justify-center text-center bg-gradient-to-br from-[#0458AB] to-[#051537] relative">
+      <div className="lg:w-2/5 w-full flex items-center justify-center text-center bg-[#0B2863] relative">
         <div
-          className="absolute lg:hidden inset-0 bg-gray-500 bg-no-repeat bg-cover"
-          style={{ backgroundImage: `url(${BackgroundIm})` }}
+          className="absolute inset-0 bg-no-repeat bg-cover"
+          style={{ backgroundImage: `url(${patron_modo_oscuro})` }}
         >
           <div className="absolute bg-black opacity-60 inset-0"></div>
         </div>
