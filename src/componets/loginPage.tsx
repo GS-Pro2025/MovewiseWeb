@@ -1,8 +1,9 @@
 import React, { useState, FormEvent } from 'react';
 import Logo from '../assets/logo.png';
 import BackgroundIm from '../assets/imagenBg.webp';
+import patron_modo_oscuro from '../assets/patron_modo_oscuro.png';
 import { login } from '../service/authService';
-
+import RecursoMovewise from '../assets/RecursoMovewise.png';
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -39,10 +40,10 @@ const LoginPage: React.FC = () => {
       </div>
 
       {/* Right Side */}
-      <div className="lg:w-2/5 w-full flex items-center justify-center text-center bg-gradient-to-br from-[#0458AB] to-[#051537] relative">
+      <div className="lg:w-2/5 w-full flex items-center justify-center text-center bg-[#0B2863] relative">
         <div
-          className="absolute lg:hidden inset-0 bg-gray-500 bg-no-repeat bg-cover"
-          style={{ backgroundImage: `url(${BackgroundIm})` }}
+          className="absolute inset-0 bg-no-repeat bg-cover"
+          style={{ backgroundImage: `url(${patron_modo_oscuro})` }}
         >
           <div className="absolute bg-black opacity-60 inset-0"></div>
         </div>
@@ -50,7 +51,7 @@ const LoginPage: React.FC = () => {
         <div className="w-full py-6 px-4 sm:px-8 z-20">
           <div className="my-6 flex justify-center items-center gap-4">
             <img src={Logo} alt="Company Logo" className="h-16 object-contain" />
-            <h1 className="text-5xl font-semibold">Movingwise</h1>
+            <img src={RecursoMovewise} alt="Movingwise" className="h-16 object-contain" />
           </div>
 
           <p className="text-xl text-gray-100 mb-6">or use email to sign into your account</p>
