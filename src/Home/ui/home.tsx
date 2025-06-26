@@ -140,7 +140,7 @@ const Example = () => {
     const start = new Date(now.getFullYear(), 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 });
   const [totalRows, setTotalRows] = useState(0);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const currentYear = new Date().getFullYear();
