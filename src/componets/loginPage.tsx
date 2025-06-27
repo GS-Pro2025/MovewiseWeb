@@ -50,7 +50,7 @@ const LoginPage: React.FC = () => {
 
         <div className="w-full py-6 px-4 sm:px-8 z-20">
           <div className="my-6 flex justify-center items-center gap-4">
-            <img src={Logo} alt="Company Logo" className="h-16 object-contain" />
+            <img src={Logo} alt="Company Logo" className="h-16 object-contain rounded-full bg-white" />
             <img src={RecursoMovewise} alt="Movingwise" className="h-16 object-contain" />
           </div>
 

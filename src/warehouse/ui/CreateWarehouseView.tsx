@@ -5,6 +5,7 @@ import { formatDateForAPI } from "../../utils/dateUtils";
 import { createWorkhouseOrder, fetchCustomerFactories } from "../data/WarehouseRepository";
 import { enqueueSnackbar } from "notistack";
 import type { CustomerFactoryModel } from "../domain/CustomerFactoryModel";
+import { useNavigate } from "react-router-dom";
 
 const DEFAULT_STATUS = "Pending";
 const DEFAULT_PERSON_ID = 7;
@@ -20,6 +21,7 @@ const CreateWarehouseView = () => {
   const [factories, setFactories] = useState<CustomerFactoryModel[]>([]);
   const [factoryLoading, setFactoryLoading] = useState(true);
   const [selectedFactory, setSelectedFactory] = useState<CustomerFactoryModel | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setFactoryLoading(true);
@@ -71,7 +73,7 @@ const CreateWarehouseView = () => {
       return;
     }
     try {
-      await createWorkhouseOrder({
+      const response = await createWorkhouseOrder({
         date,
         status: DEFAULT_STATUS,
         person_id: DEFAULT_PERSON_ID,
@@ -82,6 +84,13 @@ const CreateWarehouseView = () => {
       enqueueSnackbar("Warehouse order created successfully!", { variant: "success" });
       setDispatchTicket(null);
       setDispatchTicketPreview(null);
+
+      // Redirige a asignar operadores usando la key de la orden creada
+      // Ajusta esto según cómo tu API retorne la key/id de la orden
+      const orderKey = response?.key || response?.id || response?.orderKey;
+      if (orderKey) {
+        navigate(`/add-operators-to-order/${orderKey}`);
+      }
     } catch (err: any) {
       enqueueSnackbar(err.message || "Error creating warehouse order", { variant: "error" });
     } finally {

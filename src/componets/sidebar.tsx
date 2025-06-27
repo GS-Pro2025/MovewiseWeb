@@ -80,7 +80,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           <img
             src={Logo}
             alt="Move Wise Logo"
-            className="h-10 mr-2 object-contain" // un poco más pequeño
+            className="h-10 mr-2 object-contain rounded-full bg-white" // un poco más pequeño
           />
         ) : (
           <img
