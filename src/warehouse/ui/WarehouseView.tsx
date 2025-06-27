@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Box, Typography, CircularProgress, Button } from "@mui/material";
+import { Box, Typography, CircularProgress, Button, TextField } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import { MaterialReactTable, useMaterialReactTable, type MRT_ColumnDef, type MRT_Row } from "material-react-table";
 import { fetchWorkhouseOrders, fetchOperatorsInOrder } from "../data/WarehouseRepository";
@@ -14,19 +14,29 @@ import type { UpdateOrderData } from "../../Home/domain/ModelOrderUpdate";
 
 const PAGE_SIZE = 10;
 
+const getCurrentWeek = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  return Math.ceil((now.getTime() - start.getTime()) / 604800000);
+};
+
 const WarehouseView = () => {
   const [orders, setOrders] = useState<WorkhouseOrderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [rowCount, setRowCount] = useState(0);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [operatorsByOrder, setOperatorsByOrder] = useState<Record<string, OperatorAssigned[]>>({}); // Nuevo estado
+  const [operatorsByOrder, setOperatorsByOrder] = useState<Record<string, OperatorAssigned[]>>({});
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
 
+  
+  const [week, setWeek] = useState(getCurrentWeek());
+  const [year, setYear] = useState(new Date().getFullYear());
+
   useEffect(() => {
     setLoading(true);
-    fetchWorkhouseOrders(page, PAGE_SIZE)
+    fetchWorkhouseOrders(page, PAGE_SIZE, week, year)
       .then((data) => {
         setOrders(data.results);
         setRowCount(data.count);
@@ -43,7 +53,7 @@ const WarehouseView = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, [page]);
+  }, [page, week, year]);
 
   const columns = useMemo<MRT_ColumnDef<WorkhouseOrderData>[]>(
     () => [
@@ -194,7 +204,7 @@ const WarehouseView = () => {
       if (result.success) {
         enqueueSnackbar('Order updated', { variant: 'success' });
         // Refresca la tabla
-        fetchWorkhouseOrders(page, PAGE_SIZE)
+        fetchWorkhouseOrders(page, PAGE_SIZE, week, year)
           .then((data) => {
             setOrders(data.results);
             setRowCount(data.count);
@@ -243,6 +253,24 @@ const WarehouseView = () => {
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
         Here you can find all the workhouse orders registered in the system.
       </Typography>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <TextField
+          label="Week"
+          type="number"
+          value={week}
+          onChange={e => setWeek(Number(e.target.value))}
+          inputProps={{ min: 1, max: 53 }}
+          size="small"
+        />
+        <TextField
+          label="Year"
+          type="number"
+          value={year}
+          onChange={e => setYear(Number(e.target.value))}
+          inputProps={{ min: 2020, max: 2100 }}
+          size="small"
+        />
+      </Box>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
           <CircularProgress />

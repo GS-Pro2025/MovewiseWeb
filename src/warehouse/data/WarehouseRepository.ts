@@ -37,7 +37,12 @@ export const createWorkhouseOrder = async (orderData: WorkhouseCreationOrderData
 };
 
 
-export const fetchWorkhouseOrders = async (page: number, pageSize: number) => {
+export const fetchWorkhouseOrders = async (
+  page: number,
+  pageSize: number,
+  number_week: number,
+  year: number
+) => {
   const token = Cookies.get("authToken");
   if (!token) {
     window.location.href = '/login';
@@ -45,13 +50,16 @@ export const fetchWorkhouseOrders = async (page: number, pageSize: number) => {
   }
 
   try {
-    const response = await fetch(`${BASE_URL_API}/workhouse/?page=${page}&page_size=${pageSize}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      `${BASE_URL_API}/workhouse/?number_week=${number_week}&year=${year}&page=${page}&page_size=${pageSize}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (response.status === 403) {
       Cookies.remove('authToken');
@@ -69,7 +77,6 @@ export const fetchWorkhouseOrders = async (page: number, pageSize: number) => {
       throw new Error(errorData.messDev || 'Error fetching workhouse orders');
     }
 
-    // Ajuste: extrae los datos de response.data
     const apiResponse: WorkHouseResponse = await response.json();
     return apiResponse.data;
   } catch (err: any) {
