@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-constant-condition */
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -6,6 +7,9 @@ import {
 } from '../../service/PayrollService';
 import { PayrollModal } from '../components/PayrollModal';
 import LoaderSpinner from '../../componets/LoadingSpinner';
+import { fetchCountries, fetchStates, fetchCities } from '../../createOrder/repository/repositoryLocation';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 
 interface WeekAmounts { Mon?: number; Tue?: number; Wed?: number; Thu?: number; Fri?: number; Sat?: number; Sun?: number; }
 
@@ -84,6 +88,8 @@ function formatDateForHeader(dateStr: string): string {
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
+type LocationStep = 'country' | 'state' | 'city';
+
 export default function PayrollPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,15 +100,73 @@ export default function PayrollPage() {
   const [selectedOperator, setSelectedOperator] = useState<OperatorRow | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // NUEVO: Estados para país, estado y ciudad
+  const [countries, setCountries] = useState<{ country: string }[]>([]);
+  const [states, setStates] = useState<{ name: string }[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [locationStep, setLocationStep] = useState<LocationStep>('country');
+
+  // Cargar países al montar
+  useEffect(() => {
+    fetchCountries().then((countries) => {
+      setCountries(countries.map(c => ({ country: c.name })));
+    });
+  }, []);
+
+  // Cargar estados cuando cambia el país
+  useEffect(() => {
+    if (country) {
+      fetchStates(country).then(setStates);
+      setState('');
+      setCities([]);
+      setCity('');
+      setLocationStep('state');
+    }
+  }, [country]);
+
+  // Cargar ciudades cuando cambia el estado
+  useEffect(() => {
+    if (country && state) {
+      fetchCities(country, state).then(setCities);
+      setCity('');
+      setLocationStep('city');
+    }
+  }, [state]);
+
+  // Resetear todo si se borra el input
+  useEffect(() => {
+    if (!country) {
+      setState('');
+      setCity('');
+      setStates([]);
+      setCities([]);
+      setLocationStep('country');
+    } else if (!state) {
+      setCity('');
+      setCities([]);
+      setLocationStep('state');
+    } else if (!city) {
+      setLocationStep('city');
+    }
+  }, [country, state, city]);
+
+  // Construir el string location
+  const locationString = useMemo(() => {
+    if (!country) return '';
+    let loc = country;
+    if (state) loc += `, ${state}`;
+    if (city) loc += `, ${city}`;
+    return loc;
+  }, [country, state, city]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Obtener el año actual para la consulta
       const currentYear = new Date().getFullYear();
-      
-      // Llamada directa al servicio sin paginación
-      const response = await payrollService(week, currentYear);
+      const response = await payrollService(week, currentYear, locationString);
       console.log('Datos recibidos:', response.data);
       
       // Generar mapeo de fechas para los encabezados
@@ -192,7 +256,8 @@ export default function PayrollPage() {
 
   useEffect(() => {
     fetchData();
-  }, [week]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [week, country, state, city]);
 
   const handleModalClose = () => {
     setSelectedOperator(null);
@@ -255,6 +320,29 @@ export default function PayrollPage() {
     }
   };
 
+  // Opciones y labels dinámicos según el paso
+  let options: any[] = [];
+  let getOptionLabel: (option: any) => string = () => '';
+  let label = '';
+  let value: any = null;
+
+  if (locationStep === 'country') {
+    options = countries;
+    getOptionLabel = o => o.country;
+    label = 'Country';
+    value = countries.find(c => c.country === country) || null;
+  } else if (locationStep === 'state') {
+    options = states;
+    getOptionLabel = o => o.name;
+    label = 'State';
+    value = states.find(s => s.name === state) || null;
+  } else if (locationStep === 'city') {
+    options = cities;
+    getOptionLabel = o => o;
+    label = 'City';
+    value = city || null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-6 py-8">
@@ -289,7 +377,74 @@ export default function PayrollPage() {
                 />
               </div>
             </div>
-
+            {/* Autocomplete País, Estado, Ciudad */}
+            <div className="w-64"> {/* Ancho de la location*/}
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Location</label>
+              <div className="flex items-center gap-2">
+                <Autocomplete
+                  options={options}
+                  getOptionLabel={getOptionLabel}
+                  value={value}
+                  onChange={(_, newValue) => {
+                    // Manejar selección y limpieza aquí
+                    if (newValue === null) {
+                      // Si el usuario borra el input, retrocede un paso
+                      if (locationStep === 'city') {
+                        setCity('');
+                        setLocationStep('state');
+                      } else if (locationStep === 'state') {
+                        setState('');
+                        setLocationStep('country');
+                      } else if (locationStep === 'country') {
+                        setCountry('');
+                      }
+                    } else {
+                      // Selección normal
+                      if (locationStep === 'country') {
+                        setCountry(newValue.country);
+                      } else if (locationStep === 'state') {
+                        setState(newValue.name);
+                      } else if (locationStep === 'city') {
+                        setCity(newValue);
+                      }
+                    }
+                  }}
+                  sx={{ width: '100%' }} // Esto fuerza el ancho del Autocomplete
+                  renderInput={params => (
+                    <TextField
+                      {...params}
+                      label={label}
+                      placeholder={`Select ${label.toLowerCase()}`}
+                      size="small"
+                      sx={{ width: '100%' }} // Esto fuerza el ancho del input interno
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => getOptionLabel(option) === getOptionLabel(value)}
+                  disableClearable={false}
+                  disabled={locationStep === 'state' && !country}
+                />
+                {/* Botón para limpiar toda la búsqueda de location */}
+                {(country || state || city) && (
+                  <button
+                    type="button"
+                    className="ml-2 px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold transition"
+                    onClick={() => {
+                      setCountry('');
+                      setState('');
+                      setCity('');
+                      setLocationStep('country');
+                    }}
+                    title="Clear location filter"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+              {/* Mostrar el string construido */}
+              <div className="text-xs text-gray-500 mt-1">
+                {locationString && `Selected: ${locationString}`}
+              </div>
+            </div>
             {/* Search Input */}
             <div className="flex items-center gap-3 flex-1 max-w-md">
               <div className="bg-emerald-50 rounded-lg p-3">
@@ -317,7 +472,7 @@ export default function PayrollPage() {
                       title="Clear search"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6m2 5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                       </svg>
                     </button>
                   )}

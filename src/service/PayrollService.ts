@@ -47,9 +47,10 @@ const API_BASE: string =
 export async function payrollService(
   numberWeek: number,
   year: number = 1,
+  location: string = "",
 ): Promise<ApiResponse> {
   const token: string | undefined = Cookies.get("authToken");
-  const url = `${API_BASE}/list-assign-operator?number_week=${numberWeek}&year=${year}`;
+  const url = `${API_BASE}/list-assign-operator?number_week=${numberWeek}&year=${year}&location=${location}`;
 
   const res: Response = await fetch(url, {
     method: "GET",
