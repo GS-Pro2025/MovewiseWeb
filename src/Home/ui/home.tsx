@@ -55,11 +55,15 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   job: item.job_id 
 });
 
-// Función para calcular la semana del año
+// Reemplaza tu función getWeekOfYear con esta versión ISO
 const getWeekOfYear = (date: Date): number => {
-  const startOfYear = new Date(date.getFullYear(), 0, 1);
-  const pastDaysOfYear = (date.getTime() - startOfYear.getTime()) / 86400000;
-  return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const yearStartDayNum = yearStart.getUTCDay() || 7;
+  yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 };
 
 
@@ -440,20 +444,28 @@ const Example = () => {
         week,
         currentYear,
         pagination.pageSize
-      );const mappedData = response.results.map((item) => {
+      );
+      
+      const mappedData = response.results.map((item) => {
         const dateParts = item.date.split('-');
         const date = new Date(
           Number(dateParts[0]),
           Number(dateParts[1]) - 1,
           Number(dateParts[2])
         );
+        
+        // Usar la función ISO para calcular la semana
+        const calculatedWeek = getWeekOfYear(date);
+        
+        console.log(`Fecha: ${item.date}, Día: ${date.toLocaleDateString('en-US', { weekday: 'long' })}, Semana calculada: ${calculatedWeek}`);
+        
         return {
           id: item.key,
           status: item.status.toLowerCase(),
           key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
-          phone: item.person.phone != null ? String(item.person.phone) : '', // <-- aquí
+          phone: item.person.phone != null ? String(item.person.phone) : '',
           email: item.person.email ?? '',
           company: item.customer_factory_name,
           customer_factory: item.customer_factory,
@@ -466,7 +478,7 @@ const Example = () => {
           weight: item.weight,
           truckType: item.vehicles[0]?.type,
           totalCost: item.summaryCost?.totalCost,
-          week: getWeekOfYear(date),
+          week: calculatedWeek, // Usar la función ISO
           state: item.state_usa,
           operators: item.operators,
           distance: item.distance ?? 0,
@@ -476,9 +488,10 @@ const Example = () => {
           dispatch_ticket: item.dispatch_ticket ?? '',
         };
       });
+      
       setData(mappedData);
       setTotalRows(response.count);
-      console.log(mappedData)
+      console.log('Datos mapeados:', mappedData);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
