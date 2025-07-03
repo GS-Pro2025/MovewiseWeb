@@ -4,6 +4,7 @@ export interface WorkhouseCreationOrderData {
     person_id: number;
     job: number;
     customer_factory: number;
+    state_usa: string;
     dispatch_ticket?: string | null;
 }
 export interface WorkhousePerson {
