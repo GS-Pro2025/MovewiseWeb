@@ -89,3 +89,26 @@ export const getToken = (): string | undefined => {
   }
   return Cookies.get('authToken');
 };
+
+export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+  const headers = {
+    ...(init.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const response = await fetch(input, { ...init, headers });
+
+  if (response.status === 401) {
+    // Token expirado o inválido
+    Cookies.remove('authToken');
+    // Lanza un evento global para mostrar aviso en la app
+    window.dispatchEvent(new CustomEvent('sessionExpired'));
+    // Opcional: Redirigir inmediatamente
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 2000);
+  }
+
+  return response;
+}

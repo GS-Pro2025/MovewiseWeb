@@ -1,15 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Box, Typography, TextField, Button, Autocomplete, CircularProgress } from "@mui/material";
 import { formatDateForAPI } from "../../utils/dateUtils";
 import { createWorkhouseOrder, fetchCustomerFactories } from "../data/WarehouseRepository";
 import { enqueueSnackbar } from "notistack";
 import type { CustomerFactoryModel } from "../domain/CustomerFactoryModel";
 import { useNavigate } from "react-router-dom";
+import { fetchCountries, fetchStates, fetchCities } from "../../createOrder/repository/repositoryLocation";
 
 const DEFAULT_STATUS = "Pending";
 const DEFAULT_PERSON_ID = 7;
 const DEFAULT_JOB = 5;
+
+type LocationStep = 'country' | 'state' | 'city';
 
 const CreateWarehouseView = () => {
   const [date, setDate] = useState(formatDateForAPI(new Date()));
@@ -22,6 +25,68 @@ const CreateWarehouseView = () => {
   const [factoryLoading, setFactoryLoading] = useState(true);
   const [selectedFactory, setSelectedFactory] = useState<CustomerFactoryModel | null>(null);
   const navigate = useNavigate();
+
+  // Location states
+  const [countries, setCountries] = useState<{ country: string }[]>([]);
+  const [states, setStates] = useState<{ name: string }[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [locationStep, setLocationStep] = useState<LocationStep>('country');
+
+  // Load countries on mount
+  useEffect(() => {
+    fetchCountries().then((countries) => {
+      setCountries(countries.map(c => ({ country: c.name })));
+    });
+  }, []);
+
+  // Load states when country changes
+  useEffect(() => {
+    if (country) {
+      fetchStates(country).then(setStates);
+      setState('');
+      setCities([]);
+      setCity('');
+      setLocationStep('state');
+    }
+  }, [country]);
+
+  // Load cities when state changes
+  useEffect(() => {
+    if (country && state) {
+      fetchCities(country, state).then(setCities);
+      setCity('');
+      setLocationStep('city');
+    }
+  }, [country, state]);
+
+  // Reset everything if input is cleared
+  useEffect(() => {
+    if (!country) {
+      setState('');
+      setCity('');
+      setStates([]);
+      setCities([]);
+      setLocationStep('country');
+    } else if (!state) {
+      setCity('');
+      setCities([]);
+      setLocationStep('state');
+    } else if (!city) {
+      setLocationStep('city');
+    }
+  }, [country, state, city]);
+
+  // Build location string (for state_usa field)
+  const locationString = useMemo(() => {
+    if (!country) return '';
+    let loc = country;
+    if (state) loc += ` - ${state}`;
+    if (city) loc += ` - ${city}`;
+    return loc;
+  }, [country, state, city]);
 
   useEffect(() => {
     setFactoryLoading(true);
@@ -72,6 +137,13 @@ const CreateWarehouseView = () => {
       setLoading(false);
       return;
     }
+
+    if (!locationString) {
+      enqueueSnackbar('Please select a location.', { variant: 'error' });
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await createWorkhouseOrder({
         date,
@@ -80,13 +152,13 @@ const CreateWarehouseView = () => {
         job: DEFAULT_JOB,
         customer_factory: selectedFactory.id_factory,
         dispatch_ticket: dispatchTicketString || null,
+        state_usa: locationString, // Enviar la ubicación construida
       });
       enqueueSnackbar("Warehouse order created successfully!", { variant: "success" });
       setDispatchTicket(null);
       setDispatchTicketPreview(null);
 
       // Redirige a asignar operadores usando la key de la orden creada
-      // Ajusta esto según cómo tu API retorne la key/id de la orden
       const orderKey = response?.key || response?.id || response?.orderKey;
       if (orderKey) {
         navigate(`/add-operators-to-order/${orderKey}`);
@@ -97,6 +169,29 @@ const CreateWarehouseView = () => {
       setLoading(false);
     }
   };
+
+  // Dynamic options and labels based on step
+  let options: any[] = [];
+  let getOptionLabel: (option: any) => string = () => '';
+  let label = '';
+  let value: any = null;
+
+  if (locationStep === 'country') {
+    options = countries;
+    getOptionLabel = o => o.country;
+    label = 'Country';
+    value = countries.find(c => c.country === country) || null;
+  } else if (locationStep === 'state') {
+    options = states;
+    getOptionLabel = o => o.name;
+    label = 'State';
+    value = states.find(s => s.name === state) || null;
+  } else if (locationStep === 'city') {
+    options = cities;
+    getOptionLabel = o => o;
+    label = 'City';
+    value = city || null;
+  }
 
   return (
     <Box sx={{ maxWidth: 400, mx: "auto", mt: 5, p: 3, boxShadow: 3, borderRadius: 2, bgcolor: "#fff" }}>
@@ -113,6 +208,78 @@ const CreateWarehouseView = () => {
           margin="normal"
           InputLabelProps={{ shrink: true }}
         />
+        
+        {/* Location Autocomplete */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Location
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Autocomplete
+              options={options}
+              getOptionLabel={getOptionLabel}
+              value={value}
+              onChange={(_, newValue) => {
+                if (newValue === null) {
+                  // Si el usuario borra el input, retrocede un paso
+                  if (locationStep === 'city') {
+                    setCity('');
+                    setLocationStep('state');
+                  } else if (locationStep === 'state') {
+                    setState('');
+                    setLocationStep('country');
+                  } else if (locationStep === 'country') {
+                    setCountry('');
+                  }
+                } else {
+                  // Selección normal
+                  if (locationStep === 'country') {
+                    setCountry(newValue.country);
+                  } else if (locationStep === 'state') {
+                    setState(newValue.name);
+                  } else if (locationStep === 'city') {
+                    setCity(newValue);
+                  }
+                }
+              }}
+              sx={{ flex: 1 }}
+              renderInput={params => (
+                <TextField
+                  {...params}
+                  label={label}
+                  placeholder={`Select ${label.toLowerCase()}`}
+                  size="small"
+                />
+              )}
+              isOptionEqualToValue={(option, value) => getOptionLabel(option) === getOptionLabel(value)}
+              disableClearable={false}
+              disabled={locationStep === 'state' && !country}
+            />
+            {/* Clear button */}
+            {(country || state || city) && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setCountry('');
+                  setState('');
+                  setCity('');
+                  setLocationStep('country');
+                }}
+                sx={{ minWidth: 'auto', px: 1 }}
+              >
+                Clear
+              </Button>
+            )}
+          </Box>
+          {/* Show constructed string */}
+          {locationString && (
+            <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+              Selected: {locationString}
+            </Typography>
+          )}
+        </Box>
+
         <Autocomplete
           options={factories}
           getOptionLabel={(option) => option.name}
