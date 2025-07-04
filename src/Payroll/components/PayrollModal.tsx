@@ -276,11 +276,6 @@ const PayrollPDF: React.FC<{
         <Text style={pdfStyles.bonusAmount}>{formatCurrency(totalDailyBonuses)}</Text>
       </View>
 
-      <View style={pdfStyles.bonusRow}>
-        <Text style={pdfStyles.bonusLabel}>Additional Bonus</Text>
-        <Text style={pdfStyles.bonusAmount}>{formatCurrency(operatorData.additionalBonuses)}</Text>
-      </View>
-
       <View style={pdfStyles.totalRow}>
         <Text style={pdfStyles.totalLabel}>GRAND TOTAL</Text>
         <Text style={pdfStyles.totalAmount}>{formatCurrency(operatorData.grandTotal)}</Text>
@@ -303,7 +298,6 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   periodEnd,
   assignmentsByDay,
 }) => {
-  const [additionalBonus, setAdditionalBonus] = useState(operatorData.additionalBonuses || 0);
   const [grandTotal, setGrandTotal] = useState(operatorData.grandTotal || 0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -328,9 +322,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   useEffect(() => {
   const baseTotal = operatorData.total || 0;
   const dailyBonusTotal = Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
-  const newGrandTotal = baseTotal + dailyBonusTotal + (additionalBonus || 0);
+  const newGrandTotal = baseTotal + dailyBonusTotal;
   setGrandTotal(newGrandTotal);
-}, [dailyBonuses, additionalBonus, operatorData.total]);
+}, [dailyBonuses, operatorData.total]);
 
   const days: DayInfo[] = [
     { key: 'Mon', label: 'Monday' },
@@ -352,12 +346,10 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
 
   // Función para calcular el total de bonos diarios
   const calculateDailyBonusTotal = () => {
+    // Si quieres incluir el adicional, suma aquí:
+    // return Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0) + (operatorData.additionalBonuses || 0);
+    // Si NO quieres incluir el adicional, solo suma los dailyBonuses:
     return Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
-  };
-
-  const handleBonusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
-    setAdditionalBonus(value);
   };
 
   const handleDailyBonusChange = (day: keyof WeekAmounts, value: number) => {
@@ -395,16 +387,14 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     setError(null);
     try {
       const dailyBonusTotal = calculateDailyBonusTotal();
-      const totalBonus = dailyBonusTotal + additionalBonus;
-      
       const payload = {
         id_assigns: operatorData.assignmentIds as number[],
         value: grandTotal,
-        bonus: totalBonus,
+        bonus: dailyBonusTotal, // solo daily bonuses
         status: 'paid',
         date_start: periodStart,
         date_end: periodEnd,
-        daily_bonuses: dailyBonuses, // Incluir bonos diarios en el payload
+        daily_bonuses: dailyBonuses,
       };
       await createPayment(payload);
       setIsPaid(true);
@@ -587,22 +577,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
               </div>
 
               {/* Bonus Adicional */}
-              <div className="flex justify-between items-center px-4 py-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <label className="font-semibold text-yellow-800">Additional Bonus</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-600">$</span>
-                  <input
-                    type="number"
-                    value={additionalBonus}
-                    onChange={handleBonusChange}
-                    min="0"
-                    step="0.01"
-                    disabled={loading || isPaid}
-                    className="w-32 pl-8 pr-3 py-2 border border-yellow-300 rounded-md text-right font-bold text-yellow-900 bg-white disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
+              
 
               {/* Grand Total */}
               <div className="flex justify-between items-center px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-800 rounded-lg text-white">
@@ -620,7 +595,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                   <PayrollPDF 
                     operatorData={{ 
                       ...operatorData, 
-                      additionalBonuses: additionalBonus, 
+                      additionalBonuses: operatorData.additionalBonuses, 
                       grandTotal 
                     }} 
                     days={days} 
