@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { createPayment } from '../../service/PayrollService';
+import { updateAssign } from '../../service/AssignService'; // Asegúrate de importar el servicio
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -37,9 +38,11 @@ interface PayrollModalProps {
     grandTotal?: number;
     assignmentIds?: (number | string)[];
     paymentIds?: (number | string)[];
+    assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] }; // NUEVO
   };
   periodStart: string;
   periodEnd: string;
+  assignmentsByDay?: { [key in keyof WeekAmounts]?: { id: number | string; date: string; bonus?: number }[] };
 }
 
 const formatCurrency = (n?: number) =>
@@ -298,23 +301,29 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   onPaymentComplete,
   periodStart,
   periodEnd,
+  assignmentsByDay,
 }) => {
   const [additionalBonus, setAdditionalBonus] = useState(operatorData.additionalBonuses || 0);
   const [grandTotal, setGrandTotal] = useState(operatorData.grandTotal || 0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
-  
-  // Estado para bonos por día
-  const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>({
-    Mon: 0,
-    Tue: 0,
-    Wed: 0,
-    Thu: 0,
-    Fri: 0,
-    Sat: 0,
-    Sun: 0,
+
+  // Inicializa dailyBonuses con el bonus de la primera asignación de cada día (si existe)
+  const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
+    const initial: WeekAmounts = {};
+    const days: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    days.forEach(day => {
+      // Busca el bonus en la primera asignación del día, si existe
+      const assign = assignmentsByDay?.[day]?.[0];
+      initial[day] = assign && typeof assign.bonus === 'number'
+        ? assign.bonus
+        : 0;
+    });
+    return initial;
   });
+  const [savingBonus, setSavingBonus] = useState<{ [key in keyof WeekAmounts]?: boolean }>({});
+
   // Efecto para recalcular cuando cambien los bonos
   useEffect(() => {
   const baseTotal = operatorData.total || 0;
@@ -346,9 +355,6 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     return Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
   };
 
-
-
-
   const handleBonusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;
     setAdditionalBonus(value);
@@ -359,6 +365,28 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       ...prev,
       [day]: value
     }));
+  };
+
+  // Cambia la función para obtener los ids de las asignaciones del día:
+  const handleSaveDailyBonus = async (day: keyof WeekAmounts) => {
+    const assigns = assignmentsByDay?.[day];
+    if (!assigns || assigns.length === 0) {
+      toast.error('No assignment for this day');
+      return;
+    }
+    setSavingBonus(prev => ({ ...prev, [day]: true }));
+    try {
+      await Promise.all(
+        assigns.map(assign =>
+          updateAssign(Number(assign.id), { bonus: dailyBonuses[day] || 0 })
+        )
+      );
+      toast.success(`Bonus for ${day} updated!`);
+    } catch (e: any) {
+      toast.error(`Error updating bonus for ${day}: ${e.message}`);
+    } finally {
+      setSavingBonus(prev => ({ ...prev, [day]: false }));
+    }
   };
 
   const handlePayment = async () => {
@@ -497,7 +525,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                     <div className="flex items-center space-x-3">
                       {/* Input para bono del día */}
                       <div className="flex flex-col items-end">
-                        <div className="relative">
+                        <div className="relative flex items-center">
                           <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-green-600 text-xs">$</span>
                           <input
                             type="number"
@@ -505,10 +533,29 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                             onChange={(e) => handleDailyBonusChange(key, parseFloat(e.target.value) || 0)}
                             min="0"
                             step="0.01"
-                            disabled={loading || isPaid}
+                            disabled={loading || isPaid || savingBonus[key]}
                             className="w-20 pl-5 pr-2 py-1 text-xs border border-green-300 rounded-md text-right font-medium text-green-700 bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-green-500 focus:border-green-500"
                             placeholder="0"
                           />
+                          {/* Botón para guardar bonus */}
+                          <button
+                            type="button"
+                            disabled={loading || isPaid || savingBonus[key]}
+                            onClick={() => handleSaveDailyBonus(key)}
+                            className="ml-2 text-green-600 hover:text-green-800 disabled:opacity-50"
+                            title="Guardar bonus"
+                          >
+                            {savingBonus[key] ? (
+                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
                         </div>
                         <span className="text-xs text-green-600 mt-1">Bonus</span>
                       </div>

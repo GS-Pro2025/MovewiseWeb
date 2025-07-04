@@ -25,6 +25,7 @@ interface OperatorRow extends WeekAmounts {
   grandTotal?: number;
   assignmentIds: (number | string)[];
   paymentIds: (number | string)[];
+  assignmentsByDay?: { [key in keyof WeekAmounts]?: { id: number | string; date: string; bonus?: number }[] };
 }
 
 const weekdayKeys: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -195,6 +196,7 @@ export default function PayrollPage() {
             grandTotal: 0,
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
+            assignmentsByDay: {}, // NUEVO
           });
         } else {
           const ex = map.get(key)!;
@@ -202,7 +204,19 @@ export default function PayrollPage() {
           if (payId != null && !ex.paymentIds.includes(payId)) {
             ex.paymentIds.push(payId);
           }
-          // NO acumular bonus aquí - solo se toma una vez por operador
+        }
+  
+        // Para cada registro, asigna el id_assign y la fecha al día correspondiente:
+        const dataDate = d.date.split('T')[0];
+        const dayKey = Object.entries(dates).find(([, date]) => date === dataDate)?.[0] as keyof WeekAmounts;
+        if (dayKey) {
+          const ex = map.get(key)!;
+          if (!ex.assignmentsByDay![dayKey]) ex.assignmentsByDay![dayKey] = [];
+          ex.assignmentsByDay![dayKey]!.push({
+            id: assignId,
+            date: dataDate,
+            bonus: Number(d.bonus) || 0 // <-- agrega esto si d.bonus existe en tu data
+          });
         }
       });
   
@@ -681,6 +695,7 @@ export default function PayrollPage() {
             operatorData={selectedOperator}
             periodStart={weekInfo.start_date}
             periodEnd={weekInfo.end_date}
+            assignmentsByDay={selectedOperator.assignmentsByDay}
           />
         )}
       </div>
