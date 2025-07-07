@@ -1,15 +1,6 @@
 import React from 'react';
 
-import { 
-  Document as PDFDocument, 
-  Page, 
-  Text, 
-  View, 
-  StyleSheet, 
-  PDFDownloadLink,
-} from '@react-pdf/renderer';
-
-// Interfaces de TypeScript
+// Interfaces (mismas que antes)
 interface WeekInfo {
   start_date: string;
   end_date: string;
@@ -37,13 +28,6 @@ interface OperatorRow extends WeekAmounts {
   grandTotal?: number;
   assignmentIds: (number | string)[];
   paymentIds: (number | string)[];
-  assignmentsByDay?: { 
-    [key in keyof WeekAmounts]?: { 
-      id: number | string; 
-      date: string; 
-      bonus?: number;
-    }[] 
-  };
 }
 
 interface PaymentStats {
@@ -54,7 +38,7 @@ interface PaymentStats {
   unpaidAmount: number;
 }
 
-interface PayrollPDFExportProps {
+interface PayrollExportProps {
   operators: OperatorRow[];
   weekInfo: WeekInfo;
   weekDates: { [key in keyof WeekAmounts]?: string };
@@ -64,149 +48,13 @@ interface PayrollPDFExportProps {
   totalGrand: number;
 }
 
-// Estilos para el PDF
-const styles = StyleSheet.create({
-  page: {
-    fontSize: 9,
-    paddingTop: 30,
-    paddingLeft: 30,
-    paddingRight: 30,
-    paddingBottom: 60,
-    backgroundColor: '#ffffff',
-  },
-  header: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 700,
-    marginBottom: 5,
-    color: '#1f2937',
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 10,
-  },
-  periodInfo: {
-    fontSize: 10,
-    color: '#374151',
-    marginBottom: 5,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    gap: 10,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#1f2937',
-    marginBottom: 3,
-  },
-  statLabel: {
-    fontSize: 8,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-  },
-  tableContainer: {
-    flex: 1,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    minHeight: 22,
-    alignItems: 'center',
-  },
-  tableHeader: {
-    backgroundColor: '#f9fafb',
-    borderBottomWidth: 2,
-    borderBottomColor: '#d1d5db',
-    minHeight: 35,
-  },
-  tableCol: {
-    width: '7%',
-    paddingHorizontal: 2,
-    paddingVertical: 3,
-  },
-  tableColWide: {
-    width: '10%',
-    paddingHorizontal: 2,
-    paddingVertical: 3,
-  },
-  tableColName: {
-    width: '12%',
-    paddingHorizontal: 2,
-    paddingVertical: 3,
-  },
-  tableCellHeader: {
-    fontSize: 7,
-    fontWeight: 700,
-    color: '#374151',
-    textTransform: 'uppercase',
-  },
-  tableCell: {
-    fontSize: 7,
-    color: '#1f2937',
-  },
-  tableCellBold: {
-    fontSize: 7,
-    fontWeight: 700,
-    color: '#1f2937',
-  },
-  tableCellGreen: {
-    fontSize: 7,
-    color: '#059669',
-    fontWeight: 700,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 30,
-    right: 30,
-    textAlign: 'center',
-    color: '#9ca3af',
-    fontSize: 8,
-  },
-  totalsRow: {
-    backgroundColor: '#f3f4f6',
-    borderTopWidth: 2,
-    borderTopColor: '#d1d5db',
-    marginTop: 5,
-    minHeight: 25,
-  },
-  pageNumber: {
-    position: 'absolute',
-    bottom: 30,
-    right: 30,
-    fontSize: 8,
-    color: '#6b7280',
-  },
-  continuedText: {
-    fontSize: 8,
-    color: '#6b7280',
-    fontStyle: 'italic',
-    marginTop: 10,
-    marginBottom: 5,
-    textAlign: 'center',
-  },
-});
-
-const formatCurrency = (n: number): string => {
+const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', { 
     style: 'currency', 
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(n);
+  }).format(amount);
 };
 
 const formatDate = (dateStr: string): string => {
@@ -214,264 +62,372 @@ const formatDate = (dateStr: string): string => {
   return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
 };
 
-// Función para dividir operadores en páginas
-const paginateOperators = (operators: OperatorRow[], rowsPerPage: number): OperatorRow[][] => {
-  const pages: OperatorRow[][] = [];
-  for (let i = 0; i < operators.length; i += rowsPerPage) {
-    pages.push(operators.slice(i, i + rowsPerPage));
-  }
-  return pages;
+// Función para generar CSV
+const generateCSV = (props: PayrollExportProps): string => {
+  const { operators, weekInfo, week, location, paymentStats, totalGrand, weekDates } = props;
+  
+  let csv = '';
+  
+  // Header information
+  csv += `"Operators Payroll Report"\n`;
+  csv += `"Week ${week} - ${location || 'All Locations'}"\n`;
+  csv += `"Period: ${weekInfo.start_date} to ${weekInfo.end_date}"\n`;
+  csv += `\n`;
+  
+  // Stats
+  csv += `"Summary Statistics"\n`;
+  csv += `"Total Operators","${operators.length}"\n`;
+  csv += `"Paid","${paymentStats.paid}"\n`;
+  csv += `"Pending","${paymentStats.unpaid}"\n`;
+  csv += `"Grand Total","${totalGrand}"\n`;
+  csv += `\n`;
+  
+  // Table headers
+  const weekdayKeys: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let headerRow = '"Pay Status","Code","Name","Last Name","Cost"';
+  
+  weekdayKeys.forEach(day => {
+    const dateStr = weekDates[day];
+    const displayDate = dateStr ? formatDate(dateStr) : day;
+    headerRow += `,"${day} (${displayDate})"`;
+  });
+  
+  headerRow += ',"Additional Bonuses","Grand Total"\n';
+  csv += headerRow;
+  
+  // Data rows
+  operators.forEach(operator => {
+    let row = '';
+    row += `"${operator.pay != null ? 'Paid' : 'Pending'}"`;
+    row += `,"${operator.code}"`;
+    row += `,"${operator.name}"`;
+    row += `,"${operator.lastName}"`;
+    row += `,"${operator.cost}"`;
+    
+    weekdayKeys.forEach(day => {
+      const value = operator[day];
+      row += `,"${value ? value : 0}"`;
+    });
+    
+    row += `,"${operator.additionalBonuses || 0}"`;
+    row += `,"${operator.grandTotal || 0}"`;
+    row += '\n';
+    
+    csv += row;
+  });
+  
+  // Totals row
+  csv += '\n';
+  csv += '"","","","TOTALS","",';
+  weekdayKeys.forEach(() => {
+    csv += '"",';
+  });
+  csv += `"","${totalGrand}"\n`;
+  
+  return csv;
 };
 
-// Componente para el header de la tabla
-const TableHeader: React.FC<{ weekDates: { [key in keyof WeekAmounts]?: string } }> = ({ weekDates }) => {
+// Función para generar Excel (básico usando CSV con extensión .xls)
+const generateExcel = (props: PayrollExportProps): string => {
+  // Similar al CSV pero con formato de tabla HTML que Excel puede leer
+  const { operators, weekInfo, week, location, paymentStats, totalGrand, weekDates } = props;
+  
+  let excel = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <style>
+    .header { background-color: #f0f0f0; font-weight: bold; text-align: center; }
+    .currency { text-align: right; }
+    .center { text-align: center; }
+    .paid { background-color: #d4edda; }
+    .pending { background-color: #fff3cd; }
+  </style>
+</head>
+<body>
+  <table border="1" cellpadding="3" cellspacing="0">
+    <tr><td colspan="12" class="header">Operators Payroll Report</td></tr>
+    <tr><td colspan="12" class="center">Week ${week} - ${location || 'All Locations'}</td></tr>
+    <tr><td colspan="12" class="center">Period: ${weekInfo.start_date} to ${weekInfo.end_date}</td></tr>
+    <tr><td colspan="12"></td></tr>
+    
+    <tr>
+      <td class="header">Total Operators</td><td>${operators.length}</td>
+      <td class="header">Paid</td><td>${paymentStats.paid}</td>
+      <td class="header">Pending</td><td>${paymentStats.unpaid}</td>
+      <td class="header">Grand Total</td><td class="currency">${formatCurrency(totalGrand)}</td>
+      <td colspan="4"></td>
+    </tr>
+    <tr><td colspan="12"></td></tr>
+    
+    <tr class="header">
+      <td>Pay Status</td>
+      <td>Code</td>
+      <td>Name</td>
+      <td>Last Name</td>
+      <td>Cost</td>`;
+  
+  const weekdayKeys: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  weekdayKeys.forEach(day => {
+    const dateStr = weekDates[day];
+    const displayDate = dateStr ? formatDate(dateStr) : day;
+    excel += `<td>${day}<br/>${displayDate}</td>`;
+  });
+  
+  excel += `
+      <td>Bonus</td>
+      <td>Grand Total</td>
+    </tr>`;
+  
+  operators.forEach(operator => {
+    const rowClass = operator.pay != null ? 'paid' : 'pending';
+    excel += `
+    <tr class="${rowClass}">
+      <td class="center">${operator.pay != null ? '✓ Paid' : '⚠ Pending'}</td>
+      <td>${operator.code}</td>
+      <td>${operator.name}</td>
+      <td>${operator.lastName}</td>
+      <td class="currency">${formatCurrency(operator.cost)}</td>`;
+    
+    weekdayKeys.forEach(day => {
+      const value = operator[day];
+      excel += `<td class="currency">${value ? formatCurrency(value) : '—'}</td>`;
+    });
+    
+    excel += `
+      <td class="currency">${formatCurrency(operator.additionalBonuses || 0)}</td>
+      <td class="currency">${formatCurrency(operator.grandTotal || 0)}</td>
+    </tr>`;
+  });
+  
+  excel += `
+    <tr class="header">
+      <td colspan="4">TOTALS</td>
+      <td></td>`;
+  
+  weekdayKeys.forEach(() => {
+    excel += '<td></td>';
+  });
+  
+  excel += `
+      <td></td>
+      <td class="currency">${formatCurrency(totalGrand)}</td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  
+  return excel;
+};
+
+// Función para descargar archivo
+const downloadFile = (content: string, fileName: string, contentType: string): void => {
+  const blob = new Blob([content], { type: contentType });
+  const link = document.createElement('a');
+  
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+};
+
+// Función para imprimir reporte
+const printReport = (props: PayrollExportProps): void => {
+  const { operators, weekInfo, week, location, paymentStats, totalGrand, weekDates } = props;
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  
   const weekdayKeys: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   
-  return (
-    <View style={[styles.tableRow, styles.tableHeader]}>
-      <View style={[styles.tableCol, { width: '4%' }]}>
-        <Text style={styles.tableCellHeader}>Pay</Text>
-      </View>
-      <View style={[styles.tableCol, { width: '7%' }]}>
-        <Text style={styles.tableCellHeader}>Code</Text>
-      </View>
-      <View style={styles.tableColName}>
-        <Text style={styles.tableCellHeader}>Name</Text>
-      </View>
-      <View style={styles.tableColName}>
-        <Text style={styles.tableCellHeader}>Last Name</Text>
-      </View>
-      <View style={[styles.tableCol, { width: '8%' }]}>
-        <Text style={styles.tableCellHeader}>Cost</Text>
-      </View>
-      {weekdayKeys.map(day => (
-        <View key={day} style={[styles.tableCol, { width: '6%' }]}>
-          <Text style={styles.tableCellHeader}>{day}</Text>
-          <Text style={[styles.tableCellHeader, { fontSize: 6 }]}>
-            {weekDates[day] ? formatDate(weekDates[day]) : ''}
-          </Text>
-        </View>
-      ))}
-      <View style={[styles.tableCol, { width: '7%' }]}>
-        <Text style={styles.tableCellHeader}>Bonus</Text>
-      </View>
-      <View style={[styles.tableColWide, { width: '9%' }]}>
-        <Text style={styles.tableCellHeader}>Total</Text>
-      </View>
-    </View>
-  );
-};
-
-// Componente del documento PDF
-const PayrollPDFDoc = ({ 
-  operators, 
-  weekInfo, 
-  weekDates, 
-  week, 
-  location,
-  paymentStats,
-  totalGrand 
-}: PayrollPDFExportProps) => {
-  const weekdayKeys: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const ROWS_PER_PAGE_FIRST = 35; // Primera página (con header y stats)
-  const ROWS_PER_PAGE = 45; // Páginas subsiguientes
+  let htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Payroll Report - Week ${week}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+    .subtitle { font-size: 16px; color: #666; margin-bottom: 5px; }
+    .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+    .stat-box { text-align: center; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+    .stat-value { font-size: 18px; font-weight: bold; }
+    .stat-label { font-size: 12px; color: #666; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+    th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+    .currency { text-align: right; }
+    .center { text-align: center; }
+    .paid { background-color: #d4edda; }
+    .pending { background-color: #fff3cd; }
+    .totals { background-color: #e9ecef; font-weight: bold; }
+    @media print {
+      body { margin: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">Operators Payroll Report</div>
+    <div class="subtitle">Week ${week} - ${location || 'All Locations'}</div>
+    <div class="subtitle">Period: ${weekInfo.start_date} to ${weekInfo.end_date}</div>
+  </div>
   
-  // Paginar operadores
-  let paginatedOperators: OperatorRow[][] = [];
-  if (operators.length > ROWS_PER_PAGE_FIRST) {
-    paginatedOperators.push(operators.slice(0, ROWS_PER_PAGE_FIRST));
-    const remaining = operators.slice(ROWS_PER_PAGE_FIRST);
-    const remainingPages = paginateOperators(remaining, ROWS_PER_PAGE);
-    paginatedOperators = [...paginatedOperators, ...remainingPages];
-  } else {
-    paginatedOperators = [operators];
-  }
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-value">${operators.length}</div>
+      <div class="stat-label">Total Operators</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" style="color: green;">${paymentStats.paid}</div>
+      <div class="stat-label">Paid</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" style="color: red;">${paymentStats.unpaid}</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" style="color: blue;">${formatCurrency(totalGrand)}</div>
+      <div class="stat-label">Grand Total</div>
+    </div>
+  </div>
   
+  <table>
+    <thead>
+      <tr>
+        <th>Pay</th>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Last Name</th>
+        <th>Cost</th>`;
+
+  weekdayKeys.forEach(day => {
+    const dateStr = weekDates[day];
+    const displayDate = dateStr ? formatDate(dateStr) : day;
+    htmlContent += `<th>${day}<br/><small>${displayDate}</small></th>`;
+  });
+
+  htmlContent += `
+        <th>Bonus</th>
+        <th>Grand Total</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  operators.forEach(operator => {
+    const rowClass = operator.pay != null ? 'paid' : 'pending';
+    htmlContent += `
+      <tr class="${rowClass}">
+        <td class="center">${operator.pay != null ? '✓' : '⚠'}</td>
+        <td>${operator.code}</td>
+        <td>${operator.name}</td>
+        <td>${operator.lastName}</td>
+        <td class="currency">${formatCurrency(operator.cost)}</td>`;
+
+    weekdayKeys.forEach(day => {
+      const value = operator[day];
+      htmlContent += `<td class="currency">${value ? formatCurrency(value) : '—'}</td>`;
+    });
+
+    htmlContent += `
+        <td class="currency">${formatCurrency(operator.additionalBonuses || 0)}</td>
+        <td class="currency">${formatCurrency(operator.grandTotal || 0)}</td>
+      </tr>`;
+  });
+
+  htmlContent += `
+      <tr class="totals">
+        <td colspan="4">TOTALS</td>
+        <td></td>`;
+
+  weekdayKeys.forEach(() => {
+    htmlContent += '<td></td>';
+  });
+
+  htmlContent += `
+        <td></td>
+        <td class="currency">${formatCurrency(totalGrand)}</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <div class="no-print" style="margin-top: 20px; text-align: center;">
+    <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Print Report</button>
+    <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Close</button>
+  </div>
+</body>
+</html>`;
+
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  printWindow.focus();
+};
+
+// Componente principal
+const PayrollExport: React.FC<PayrollExportProps> = (props) => {
+  const fileName = `payroll_week_${props.week}_${new Date().toISOString().split('T')[0]}`;
+
+  const handleCSVExport = () => {
+    const csvContent = generateCSV(props);
+    downloadFile(csvContent, `${fileName}.csv`, 'text/csv;charset=utf-8;');
+  };
+
+  const handleExcelExport = () => {
+    const excelContent = generateExcel(props);
+    downloadFile(excelContent, `${fileName}.xls`, 'application/vnd.ms-excel');
+  };
+
+  const handlePrint = () => {
+    printReport(props);
+  };
+
   return (
-    <PDFDocument>
-      {paginatedOperators.map((pageOperators, pageIndex) => (
-        <Page key={pageIndex} size="A4" orientation="landscape" style={styles.page}>
-          {/* Header - solo en la primera página */}
-          {pageIndex === 0 && (
-            <>
-              <View style={styles.header}>
-                <Text style={styles.title}>Operators Payroll Report</Text>
-                <Text style={styles.subtitle}>Week {week} - {location || 'All Locations'}</Text>
-                <Text style={styles.periodInfo}>
-                  Period: {weekInfo.start_date} to {weekInfo.end_date}
-                </Text>
-              </View>
+    <div className="flex items-center gap-2">
+      {/* Botón CSV */}
+      <button
+        onClick={handleCSVExport}
+        className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+        title="Export as CSV"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <span className="hidden sm:inline">CSV</span>
+      </button>
 
-              {/* Stats - solo en la primera página */}
-              <View style={styles.statsContainer}>
-                <View style={styles.statBox}>
-                  <Text style={styles.statValue}>{operators.length}</Text>
-                  <Text style={styles.statLabel}>Total Operators</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={[styles.statValue, { color: '#059669' }]}>{paymentStats.paid}</Text>
-                  <Text style={styles.statLabel}>Paid</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={[styles.statValue, { color: '#dc2626' }]}>{paymentStats.unpaid}</Text>
-                  <Text style={styles.statLabel}>Pending</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={[styles.statValue, { color: '#0891b2' }]}>{formatCurrency(totalGrand)}</Text>
-                  <Text style={styles.statLabel}>Grand Total</Text>
-                </View>
-              </View>
-            </>
-          )}
+      {/* Botón Excel */}
+      <button
+        onClick={handleExcelExport}
+        className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+        title="Export as Excel"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <span className="hidden sm:inline">Excel</span>
+      </button>
 
-          {/* Indicador de continuación */}
-          {pageIndex > 0 && (
-            <Text style={styles.continuedText}>
-              (Continued from page {pageIndex})
-            </Text>
-          )}
-
-          {/* Table Container */}
-          <View style={styles.tableContainer}>
-            {/* Table Header - en todas las páginas */}
-            <TableHeader weekDates={weekDates} />
-
-            {/* Table Body */}
-            {pageOperators.map((operator) => (
-              <View key={operator.code} style={styles.tableRow}>
-                <View style={[styles.tableCol, { width: '4%' }]}>
-                  <Text style={styles.tableCell}>
-                    {operator.pay != null ? '✓' : '✗'}
-                  </Text>
-                </View>
-                <View style={[styles.tableCol, { width: '7%' }]}>
-                  <Text style={styles.tableCellBold}>{operator.code}</Text>
-                </View>
-                <View style={styles.tableColName}>
-                  <Text style={styles.tableCell}>{operator.name}</Text>
-                </View>
-                <View style={styles.tableColName}>
-                  <Text style={styles.tableCell}>{operator.lastName}</Text>
-                </View>
-                <View style={[styles.tableCol, { width: '8%' }]}>
-                  <Text style={styles.tableCell}>{formatCurrency(operator.cost)}</Text>
-                </View>
-                {weekdayKeys.map(day => (
-                  <View key={day} style={[styles.tableCol, { width: '6%' }]}>
-                    <Text style={operator[day] ? styles.tableCellGreen : styles.tableCell}>
-                      {operator[day] ? formatCurrency(operator[day]) : '—'}
-                    </Text>
-                  </View>
-                ))}
-                <View style={[styles.tableCol, { width: '7%' }]}>
-                  <Text style={styles.tableCell}>
-                    {formatCurrency(operator.additionalBonuses || 0)}
-                  </Text>
-                </View>
-                <View style={[styles.tableColWide, { width: '9%' }]}>
-                  <Text style={styles.tableCellBold}>
-                    {formatCurrency(operator.grandTotal || 0)}
-                  </Text>
-                </View>
-              </View>
-            ))}
-
-            {/* Totals Row - solo en la última página */}
-            {pageIndex === paginatedOperators.length - 1 && (
-              <View style={[styles.tableRow, styles.totalsRow]}>
-                <View style={[styles.tableCol, { width: '4%' }]}><Text></Text></View>
-                <View style={[styles.tableCol, { width: '7%' }]}><Text></Text></View>
-                <View style={styles.tableColName}><Text></Text></View>
-                <View style={styles.tableColName}>
-                  <Text style={styles.tableCellBold}>TOTALS</Text>
-                </View>
-                <View style={[styles.tableCol, { width: '8%' }]}><Text></Text></View>
-                {weekdayKeys.map(day => (
-                  <View key={day} style={[styles.tableCol, { width: '6%' }]}><Text></Text></View>
-                ))}
-                <View style={[styles.tableCol, { width: '7%' }]}><Text></Text></View>
-                <View style={[styles.tableColWide, { width: '9%' }]}>
-                  <Text style={[styles.tableCellBold, { fontSize: 9 }]}>
-                    {formatCurrency(totalGrand)}
-                  </Text>
-                </View>
-              </View>
-            )}
-          </View>
-
-          {/* Footer */}
-          <Text style={styles.footer}>
-            Generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
-          </Text>
-          
-          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
-            `Page ${pageNumber} of ${totalPages}`
-          )} fixed />
-        </Page>
-      ))}
-    </PDFDocument>
+      {/* Botón Imprimir */}
+      <button
+        onClick={handlePrint}
+        className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+        title="Print Report"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+        </svg>
+        <span className="hidden sm:inline">Print</span>
+      </button>
+    </div>
   );
 };
 
-// Componente del botón de exportación
-const PayrollPDFExport: React.FC<PayrollPDFExportProps> = ({ 
-  operators, 
-  weekInfo, 
-  weekDates, 
-  week, 
-  location,
-  paymentStats,
-  totalGrand 
-}) => {
-  const fileName = `payroll_week_${week}_${new Date().toISOString().split('T')[0]}.pdf`;
-
-  return (
-    <PDFDownloadLink
-      document={
-        <PayrollPDFDoc
-          operators={operators}
-          weekInfo={weekInfo}
-          weekDates={weekDates}
-          week={week}
-          location={location}
-          paymentStats={paymentStats}
-          totalGrand={totalGrand}
-        />
-      }
-      fileName={fileName}
-    >
-      {({ loading }) => (
-        <button
-          className={`
-            flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm
-            transition-all duration-200 shadow-md hover:shadow-lg
-            ${loading 
-              ? 'bg-gray-400 text-white cursor-not-allowed' 
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }
-          `}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Generating PDF...</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              <span>Export PDF</span>
-            </>
-          )}
-        </button>
-      )}
-    </PDFDownloadLink>
-  );
-};
-
-export default PayrollPDFExport;
+export default PayrollExport;
