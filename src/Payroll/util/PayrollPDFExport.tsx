@@ -209,7 +209,7 @@ const formatCurrency = (n: number): string => {
 };
 
 const formatDate = (dateStr: string): string => {
-  const [year, month, day] = dateStr.split('-').map(Number);
+  const [, month, day] = dateStr.split('-').map(Number);
   return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
 };
 
@@ -276,9 +276,6 @@ const PayrollPDFDoc = ({
   const ROWS_PER_PAGE = 45; // Páginas subsiguientes
   
   // Paginar operadores
-  const pages = paginateOperators(operators, ROWS_PER_PAGE_FIRST);
-  
-  // Si hay más de una página, re-paginar con diferentes límites
   let paginatedOperators: OperatorRow[][] = [];
   if (operators.length > ROWS_PER_PAGE_FIRST) {
     paginatedOperators.push(operators.slice(0, ROWS_PER_PAGE_FIRST));
