@@ -111,15 +111,14 @@ function generateWeekDates(
 
 /** Formatear fecha para mostrar en header */
 function formatDateForHeader(dateStr: string): string {
-  // Parsear la fecha correctamente sin problemas de timezone
+  if (!dateStr || typeof dateStr !== "string" || !dateStr.includes("-")) {
+    return "--/--";
+  }
   const [year, month, day] = dateStr.split("-").map(Number);
+  if (!year || !month || !day) {
+    return "--/--";
+  }
   const date = new Date(year, month - 1, day);
-
-  console.log(
-    `formatDateForHeader: input=${dateStr}, parsed date=${date}, month=${
-      date.getMonth() + 1
-    }, day=${date.getDate()}`
-  );
 
   const monthStr = (date.getMonth() + 1).toString().padStart(2, "0");
   const dayStr = date.getDate().toString().padStart(2, "0");
@@ -649,15 +648,17 @@ export default function PayrollPage() {
 
             {/* PDF Export Button - AGREGAR ESTO */}
             {!loading && weekInfo && grouped.length > 0 && (
-              <PayrollPDFExport
-                operators={filteredOperators}
-                weekInfo={weekInfo}
-                weekDates={weekDates}
-                week={week}
-                location={locationString}
-                paymentStats={paymentStats}
-                totalGrand={filteredTotalGrand}
-              />
+              <ErrorBoundary>
+                <PayrollPDFExport
+                  operators={filteredOperators}
+                  weekInfo={weekInfo}
+                  weekDates={weekDates}
+                  week={week}
+                  location={locationString}
+                  paymentStats={paymentStats}
+                  totalGrand={filteredTotalGrand}
+                />
+              </ErrorBoundary>
             )}
           </div>
         </div>
@@ -933,4 +934,28 @@ export default function PayrollPage() {
       </div>
     </div>
   );
+}
+//ErrorBoundary mientras se averigua por qué no funciona el PDF
+// ...existing code...
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: any }
+> {
+  constructor(props: { children: React.ReactNode }) { 
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ color: "red" }}>
+          PDF Error: {String(this.state.error)}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
