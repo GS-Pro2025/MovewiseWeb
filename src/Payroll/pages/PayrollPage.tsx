@@ -31,7 +31,7 @@ interface OperatorRow extends WeekAmounts {
   cost: number;
   pay?: string | null;
   total?: number;
-  additionalBonuses?: number;
+  additionalBonuses: number;
   grandTotal?: number;
   assignmentIds: (number | string)[];
   paymentIds: (number | string)[];
@@ -233,7 +233,6 @@ export default function PayrollPage() {
         const payId = d.id_payment;
 
         if (!map.has(key)) {
-          // Al crear el operador por primera vez, tomar el bonus del primer registro
           map.set(key, {
             code: d.code,
             name: d.first_name,
@@ -242,12 +241,14 @@ export default function PayrollPage() {
             cost: d.salary,
             pay: payId ? payId.toString() : null,
             total: 0,
-            additionalBonuses: Number(d.bonus || 0), // Solo tomar el bonus una vez
+            additionalBonuses: 0,
             grandTotal: 0,
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
-            assignmentsByDay: {}, // NUEVO
-          });
+            assignmentsByDay: {},
+            // Agrega un set temporal para controlar los días sumados (no parte de la interfaz final)
+            _bonusDaysAdded: new Set<string>(),
+          } as any);
         } else {
           const ex = map.get(key)!;
           ex.assignmentIds.push(assignId);
@@ -256,18 +257,22 @@ export default function PayrollPage() {
           }
         }
 
-        // Para cada registro, asigna el id_assign y la fecha al día correspondiente:
         const dataDate = d.date.split("T")[0];
         const dayKey = Object.entries(dates).find(
           ([, date]) => date === dataDate
         )?.[0] as keyof WeekAmounts;
         if (dayKey) {
           const ex = map.get(key)!;
+          // Solo suma el bonus si aún no se sumó para ese día
+          if (!(ex as any)._bonusDaysAdded.has(dayKey)) {
+            ex.additionalBonuses += Number(d.bonus) || 0;
+            (ex as any)._bonusDaysAdded.add(dayKey);
+          }
           if (!ex.assignmentsByDay![dayKey]) ex.assignmentsByDay![dayKey] = [];
           ex.assignmentsByDay![dayKey]!.push({
             id: assignId,
             date: dataDate,
-            bonus: Number(d.bonus) || 0, // <-- agrega esto si d.bonus existe en tu data
+            bonus: Number(d.bonus) || 0,
           });
         }
       });
@@ -288,6 +293,8 @@ export default function PayrollPage() {
 
       // PASO 3: Mapear cada día de la semana para cada operador
       const operators = Array.from(map.values()).map((row) => {
+        delete (row as any)._bonusDaysAdded;
+
         console.log(
           `Mapeando días para ${row.name} ${row.lastName} (${row.code})`
         );
