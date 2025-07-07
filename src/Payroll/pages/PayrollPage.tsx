@@ -449,116 +449,8 @@ export default function PayrollPage() {
 
         {/* Controls Section */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-            {/* Week Input */}
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-50 rounded-lg p-3">
-                <svg
-                  className="w-5 h-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
-              </div>
-              <div>
-                <label
-                  htmlFor="weekInput"
-                  className="block text-sm font-semibold text-gray-700 mb-1"
-                >
-                  Week Number
-                </label>
-                <input
-                  id="weekInput"
-                  type="number"
-                  min="1"
-                  max="53"
-                  value={week}
-                  onChange={changeWeek}
-                  className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 font-medium text-center"
-                />
-              </div>
-            </div>
-            {/* Autocomplete País, Estado, Ciudad */}
-            <div className="w-64">
-              {" "}
-              {/* Ancho de la location*/}
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Location
-              </label>
-              <div className="flex items-center gap-2">
-                <Autocomplete
-                  options={options}
-                  getOptionLabel={getOptionLabel}
-                  value={value}
-                  onChange={(_, newValue) => {
-                    // Manejar selección y limpieza aquí
-                    if (newValue === null) {
-                      // Si el usuario borra el input, retrocede un paso
-                      if (locationStep === "city") {
-                        setCity("");
-                        setLocationStep("state");
-                      } else if (locationStep === "state") {
-                        setState("");
-                        setLocationStep("country");
-                      } else if (locationStep === "country") {
-                        setCountry("");
-                      }
-                    } else {
-                      // Selección normal
-                      if (locationStep === "country") {
-                        setCountry(newValue.country);
-                      } else if (locationStep === "state") {
-                        setState(newValue.name);
-                      } else if (locationStep === "city") {
-                        setCity(newValue);
-                      }
-                    }
-                  }}
-                  sx={{ width: "100%" }} // Esto fuerza el ancho del Autocomplete
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={label}
-                      placeholder={`Select ${label.toLowerCase()}`}
-                      size="small"
-                      sx={{ width: "100%" }} // Esto fuerza el ancho del input interno
-                    />
-                  )}
-                  isOptionEqualToValue={(option, value) =>
-                    getOptionLabel(option) === getOptionLabel(value)
-                  }
-                  disableClearable={false}
-                  disabled={locationStep === "state" && !country}
-                />
-                {/* Botón para limpiar toda la búsqueda de location */}
-                {(country || state || city) && (
-                  <button
-                    type="button"
-                    className="ml-2 px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold transition"
-                    onClick={() => {
-                      setCountry("");
-                      setState("");
-                      setCity("");
-                      setLocationStep("country");
-                    }}
-                    title="Clear location filter"
-                  >
-                    Limpiar
-                  </button>
-                )}
-              </div>
-              {/* Mostrar el string construido */}
-              <div className="text-xs text-gray-500 mt-1">
-                {locationString && `Selected: ${locationString}`}
-              </div>
-            </div>
+          {/* Controles principales: búsqueda, location y semana */}
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             {/* Search Input */}
             <div className="flex items-center gap-3 flex-1 max-w-md">
               <div className="bg-emerald-50 rounded-lg p-3">
@@ -616,8 +508,157 @@ export default function PayrollPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Location Input with Clear Button */}
+            <div className="w-64">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <svg
+                    className="w-5 h-5 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    ></path>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    ></path>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Location
+                    </label>
+                    {locationString && (
+                      <button
+                        onClick={() => {
+                          setCountry("");
+                          setState("");
+                          setCity("");
+                          setStates([]);
+                          setCities([]);
+                          setLocationStep("country");
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200 flex items-center gap-1"
+                        title="Clear location"
+                      >
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          ></path>
+                        </svg>
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <Autocomplete
+                    options={options}
+                    getOptionLabel={getOptionLabel}
+                    value={value}
+                    onChange={(_, newValue) => {
+                      // Manejar selección y limpieza aquí
+                      if (newValue === null) {
+                        // Si el usuario borra el input, retrocede un paso
+                        if (locationStep === "city") {
+                          setCity("");
+                          setLocationStep("state");
+                        } else if (locationStep === "state") {
+                          setState("");
+                          setLocationStep("country");
+                        } else if (locationStep === "country") {
+                          setCountry("");
+                        }
+                      } else {
+                        // Selección normal
+                        if (locationStep === "country") {
+                          setCountry(newValue.country);
+                        } else if (locationStep === "state") {
+                          setState(newValue.name);
+                        } else if (locationStep === "city") {
+                          setCity(newValue);
+                        }
+                      }
+                    }}
+                    sx={{ width: "100%" }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={label}
+                        placeholder={`Select ${label.toLowerCase()}`}
+                        size="small"
+                        sx={{ width: "100%" }}
+                      />
+                    )}
+                    isOptionEqualToValue={(option, value) =>
+                      getOptionLabel(option) === getOptionLabel(value)
+                    }
+                    disableClearable={false}
+                    disabled={locationStep === "state" && !country}
+                  />
+                </div>
+              </div>
+              {/* Mostrar el string construido */}
+              <div className="text-xs text-gray-500 mt-1">
+                {locationString && `Selected: ${locationString}`}
+              </div>
+            </div>
+            
+            {/* Week Input */}
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <svg
+                  className="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div>
+                <label
+                  htmlFor="weekInput"
+                  className="block text-sm font-semibold text-gray-700 mb-1"
+                >
+                  Week Number
+                </label>
+                <input
+                  id="weekInput"
+                  type="number"
+                  min="1"
+                  max="53"
+                  value={week}
+                  onChange={changeWeek}
+                  className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 font-medium text-center"
+                />
+              </div>
+            </div>
+          </div>
 
-            {/* Period Display */}
+          {/* Periodo y exportar PDF centrados abajo */}
+          <div className="flex flex-col items-center mt-8 gap-4">
             {weekInfo && (
               <div className="flex items-center gap-3">
                 <div className="bg-amber-50 rounded-lg p-3">
@@ -645,8 +686,6 @@ export default function PayrollPage() {
                 </div>
               </div>
             )}
-
-            {/* PDF Export Button - AGREGAR ESTO */}
             {!loading && weekInfo && grouped.length > 0 && (
               <ErrorBoundary>
                 <PayrollPDFExport
