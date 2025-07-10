@@ -302,6 +302,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
+  
+  // NUEVO: Estado para expense
+  const [expense, setExpense] = useState<number>(0);
 
   // Inicializa dailyBonuses con el bonus de la primera asignación de cada día (si existe)
   const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
@@ -318,13 +321,13 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   });
   const [savingBonus, setSavingBonus] = useState<{ [key in keyof WeekAmounts]?: boolean }>({});
 
-  // Efecto para recalcular cuando cambien los bonos
+  // Efecto para recalcular cuando cambien los bonos Y expense
   useEffect(() => {
-  const baseTotal = operatorData.total || 0;
-  const dailyBonusTotal = Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
-  const newGrandTotal = baseTotal + dailyBonusTotal;
-  setGrandTotal(newGrandTotal);
-}, [dailyBonuses, operatorData.total]);
+    const baseTotal = operatorData.total || 0;
+    const dailyBonusTotal = Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
+    const newGrandTotal = baseTotal + dailyBonusTotal - expense; // Restar expense del total
+    setGrandTotal(newGrandTotal);
+  }, [dailyBonuses, operatorData.total, expense]); // Agregar expense a las dependencias
 
   const days: DayInfo[] = [
     { key: 'Mon', label: 'Monday' },
@@ -391,6 +394,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
         id_assigns: operatorData.assignmentIds as number[],
         value: grandTotal,
         bonus: dailyBonusTotal, // solo daily bonuses
+        expense: expense, 
         status: 'paid',
         date_start: periodStart,
         date_end: periodEnd,
@@ -576,8 +580,23 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                 <span className="font-bold text-green-900 text-lg">{formatCurrency(calculateDailyBonusTotal())}</span>
               </div>
 
-              {/* Bonus Adicional */}
-              
+              {/* NUEVO: Expense Input */}
+              <div className="flex justify-between items-center px-4 py-3 bg-red-50 rounded-lg border border-red-200">
+                <span className="font-semibold text-red-800">Expenses</span>
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2">$</span>
+                  <input
+                    type="number"
+                    value={expense || ''}
+                    onChange={(e) => setExpense(parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                    disabled={loading || isPaid}
+                    className="w-24 px-3 py-1 text-right border border-red-300 rounded-md font-semibold text-red-700 bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
 
               {/* Grand Total */}
               <div className="flex justify-between items-center px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-800 rounded-lg text-white">
