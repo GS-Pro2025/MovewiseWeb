@@ -35,6 +35,17 @@ export interface ApiResponse {
   pagination: Pagination;
 }
 
+export interface PaymentData {
+  id_pay: number;
+  value: string;
+  date_payment: string;
+  bonus: string;
+  status: string;
+  date_start: string;
+  date_end: string;
+  expense: string | null;
+}
+
 const API_BASE: string =
   import.meta.env.VITE_URL_BASE ?? "http://127.0.0.1:8000";
 
@@ -106,4 +117,32 @@ export async function createPayment(
   }
 
   return (await res.json()) as ApiResponse;
+}
+
+/**
+ * GET /payments/{id}/
+ * @param paymentId — ID del pago a obtener.
+ * @returns         — Parsed JSON response con los detalles del pago.
+ */
+export async function getPaymentById(
+  paymentId: number | string,
+): Promise<PaymentData> {
+  const token: string | undefined = Cookies.get("authToken");
+  const url = `${API_BASE}/payments/${paymentId}/`;
+
+  const res: Response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`API ${res.status}: ${msg || res.statusText}`);
+  }
+
+  return (await res.json()) as PaymentData;
 }
