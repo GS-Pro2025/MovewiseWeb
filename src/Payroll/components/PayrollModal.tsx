@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { createPayment } from '../../service/PayrollService';
-import { updateAssign } from '../../service/AssignService'; // Asegúrate de importar el servicio
+import { createPayment, getPaymentById } from '../../service/PayrollService'; // AGREGAR getPaymentById
+import { updateAssign } from '../../service/AssignService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -38,7 +38,8 @@ interface PayrollModalProps {
     grandTotal?: number;
     assignmentIds?: (number | string)[];
     paymentIds?: (number | string)[];
-    assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] }; // NUEVO
+    expense?: number; // AGREGAR expense
+    assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] };
   };
   periodStart: string;
   periodEnd: string;
@@ -303,8 +304,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
   
-  // NUEVO: Estado para expense
-  const [expense, setExpense] = useState<number>(0);
+  // NUEVO: Estado para expense inicializado con el valor del operador
+  const [expense, setExpense] = useState<number>(operatorData.expense || 0);
+  const [expenseLoading, setExpenseLoading] = useState<boolean>(false);
 
   // Inicializa dailyBonuses con el bonus de la primera asignación de cada día (si existe)
   const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
@@ -321,13 +323,43 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   });
   const [savingBonus, setSavingBonus] = useState<{ [key in keyof WeekAmounts]?: boolean }>({});
 
+  // NUEVO: Effect para cargar expense si no está disponible pero hay paymentIds
+  useEffect(() => {
+    const loadExpenseFromPayment = async () => {
+      // Si ya tenemos expense o no hay pagos, no hacer nada
+      if (operatorData.expense !== undefined || !operatorData.paymentIds?.length) {
+        return;
+      }
+
+      setExpenseLoading(true);
+      try {
+        // Usar el primer payment ID
+        const paymentId = operatorData.paymentIds[0];
+        console.log(`Loading expense from payment ID: ${paymentId}`);
+        
+        const paymentData = await getPaymentById(paymentId);
+        const expenseValue = paymentData.expense ? parseFloat(paymentData.expense) : 0;
+        
+        console.log(`Expense loaded: ${expenseValue}`);
+        setExpense(expenseValue);
+      } catch (error) {
+        console.error('Error loading expense from payment:', error);
+        toast.error('Could not load expense data');
+      } finally {
+        setExpenseLoading(false);
+      }
+    };
+
+    loadExpenseFromPayment();
+  }, [operatorData.paymentIds, operatorData.expense]);
+
   // Efecto para recalcular cuando cambien los bonos Y expense
   useEffect(() => {
     const baseTotal = operatorData.total || 0;
     const dailyBonusTotal = Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
-    const newGrandTotal = baseTotal + dailyBonusTotal - expense; // Restar expense del total
+    const newGrandTotal = baseTotal + dailyBonusTotal - expense;
     setGrandTotal(newGrandTotal);
-  }, [dailyBonuses, operatorData.total, expense]); // Agregar expense a las dependencias
+  }, [dailyBonuses, operatorData.total, expense]);
 
   const days: DayInfo[] = [
     { key: 'Mon', label: 'Monday' },
@@ -580,21 +612,33 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                 <span className="font-bold text-green-900 text-lg">{formatCurrency(calculateDailyBonusTotal())}</span>
               </div>
 
-              {/* NUEVO: Expense Input */}
+              {/* EXPENSE INPUT con loading */}
               <div className="flex justify-between items-center px-4 py-3 bg-red-50 rounded-lg border border-red-200">
                 <span className="font-semibold text-red-800">Expenses</span>
                 <div className="flex items-center">
-                  <span className="text-red-600 mr-2">$</span>
-                  <input
-                    type="number"
-                    value={expense || ''}
-                    onChange={(e) => setExpense(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                    disabled={loading || isPaid}
-                    className="w-24 px-3 py-1 text-right border border-red-300 rounded-md font-semibold text-red-700 bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                    placeholder="0.00"
-                  />
+                  {expenseLoading ? (
+                    <div className="flex items-center">
+                      <svg className="animate-spin w-4 h-4 mr-2 text-red-600" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-red-600 text-sm">Loading...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-red-600 mr-2">$</span>
+                      <input
+                        type="number"
+                        value={expense || ''}
+                        onChange={(e) => setExpense(parseFloat(e.target.value) || 0)}
+                        min="0"
+                        step="0.01"
+                        disabled={loading || isPaid || expenseLoading}
+                        className="w-24 px-3 py-1 text-right border border-red-300 rounded-md font-semibold text-red-700 bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                        placeholder="0.00"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
 
