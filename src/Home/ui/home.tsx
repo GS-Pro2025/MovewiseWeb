@@ -337,6 +337,18 @@ const Example = () => {
         );
       },
     }),
+    columnHelper.accessor('created_by', {
+      header: 'Created By',
+      size: 120,
+      Cell: ({ cell }) => {
+        const value = cell.getValue<string>();
+        return (
+          <Typography sx={{ color: '#1976d2', fontWeight: 500 }}>
+            {value || 'N/A'}
+          </Typography>
+        );
+      },
+    }),
   ];
   const finishOrder = async (orderId: string, image?: File) => {
     try{
@@ -467,6 +479,7 @@ const Example = () => {
           income: item.income != null ? Number(item.income) : 0,
           payStatus: Number(item.payStatus) || 0,
           dispatch_ticket: item.dispatch_ticket ?? '',
+          created_by: item.created_by ?? 'N/A',
         };
       });
       

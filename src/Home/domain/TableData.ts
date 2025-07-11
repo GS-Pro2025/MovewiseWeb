@@ -23,6 +23,7 @@ export interface TableData {
   week: number; 
   payStatus: number;
   distance: number;
+  created_by: string | null;
   operators: Operator[];
 }
 // Interfaz para exportar solo los campos planos
