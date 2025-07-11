@@ -59,6 +59,7 @@ export interface OrderReportResult {
   operators: Operator[];
   vehicles: Vehicle[];
   summaryCost: SummaryCost;
+  created_by: string | null;
 }
 
 export interface OrdersReportResponse {
