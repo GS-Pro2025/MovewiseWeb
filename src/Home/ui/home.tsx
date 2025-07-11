@@ -32,6 +32,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useNavigate } from 'react-router-dom'; 
+import { Menu, ListItemIcon, ListItemText } from '@mui/material';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -183,28 +184,24 @@ const Example = () => {
 
   const navigate = useNavigate();
 
+  // NUEVO: Estado para menú contextual
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    row: TableData | null;
+  } | null>(null);
+
   const columns = [
     {
       header: 'Actions',
       id: 'actions',
-      size: 200,
+      size: 80, // REDUCIDO de 200 a 80
       headerProps: { style: { textAlign: 'center' } },
       Cell: ({ row }: { row: MRT_Row<TableData> }) => {
         const isFinished = row.original.status === 'finished';
         return (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {/* Botón continuar orden */}
-            <IconButton
-              color="primary"
-              size="small"
-              onClick={e => {
-                e.stopPropagation();
-                handleContinueOrder(row.original);
-              }}
-              title="Continue Order"
-            >
-              <ContentCopyIcon />
-            </IconButton>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            {/* Solo mostrar el botón más importante */}
             <IconButton
               color={isFinished ? 'default' : 'success'}
               size="small"
@@ -214,34 +211,18 @@ const Example = () => {
                 if (!isFinished) handleOpenFinishModal(row.original.id);
               }}
               title={isFinished ? "Order finished" : "Finish Order"}
+              sx={{
+                backgroundColor: isFinished ? '#e8f5e8' : 'transparent',
+                '&:hover': {
+                  backgroundColor: isFinished ? '#e8f5e8' : 'rgba(76, 175, 80, 0.08)'
+                }
+              }}
             >
               {isFinished ? (
-                <CheckCircleIcon sx={{ color: '#8bc34a' }} />
+                <CheckCircleIcon sx={{ color: '#4caf50' }} />
               ) : (
                 <CheckIcon />
               )}
-            </IconButton>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditOrder(row.original);
-              }}
-              size="small"
-              color="primary"
-              startIcon={<EditIcon />}
-            >
-              Editar
-            </Button>
-            <IconButton
-              color="error"
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteOrderClick(row.original);
-              }}
-              title="Delete Order"
-            >
-              <DeleteIcon />
             </IconButton>
           </Box>
         );
@@ -648,15 +629,20 @@ const Example = () => {
     data: filteredData,
     enableRowSelection: true,
     columnFilterDisplayMode: 'popover',
-    manualPagination: true,        // <--- Indica que la paginación será manual
-    rowCount: totalRows,           // <--- Total de filas (de tu API)
-    state: { isLoading: loading, pagination }, // <--- Controla la paginación desde tu estado
-    onPaginationChange: setPagination,         // <--- Cambia la página desde tu estado
-    // Elimina muiExpandButtonProps para mostrar el ícono de expandir
+    manualPagination: true,
+    rowCount: totalRows,
+    state: { isLoading: loading, pagination },
+    onPaginationChange: setPagination,
     muiTableBodyRowProps: ({ row }) => ({
       onClick: () => handleRowClick(row),
-      sx: { cursor: 'pointer' },
-      style: { textAlign: 'center' }, 
+      onContextMenu: (event) => handleContextMenu(event, row.original),
+      sx: { 
+        cursor: 'pointer',
+        '&:hover': {
+          backgroundColor: '#f5f5f5'
+        }
+      },
+      style: { textAlign: 'center' },
     }),
     renderTopToolbarCustomActions: ({ table }) => (
       <Box
@@ -771,9 +757,108 @@ const Example = () => {
       ) : null,
       });
 
+  const handleContextMenu = (event: React.MouseEvent, row: TableData) => {
+    event.preventDefault();
+    setContextMenu({
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+      row,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleContextAction = (action: string) => {
+    if (!contextMenu?.row) return;
+    
+    const row = contextMenu.row;
+    
+    switch (action) {
+      case 'continue':
+        handleContinueOrder(row);
+        break;
+      case 'finish':
+        if (row.status !== 'finished') {
+          handleOpenFinishModal(row.id);
+        }
+        break;
+      case 'edit':
+        handleEditOrder(row);
+        break;
+      case 'delete':
+        handleDeleteOrderClick(row);
+        break;
+    }
+    
+    handleCloseContextMenu();
+  };
+
   return (
     <>
       <MaterialReactTable table={table} />
+      
+      {/* NUEVO: Menú Contextual */}
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 180,
+              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+              border: '1px solid #e0e0e0',
+            }
+          }
+        }}
+      >
+        <MenuItem 
+          onClick={() => handleContextAction('continue')}
+          disabled={!contextMenu?.row}
+        >
+          <ListItemIcon>
+            <ContentCopyIcon fontSize="small" color="primary" />
+          </ListItemIcon>
+          <ListItemText>Continue Order</ListItemText>
+        </MenuItem>
+        
+        <MenuItem 
+          onClick={() => handleContextAction('finish')}
+          disabled={contextMenu?.row?.status === 'finished'}
+        >
+          <ListItemIcon>
+            <CheckIcon fontSize="small" color="success" />
+          </ListItemIcon>
+          <ListItemText>
+            {contextMenu?.row?.status === 'finished' ? 'Already Finished' : 'Finish Order'}
+          </ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={() => handleContextAction('edit')}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" color="primary" />
+          </ListItemIcon>
+          <ListItemText>Edit Order</ListItemText>
+        </MenuItem>
+        
+        <MenuItem 
+          onClick={() => handleContextAction('delete')}
+          sx={{ color: 'error.main' }}
+        >
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText>Delete Order</ListItemText>
+        </MenuItem>
+      </Menu>
+
       {editModalOpen && (
         <EditOrderDialog
           open={editModalOpen}
