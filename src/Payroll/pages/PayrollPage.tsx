@@ -2,7 +2,7 @@
 /* eslint-disable no-constant-condition */
 import React, { useState, useEffect, useMemo } from "react";
 import PayrollPDFExport from "../util/PayrollPDFExport";
-import { payrollService, WeekInfo } from "../../service/PayrollService";
+import { payrollService, WeekInfo, getPaymentById } from "../../service/PayrollService";
 import { PayrollModal } from "../components/PayrollModal";
 import LoaderSpinner from "../../componets/LoadingSpinner";
 import {
@@ -32,6 +32,7 @@ interface OperatorRow extends WeekAmounts {
   pay?: string | null;
   total?: number;
   additionalBonuses: number;
+  expense?: number;
   grandTotal?: number;
   assignmentIds: (number | string)[];
   paymentIds: (number | string)[];
@@ -224,6 +225,8 @@ export default function PayrollPage() {
       setWeekDates(dates);
 
       const map = new Map<string, OperatorRow>();
+      // NUEVO: Map para cachear payments y evitar llamadas duplicadas
+      const paymentCache = new Map<string, number>();
 
       // PASO 1: Crear la estructura básica de cada operador y obtener bonus único
       response.data.forEach((d) => {
@@ -241,11 +244,12 @@ export default function PayrollPage() {
             pay: payId ? payId.toString() : null,
             total: 0,
             additionalBonuses: 0,
+            expense: 0, // INICIALIZAR expense
             grandTotal: 0,
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
             assignmentsByDay: {},
-            // Agrega un set temporal para controlar los días sumados (no parte de la interfaz final)
+            // Agrega un set temporal para controlar los días sumados
             _bonusDaysAdded: new Set<string>(),
           } as any);
         } else {
@@ -276,17 +280,66 @@ export default function PayrollPage() {
         }
       });
 
+      // PASO 1.5: OBTENER EXPENSES DE LOS PAYMENTS
+      console.log("Obteniendo expenses de payments...");
+      const paymentPromises: Promise<void>[] = [];
+      
+      // Recopilar todos los payment_ids únicos
+      const uniquePaymentIds = new Set<string>();
+      Array.from(map.values()).forEach(operator => {
+        operator.paymentIds.forEach(payId => {
+          if (payId && !uniquePaymentIds.has(payId.toString())) {
+            uniquePaymentIds.add(payId.toString());
+          }
+        });
+      });
+
+      // Hacer llamadas para obtener expenses
+      for (const paymentId of uniquePaymentIds) {
+        paymentPromises.push(
+          getPaymentById(paymentId)
+            .then(paymentData => {
+              const expense = Number(paymentData.expense) || 0;
+              paymentCache.set(paymentId, expense);
+              console.log(`Payment ${paymentId}: expense = ${expense}`);
+            })
+            .catch(error => {
+              console.error(`Error getting payment ${paymentId}:`, error);
+              paymentCache.set(paymentId, 0); // Default a 0 si hay error
+            })
+        );
+      }
+
+      // Esperar a que todas las llamadas de payment terminen
+      await Promise.all(paymentPromises);
+
+      // Asignar expenses a los operadores basado en sus payments
+      Array.from(map.values()).forEach(operator => {
+        let totalExpense = 0;
+        const processedPayments = new Set<string>();
+        
+        operator.paymentIds.forEach(payId => {
+          const paymentIdStr = payId.toString();
+          if (!processedPayments.has(paymentIdStr)) {
+            const expense = paymentCache.get(paymentIdStr) || 0;
+            totalExpense += expense;
+            processedPayments.add(paymentIdStr);
+          }
+        });
+        
+        operator.expense = totalExpense;
+        console.log(`Operator ${operator.code}: total expense = ${totalExpense}`);
+      });
+
       // PASO 2: Función para buscar si un operador trabajó en una fecha específica
       const findWorkDay = (
         operatorCode: string,
         targetDate: string
       ): number | null => {
-        // Buscar en todos los datos si este operador trabajó en esta fecha
         const workRecord = response.data.find((d) => {
-          const dataDate = d.date.split("T")[0]; // "2025-05-19T00:00:00Z" -> "2025-05-19"
+          const dataDate = d.date.split("T")[0];
           return d.code === operatorCode && dataDate === targetDate;
         });
-
         return workRecord ? workRecord.salary : null;
       };
 
@@ -298,6 +351,7 @@ export default function PayrollPage() {
           `Mapeando días para ${row.name} ${row.lastName} (${row.code})`
         );
         console.log(`Bonus para ${row.code}: ${row.additionalBonuses}`);
+        console.log(`Expense para ${row.code}: ${row.expense}`);
 
         // Para cada día de la semana, buscar si trabajó
         weekdayKeys.forEach((dayKey) => {
@@ -311,15 +365,16 @@ export default function PayrollPage() {
           }
         });
 
-        // Calcular totales
+        // Calcular totales - INCLUYENDO EXPENSE
         const daysWorked = weekdayKeys.filter(
           (day) => row[day] != null && row[day]! > 0
         ).length;
         row.total = daysWorked * row.cost;
-        row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
+        // NUEVO CÁLCULO: restar expense del grand total
+        row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0) - (row.expense || 0);
 
         console.log(
-          `Total para ${row.code}: Días=${daysWorked}, Salario=${row.total}, Bonus=${row.additionalBonuses}, Gran Total=${row.grandTotal}`
+          `Total para ${row.code}: Días=${daysWorked}, Salario=${row.total}, Bonus=${row.additionalBonuses}, Expense=${row.expense}, Gran Total=${row.grandTotal}`
         );
 
         return row;
@@ -378,6 +433,12 @@ export default function PayrollPage() {
   // Totales para los operadores filtrados
   const filteredTotalGrand = useMemo(
     () => filteredOperators.reduce((sum, r) => sum + (r.grandTotal || 0), 0),
+    [filteredOperators]
+  );
+
+  // AGREGAR: Total de expenses para las estadísticas
+  const totalExpenses = useMemo(
+    () => filteredOperators.reduce((sum, r) => sum + (r.expense || 0), 0),
     [filteredOperators]
   );
 
@@ -740,7 +801,7 @@ export default function PayrollPage() {
           <>
             {/* Stats Cards */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8 shadow-lg">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 text-center"> {/* CAMBIAR a 6 columnas */}
                 <div className="bg-white rounded-xl p-5 shadow-md border border-blue-100 hover:shadow-lg transition-shadow duration-200">
                   <div className="text-3xl font-bold text-blue-600 mb-1">
                     {countDays}
@@ -818,6 +879,21 @@ export default function PayrollPage() {
                     )}
                   </div>
                 </div>
+
+                {/* NUEVA CARD: Total Expenses */}
+                <div className="bg-white rounded-xl p-5 shadow-md border border-red-100 hover:shadow-lg transition-shadow duration-200">
+                  <div className="text-2xl font-bold text-red-600 mb-1">
+                    {formatCurrency(totalExpenses)}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                    Total Expenses
+                    {totalExpenses > 0 && (
+                      <div className="text-xs text-red-500 mt-1 font-medium">
+                        Deducted from pay
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -861,6 +937,14 @@ export default function PayrollPage() {
                       })}
                       <th className="py-4 px-6 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l-2 border-blue-200">
                         Additional Bonuses
+                      </th>
+                      {/* NUEVA COLUMNA EXPENSE */}
+                      <th className="py-4 px-6 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l border-gray-200">
+                        <div className="text-red-600">Expenses</div>
+                      </th>
+                      {/* NUEVA COLUMNA TOTAL (sin descontar expense) */}
+                      <th className="py-4 px-6 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l border-gray-200">
+                        Total
                       </th>
                       <th className="py-4 px-6 text-right font-semibold text-gray-700 uppercase tracking-wide text-xs border-l border-gray-200">
                         Grand Total
@@ -918,6 +1002,20 @@ export default function PayrollPage() {
                           <td className="py-2 px-4 text-right font-semibold text-blue-600 border-l-2 border-blue-200">
                             {formatCurrency(r.additionalBonuses || 0)}
                           </td>
+                          {/* NUEVA CELDA EXPENSE */}
+                          <td className="py-2 px-4 text-right font-semibold text-red-600 border-l border-gray-200">
+                            {r.expense && r.expense > 0 ? (
+                              <span className="bg-red-50 px-2 py-1 rounded-lg">
+                                -{formatCurrency(r.expense)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 font-medium">—</span>
+                            )}
+                          </td>
+                          {/* NUEVA CELDA TOTAL (sin descontar expense) */}
+                          <td className="py-2 px-4 text-right font-semibold text-blue-600 text-lg border-l border-gray-200">
+                            {formatCurrency((r.total || 0) + (r.additionalBonuses || 0))}
+                          </td>
                           <td className="py-2 px-4 text-right font-bold text-emerald-600 text-lg border-l border-gray-200">
                             {formatCurrency(r.grandTotal || 0)}
                           </td>
@@ -926,7 +1024,7 @@ export default function PayrollPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan={weekdayKeys.length + 7}
+                          colSpan={weekdayKeys.length + 9} 
                           className="py-12 text-center"
                         >
                           <div className="flex flex-col items-center">
@@ -964,7 +1062,10 @@ export default function PayrollPage() {
           <PayrollModal
             isOpen={!!selectedOperator}
             onClose={handleModalClose}
-            operatorData={selectedOperator}
+            operatorData={{
+              ...selectedOperator,
+              expense: selectedOperator.expense || 0, // ASEGURAR que expense se pase
+            }}
             periodStart={weekInfo.start_date}
             periodEnd={weekInfo.end_date}
             assignmentsByDay={selectedOperator.assignmentsByDay}
