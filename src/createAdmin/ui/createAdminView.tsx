@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { Box, Typography, TextField, Button, Paper, MenuItem, IconButton, InputAdornment } from "@mui/material";
+import { 
+  TextField, 
+  Button, 
+  MenuItem, 
+  IconButton, 
+  InputAdornment,
+} from "@mui/material";
 import { registerUser } from "../data/repositoryAdmin";
 import { enqueueSnackbar } from "notistack";
 import type { RegisterRequestBody } from "../domain/registerAdminModels";
@@ -9,6 +15,8 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/material.css";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 const initialForm = {
   user_name: "",
@@ -50,11 +58,14 @@ const CreateAdminView = () => {
 
     // Obtén el company_id del token
     const tokenInfo = getTokenInfo();
-    const companyId = tokenInfo?.company_id ?? -1; // Usa -1 como fallback si no hay token
+    const companyId = tokenInfo?.company_id ?? -1;
+    
     if(form.password.length < 6) {
       enqueueSnackbar("Password must be at least 6 characters long", { variant: "error" });
+      setLoading(false);
       return;
     }
+    
     const dataToSend: RegisterRequestBody = {
       user_name: form.user_name,
       password: form.password,
@@ -87,137 +98,229 @@ const CreateAdminView = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
-      <Paper sx={{ p: 4, borderRadius: 3, boxShadow: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Register New Admin
-        </Typography>
-        <form onSubmit={handleSubmit}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <TextField
-              label="Username"
-              name="user_name"
-              value={form.user_name}
-              onChange={handleChange}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={form.password}
-              onChange={handleChange}
-              fullWidth
-              required
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword((show) => !show)}
-                      edge="end"
-                      size="large"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              label="First Name"
-              name="first_name"
-              value={form.first_name}
-              onChange={handleChange}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Last Name"
-              name="last_name"
-              value={form.last_name}
-              onChange={handleChange}
-              fullWidth
-              required
-            />
-            <TextField
-              label="Email"
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              fullWidth
-              required
-              autoComplete="email"
-            />
-            <TextField
-              label="Birth Date"
-              name="birth_date"
-              type="date"
-              value={form.birth_date}
-              onChange={handleChange}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              required
-            />
-            <PhoneInput
-              country={'us'}
-              value={form.phone}
-              onChange={handlePhoneChange}
-              inputProps={{
-                name: 'phone',
-                required: true,
-                autoFocus: false,
-              }}
-              inputStyle={{ width: '100%' }}
-              specialLabel="Phone"
-            />
-            <TextField
-              label="Address"
-              name="address"
-              value={form.address}
-              onChange={handleChange}
-              fullWidth
-              required
-            />
-            <TextField
-              label="ID Number"
-              name="id_number"
-              value={form.id_number}
-              onChange={handleChange}
-              fullWidth
-              required
-            />
-            <TextField
-              select
-              label="ID Type"
-              name="type_id"
-              value={form.type_id}
-              onChange={handleChange}
-              fullWidth
-              required
-            >
-              {idTypeOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              sx={{ mt: 2 }}
-              disabled={loading}
-            >
-              {loading ? "Registering..." : "Register"}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
-    </Box>
+    <div className="min-h-screen py-8 px-4 flex items-center justify-center">
+      <div className="w-full max-w-4xl">
+        <div className="bg-white/0 backdrop-blur-md border border-white/40 rounded-2xl shadow-2xl p-8 md:p-12 relative overflow-hidden animate-in fade-in duration-700">
+          {/* Animated top border */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 animate-pulse" style={{ backgroundSize: '200% 100%' }}></div>
+          
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+              <AdminPanelSettingsIcon className="text-white text-3xl" />
+            </div>
+            
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+              Register New Admin
+            </h1>
+            
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50/80 rounded-full border border-blue-200">
+              <PersonAddIcon className="text-blue-600 text-sm" />
+              <span className="text-blue-700 font-medium text-sm">Administrator Registration</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Account Credentials Section */}
+            <div>
+              <h2 className="text-xl font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                🔐 Account Credentials
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <TextField
+                  label="Username"
+                  name="user_name"
+                  value={form.user_name}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="outlined"
+                  className="bg-white/90 rounded-lg"
+                />
+                <TextField
+                  label="Password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={handleChange}
+                  fullWidth
+                  required
+                  variant="outlined"
+                  className="bg-white/90 rounded-lg"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword((show) => !show)}
+                          edge="end"
+                          size="large"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Personal Information Section */}
+            <div>
+              <h2 className="text-xl font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                👤 Personal Information
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TextField
+                    label="First Name"
+                    name="first_name"
+                    value={form.first_name}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  />
+                  <TextField
+                    label="Last Name"
+                    name="last_name"
+                    value={form.last_name}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TextField
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    autoComplete="email"
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  />
+                  <TextField
+                    label="Birth Date"
+                    name="birth_date"
+                    type="date"
+                    value={form.birth_date}
+                    onChange={handleChange}
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    required
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact & ID Section */}
+            <div>
+              <h2 className="text-xl font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                📞 Contact & Identification
+              </h2>
+              <div className="space-y-4">
+                {/* Phone and Address in column */}
+                <div className="space-y-4">
+                  <div className="phone-input-container">
+                    <PhoneInput
+                      country={'us'}
+                      value={form.phone}
+                      onChange={handlePhoneChange}
+                      inputProps={{
+                        name: 'phone',
+                        required: true,
+                        autoFocus: false,
+                      }}
+                      inputStyle={{ 
+                        width: '100%', 
+                        height: '56px',
+                        fontSize: '16px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        border: '2px solid rgba(0, 0, 0, 0.23)',
+                        borderRadius: '8px',
+                        paddingLeft: '48px'
+                      }}
+                      buttonStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        border: '2px solid rgba(0, 0, 0, 0.23)',
+                        borderRight: 'none',
+                        borderRadius: '8px 0 0 8px',
+                      }}
+                      specialLabel="Phone Number"
+                    />
+                  </div>
+                  
+                  <TextField
+                    label="Address"
+                    name="address"
+                    value={form.address}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TextField
+                    label="ID Number"
+                    name="id_number"
+                    value={form.id_number}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  />
+                  <TextField
+                    select
+                    label="ID Type"
+                    name="type_id"
+                    value={form.type_id}
+                    onChange={handleChange}
+                    fullWidth
+                    required
+                    variant="outlined"
+                    className="bg-white/90 rounded-lg"
+                  >
+                    {idTypeOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-6">
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                disabled={loading}
+                startIcon={<PersonAddIcon />}
+                className="!py-4 !text-lg !font-semibold !bg-gradient-to-r !from-blue-600 !to-purple-600 !hover:from-blue-700 !hover:to-purple-700 !transform !transition-all !duration-300 !hover:-translate-y-1 !hover:shadow-lg !rounded-xl"
+              >
+                {loading ? "Creating Administrator..." : "Register Administrator"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 };
 

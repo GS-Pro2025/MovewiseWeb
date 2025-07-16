@@ -83,6 +83,7 @@ const WarehouseView = () => {
       { accessorKey: "key_ref", header: "Reference", size: 120 },
       { accessorKey: "date", header: "Date", size: 120 },
       { accessorKey: "status", header: "Status", size: 100 },
+      { accessorKey: "customer_factory_name", header: "Customer Factory", size: 160 },
       {
         accessorKey: "payStatus",
         header: "Pay Status",
@@ -108,10 +109,7 @@ const WarehouseView = () => {
       },
       { accessorKey: "income", header: "Income", size: 100 },
       { accessorKey: "expense", header: "Expense", size: 100 },
-      { accessorKey: "weight", header: "Weight(lb)", size: 100 },
-      { accessorKey: "distance", header: "Distance(mi)", size: 100 },
       { accessorKey: "job_name", header: "Job", size: 120 },
-      { accessorKey: "customer_factory_name", header: "Customer Factory", size: 160 },
       { accessorKey: "state_usa", header: "Location", size: 80 },
 
     ],
