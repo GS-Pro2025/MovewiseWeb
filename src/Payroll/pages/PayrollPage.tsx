@@ -212,7 +212,7 @@ export default function PayrollPage() {
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(
         response.week_info.start_date,
-        response.week_info.end_date
+        //response.week_info.end_date
       );
       setWeekDates(dates);
 
