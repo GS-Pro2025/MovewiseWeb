@@ -69,7 +69,7 @@ function getISOWeek(date: Date): number {
 /** Genera las fechas de la semana basado en la información de week_info */
 function generateWeekDates(
   startDate: string,
-  endDate: string
+  //endDate: string
 ): { [key in keyof WeekAmounts]?: string } {
   const dates: { [key in keyof WeekAmounts]?: string } = {};
 
