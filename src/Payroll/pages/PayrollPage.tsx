@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import PayrollPDFExport from "../util/PayrollPDFExport";
 import { payrollService, WeekInfo, getPaymentById } from "../../service/PayrollService";
 import { PayrollModal } from "../components/PayrollModal";
 import LoaderSpinner from "../../componets/LoadingSpinner";
@@ -11,121 +10,20 @@ import {
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 
-interface WeekAmounts {
-  Mon?: number;
-  Tue?: number;
-  Wed?: number;
-  Thu?: number;
-  Fri?: number;
-  Sat?: number;
-  Sun?: number;
-}
-
-interface OperatorRow extends WeekAmounts {
-  code: string;
-  name: string;
-  lastName: string;
-  role: string;
-  cost: number;
-  pay?: string | null;
-  total?: number;
-  additionalBonuses: number;
-  expense?: number;
-  grandTotal?: number;
-  assignmentIds: (number | string)[];
-  paymentIds: (number | string)[];
-  assignmentsByDay?: {
-    [key in keyof WeekAmounts]?: {
-      id: number | string;
-      date: string;
-      bonus?: number;
-    }[];
-  };
-}
-
-const weekdayKeys: (keyof WeekAmounts)[] = [
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-  "Sun",
-];
-
-/** Devuelve el número de semana ISO para una fecha dada */
-function getISOWeek(date: Date): number {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
-  const yearStartDayNum = yearStart.getUTCDay() || 7;
-  yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
-
-/** Genera las fechas de la semana basado en la información de week_info */
-function generateWeekDates(
-  startDate: string,
-  //endDate: string
-): { [key in keyof WeekAmounts]?: string } {
-  const dates: { [key in keyof WeekAmounts]?: string } = {};
-
-  // El startDate ya debería ser el lunes, usar directamente
-  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
-  const monday = new Date(startYear, startMonth - 1, startDay);
-
-  // Generar fechas de lunes a domingo en orden
-  const dayKeys: (keyof WeekAmounts)[] = [
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat",
-    "Sun",
-  ];
-
-  for (let i = 0; i < 7; i++) {
-    const current = new Date(monday);
-    current.setDate(monday.getDate() + i);
-
-    const year = current.getFullYear();
-    const month = (current.getMonth() + 1).toString().padStart(2, "0");
-    const day = current.getDate().toString().padStart(2, "0");
-    const dateStr = `${year}-${month}-${day}`;
-
-    dates[dayKeys[i]] = dateStr;
-  }
-
-  return dates;
-}
-
-/** Formatear fecha para mostrar en header */
-function formatDateForHeader(dateStr: string): string {
-  if (!dateStr || typeof dateStr !== "string" || !dateStr.includes("-")) {
-    return "--/--";
-  }
-  const [year, month, day] = dateStr.split("-").map(Number);
-  if (!year || !month || !day) {
-    return "--/--";
-  }
-  const date = new Date(year, month - 1, day);
-
-  const monthStr = (date.getMonth() + 1).toString().padStart(2, "0");
-  const dayStr = date.getDate().toString().padStart(2, "0");
-
-  return `${monthStr}/${dayStr}`;
-}
-
-const formatCurrency = (n: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    n
-  );
-
-type LocationStep = "country" | "state" | "city";
+// Imports de los nuevos módulos
+import { 
+  weekdayKeys, 
+  LocationStep, 
+  OperatorRow, 
+  WeekAmounts, 
+} from '../../models/payrroll';
+import { 
+  formatCurrency, 
+  formatDateForHeader, 
+  getISOWeek, 
+  generateWeekDates 
+} from '../util/PayrollUtil';
+import PayrollExport from '../util/PayrollExport';
 
 export default function PayrollPage() {
   const [loading, setLoading] = useState(true);
@@ -211,8 +109,7 @@ export default function PayrollPage() {
 
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(
-        response.week_info.start_date,
-        //response.week_info.end_date
+        response.week_info.start_date
       );
       setWeekDates(dates);
 
@@ -646,7 +543,7 @@ export default function PayrollPage() {
             </div>
           </div>
 
-          {/* Period and Export PDF */}
+          {/* Period and Export */}
           <div className="flex flex-col items-center mt-6 gap-4">
             {weekInfo && (
               <div className="flex items-center gap-3 bg-amber-50 rounded-xl p-4 border border-amber-200 shadow-sm">
@@ -660,7 +557,7 @@ export default function PayrollPage() {
             )}
             {!loading && weekInfo && grouped.length > 0 && (
               <ErrorBoundary>
-                <PayrollPDFExport
+                <PayrollExport
                   operators={filteredOperators}
                   weekInfo={weekInfo}
                   weekDates={weekDates}
@@ -1005,7 +902,7 @@ class ErrorBoundary extends React.Component<
               </svg>
             </div>
             <div>
-              <h3 className="font-bold text-red-800">PDF Export Error</h3>
+              <h3 className="font-bold text-red-800">Export Error</h3>
               <p className="text-red-600">{String(this.state.error)}</p>
             </div>
           </div>
