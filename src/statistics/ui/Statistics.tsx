@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
 import { fetchOrdersCountWithComparison } from '../data/repositoryStatistics';
+import { fetchPayrollStatsForWeek } from '../data/repositoryPayrollStats';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 
 interface StatItem {
@@ -18,6 +19,11 @@ interface MonthlyTargetData {
   target: string;
   revenue: string;
   today: string;
+  // NUEVOS CAMPOS PARA PAYROLL
+  totalExpenses: number;
+  grandTotal: number;
+  previousExpenses: number;
+  previousGrandTotal: number;
 }
 
 const Statistics = () => {
@@ -37,11 +43,15 @@ const Statistics = () => {
   // Estados para los datos
   const [statsData, setStatsData] = useState<StatItem[]>([]);
   const [monthlyTargetData, setMonthlyTargetData] = useState<MonthlyTargetData>({
-    percent: 75.55,
-    change: 10,
-    target: "$20K",
-    revenue: "$20K",
-    today: "$3287"
+    percent: 0, 
+    change: 0,         
+    target: "$0",      
+    revenue: "$0",     
+    today: "$0",       
+    totalExpenses: 0,
+    grandTotal: 0,
+    previousExpenses: 0,
+    previousGrandTotal: 0
   });
   const [ordersCountStats, setOrdersCountStats] = useState<OrdersCountStats | null>(null);
   console.log('Orders Count Stats:', ordersCountStats);
@@ -69,7 +79,7 @@ const Statistics = () => {
     };
   }, []);
 
-  // Función para cargar estadísticas CON COMPARACIÓN SEMANAL
+  // Función para cargar estadísticas CON PAYROLL
   const loadStatistics = useCallback(async (week: number, year: number) => {
     try {
       setLoading(true);
@@ -78,15 +88,20 @@ const Statistics = () => {
       const weekRange = getWeekRange(year, week);
       console.log(`Loading statistics for week ${week} of ${year}:`, weekRange);
       
-      // ACTUALIZADA: Llamada con comparación semanal directa
-      const { currentStats, previousStats, comparison, currentFilter, previousFilter } = 
+      // Cargar estadísticas de órdenes (existente)
+      const { currentStats, comparison } = 
         await fetchOrdersCountWithComparison(year, week);
       
-      console.log('Current week stats:', currentStats);
-      console.log('Previous week stats:', previousStats);
-      console.log('Week comparison:', comparison);
-      console.log('Current filter info:', currentFilter);
-      console.log('Previous filter info:', previousFilter);
+      // NUEVO: Cargar estadísticas de payroll para semana actual
+      const currentPayrollStats = await fetchPayrollStatsForWeek(week, year);
+      
+      // NUEVO: Cargar estadísticas de payroll para semana anterior
+      const previousWeek = week > 1 ? week - 1 : 53;
+      const previousYear = week > 1 ? year : year - 1;
+      const previousPayrollStats = await fetchPayrollStatsForWeek(previousWeek, previousYear);
+      
+      console.log('Current week payroll stats:', currentPayrollStats);
+      console.log('Previous week payroll stats:', previousPayrollStats);
       
       setOrdersCountStats(currentStats);
       
@@ -122,17 +137,30 @@ const Statistics = () => {
       ];
 
       setStatsData(realStatsData);
-      
-      // Mantener datos mock para Monthly Target por ahora
-      const mockMonthlyTarget: MonthlyTargetData = {
-        percent: Number((Math.random() * 30 + 60).toFixed(2)),
-        change: Number(((Math.random() - 0.5) * 20).toFixed(1)),
-        target: "$20K",
-        revenue: `$${(Math.random() * 5 + 18).toFixed(1)}K`,
-        today: `$${(Math.random() * 2000 + 2000).toFixed(0)}`
+    
+      // CORREGIDO: Calcular cambio y usar previous total como target
+      const grandTotalChange = previousPayrollStats.grandTotal > 0
+        ? ((currentPayrollStats.grandTotal - previousPayrollStats.grandTotal) / previousPayrollStats.grandTotal) * 100
+        : 0;
+
+      // CORREGIDO: Calcular porcentaje basado en el total anterior como meta
+      const targetPercent = previousPayrollStats.grandTotal > 0 
+        ? Math.min((currentPayrollStats.grandTotal / previousPayrollStats.grandTotal) * 100, 200) // Máximo 200% para el arco
+        : 0;
+
+      const payrollTargetData: MonthlyTargetData = {
+        percent: targetPercent,
+        change: Number(grandTotalChange.toFixed(1)),
+        target: `$${(previousPayrollStats.grandTotal / 1000).toFixed(1)}K`, // Target es el total anterior semana
+        revenue: `$${(currentPayrollStats.grandTotal / 1000).toFixed(1)}K`,
+        today: `$${(currentPayrollStats.grandTotal / 7).toFixed(0)}`, // Promedio diario
+        totalExpenses: currentPayrollStats.totalExpenses,
+        grandTotal: currentPayrollStats.grandTotal,
+        previousExpenses: previousPayrollStats.totalExpenses,
+        previousGrandTotal: previousPayrollStats.grandTotal
       };
 
-      setMonthlyTargetData(mockMonthlyTarget);
+      setMonthlyTargetData(payrollTargetData);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading statistics');
@@ -265,7 +293,7 @@ const Statistics = () => {
       {/* Content */}
       {!loading && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Monthly Target Card */}
+          {/* Monthly Target Card con datos de payroll */}
           <div className="flex justify-center">
             <MonthlyTargetCard
               percent={monthlyTargetData.percent}
@@ -273,6 +301,10 @@ const Statistics = () => {
               target={monthlyTargetData.target}
               revenue={monthlyTargetData.revenue}
               today={monthlyTargetData.today}
+              totalExpenses={monthlyTargetData.totalExpenses}
+              grandTotal={monthlyTargetData.grandTotal}
+              previousExpenses={monthlyTargetData.previousExpenses}
+              previousGrandTotal={monthlyTargetData.previousGrandTotal}
             />
           </div>
 
