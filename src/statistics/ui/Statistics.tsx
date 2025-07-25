@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
-import { fetchOrdersCountWithStats } from '../data/repositoryStatistics';
+import { fetchOrdersCountWithComparison } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 
 interface StatItem {
@@ -69,7 +69,7 @@ const Statistics = () => {
     };
   }, []);
 
-  // Función para cargar estadísticas
+  // Función para cargar estadísticas CON COMPARACIÓN
   const loadStatistics = useCallback(async (week: number, year: number) => {
     try {
       setLoading(true);
@@ -78,43 +78,42 @@ const Statistics = () => {
       const weekRange = getWeekRange(year, week);
       console.log(`Loading statistics for week ${week} of ${year}:`, weekRange);
       
-      // Llamada real al API de conteo de órdenes (que internamente usa el mes)
-      const { response: ordersCountResponse, stats: ordersStats } = 
-        await fetchOrdersCountWithStats(year, week);
+      //z Llamada con comparación del mes anterior
+      const { currentStats, previousStats, comparison } = 
+        await fetchOrdersCountWithComparison(year, week);
       
-      console.log('Orders count data:', ordersCountResponse);
-      console.log('Orders stats:', ordersStats);
+      console.log('Current month stats:', currentStats);
+      console.log('Previous month stats:', previousStats);
+      console.log('Comparison:', comparison);
       
-      // Actualizar el estado con los datos reales
-      setOrdersCountStats(ordersStats);
+      setOrdersCountStats(currentStats);
       
-      // ACTUALIZADO: Usar los datos reales para actualizar statsData con mejor información
       const realStatsData: StatItem[] = [
         {
-          label: 'Total Orders (Month)',  // Aclarar que es del mes
-          value: ordersStats.totalOrders,
-          change: 0,
+          label: 'Total Orders (Month)',
+          value: currentStats.totalOrders,
+          change: comparison.totalOrdersChange,
           icon: 'fa-box',
           color: 'green'
         },
         {
           label: 'Avg Orders/Day',
-          value: ordersStats.averagePerDay,
-          change: 0,
+          value: currentStats.averagePerDay,
+          change: comparison.averagePerDayChange, 
           icon: 'fa-chart-line',
           color: 'blue'
         },
         {
           label: 'Peak Day Orders',
-          value: ordersStats.peakDay?.count || 0,
-          change: 0,
+          value: currentStats.peakDay?.count || 0,
+          change: comparison.peakDayChange, 
           icon: 'fa-arrow-up',
           color: 'purple'
         },
         {
-          label: 'Active Days (Month)', // Aclarar que es del mes
-          value: ordersStats.daysWithOrders,
-          change: 0,
+          label: 'Active Days (Month)',
+          value: currentStats.daysWithOrders,
+          change: comparison.activeDaysChange, 
           icon: 'fa-calendar-check',
           color: 'orange'
         },

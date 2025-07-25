@@ -114,3 +114,63 @@ export const fetchOrdersCountWithStats = async (
   
   return { response, stats };
 };
+
+// NUEVA: Función para obtener el mes anterior
+export const getPreviousMonth = (year: number, month: number): { year: number; month: number } => {
+  if (month === 1) {
+    return { year: year - 1, month: 12 };
+  }
+  return { year, month: month - 1 };
+};
+
+// NUEVA: Función para calcular el cambio porcentual
+export const calculatePercentageChange = (current: number, previous: number): number => {
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
+  return Number((((current - previous) / previous) * 100).toFixed(2));
+};
+
+// NUEVA: Función para obtener estadísticas con comparación
+export const fetchOrdersCountWithComparison = async (
+  year: number, 
+  week: number
+): Promise<{ 
+  currentStats: OrdersCountStats; 
+  previousStats: OrdersCountStats;
+  comparison: {
+    totalOrdersChange: number;
+    averagePerDayChange: number;
+    peakDayChange: number;
+    activeDaysChange: number;
+  }
+}> => {
+  // Obtener el mes actual
+  const currentMonth = getMonthFromWeek(year, week);
+  
+  // Obtener el mes anterior
+  const { year: prevYear, month: prevMonth } = getPreviousMonth(year, currentMonth);
+  
+  // Hacer ambas peticiones en paralelo
+  const [currentResponse, previousResponse] = await Promise.all([
+    fetchOrdersCountPerDay(year, currentMonth),
+    fetchOrdersCountPerDay(prevYear, prevMonth)
+  ]);
+  
+  // Procesar estadísticas
+  const currentStats = processOrdersCountStats(currentResponse.data);
+  const previousStats = processOrdersCountStats(previousResponse.data);
+  
+  // Calcular comparaciones
+  const comparison = {
+    totalOrdersChange: calculatePercentageChange(currentStats.totalOrders, previousStats.totalOrders),
+    averagePerDayChange: calculatePercentageChange(currentStats.averagePerDay, previousStats.averagePerDay),
+    peakDayChange: calculatePercentageChange(
+      currentStats.peakDay?.count || 0, 
+      previousStats.peakDay?.count || 0
+    ),
+    activeDaysChange: calculatePercentageChange(currentStats.daysWithOrders, previousStats.daysWithOrders)
+  };
+  
+  return { currentStats, previousStats, comparison };
+};
