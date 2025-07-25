@@ -69,7 +69,7 @@ const Statistics = () => {
     };
   }, []);
 
-  // Función para cargar estadísticas CON COMPARACIÓN
+  // Función para cargar estadísticas CON COMPARACIÓN SEMANAL
   const loadStatistics = useCallback(async (week: number, year: number) => {
     try {
       setLoading(true);
@@ -78,19 +78,21 @@ const Statistics = () => {
       const weekRange = getWeekRange(year, week);
       console.log(`Loading statistics for week ${week} of ${year}:`, weekRange);
       
-      //z Llamada con comparación del mes anterior
-      const { currentStats, previousStats, comparison } = 
+      // ACTUALIZADA: Llamada con comparación semanal directa
+      const { currentStats, previousStats, comparison, currentFilter, previousFilter } = 
         await fetchOrdersCountWithComparison(year, week);
       
-      console.log('Current month stats:', currentStats);
-      console.log('Previous month stats:', previousStats);
-      console.log('Comparison:', comparison);
+      console.log('Current week stats:', currentStats);
+      console.log('Previous week stats:', previousStats);
+      console.log('Week comparison:', comparison);
+      console.log('Current filter info:', currentFilter);
+      console.log('Previous filter info:', previousFilter);
       
       setOrdersCountStats(currentStats);
       
       const realStatsData: StatItem[] = [
         {
-          label: 'Total Orders (Month)',
+          label: 'Total Orders (Week)', 
           value: currentStats.totalOrders,
           change: comparison.totalOrdersChange,
           icon: 'fa-box',
@@ -111,7 +113,7 @@ const Statistics = () => {
           color: 'purple'
         },
         {
-          label: 'Active Days (Month)',
+          label: 'Active Days (Week)',
           value: currentStats.daysWithOrders,
           change: comparison.activeDaysChange, 
           icon: 'fa-calendar-check',
@@ -233,6 +235,10 @@ const Statistics = () => {
             <span className="flex items-center gap-2">
               <i className="fas fa-calendar-alt"></i>
               Period: {weekRange.start} → {weekRange.end}
+            </span>
+            <span className="flex items-center gap-2 text-blue-600">
+              <i className="fas fa-chart-line"></i>
+              vs Previous Week
             </span>
             <button
               onClick={() => loadStatistics(selectedWeek, selectedYear)}

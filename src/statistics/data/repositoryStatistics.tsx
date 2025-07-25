@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrdersCountResponse, OrderCountDay, OrdersCountStats } from '../domain/OrdersCountModel';
 import Cookies from 'js-cookie';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-// Función para obtener el conteo de órdenes por día (por MES, no por semana)
-export const fetchOrdersCountPerDay = async (
+// NUEVA: Función para obtener datos por semana directamente
+export const fetchOrdersCountByWeek = async (
   year: number, 
-  month: number  // CAMBIO: ahora es month en lugar de week
+  week: number
 ): Promise<OrdersCountResponse> => {
   const token = Cookies.get('authToken');
   if (!token) {
@@ -15,8 +16,7 @@ export const fetchOrdersCountPerDay = async (
   }
 
   try {
-    // CAMBIO: ahora usa month en lugar de week
-    const url = `${BASE_URL_API}/orders-count-orders-per-day/${year}/${month}/`;
+    const url = `${BASE_URL_API}/orders-count-orders-per-day/${year}/?filter_type=week&week=${week}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -33,33 +33,51 @@ export const fetchOrdersCountPerDay = async (
     }
 
     if (!response.ok) {
-      throw new Error(`Error fetching orders count: ${response.statusText}`);
+      throw new Error(`Error fetching weekly orders count: ${response.statusText}`);
     }
 
     const data: OrdersCountResponse = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching orders count:', error);
+    console.error('Error fetching weekly orders count:', error);
     throw new Error(
       error instanceof Error 
         ? error.message 
-        : 'Error desconocido al obtener el conteo de órdenes'
+        : 'Error desconocido al obtener el conteo de órdenes semanal'
     );
   }
 };
 
-// NUEVA: Función para convertir semana a mes
-export const getMonthFromWeek = (year: number, week: number): number => {
-  // Crear fecha del primer día de la semana
-  const firstDayOfYear = new Date(year, 0, 1);
-  const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
-  const weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
-  
-  // Retornar el mes (1-12)
-  return weekDate.getMonth() + 1;
+// NUEVA: Función para obtener la semana anterior
+export const getPreviousWeek = (year: number, week: number): { year: number; week: number } => {
+  if (week === 1) {
+    // Si es la primera semana del año, ir a la última semana del año anterior
+    // Calcular cuántas semanas tiene el año anterior
+    const lastWeekOfPrevYear = getWeeksInYear(year - 1);
+    return { year: year - 1, week: lastWeekOfPrevYear };
+  }
+  return { year, week: week - 1 };
 };
 
-// Función para procesar estadísticas considerando que son datos mensuales
+// NUEVA: Función para calcular cuántas semanas tiene un año
+const getWeeksInYear = (year: number): number => {
+  const lastDay = new Date(year, 11, 31); // 31 de diciembre
+  const lastWeek = getWeekOfYear(lastDay);
+  return lastWeek;
+};
+
+// NUEVA: Función para obtener semana del año
+const getWeekOfYear = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const yearStartDayNum = yearStart.getUTCDay() || 7;
+  yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+};
+
+// ACTUALIZADA: Función para procesar estadísticas semanales
 export const processOrdersCountStats = (
   ordersData: OrderCountDay[]
 ): OrdersCountStats => {
@@ -77,8 +95,8 @@ export const processOrdersCountStats = (
   const totalOrders = ordersData.reduce((sum, day) => sum + day.count, 0);
   const daysWithOrders = ordersData.length;
   
-  // CAMBIO: Calcular promedio sobre los días que realmente tienen datos
-  const averagePerDay = daysWithOrders > 0 ? totalOrders / daysWithOrders : 0;
+  // Promedio sobre 7 días de la semana
+  const averagePerDay = totalOrders / 7;
   
   const peakDay = ordersData.reduce((max, day) => 
     day.count > (max?.count || 0) ? day : max
@@ -94,33 +112,8 @@ export const processOrdersCountStats = (
     peakDay,
     lowDay,
     daysWithOrders,
-    totalDaysInPeriod: 7, // Mantenemos 7 para mostrar estadísticas de la semana
+    totalDaysInPeriod: 7,
   };
-};
-
-// ACTUALIZADA: Función para obtener datos con estadísticas procesadas
-export const fetchOrdersCountWithStats = async (
-  year: number, 
-  week: number
-): Promise<{ response: OrdersCountResponse; stats: OrdersCountStats }> => {
-  // Convertir semana a mes
-  const month = getMonthFromWeek(year, week);
-  
-  // Obtener datos del mes completo
-  const response = await fetchOrdersCountPerDay(year, month);
-  
-  // Procesar estadísticas
-  const stats = processOrdersCountStats(response.data);
-  
-  return { response, stats };
-};
-
-// NUEVA: Función para obtener el mes anterior
-export const getPreviousMonth = (year: number, month: number): { year: number; month: number } => {
-  if (month === 1) {
-    return { year: year - 1, month: 12 };
-  }
-  return { year, month: month - 1 };
 };
 
 // NUEVA: Función para calcular el cambio porcentual
@@ -131,7 +124,7 @@ export const calculatePercentageChange = (current: number, previous: number): nu
   return Number((((current - previous) / previous) * 100).toFixed(2));
 };
 
-// NUEVA: Función para obtener estadísticas con comparación
+// ACTUALIZADA: Función para obtener estadísticas con comparación SEMANAL
 export const fetchOrdersCountWithComparison = async (
   year: number, 
   week: number
@@ -143,23 +136,30 @@ export const fetchOrdersCountWithComparison = async (
     averagePerDayChange: number;
     peakDayChange: number;
     activeDaysChange: number;
-  }
+  };
+  currentFilter: any;
+  previousFilter: any;
 }> => {
-  // Obtener el mes actual
-  const currentMonth = getMonthFromWeek(year, week);
+  // Obtener la semana actual y anterior
+  const { year: prevYear, week: prevWeek } = getPreviousWeek(year, week);
   
-  // Obtener el mes anterior
-  const { year: prevYear, month: prevMonth } = getPreviousMonth(year, currentMonth);
+  console.log(`Comparing weeks: current week ${week}/${year} vs previous week ${prevWeek}/${prevYear}`);
   
   // Hacer ambas peticiones en paralelo
   const [currentResponse, previousResponse] = await Promise.all([
-    fetchOrdersCountPerDay(year, currentMonth),
-    fetchOrdersCountPerDay(prevYear, prevMonth)
+    fetchOrdersCountByWeek(year, week),
+    fetchOrdersCountByWeek(prevYear, prevWeek)
   ]);
+  
+  console.log('Current week response:', currentResponse);
+  console.log('Previous week response:', previousResponse);
   
   // Procesar estadísticas
   const currentStats = processOrdersCountStats(currentResponse.data);
   const previousStats = processOrdersCountStats(previousResponse.data);
+  
+  console.log('Current week stats:', currentStats);
+  console.log('Previous week stats:', previousStats);
   
   // Calcular comparaciones
   const comparison = {
@@ -172,5 +172,19 @@ export const fetchOrdersCountWithComparison = async (
     activeDaysChange: calculatePercentageChange(currentStats.daysWithOrders, previousStats.daysWithOrders)
   };
   
-  return { currentStats, previousStats, comparison };
+  return { 
+    currentStats, 
+    previousStats, 
+    comparison,
+    currentFilter: currentResponse.filter,
+    previousFilter: previousResponse.filter
+  };
+};
+
+// MANTENEMOS las funciones anteriores para compatibilidad
+export const getMonthFromWeek = (year: number, week: number): number => {
+  const firstDayOfYear = new Date(year, 0, 1);
+  const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+  const weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
+  return weekDate.getMonth() + 1;
 };

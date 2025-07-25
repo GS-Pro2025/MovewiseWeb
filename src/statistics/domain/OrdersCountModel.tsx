@@ -4,14 +4,25 @@ export interface OrderCountDay {
   count: number;
 }
 
-// Modelo para la respuesta completa del API
+// NUEVA: Modelo para la información del filtro
+export interface OrdersCountFilter {
+  type: "week" | "month";
+  year: number;
+  week?: number;
+  month?: number;
+  start_date: string;
+  end_date: string;
+}
+
+// ACTUALIZADA: Modelo para la respuesta completa del API
 export interface OrdersCountResponse {
   messUser: string;
   messDev: string;
+  filter: OrdersCountFilter; 
   data: OrderCountDay[];
 }
 
-// Modelo para estadísticas procesadas
+// Modelo para estadísticas procesadas 
 export interface OrdersCountStats {
   totalOrders: number;
   averagePerDay: number;
