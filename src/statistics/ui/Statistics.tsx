@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
+import TruckStatistics from './TruckStatistics'; // NUEVO IMPORT
 import { fetchOrdersCountWithComparison } from '../data/repositoryStatistics';
 import { fetchPayrollStatsForWeek } from '../data/repositoryPayrollStats';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
@@ -19,7 +20,6 @@ interface MonthlyTargetData {
   target: string;
   revenue: string;
   today: string;
-  // NUEVOS CAMPOS PARA PAYROLL
   totalExpenses: number;
   grandTotal: number;
   previousExpenses: number;
@@ -29,8 +29,11 @@ interface MonthlyTargetData {
 const Statistics = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // NUEVO: Estado para la sección activa
+  const [activeSection, setActiveSection] = useState<'overview' | 'trucks' | 'payroll'>('overview');
 
-  // Filtros de semana y año
+  // Filtros de semana y año (compartidos por todas las secciones)
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
     const now = new Date();
     return getWeekOfYear(now);
@@ -40,7 +43,7 @@ const Statistics = () => {
     return new Date().getFullYear();
   });
 
-  // Estados para los datos
+  // Estados para los datos (solo para overview)
   const [statsData, setStatsData] = useState<StatItem[]>([]);
   const [monthlyTargetData, setMonthlyTargetData] = useState<MonthlyTargetData>({
     percent: 0, 
@@ -54,8 +57,7 @@ const Statistics = () => {
     previousGrandTotal: 0
   });
   const [ordersCountStats, setOrdersCountStats] = useState<OrdersCountStats | null>(null);
-  console.log('Orders Count Stats:', ordersCountStats);
-  // Función para obtener la semana del año (ISO)
+  console.log('Statistics component initialized', ordersCountStats);
   function getWeekOfYear(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -66,7 +68,6 @@ const Statistics = () => {
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
-  // Función para obtener el rango de fechas de una semana
   const getWeekRange = useCallback((year: number, week: number): { start: string; end: string } => {
     const firstDayOfYear = new Date(year, 0, 1);
     const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
@@ -79,8 +80,10 @@ const Statistics = () => {
     };
   }, []);
 
-  // Función para cargar estadísticas CON PAYROLL
+  // ACTUALIZADA: Solo cargar datos cuando esté en overview
   const loadStatistics = useCallback(async (week: number, year: number) => {
+    if (activeSection !== 'overview') return; // Solo cargar si estamos en overview
+
     try {
       setLoading(true);
       setError(null);
@@ -88,14 +91,10 @@ const Statistics = () => {
       const weekRange = getWeekRange(year, week);
       console.log(`Loading statistics for week ${week} of ${year}:`, weekRange);
       
-      // Cargar estadísticas de órdenes (existente)
       const { currentStats, comparison } = 
         await fetchOrdersCountWithComparison(year, week);
       
-      // NUEVO: Cargar estadísticas de payroll para semana actual
       const currentPayrollStats = await fetchPayrollStatsForWeek(week, year);
-      
-      // NUEVO: Cargar estadísticas de payroll para semana anterior
       const previousWeek = week > 1 ? week - 1 : 53;
       const previousYear = week > 1 ? year : year - 1;
       const previousPayrollStats = await fetchPayrollStatsForWeek(previousWeek, previousYear);
@@ -138,22 +137,20 @@ const Statistics = () => {
 
       setStatsData(realStatsData);
     
-      // CORREGIDO: Calcular cambio y usar previous total como target
       const grandTotalChange = previousPayrollStats.grandTotal > 0
         ? ((currentPayrollStats.grandTotal - previousPayrollStats.grandTotal) / previousPayrollStats.grandTotal) * 100
         : 0;
 
-      // CORREGIDO: Calcular porcentaje basado en el total anterior como meta
       const targetPercent = previousPayrollStats.grandTotal > 0 
-        ? Math.min((currentPayrollStats.grandTotal / previousPayrollStats.grandTotal) * 100, 200) // Máximo 200% para el arco
+        ? Math.min((currentPayrollStats.grandTotal / previousPayrollStats.grandTotal) * 100, 200)
         : 0;
 
       const payrollTargetData: MonthlyTargetData = {
         percent: targetPercent,
         change: Number(grandTotalChange.toFixed(1)),
-        target: `$${(previousPayrollStats.grandTotal / 1000).toFixed(1)}K`, // Target es el total anterior semana
+        target: `$${(previousPayrollStats.grandTotal / 1000).toFixed(1)}K`,
         revenue: `$${(currentPayrollStats.grandTotal / 1000).toFixed(1)}K`,
-        today: `$${(currentPayrollStats.grandTotal / 7).toFixed(0)}`, // Promedio diario
+        today: `$${(currentPayrollStats.grandTotal / 7).toFixed(0)}`,
         totalExpenses: currentPayrollStats.totalExpenses,
         grandTotal: currentPayrollStats.grandTotal,
         previousExpenses: previousPayrollStats.totalExpenses,
@@ -168,14 +165,13 @@ const Statistics = () => {
     } finally {
       setLoading(false);
     }
-  }, [getWeekRange]);
+  }, [getWeekRange, activeSection]);
 
-  // Cargar datos cuando cambian los filtros
+  // Cargar datos cuando cambian los filtros o la sección activa
   useEffect(() => {
     loadStatistics(selectedWeek, selectedYear);
   }, [selectedWeek, selectedYear, loadStatistics]);
 
-  // Handlers para cambiar filtros
   const handleWeekChange = (week: number) => {
     if (week >= 1 && week <= 53) {
       setSelectedWeek(week);
@@ -186,7 +182,6 @@ const Statistics = () => {
     setSelectedYear(year);
   };
 
-  // Función para obtener años disponibles
   const getAvailableYears = (): number[] => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -199,7 +194,7 @@ const Statistics = () => {
   const weekRange = getWeekRange(selectedYear, selectedWeek);
   const availableYears = getAvailableYears();
 
-  if (error) {
+  if (error && activeSection === 'overview') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -227,10 +222,72 @@ const Statistics = () => {
         <p className="text-gray-600">Monitor your business performance and key metrics</p>
       </div>
 
-      {/* Filtros */}
+      {/* NUEVO: Navigation Tabs */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between mb-4">
+          {/* Tabs de navegación */}
+          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveSection('overview')}
+              className={`px-4 py-2 rounded-md font-medium transition-all ${
+                activeSection === 'overview'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <i className="fas fa-chart-line mr-2"></i>
+              Business Overview
+            </button>
+            <button
+              onClick={() => setActiveSection('trucks')}
+              className={`px-4 py-2 rounded-md font-medium transition-all ${
+                activeSection === 'trucks'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <i className="fas fa-truck mr-2"></i>
+              Vehicle Logistics
+            </button>
+            <button
+              onClick={() => setActiveSection('payroll')}
+              className={`px-4 py-2 rounded-md font-medium transition-all ${
+                activeSection === 'payroll'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <i className="fas fa-users mr-2"></i>
+              Payroll Analytics
+            </button>
+          </div>
+
+          {/* Info del período (solo para overview) */}
+          {activeSection === 'overview' && (
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span className="flex items-center gap-2">
+                <i className="fas fa-calendar-alt"></i>
+                Period: {weekRange.start} → {weekRange.end}
+              </span>
+              <span className="flex items-center gap-2 text-blue-600">
+                <i className="fas fa-chart-line"></i>
+                vs Previous Week
+              </span>
+              <button
+                onClick={() => loadStatistics(selectedWeek, selectedYear)}
+                disabled={loading}
+                className="flex items-center gap-2 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''}`}></i>
+                Refresh
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Filtros solo para overview */}
+        {activeSection === 'overview' && (
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Year:</label>
               <select
@@ -258,63 +315,66 @@ const Statistics = () => {
               />
             </div>
           </div>
-          
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span className="flex items-center gap-2">
-              <i className="fas fa-calendar-alt"></i>
-              Period: {weekRange.start} → {weekRange.end}
-            </span>
-            <span className="flex items-center gap-2 text-blue-600">
-              <i className="fas fa-chart-line"></i>
-              vs Previous Week
-            </span>
-            <button
-              onClick={() => loadStatistics(selectedWeek, selectedYear)}
-              disabled={loading}
-              className="flex items-center gap-2 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-            >
-              <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''}`}></i>
-              Refresh
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Loading state */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-spinner animate-spin text-blue-600 text-xl"></i>
-            <span className="text-gray-600">Loading statistics...</span>
-          </div>
-        </div>
+      {/* Content basado en la sección activa */}
+      {activeSection === 'overview' && (
+        <>
+          {/* Loading state */}
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3">
+                <i className="fas fa-spinner animate-spin text-blue-600 text-xl"></i>
+                <span className="text-gray-600">Loading statistics...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Content */}
+          {!loading && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="flex justify-center">
+                <MonthlyTargetCard
+                  percent={monthlyTargetData.percent}
+                  change={monthlyTargetData.change}
+                  target={monthlyTargetData.target}
+                  revenue={monthlyTargetData.revenue}
+                  today={monthlyTargetData.today}
+                  totalExpenses={monthlyTargetData.totalExpenses}
+                  grandTotal={monthlyTargetData.grandTotal}
+                  previousExpenses={monthlyTargetData.previousExpenses}
+                  previousGrandTotal={monthlyTargetData.previousGrandTotal}
+                />
+              </div>
+
+              <div className="xl:col-span-1">
+                <StatsComparisonCard
+                  title="Business Metrics"
+                  stats={statsData}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Content */}
-      {!loading && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Monthly Target Card con datos de payroll */}
-          <div className="flex justify-center">
-            <MonthlyTargetCard
-              percent={monthlyTargetData.percent}
-              change={monthlyTargetData.change}
-              target={monthlyTargetData.target}
-              revenue={monthlyTargetData.revenue}
-              today={monthlyTargetData.today}
-              totalExpenses={monthlyTargetData.totalExpenses}
-              grandTotal={monthlyTargetData.grandTotal}
-              previousExpenses={monthlyTargetData.previousExpenses}
-              previousGrandTotal={monthlyTargetData.previousGrandTotal}
-            />
-          </div>
+      {/* NUEVO: Trucks Section */}
+      {activeSection === 'trucks' && (
+        <TruckStatistics 
+          initialWeek={selectedWeek}
+          initialYear={selectedYear}
+        />
+      )}
 
-          {/* Stats Comparison */}
-          <div className="xl:col-span-1">
-            <StatsComparisonCard
-              title="Business Metrics"
-              stats={statsData}
-            />
+      {/* NUEVO: Payroll Section (placeholder) */}
+      {activeSection === 'payroll' && (
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <div className="text-gray-400 mb-4">
+            <i className="fas fa-users text-6xl"></i>
           </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Payroll Analytics</h3>
+          <p className="text-gray-600">Detailed payroll analytics coming soon...</p>
         </div>
       )}
     </div>
