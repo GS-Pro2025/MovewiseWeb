@@ -56,7 +56,7 @@ const Statistics = () => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const yearStart = new Date(Date.UTC(d.getFullYear(), 0, 4));
     const yearStartDayNum = yearStart.getUTCDay() || 7;
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
@@ -83,11 +83,11 @@ const Statistics = () => {
       setError(null);
 
       const weekRange = getWeekRange(year, week);
-      console.log('Week Range:', weekRange);
+      console.log('Loading statistics for week:', week, 'year:', year, 'range:', weekRange);
       const previousWeek = week > 1 ? week - 1 : 53;
       const previousYear = week > 1 ? year : year - 1;
 
-      // 1. Cargar métricas de órdenes (puedes mantener esto si lo usas)
+      // 1. Cargar métricas de órdenes
       const { currentStats, comparison } = await fetchOrdersCountWithComparison(year, week);
       setOrdersCountStats(currentStats);
 
@@ -129,8 +129,10 @@ const Statistics = () => {
 
       const currentNetProfit = currentWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
       const previousNetProfit = previousWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
-      const currentExpenses = currentWeekProfits.reduce((sum, o) => sum + o.total_cost, 0);
-      const previousExpenses = previousWeekProfits.reduce((sum, o) => sum + o.total_cost, 0);
+
+      // Suma de todos los gastos de la semana actual y anterior
+      const currentExpenses = currentWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
+      const previousExpenses = previousWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
 
       const netProfitChange = previousNetProfit !== 0
         ? ((currentNetProfit - previousNetProfit) / Math.abs(previousNetProfit)) * 100
@@ -143,11 +145,11 @@ const Statistics = () => {
       const monthlyTargetData: MonthlyTargetData = {
         percent: targetPercent,
         change: Number(netProfitChange.toFixed(1)),
-        target: `$${(previousNetProfit / 1000).toFixed(1)}K`, // objetivo = profit neto semana anterior
-        revenue: `$${(currentNetProfit / 1000).toFixed(1)}K`, // profit neto actual
-        today: `$${(currentNetProfit / 7).toFixed(0)}`,        // profit neto diario promedio
-        totalExpenses: currentExpenses,                        // suma de total_cost
-        grandTotal: currentNetProfit,                          // profit neto actual (se muestra como principal)
+        target: `$${(previousNetProfit / 1000).toFixed(1)}K`,
+        revenue: `$${(currentNetProfit / 1000).toFixed(1)}K`,
+        today: `$${(currentNetProfit / 7).toFixed(0)}`,
+        totalExpenses: currentExpenses, // ahora suma de total_expenses
+        grandTotal: currentNetProfit,
         previousExpenses: previousExpenses,
         previousGrandTotal: previousNetProfit
       };

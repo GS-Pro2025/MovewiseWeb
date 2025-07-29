@@ -188,12 +188,13 @@ export const getMonthFromWeek = (year: number, week: number): number => {
   const weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
   return weekDate.getMonth() + 1;
 };
-
 export interface WeeklyOrderProfit {
   order_id: string;
   operator_payments: number;
-  expenses: number;
+  total_expenses: number;
   costfuel_expenses: number;
+  order_expense: number;
+  additional_costs: number;
   total_cost: number;
   income: number;
   net_profit: number;

@@ -98,7 +98,7 @@ const StatsComparisonCard: React.FC<StatsComparisonCardProps> = ({
                 </div>
                 
                 <p className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {isPositive ? 'Increased' : 'Decreased'} from last month
+                  {isPositive ? 'Increased' : 'Decreased'} from last week
                 </p>
               </div>
               
