@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
 import TruckStatistics from './TruckStatistics';
-import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport } from '../data/repositoryStatistics';
+import PaymentStatusChart from './components/PaymentStatusChart';
+import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
+import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
 
 interface StatItem {
   label: string;
@@ -51,6 +53,35 @@ const Statistics = () => {
     previousGrandTotal: 0
   });
   const [ordersCountStats, setOrdersCountStats] = useState<OrdersCountStats | null>(null);
+  const [paymentStatusData, setPaymentStatusData] = useState<PaymentStatusComparison>({
+    currentStats: {
+      totalOrders: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+      paidPercentage: 0,
+      unpaidPercentage: 0,
+      totalIncome: 0,
+      paidIncome: 0,
+      unpaidIncome: 0
+    },
+    previousStats: {
+      totalOrders: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+      paidPercentage: 0,
+      unpaidPercentage: 0,
+      totalIncome: 0,
+      paidIncome: 0,
+      unpaidIncome: 0
+    },
+    changes: {
+      totalOrdersChange: 0,
+      paidOrdersChange: 0,
+      unpaidOrdersChange: 0,
+      paidPercentageChange: 0
+    }
+  });
+
   console.log('Orders Count Stats:', ordersCountStats);
   function getWeekOfYear(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -155,6 +186,10 @@ const Statistics = () => {
       };
 
       setMonthlyTargetData(monthlyTargetData);
+
+      // 3. Cargar datos de payment status
+      const paymentComparison = await fetchPaymentStatusWithComparison(year, week);
+      setPaymentStatusData(paymentComparison);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading statistics');
@@ -348,6 +383,16 @@ const Statistics = () => {
                 <StatsComparisonCard
                   title="Business Metrics"
                   stats={statsData}
+                />
+              </div>
+
+              {/* NUEVO: Payment Status Chart - ocupa toda la fila */}
+              <div className="xl:col-span-2">
+                <PaymentStatusChart
+                  currentStats={paymentStatusData.currentStats}
+                  previousStats={paymentStatusData.previousStats}
+                  changes={paymentStatusData.changes}
+                  loading={loading}
                 />
               </div>
             </div>

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrdersCountResponse, OrderCountDay, OrdersCountStats } from '../domain/OrdersCountModel';
+import { WeeklyPaymentStatusResponse, PaymentStatusStats, PaymentStatusComparison } from '../domain/PaymentStatusModels';
 import Cookies from 'js-cookie';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -215,4 +216,96 @@ export async function fetchWeeklyProfitReport(year: number, week: number): Promi
   });
   if (!response.ok) throw new Error('Error fetching weekly profit report');
   return await response.json();
+}
+
+// Función para obtener datos de órdenes pagas/no pagas
+export async function fetchWeeklyPaymentStatus(year: number, week: number): Promise<WeeklyPaymentStatusResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/order/weekly-paid-unpaid/?year=${year}&week=${week}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching weekly payment status: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching weekly payment status:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener el estado de pagos semanal'
+    );
+  }
+}
+
+// Función para procesar estadísticas de pagos
+export function processPaymentStatusStats(data: WeeklyPaymentStatusResponse): PaymentStatusStats {
+  const totalOrders = data.paid_orders.length + data.unpaid_orders.length;
+  const paidOrders = data.paid_orders.length;
+  const unpaidOrders = data.unpaid_orders.length;
+
+  const paidPercentage = totalOrders > 0 ? Number(((paidOrders / totalOrders) * 100).toFixed(1)) : 0;
+  const unpaidPercentage = totalOrders > 0 ? Number(((unpaidOrders / totalOrders) * 100).toFixed(1)) : 0;
+
+  const paidIncome = data.paid_orders.reduce((sum, order) => sum + order.income, 0);
+  const unpaidIncome = data.unpaid_orders.reduce((sum, order) => sum + order.income, 0);
+  const totalIncome = paidIncome + unpaidIncome;
+
+  return {
+    totalOrders,
+    paidOrders,
+    unpaidOrders,
+    paidPercentage,
+    unpaidPercentage,
+    totalIncome,
+    paidIncome,
+    unpaidIncome
+  };
+}
+
+// Función para obtener comparación de pagos con semana anterior
+export async function fetchPaymentStatusWithComparison(
+  year: number, 
+  week: number
+): Promise<PaymentStatusComparison> {
+  const { year: prevYear, week: prevWeek } = getPreviousWeek(year, week);
+  
+  const [currentData, previousData] = await Promise.all([
+    fetchWeeklyPaymentStatus(year, week),
+    fetchWeeklyPaymentStatus(prevYear, prevWeek)
+  ]);
+
+  const currentStats = processPaymentStatusStats(currentData);
+  const previousStats = processPaymentStatusStats(previousData);
+
+  const changes = {
+    totalOrdersChange: calculatePercentageChange(currentStats.totalOrders, previousStats.totalOrders),
+    paidOrdersChange: calculatePercentageChange(currentStats.paidOrders, previousStats.paidOrders),
+    unpaidOrdersChange: calculatePercentageChange(currentStats.unpaidOrders, previousStats.unpaidOrders),
+    paidPercentageChange: calculatePercentageChange(currentStats.paidPercentage, previousStats.paidPercentage)
+  };
+
+  return {
+    currentStats,
+    previousStats,
+    changes
+  };
 }
