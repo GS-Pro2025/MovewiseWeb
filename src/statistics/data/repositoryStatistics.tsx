@@ -188,3 +188,30 @@ export const getMonthFromWeek = (year: number, week: number): number => {
   const weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
   return weekDate.getMonth() + 1;
 };
+
+export interface WeeklyOrderProfit {
+  order_id: string;
+  operator_payments: number;
+  expenses: number;
+  costfuel_expenses: number;
+  total_cost: number;
+  income: number;
+  net_profit: number;
+}
+
+export async function fetchWeeklyProfitReport(year: number, week: number): Promise<WeeklyOrderProfit[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+  const url = `${BASE_URL_API}/assign/weekly-profit-report/?year=${year}&week=${week}`;
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) throw new Error('Error fetching weekly profit report');
+  return await response.json();
+}
