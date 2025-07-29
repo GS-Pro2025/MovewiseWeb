@@ -187,7 +187,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           <NavItem icon="fa-home" text="Home" isCollapsed={isCollapsed} to="/home" />
           <NavItem icon="fa-solid fa-box" text="Create daily" isCollapsed={isCollapsed} to="/create-daily" />
           <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
-
+          <NavItem icon="fa-chart-bar" text="Statistics" isCollapsed={isCollapsed} to="/statistics" />
           {/* Nuevo Dropdown Cost */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 1 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
             <button

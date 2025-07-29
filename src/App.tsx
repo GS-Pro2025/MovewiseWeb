@@ -15,7 +15,7 @@ import CreateOrder from './createOrder/ui/CreateOrder';
 import FinancialView from './financials/ui/FinancialView';
 import WarehouseView from './warehouse/ui/WarehouseView';
 import CreateWarehouseView from './warehouse/ui/CreateWarehouseView';
-
+import Statistics from './statistics/ui/Statistics';
 import CustomersView from './settings/customer/UI/customersView';
 import CreateAdminView from './createAdmin/ui/createAdminView';
 import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
@@ -95,6 +95,7 @@ const App = () => {
             <Route path="/customers" element={<CustomersView />} />
             <Route path="/create-admin" element={<CreateAdminView />} />
             <Route path="/jobs-tools" element={<JobsAndToolsGUI />} />
+            <Route path="statistics" element={<Statistics/>} />
           </Route>
 
           {/* Ruta por defecto */}
