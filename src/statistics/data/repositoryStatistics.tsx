@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrdersCountResponse, OrderCountDay, OrdersCountStats } from '../domain/OrdersCountModel';
 import { WeeklyPaymentStatusResponse, PaymentStatusStats, PaymentStatusComparison } from '../domain/PaymentStatusModels';
+import { OrdersWithClientResponse, WeeklyClientStats, ClientStats, ClientStatsComparison, FactoryStats } from '../domain/OrdersWithClientModels';
 import Cookies from 'js-cookie';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -301,6 +302,170 @@ export async function fetchPaymentStatusWithComparison(
     paidOrdersChange: calculatePercentageChange(currentStats.paidOrders, previousStats.paidOrders),
     unpaidOrdersChange: calculatePercentageChange(currentStats.unpaidOrders, previousStats.unpaidOrders),
     paidPercentageChange: calculatePercentageChange(currentStats.paidPercentage, previousStats.paidPercentage)
+  };
+
+  return {
+    currentStats,
+    previousStats,
+    changes
+  };
+}
+
+// NUEVA: Función para obtener órdenes semanales con cliente
+export async function fetchWeeklyOrdersWithClient(year: number, week: number): Promise<OrdersWithClientResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/orders-weekly-with-client/?year=${year}&week=${week}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching weekly orders with client: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching weekly orders with client:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener las órdenes semanales con cliente'
+    );
+  }
+}
+
+//Función para procesar estadísticas de clientes
+export function processClientStats(data: OrdersWithClientResponse): WeeklyClientStats {
+  if (!data.data || data.data.length === 0) {
+    return {
+      totalClients: 0,
+      activeClients: 0,
+      totalFactories: 0,
+      activeFactories: 0,
+      topClients: [],
+      topFactories: [],
+      totalOrders: 0,
+      averageOrdersPerClient: 0,
+      averageOrdersPerFactory: 0
+    };
+  }
+
+  // Agrupar órdenes por cliente
+  const clientMap = new Map<string, ClientStats>();
+  // Agrupar órdenes por factory
+  const factoryMap = new Map<string, FactoryStats>();
+  
+  data.data.forEach((order) => {
+    const clientName = order.client_name || 'Unknown Client';
+    const factoryName = order.customer_factory || 'Unknown Factory';
+    
+    // Procesar estadísticas del cliente
+    if (!clientMap.has(clientName)) {
+      clientMap.set(clientName, {
+        clientName,
+        totalOrders: 0,
+        factoriesServed: [],
+        uniqueFactories: 0
+      });
+    }
+    
+    const client = clientMap.get(clientName)!;
+    client.totalOrders += 1;
+    
+    // Agregar factory si no está en la lista
+    if (!client.factoriesServed.includes(factoryName)) {
+      client.factoriesServed.push(factoryName);
+    }
+    client.uniqueFactories = client.factoriesServed.length;
+
+    // Procesar estadísticas de la factory
+    if (!factoryMap.has(factoryName)) {
+      factoryMap.set(factoryName, {
+        factoryName,
+        totalOrders: 0,
+        clientsServed: [],
+        uniqueClients: 0
+      });
+    }
+    
+    const factory = factoryMap.get(factoryName)!;
+    factory.totalOrders += 1;
+    
+    // Agregar cliente si no está en la lista
+    if (!factory.clientsServed.includes(clientName)) {
+      factory.clientsServed.push(clientName);
+    }
+    factory.uniqueClients = factory.clientsServed.length;
+  });
+
+  const clients = Array.from(clientMap.values());
+  const factories = Array.from(factoryMap.values());
+  
+  const activeClients = clients.filter(c => c.totalOrders > 0).length;
+  const activeFactories = factories.filter(f => f.totalOrders > 0).length;
+  
+  // Top clientes por número de órdenes
+  const topClients = clients
+    .sort((a, b) => b.totalOrders - a.totalOrders)
+    .slice(0, 5);
+
+  // Top factories por número de órdenes
+  const topFactories = factories
+    .sort((a, b) => b.totalOrders - a.totalOrders)
+    .slice(0, 5);
+
+  const totalOrders = data.total_orders || data.data.length;
+  const averageOrdersPerClient = activeClients > 0 ? totalOrders / activeClients : 0;
+  const averageOrdersPerFactory = activeFactories > 0 ? totalOrders / activeFactories : 0;
+
+  return {
+    totalClients: clients.length,
+    activeClients,
+    totalFactories: factories.length,
+    activeFactories,
+    topClients,
+    topFactories,
+    totalOrders,
+    averageOrdersPerClient: Number(averageOrdersPerClient.toFixed(2)),
+    averageOrdersPerFactory: Number(averageOrdersPerFactory.toFixed(2))
+  };
+}
+
+// ACTUALIZADA: Función para obtener comparación de estadísticas de clientes
+export async function fetchClientStatsWithComparison(
+  year: number, 
+  week: number
+): Promise<ClientStatsComparison> {
+  const { year: prevYear, week: prevWeek } = getPreviousWeek(year, week);
+  
+  const [currentData, previousData] = await Promise.all([
+    fetchWeeklyOrdersWithClient(year, week),
+    fetchWeeklyOrdersWithClient(prevYear, prevWeek)
+  ]);
+
+  const currentStats = processClientStats(currentData);
+  const previousStats = processClientStats(previousData);
+
+  const changes = {
+    totalClientsChange: calculatePercentageChange(currentStats.totalClients, previousStats.totalClients),
+    activeClientsChange: calculatePercentageChange(currentStats.activeClients, previousStats.activeClients),
+    totalFactoriesChange: calculatePercentageChange(currentStats.totalFactories, previousStats.totalFactories),
+    totalOrdersChange: calculatePercentageChange(currentStats.totalOrders, previousStats.totalOrders)
   };
 
   return {

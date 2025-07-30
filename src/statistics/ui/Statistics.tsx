@@ -3,9 +3,10 @@ import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
 import TruckStatistics from './TruckStatistics';
 import PaymentStatusChart from './components/PaymentStatusChart';
-import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison } from '../data/repositoryStatistics';
+import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
+import { ClientStatsComparison } from '../domain/OrdersWithClientModels';
 
 interface StatItem {
   label: string;
@@ -40,6 +41,7 @@ const Statistics = () => {
     return new Date().getFullYear();
   });
 
+  // 1. CAMBIAR statsData de readonly a mutable:
   const [statsData, setStatsData] = useState<StatItem[]>([]);
   const [monthlyTargetData, setMonthlyTargetData] = useState<MonthlyTargetData>({
     percent: 0,
@@ -81,8 +83,38 @@ const Statistics = () => {
       paidPercentageChange: 0
     }
   });
-
+  const [clientStats, setClientStats] = useState<ClientStatsComparison>({
+    currentStats: {
+      totalClients: 0,
+      activeClients: 0,
+      totalFactories: 0,
+      activeFactories: 0,
+      topClients: [],
+      topFactories: [],
+      totalOrders: 0,
+      averageOrdersPerClient: 0,
+      averageOrdersPerFactory: 0
+    },
+    previousStats: {
+      totalClients: 0,
+      activeClients: 0,
+      totalFactories: 0,
+      activeFactories: 0,
+      topClients: [],
+      topFactories: [],
+      totalOrders: 0,
+      averageOrdersPerClient: 0,
+      averageOrdersPerFactory: 0
+    },
+    changes: {
+      totalClientsChange: 0,
+      activeClientsChange: 0,
+      totalFactoriesChange: 0,
+      totalOrdersChange: 0
+    }
+  });
   console.log('Orders Count Stats:', ordersCountStats);
+  console.log('ClientStats', clientStats);
   function getWeekOfYear(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -122,6 +154,48 @@ const Statistics = () => {
       const { currentStats, comparison } = await fetchOrdersCountWithComparison(year, week);
       setOrdersCountStats(currentStats);
 
+      // 2. Cargar profit semanal actual y anterior
+      const currentWeekProfits = await fetchWeeklyProfitReport(year, week);
+      const previousWeekProfits = await fetchWeeklyProfitReport(previousYear, previousWeek);
+
+      const currentNetProfit = currentWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
+      const previousNetProfit = previousWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
+
+      // Suma de todos los gastos de la semana actual y anterior
+      const currentExpenses = currentWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
+      const previousExpenses = previousWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
+
+      const netProfitChange = previousNetProfit !== 0
+        ? ((currentNetProfit - previousNetProfit) / Math.abs(previousNetProfit)) * 100
+        : 0;
+
+      const targetPercent = previousNetProfit !== 0
+        ? Math.min((currentNetProfit / previousNetProfit) * 100, 200)
+        : 0;
+
+      const monthlyTargetData: MonthlyTargetData = {
+        percent: targetPercent,
+        change: Number(netProfitChange.toFixed(1)),
+        target: `$${(previousNetProfit / 1000).toFixed(1)}K`,
+        revenue: `$${(currentNetProfit / 1000).toFixed(1)}K`,
+        today: `$${(currentNetProfit / 7).toFixed(0)}`,
+        totalExpenses: currentExpenses,
+        grandTotal: currentNetProfit,
+        previousExpenses: previousExpenses,
+        previousGrandTotal: previousNetProfit
+      };
+
+      setMonthlyTargetData(monthlyTargetData);
+
+      // 3. Cargar datos de payment status
+      const paymentComparison = await fetchPaymentStatusWithComparison(year, week);
+      setPaymentStatusData(paymentComparison);
+
+      // 4. Cargar estadísticas de clientes
+      const clientComparison = await fetchClientStatsWithComparison(year, week);
+      setClientStats(clientComparison);
+
+      // 5. NUEVO: Crear statsData con todos los datos
       const realStatsData: StatItem[] = [
         {
           label: 'Total Orders (Week)',
@@ -151,45 +225,23 @@ const Statistics = () => {
           icon: 'fa-calendar-check',
           color: 'orange'
         },
+        {
+          label: 'Unique Clients',
+          value: clientComparison.currentStats.totalClients,
+          change: clientComparison.changes.totalClientsChange,
+          icon: 'fa-users',
+          color: 'blue'
+        },
+        {
+          label: 'Customer Factories',
+          value: clientComparison.currentStats.totalFactories,
+          change: clientComparison.changes.totalFactoriesChange,
+          icon: 'fa-industry',
+          color: 'red'
+        }
       ];
+
       setStatsData(realStatsData);
-
-      // 2. Cargar profit semanal actual y anterior
-      const currentWeekProfits = await fetchWeeklyProfitReport(year, week);
-      const previousWeekProfits = await fetchWeeklyProfitReport(previousYear, previousWeek);
-
-      const currentNetProfit = currentWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
-      const previousNetProfit = previousWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
-
-      // Suma de todos los gastos de la semana actual y anterior
-      const currentExpenses = currentWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
-      const previousExpenses = previousWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
-
-      const netProfitChange = previousNetProfit !== 0
-        ? ((currentNetProfit - previousNetProfit) / Math.abs(previousNetProfit)) * 100
-        : 0;
-
-      const targetPercent = previousNetProfit !== 0
-        ? Math.min((currentNetProfit / previousNetProfit) * 100, 200)
-        : 0;
-
-      const monthlyTargetData: MonthlyTargetData = {
-        percent: targetPercent,
-        change: Number(netProfitChange.toFixed(1)),
-        target: `$${(previousNetProfit / 1000).toFixed(1)}K`,
-        revenue: `$${(currentNetProfit / 1000).toFixed(1)}K`,
-        today: `$${(currentNetProfit / 7).toFixed(0)}`,
-        totalExpenses: currentExpenses, // ahora suma de total_expenses
-        grandTotal: currentNetProfit,
-        previousExpenses: previousExpenses,
-        previousGrandTotal: previousNetProfit
-      };
-
-      setMonthlyTargetData(monthlyTargetData);
-
-      // 3. Cargar datos de payment status
-      const paymentComparison = await fetchPaymentStatusWithComparison(year, week);
-      setPaymentStatusData(paymentComparison);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading statistics');
