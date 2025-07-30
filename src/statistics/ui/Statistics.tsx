@@ -7,6 +7,7 @@ import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentSt
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
 import { ClientStatsComparison } from '../domain/OrdersWithClientModels';
+import PayrollStatistics from './PayrollStatistics';
 
 interface StatItem {
   label: string;
@@ -438,7 +439,7 @@ const Statistics = () => {
                 />
               </div>
 
-              {/* NUEVO: Payment Status Chart - ocupa toda la fila */}
+              {/* Payment Status Chart - ocupa toda la fila */}
               <div className="xl:col-span-2">
                 <PaymentStatusChart
                   currentStats={paymentStatusData.currentStats}
@@ -452,7 +453,7 @@ const Statistics = () => {
         </>
       )}
 
-      {/* NUEVO: Trucks Section */}
+      {/* Trucks Section */}
       {activeSection === 'trucks' && (
         <TruckStatistics
           initialWeek={selectedWeek}
@@ -460,16 +461,11 @@ const Statistics = () => {
         />
       )}
 
-      {/* NUEVO: Payroll Section (placeholder) */}
+      {/* Payroll Section */}
       {activeSection === 'payroll' && (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-gray-400 mb-4">
-            <i className="fas fa-users text-6xl"></i>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Payroll Analytics</h3>
-          <p className="text-gray-600">Detailed payroll analytics coming soon...</p>
-        </div>
+        <PayrollStatistics />
       )}
+        
     </div>
   );
 };
