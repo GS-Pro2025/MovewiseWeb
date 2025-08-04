@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrdersCountResponse, OrderCountDay, OrdersCountStats } from '../domain/OrdersCountModel';
+import { WeeklyPaymentStatusResponse, PaymentStatusStats, PaymentStatusComparison } from '../domain/PaymentStatusModels';
+import { OrdersWithClientResponse, WeeklyClientStats, ClientStats, ClientStatsComparison, FactoryStats } from '../domain/OrdersWithClientModels';
 import Cookies from 'js-cookie';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -188,3 +190,287 @@ export const getMonthFromWeek = (year: number, week: number): number => {
   const weekDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
   return weekDate.getMonth() + 1;
 };
+export interface WeeklyOrderProfit {
+  order_id: string;
+  operator_payments: number;
+  total_expenses: number;
+  costfuel_expenses: number;
+  order_expense: number;
+  additional_costs: number;
+  total_cost: number;
+  income: number;
+  net_profit: number;
+}
+
+export async function fetchWeeklyProfitReport(year: number, week: number): Promise<WeeklyOrderProfit[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+  const url = `${BASE_URL_API}/assign/weekly-profit-report/?year=${year}&week=${week}`;
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) throw new Error('Error fetching weekly profit report');
+  return await response.json();
+}
+
+// Función para obtener datos de órdenes pagas/no pagas
+export async function fetchWeeklyPaymentStatus(year: number, week: number): Promise<WeeklyPaymentStatusResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/order/weekly-paid-unpaid/?year=${year}&week=${week}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching weekly payment status: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching weekly payment status:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener el estado de pagos semanal'
+    );
+  }
+}
+
+// Función para procesar estadísticas de pagos
+export function processPaymentStatusStats(data: WeeklyPaymentStatusResponse): PaymentStatusStats {
+  const totalOrders = data.paid_orders.length + data.unpaid_orders.length;
+  const paidOrders = data.paid_orders.length;
+  const unpaidOrders = data.unpaid_orders.length;
+
+  const paidPercentage = totalOrders > 0 ? Number(((paidOrders / totalOrders) * 100).toFixed(1)) : 0;
+  const unpaidPercentage = totalOrders > 0 ? Number(((unpaidOrders / totalOrders) * 100).toFixed(1)) : 0;
+
+  const paidIncome = data.paid_orders.reduce((sum, order) => sum + order.income, 0);
+  const unpaidIncome = data.unpaid_orders.reduce((sum, order) => sum + order.income, 0);
+  const totalIncome = paidIncome + unpaidIncome;
+
+  return {
+    totalOrders,
+    paidOrders,
+    unpaidOrders,
+    paidPercentage,
+    unpaidPercentage,
+    totalIncome,
+    paidIncome,
+    unpaidIncome
+  };
+}
+
+// Función para obtener comparación de pagos con semana anterior
+export async function fetchPaymentStatusWithComparison(
+  year: number, 
+  week: number
+): Promise<PaymentStatusComparison> {
+  const { year: prevYear, week: prevWeek } = getPreviousWeek(year, week);
+  
+  const [currentData, previousData] = await Promise.all([
+    fetchWeeklyPaymentStatus(year, week),
+    fetchWeeklyPaymentStatus(prevYear, prevWeek)
+  ]);
+
+  const currentStats = processPaymentStatusStats(currentData);
+  const previousStats = processPaymentStatusStats(previousData);
+
+  const changes = {
+    totalOrdersChange: calculatePercentageChange(currentStats.totalOrders, previousStats.totalOrders),
+    paidOrdersChange: calculatePercentageChange(currentStats.paidOrders, previousStats.paidOrders),
+    unpaidOrdersChange: calculatePercentageChange(currentStats.unpaidOrders, previousStats.unpaidOrders),
+    paidPercentageChange: calculatePercentageChange(currentStats.paidPercentage, previousStats.paidPercentage)
+  };
+
+  return {
+    currentStats,
+    previousStats,
+    changes
+  };
+}
+
+// NUEVA: Función para obtener órdenes semanales con cliente
+export async function fetchWeeklyOrdersWithClient(year: number, week: number): Promise<OrdersWithClientResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/orders-weekly-with-client/?year=${year}&week=${week}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching weekly orders with client: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching weekly orders with client:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener las órdenes semanales con cliente'
+    );
+  }
+}
+
+//Función para procesar estadísticas de clientes
+export function processClientStats(data: OrdersWithClientResponse): WeeklyClientStats {
+  if (!data.data || data.data.length === 0) {
+    return {
+      totalClients: 0,
+      activeClients: 0,
+      totalFactories: 0,
+      activeFactories: 0,
+      topClients: [],
+      topFactories: [],
+      totalOrders: 0,
+      averageOrdersPerClient: 0,
+      averageOrdersPerFactory: 0
+    };
+  }
+
+  // Agrupar órdenes por cliente
+  const clientMap = new Map<string, ClientStats>();
+  // Agrupar órdenes por factory
+  const factoryMap = new Map<string, FactoryStats>();
+  
+  data.data.forEach((order) => {
+    const clientName = order.client_name || 'Unknown Client';
+    const factoryName = order.customer_factory || 'Unknown Factory';
+    
+    // Procesar estadísticas del cliente
+    if (!clientMap.has(clientName)) {
+      clientMap.set(clientName, {
+        clientName,
+        totalOrders: 0,
+        factoriesServed: [],
+        uniqueFactories: 0
+      });
+    }
+    
+    const client = clientMap.get(clientName)!;
+    client.totalOrders += 1;
+    
+    // Agregar factory si no está en la lista
+    if (!client.factoriesServed.includes(factoryName)) {
+      client.factoriesServed.push(factoryName);
+    }
+    client.uniqueFactories = client.factoriesServed.length;
+
+    // Procesar estadísticas de la factory
+    if (!factoryMap.has(factoryName)) {
+      factoryMap.set(factoryName, {
+        factoryName,
+        totalOrders: 0,
+        clientsServed: [],
+        uniqueClients: 0
+      });
+    }
+    
+    const factory = factoryMap.get(factoryName)!;
+    factory.totalOrders += 1;
+    
+    // Agregar cliente si no está en la lista
+    if (!factory.clientsServed.includes(clientName)) {
+      factory.clientsServed.push(clientName);
+    }
+    factory.uniqueClients = factory.clientsServed.length;
+  });
+
+  const clients = Array.from(clientMap.values());
+  const factories = Array.from(factoryMap.values());
+  
+  const activeClients = clients.filter(c => c.totalOrders > 0).length;
+  const activeFactories = factories.filter(f => f.totalOrders > 0).length;
+  
+  // Top clientes por número de órdenes
+  const topClients = clients
+    .sort((a, b) => b.totalOrders - a.totalOrders)
+    .slice(0, 5);
+
+  // Top factories por número de órdenes
+  const topFactories = factories
+    .sort((a, b) => b.totalOrders - a.totalOrders)
+    .slice(0, 5);
+
+  const totalOrders = data.total_orders || data.data.length;
+  const averageOrdersPerClient = activeClients > 0 ? totalOrders / activeClients : 0;
+  const averageOrdersPerFactory = activeFactories > 0 ? totalOrders / activeFactories : 0;
+
+  return {
+    totalClients: clients.length,
+    activeClients,
+    totalFactories: factories.length,
+    activeFactories,
+    topClients,
+    topFactories,
+    totalOrders,
+    averageOrdersPerClient: Number(averageOrdersPerClient.toFixed(2)),
+    averageOrdersPerFactory: Number(averageOrdersPerFactory.toFixed(2))
+  };
+}
+
+// ACTUALIZADA: Función para obtener comparación de estadísticas de clientes
+export async function fetchClientStatsWithComparison(
+  year: number, 
+  week: number
+): Promise<ClientStatsComparison> {
+  const { year: prevYear, week: prevWeek } = getPreviousWeek(year, week);
+  
+  const [currentData, previousData] = await Promise.all([
+    fetchWeeklyOrdersWithClient(year, week),
+    fetchWeeklyOrdersWithClient(prevYear, prevWeek)
+  ]);
+
+  const currentStats = processClientStats(currentData);
+  const previousStats = processClientStats(previousData);
+
+  const changes = {
+    totalClientsChange: calculatePercentageChange(currentStats.totalClients, previousStats.totalClients),
+    activeClientsChange: calculatePercentageChange(currentStats.activeClients, previousStats.activeClients),
+    totalFactoriesChange: calculatePercentageChange(currentStats.totalFactories, previousStats.totalFactories),
+    totalOrdersChange: calculatePercentageChange(currentStats.totalOrders, previousStats.totalOrders)
+  };
+
+  return {
+    currentStats,
+    previousStats,
+    changes
+  };
+}

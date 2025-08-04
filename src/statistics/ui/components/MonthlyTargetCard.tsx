@@ -57,8 +57,8 @@ const MonthlyTargetCard: React.FC<MonthlyTargetCardProps> = ({
   return (
     <div className="bg-white rounded-2xl shadow p-6 w-full max-w-md mx-auto">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Weekly Payroll Target</h2>
-        <p className="text-sm text-gray-400">Weekly payroll performance vs target</p>
+        <h2 className="text-lg font-semibold text-gray-800">Weekly profit last week</h2>
+        <p className="text-sm text-gray-400">Weekly order profit vs last week</p>
       </div>
       
       <div className="flex flex-col items-center justify-center">

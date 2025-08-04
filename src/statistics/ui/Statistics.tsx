@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
-import TruckStatistics from './TruckStatistics'; // NUEVO IMPORT
-import { fetchOrdersCountWithComparison } from '../data/repositoryStatistics';
-import { fetchPayrollStatsForWeek } from '../data/repositoryPayrollStats';
+import TruckStatistics from './TruckStatistics';
+import PaymentStatusChart from './components/PaymentStatusChart';
+import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
+import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
+import { ClientStatsComparison } from '../domain/OrdersWithClientModels';
+import PayrollStatistics from './PayrollStatistics';
 
 interface StatItem {
   label: string;
@@ -29,40 +32,95 @@ interface MonthlyTargetData {
 const Statistics = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // NUEVO: Estado para la sección activa
-  const [activeSection, setActiveSection] = useState<'overview' | 'trucks' | 'payroll'>('overview');
 
-  // Filtros de semana y año (compartidos por todas las secciones)
+  const [activeSection, setActiveSection] = useState<'overview' | 'trucks' | 'payroll'>('overview');
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
     const now = new Date();
     return getWeekOfYear(now);
   });
-  
   const [selectedYear, setSelectedYear] = useState<number>(() => {
     return new Date().getFullYear();
   });
 
-  // Estados para los datos (solo para overview)
+  // 1. CAMBIAR statsData de readonly a mutable:
   const [statsData, setStatsData] = useState<StatItem[]>([]);
   const [monthlyTargetData, setMonthlyTargetData] = useState<MonthlyTargetData>({
-    percent: 0, 
-    change: 0,         
-    target: "$0",      
-    revenue: "$0",     
-    today: "$0",       
+    percent: 0,
+    change: 0,
+    target: "$0",
+    revenue: "$0",
+    today: "$0",
     totalExpenses: 0,
     grandTotal: 0,
     previousExpenses: 0,
     previousGrandTotal: 0
   });
   const [ordersCountStats, setOrdersCountStats] = useState<OrdersCountStats | null>(null);
-  console.log('Statistics component initialized', ordersCountStats);
+  const [paymentStatusData, setPaymentStatusData] = useState<PaymentStatusComparison>({
+    currentStats: {
+      totalOrders: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+      paidPercentage: 0,
+      unpaidPercentage: 0,
+      totalIncome: 0,
+      paidIncome: 0,
+      unpaidIncome: 0
+    },
+    previousStats: {
+      totalOrders: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+      paidPercentage: 0,
+      unpaidPercentage: 0,
+      totalIncome: 0,
+      paidIncome: 0,
+      unpaidIncome: 0
+    },
+    changes: {
+      totalOrdersChange: 0,
+      paidOrdersChange: 0,
+      unpaidOrdersChange: 0,
+      paidPercentageChange: 0
+    }
+  });
+  const [clientStats, setClientStats] = useState<ClientStatsComparison>({
+    currentStats: {
+      totalClients: 0,
+      activeClients: 0,
+      totalFactories: 0,
+      activeFactories: 0,
+      topClients: [],
+      topFactories: [],
+      totalOrders: 0,
+      averageOrdersPerClient: 0,
+      averageOrdersPerFactory: 0
+    },
+    previousStats: {
+      totalClients: 0,
+      activeClients: 0,
+      totalFactories: 0,
+      activeFactories: 0,
+      topClients: [],
+      topFactories: [],
+      totalOrders: 0,
+      averageOrdersPerClient: 0,
+      averageOrdersPerFactory: 0
+    },
+    changes: {
+      totalClientsChange: 0,
+      activeClientsChange: 0,
+      totalFactoriesChange: 0,
+      totalOrdersChange: 0
+    }
+  });
+  console.log('Orders Count Stats:', ordersCountStats);
+  console.log('ClientStats', clientStats);
   function getWeekOfYear(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const yearStart = new Date(Date.UTC(d.getFullYear(), 0, 4));
     const yearStartDayNum = yearStart.getUTCDay() || 7;
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
@@ -73,40 +131,75 @@ const Statistics = () => {
     const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
     const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
     const endDate = new Date(startDate.getTime() + 6 * 86400000);
-    
+
     return {
       start: startDate.toISOString().split('T')[0],
       end: endDate.toISOString().split('T')[0],
     };
   }, []);
 
-  // ACTUALIZADA: Solo cargar datos cuando esté en overview
+  // NUEVO: Cargar datos de profit semanal
   const loadStatistics = useCallback(async (week: number, year: number) => {
-    if (activeSection !== 'overview') return; // Solo cargar si estamos en overview
+    if (activeSection !== 'overview') return;
 
     try {
       setLoading(true);
       setError(null);
-      
+
       const weekRange = getWeekRange(year, week);
-      console.log(`Loading statistics for week ${week} of ${year}:`, weekRange);
-      
-      const { currentStats, comparison } = 
-        await fetchOrdersCountWithComparison(year, week);
-      
-      const currentPayrollStats = await fetchPayrollStatsForWeek(week, year);
+      console.log('Loading statistics for week:', week, 'year:', year, 'range:', weekRange);
       const previousWeek = week > 1 ? week - 1 : 53;
       const previousYear = week > 1 ? year : year - 1;
-      const previousPayrollStats = await fetchPayrollStatsForWeek(previousWeek, previousYear);
-      
-      console.log('Current week payroll stats:', currentPayrollStats);
-      console.log('Previous week payroll stats:', previousPayrollStats);
-      
+
+      // 1. Cargar métricas de órdenes
+      const { currentStats, comparison } = await fetchOrdersCountWithComparison(year, week);
       setOrdersCountStats(currentStats);
-      
+
+      // 2. Cargar profit semanal actual y anterior
+      const currentWeekProfits = await fetchWeeklyProfitReport(year, week);
+      const previousWeekProfits = await fetchWeeklyProfitReport(previousYear, previousWeek);
+
+      const currentNetProfit = currentWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
+      const previousNetProfit = previousWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
+
+      // Suma de todos los gastos de la semana actual y anterior
+      const currentExpenses = currentWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
+      const previousExpenses = previousWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
+
+      const netProfitChange = previousNetProfit !== 0
+        ? ((currentNetProfit - previousNetProfit) / Math.abs(previousNetProfit)) * 100
+        : 0;
+
+      const targetPercent = previousNetProfit !== 0
+        ? Math.min((currentNetProfit / previousNetProfit) * 100, 200)
+        : 0;
+
+      const monthlyTargetData: MonthlyTargetData = {
+        percent: targetPercent,
+        change: Number(netProfitChange.toFixed(1)),
+        target: `$${(previousNetProfit / 1000).toFixed(1)}K`,
+        revenue: `$${(currentNetProfit / 1000).toFixed(1)}K`,
+        today: `$${(currentNetProfit / 7).toFixed(0)}`,
+        totalExpenses: currentExpenses,
+        grandTotal: currentNetProfit,
+        previousExpenses: previousExpenses,
+        previousGrandTotal: previousNetProfit
+      };
+
+      setMonthlyTargetData(monthlyTargetData);
+
+      // 3. Cargar datos de payment status
+      const paymentComparison = await fetchPaymentStatusWithComparison(year, week);
+      setPaymentStatusData(paymentComparison);
+
+      // 4. Cargar estadísticas de clientes
+      const clientComparison = await fetchClientStatsWithComparison(year, week);
+      setClientStats(clientComparison);
+
+      // 5. NUEVO: Crear statsData con todos los datos
       const realStatsData: StatItem[] = [
         {
-          label: 'Total Orders (Week)', 
+          label: 'Total Orders (Week)',
           value: currentStats.totalOrders,
           change: comparison.totalOrdersChange,
           icon: 'fa-box',
@@ -115,50 +208,42 @@ const Statistics = () => {
         {
           label: 'Avg Orders/Day',
           value: currentStats.averagePerDay,
-          change: comparison.averagePerDayChange, 
+          change: comparison.averagePerDayChange,
           icon: 'fa-chart-line',
           color: 'blue'
         },
         {
           label: 'Peak Day Orders',
           value: currentStats.peakDay?.count || 0,
-          change: comparison.peakDayChange, 
+          change: comparison.peakDayChange,
           icon: 'fa-arrow-up',
           color: 'purple'
         },
         {
           label: 'Active Days (Week)',
           value: currentStats.daysWithOrders,
-          change: comparison.activeDaysChange, 
+          change: comparison.activeDaysChange,
           icon: 'fa-calendar-check',
           color: 'orange'
         },
+        {
+          label: 'Unique Clients',
+          value: clientComparison.currentStats.totalClients,
+          change: clientComparison.changes.totalClientsChange,
+          icon: 'fa-users',
+          color: 'blue'
+        },
+        {
+          label: 'Customer Factories',
+          value: clientComparison.currentStats.totalFactories,
+          change: clientComparison.changes.totalFactoriesChange,
+          icon: 'fa-industry',
+          color: 'red'
+        }
       ];
 
       setStatsData(realStatsData);
-    
-      const grandTotalChange = previousPayrollStats.grandTotal > 0
-        ? ((currentPayrollStats.grandTotal - previousPayrollStats.grandTotal) / previousPayrollStats.grandTotal) * 100
-        : 0;
 
-      const targetPercent = previousPayrollStats.grandTotal > 0 
-        ? Math.min((currentPayrollStats.grandTotal / previousPayrollStats.grandTotal) * 100, 200)
-        : 0;
-
-      const payrollTargetData: MonthlyTargetData = {
-        percent: targetPercent,
-        change: Number(grandTotalChange.toFixed(1)),
-        target: `$${(previousPayrollStats.grandTotal / 1000).toFixed(1)}K`,
-        revenue: `$${(currentPayrollStats.grandTotal / 1000).toFixed(1)}K`,
-        today: `$${(currentPayrollStats.grandTotal / 7).toFixed(0)}`,
-        totalExpenses: currentPayrollStats.totalExpenses,
-        grandTotal: currentPayrollStats.grandTotal,
-        previousExpenses: previousPayrollStats.totalExpenses,
-        previousGrandTotal: previousPayrollStats.grandTotal
-      };
-
-      setMonthlyTargetData(payrollTargetData);
-      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading statistics');
       console.error('Error loading statistics:', err);
@@ -167,7 +252,6 @@ const Statistics = () => {
     }
   }, [getWeekRange, activeSection]);
 
-  // Cargar datos cuando cambian los filtros o la sección activa
   useEffect(() => {
     loadStatistics(selectedWeek, selectedYear);
   }, [selectedWeek, selectedYear, loadStatistics]);
@@ -354,29 +438,34 @@ const Statistics = () => {
                   stats={statsData}
                 />
               </div>
+
+              {/* Payment Status Chart - ocupa toda la fila */}
+              <div className="xl:col-span-2">
+                <PaymentStatusChart
+                  currentStats={paymentStatusData.currentStats}
+                  previousStats={paymentStatusData.previousStats}
+                  changes={paymentStatusData.changes}
+                  loading={loading}
+                />
+              </div>
             </div>
           )}
         </>
       )}
 
-      {/* NUEVO: Trucks Section */}
+      {/* Trucks Section */}
       {activeSection === 'trucks' && (
-        <TruckStatistics 
+        <TruckStatistics
           initialWeek={selectedWeek}
           initialYear={selectedYear}
         />
       )}
 
-      {/* NUEVO: Payroll Section (placeholder) */}
+      {/* Payroll Section */}
       {activeSection === 'payroll' && (
-        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div className="text-gray-400 mb-4">
-            <i className="fas fa-users text-6xl"></i>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Payroll Analytics</h3>
-          <p className="text-gray-600">Detailed payroll analytics coming soon...</p>
-        </div>
+        <PayrollStatistics />
       )}
+        
     </div>
   );
 };
