@@ -41,16 +41,16 @@ const AddOperatorsToOrder: React.FC = () => {
   const filteredAssignedOperators = assignedOperators.filter(
     (op) =>
       (`${op.first_name} ${op.last_name}`.toLowerCase().includes(searchAssigned.toLowerCase()) ||
-      (op.identification && op.identification.toString().includes(searchAssigned)) ||
-      (op.code && op.code.toString().includes(searchAssigned)))
+      (op.identification && op.identification.toString().toLowerCase().includes(searchAssigned.toLowerCase())) ||
+      (op.code && op.code.toString().toLowerCase().includes(searchAssigned.toLowerCase())))
   );
 
   // Filtrado de operadores disponibles
   const filteredAvailableOperators = availableOperators.filter(
     (op) =>
       (`${op.first_name} ${op.last_name}`.toLowerCase().includes(searchAvailable.toLowerCase()) ||
-      (op.id_number && op.id_number.toString().includes(searchAvailable)) ||
-      (op.code && op.code.toString().includes(searchAvailable)))
+      (op.id_number && op.id_number.toString().toLowerCase().includes(searchAvailable.toLowerCase())) ||
+      (op.code && op.code.toString().toLowerCase().includes(searchAvailable.toLowerCase())))
   );
   function getOperatorId(op: OperatorAssigned | OperatorAvailable) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
