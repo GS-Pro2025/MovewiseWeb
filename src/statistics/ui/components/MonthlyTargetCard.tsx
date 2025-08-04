@@ -6,11 +6,11 @@ interface MonthlyTargetCardProps {
   target: string;
   revenue: string;
   today: string;
-  // NUEVAS PROPS PARA PAYROLL
   totalExpenses?: number;
   grandTotal?: number;
   previousExpenses?: number;
   previousGrandTotal?: number;
+  debt?: number; 
 }
 
 const MonthlyTargetCard: React.FC<MonthlyTargetCardProps> = ({
@@ -23,13 +23,15 @@ const MonthlyTargetCard: React.FC<MonthlyTargetCardProps> = ({
   grandTotal = 0,
   previousExpenses = 0,
   previousGrandTotal = 0,
+  debt = 0
 }) => {
   // Para el arco, usamos SVG simple
   const radius = 60;
   const stroke = 8;
   const normalizedRadius = radius - stroke / 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-  const progress = circumference * (1 - percent / 100);
+  // Si grandTotal <= 0, la barra no crece
+  const progress = grandTotal > 0 ? circumference * (1 - percent / 100) : circumference;
 
   // Calcular cambios para expenses
   const expenseChange = previousExpenses > 0 
@@ -95,9 +97,16 @@ const MonthlyTargetCard: React.FC<MonthlyTargetCardProps> = ({
         </div>
         
         <div className="text-center text-gray-500 text-sm mb-4">
-          Weekly grand total: <span className="font-semibold text-gray-700">{formatLargeNumber(grandTotal)}</span><br />
+          Weekly grand total: <span className="font-semibold text-gray-700">{grandTotal > 0 ? formatLargeNumber(grandTotal) : '$0'}</span><br />
           {change >= 0 ? "Higher than last week. Great work!" : "Lower than last week. Room for improvement."}
         </div>
+
+        {/* Mostrar deuda si existe */}
+        {debt > 0 && (
+          <div className="text-center text-red-600 text-sm font-semibold mb-2">
+            Outstanding Debt: {formatLargeNumber(debt)}
+          </div>
+        )}
       </div>
 
       {/* Grid con 4 elementos: Target, Revenue, Today, Expenses */}
