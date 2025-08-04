@@ -20,7 +20,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
         }
         console.log(`Fetching summary cost for week ${week}, year ${year}, page ${pageNumber + 1}`);
         try {
-            const response = await fetch(`${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}`, {
+            const response = await fetch(`${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,

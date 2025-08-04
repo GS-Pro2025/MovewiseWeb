@@ -27,6 +27,7 @@ interface MonthlyTargetData {
   grandTotal: number;
   previousExpenses: number;
   previousGrandTotal: number;
+  debt?: number;
 }
 
 const Statistics = () => {
@@ -162,28 +163,33 @@ const Statistics = () => {
       const currentNetProfit = currentWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
       const previousNetProfit = previousWeekProfits.reduce((sum, o) => sum + o.net_profit, 0);
 
-      // Suma de todos los gastos de la semana actual y anterior
       const currentExpenses = currentWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
       const previousExpenses = previousWeekProfits.reduce((sum, o) => sum + o.total_expenses, 0);
+
+      // NUEVO: Si el profit es negativo, el grandTotal es 0 y la deuda es el valor absoluto del profit negativo
+      const grandTotal = currentNetProfit > 0 ? currentNetProfit : 0;
+      const debt = currentNetProfit < 0 ? Math.abs(currentNetProfit) : 0;
 
       const netProfitChange = previousNetProfit !== 0
         ? ((currentNetProfit - previousNetProfit) / Math.abs(previousNetProfit)) * 100
         : 0;
 
-      const targetPercent = previousNetProfit !== 0
-        ? Math.min((currentNetProfit / previousNetProfit) * 100, 200)
+      // NUEVO: Si el grandTotal es 0, la barra no crece
+      const targetPercent = previousNetProfit !== 0 && grandTotal > 0
+        ? Math.min((grandTotal / previousNetProfit) * 100, 200)
         : 0;
 
       const monthlyTargetData: MonthlyTargetData = {
         percent: targetPercent,
         change: Number(netProfitChange.toFixed(1)),
         target: `$${(previousNetProfit / 1000).toFixed(1)}K`,
-        revenue: `$${(currentNetProfit / 1000).toFixed(1)}K`,
-        today: `$${(currentNetProfit / 7).toFixed(0)}`,
+        revenue: `$${(grandTotal / 1000).toFixed(1)}K`,
+        today: `$${(grandTotal / 7).toFixed(0)}`,
         totalExpenses: currentExpenses,
-        grandTotal: currentNetProfit,
+        grandTotal: grandTotal,
         previousExpenses: previousExpenses,
-        previousGrandTotal: previousNetProfit
+        previousGrandTotal: previousNetProfit,
+        debt // <-- pasa la deuda a la card
       };
 
       setMonthlyTargetData(monthlyTargetData);
