@@ -3,11 +3,13 @@ import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
 import TruckStatistics from './TruckStatistics';
 import PaymentStatusChart from './components/PaymentStatusChart';
-import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison } from '../data/repositoryStatistics';
+import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison, fetchOrdersBasicDataList } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
 import { ClientStatsComparison } from '../domain/OrdersWithClientModels';
+import { OrdersBasicDataResponse } from '../domain/BasicOrdersDataModels';
 import PayrollStatistics from './PayrollStatistics';
+import { useNavigate } from 'react-router-dom';
 
 interface StatItem {
   label: string;
@@ -31,6 +33,8 @@ interface MonthlyTargetData {
 }
 
 const Statistics = () => {
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,8 +119,12 @@ const Statistics = () => {
       totalOrdersChange: 0
     }
   });
+  // NUEVO: Estado para datos básicos de órdenes
+  const [basicOrdersData, setBasicOrdersData] = useState<OrdersBasicDataResponse | null>(null);
   console.log('Orders Count Stats:', ordersCountStats);
   console.log('ClientStats', clientStats);
+  console.log('basicOrdersData', basicOrdersData);
+  
   function getWeekOfYear(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -155,6 +163,10 @@ const Statistics = () => {
       // 1. Cargar métricas de órdenes
       const { currentStats, comparison } = await fetchOrdersCountWithComparison(year, week);
       setOrdersCountStats(currentStats);
+
+      // NUEVO: 1.5. Cargar datos básicos de órdenes
+      const basicData = await fetchOrdersBasicDataList(year, week);
+      setBasicOrdersData(basicData);
 
       // 2. Cargar profit semanal actual y anterior
       const currentWeekProfits = await fetchWeeklyProfitReport(year, week);
@@ -205,7 +217,7 @@ const Statistics = () => {
       const clientComparison = await fetchClientStatsWithComparison(year, week);
       setClientStats(clientComparison);
 
-      // 5. NUEVO: Crear statsData con todos los datos
+      // 5. ACTUALIZADO: Crear statsData con todos los datos
       const realStatsData: StatItem[] = [
         {
           label: 'Total Orders (Week)',
@@ -260,6 +272,11 @@ const Statistics = () => {
       setLoading(false);
     }
   }, [getWeekRange, activeSection]);
+
+  // NUEVO: Handler para navegar a la página de breakdown
+  const handleOrderCardClick = () => {
+    navigate(`/order-breakdown?year=${selectedYear}&week=${selectedWeek}`);
+  };
 
   useEffect(() => {
     loadStatistics(selectedWeek, selectedYear);
@@ -445,6 +462,7 @@ const Statistics = () => {
                 <StatsComparisonCard
                   title="Business Metrics"
                   stats={statsData}
+                  onStatClick={handleOrderCardClick}
                 />
               </div>
 
