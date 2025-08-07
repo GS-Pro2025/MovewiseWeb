@@ -19,6 +19,7 @@ import Statistics from './statistics/ui/Statistics';
 import CustomersView from './settings/customer/UI/customersView';
 import CreateAdminView from './createAdmin/ui/createAdminView';
 import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
+import OrderBreakdownPage from './statistics/ui/OrderBreakdownPage';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +97,7 @@ const App = () => {
             <Route path="/create-admin" element={<CreateAdminView />} />
             <Route path="/jobs-tools" element={<JobsAndToolsGUI />} />
             <Route path="statistics" element={<Statistics/>} />
+            <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
           </Route>
 
           {/* Ruta por defecto */}
