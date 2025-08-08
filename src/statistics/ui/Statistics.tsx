@@ -3,6 +3,7 @@ import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
 import TruckStatistics from './TruckStatistics';
 import PaymentStatusChart from './components/PaymentStatusChart';
+import PaidUnpaidWeekRangeChart from './components/PaidUnpaidWeekRangeChart';
 import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison, fetchOrdersBasicDataList } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
@@ -443,39 +444,50 @@ const Statistics = () => {
 
           {/* Content */}
           {!loading && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              <div className="flex justify-center">
-                <MonthlyTargetCard
-                  percent={monthlyTargetData.percent}
-                  change={monthlyTargetData.change}
-                  target={monthlyTargetData.target}
-                  revenue={monthlyTargetData.revenue}
-                  today={monthlyTargetData.today}
-                  totalExpenses={monthlyTargetData.totalExpenses}
-                  grandTotal={monthlyTargetData.grandTotal}
-                  previousExpenses={monthlyTargetData.previousExpenses}
-                  previousGrandTotal={monthlyTargetData.previousGrandTotal}
-                />
+            <>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="flex justify-center">
+                  <MonthlyTargetCard
+                    percent={monthlyTargetData.percent}
+                    change={monthlyTargetData.change}
+                    target={monthlyTargetData.target}
+                    revenue={monthlyTargetData.revenue}
+                    today={monthlyTargetData.today}
+                    totalExpenses={monthlyTargetData.totalExpenses}
+                    grandTotal={monthlyTargetData.grandTotal}
+                    previousExpenses={monthlyTargetData.previousExpenses}
+                    previousGrandTotal={monthlyTargetData.previousGrandTotal}
+                  />
+                </div>
+
+                <div className="xl:col-span-1">
+                  <StatsComparisonCard
+                    title="Business Metrics"
+                    stats={statsData}
+                    onStatClick={handleOrderCardClick}
+                  />
+                </div>
+
+                {/* Payment Status Chart - ocupa toda la fila */}
+                <div className="xl:col-span-2">
+                  <PaymentStatusChart
+                    currentStats={paymentStatusData.currentStats}
+                    previousStats={paymentStatusData.previousStats}
+                    changes={paymentStatusData.changes}
+                    loading={loading}
+                  />
+                </div>
               </div>
 
-              <div className="xl:col-span-1">
-                <StatsComparisonCard
-                  title="Business Metrics"
-                  stats={statsData}
-                  onStatClick={handleOrderCardClick}
+              {/* NUEVO: Paid/Unpaid Week Range Chart - Sección adicional */}
+              <div className="mt-8">
+                <PaidUnpaidWeekRangeChart
+                  initialYear={selectedYear}
+                  initialStartWeek={Math.max(1, selectedWeek - 5)}
+                  initialEndWeek={Math.min(53, selectedWeek + 5)}
                 />
               </div>
-
-              {/* Payment Status Chart - ocupa toda la fila */}
-              <div className="xl:col-span-2">
-                <PaymentStatusChart
-                  currentStats={paymentStatusData.currentStats}
-                  previousStats={paymentStatusData.previousStats}
-                  changes={paymentStatusData.changes}
-                  loading={loading}
-                />
-              </div>
-            </div>
+            </>
           )}
         </>
       )}

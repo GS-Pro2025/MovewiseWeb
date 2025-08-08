@@ -1,11 +1,42 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
-import { fetchOperators } from '../data/repositoryOperators';
+import { useSnackbar } from 'notistack'; // <-- Importa el hook
+import { fetchOperators, fetchInactiveOperators, activateOperator } from '../data/repositoryOperators';
+import { fetchWeeklyOperatorRanking } from '../data/repositoryStatistics';
 import { Operator } from '../domain/OperatorsModels';
+import { OperatorWeeklyRanking } from '../domain/OperatorWeeklyRankingModels';
+import { InactiveOperator } from '../domain/OperatortsInactiveModels';
 
 const PayrollStatistics: React.FC = () => {
+  const { enqueueSnackbar } = useSnackbar(); // <-- Inicializa el hook
+
   const [operators, setOperators] = useState<Operator[]>([]);
+  const [inactiveOperators, setInactiveOperators] = useState<InactiveOperator[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [inactiveLoading, setInactiveLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [inactiveError, setInactiveError] = useState<string | null>(null);
+
+  // NUEVO: Estado para tab activo
+  const [activeTab, setActiveTab] = useState<'directory' | 'ranking' | 'inactive'>('directory');
+
+  // NUEVO: Estado para ranking
+  const [ranking, setRanking] = useState<OperatorWeeklyRanking[]>([]);
+  const [rankingLoading, setRankingLoading] = useState<boolean>(false);
+  const [rankingError, setRankingError] = useState<string | null>(null);
+
+  // NUEVO: Semana y año (puedes ajustar para que sea dinámico)
+  const now = new Date();
+  const [year] = useState<number>(now.getFullYear());
+  const [week] = useState<number>(() => {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const yearStartDayNum = yearStart.getUTCDay() || 7;
+    yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  });
 
   useEffect(() => {
     const loadOperators = async () => {
@@ -16,14 +47,61 @@ const PayrollStatistics: React.FC = () => {
         setOperators(response.results);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading operators');
-        console.error('Error loading operators:', err);
+        enqueueSnackbar(err instanceof Error ? err.message : 'Error loading operators', { variant: 'error' }); // <-- Snackbar error
       } finally {
         setLoading(false);
       }
     };
-
     loadOperators();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'ranking') {
+      const loadRanking = async () => {
+        try {
+          setRankingLoading(true);
+          setRankingError(null);
+          const data = await fetchWeeklyOperatorRanking(year, week);
+          setRanking(data);
+        } catch (err) {
+          setRankingError(err instanceof Error ? err.message : 'Error loading ranking');
+          enqueueSnackbar(err instanceof Error ? err.message : 'Error loading ranking', { variant: 'error' }); // <-- Snackbar error
+        } finally {
+          setRankingLoading(false);
+        }
+      };
+      loadRanking();
+    }
+  }, [activeTab, year, week]);
+
+  useEffect(() => {
+    if (activeTab === 'inactive') {
+      const loadInactive = async () => {
+        try {
+          setInactiveLoading(true);
+          setInactiveError(null);
+          const data = await fetchInactiveOperators();
+          setInactiveOperators(data.results);
+        } catch (err) {
+          setInactiveError(err instanceof Error ? err.message : 'Error loading inactive operators');
+          enqueueSnackbar(err instanceof Error ? err.message : 'Error loading inactive operators', { variant: 'error' }); // <-- Snackbar error
+        } finally {
+          setInactiveLoading(false);
+        }
+      };
+      loadInactive();
+    }
+  }, [activeTab]);
+
+  const handleActivate = async (id_operator: number) => {
+    try {
+      await activateOperator(id_operator);
+      setInactiveOperators(prev => prev.filter(op => op.id_operator !== id_operator));
+      enqueueSnackbar('Operator activated successfully', { variant: 'success' }); // <-- Snackbar success
+    } catch (err) {
+      enqueueSnackbar('Error activating operator', { variant: 'error' }); // <-- Snackbar error
+    }
+  };
 
   const formatCurrency = (salary: string): string => {
     const amount = parseFloat(salary);
@@ -91,126 +169,268 @@ const PayrollStatistics: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header con resumen */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Payroll Overview</h2>
-            <p className="text-gray-600">Manage employee salaries and information</p>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500">Total Payroll</div>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(getTotalPayroll().toString())}
-            </div>
-          </div>
-        </div>
-
-        {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600">Total Employees</p>
-                <p className="text-2xl font-bold text-blue-800">{operators.length}</p>
-              </div>
-              <i className="fas fa-users text-2xl text-blue-500"></i>
-            </div>
-          </div>
-          
-          <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600">Average Salary</p>
-                <p className="text-2xl font-bold text-green-800">
-                  {operators.length > 0 ? formatCurrency((getTotalPayroll() / operators.length).toString()) : '$0'}
-                </p>
-              </div>
-              <i className="fas fa-dollar-sign text-2xl text-green-500"></i>
-            </div>
-          </div>
-          
-          <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-600">Active Status</p>
-                <p className="text-2xl font-bold text-purple-800">
-                  {operators.filter(op => op.status === 'active').length}
-                </p>
-              </div>
-              <i className="fas fa-check-circle text-2xl text-purple-500"></i>
-            </div>
-          </div>
+      {/* Tabs */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
+        <div className="flex space-x-2">
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              activeTab === 'directory'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setActiveTab('directory')}
+          >
+            Employee Directory
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              activeTab === 'ranking'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setActiveTab('ranking')}
+          >
+            Weekly Operator Ranking
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              activeTab === 'inactive'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => setActiveTab('inactive')}
+          >
+            Inactive Operators
+          </button>
         </div>
       </div>
 
-      {/* Lista de operadores */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">Employee Directory</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Salary
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {operators.map((operator) => (
-                <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        {/* CAMBIO: Usar la función renderAvatar */}
-                        {renderAvatar(operator)}
-                      </div>
-                      <div className="ml-4">
+      {/* Tab Content */}
+      {activeTab === 'directory' && (
+        <>
+          {/* Header con resumen */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Payroll Overview</h2>
+                <p className="text-gray-600">Manage employee salaries and information</p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Total Payroll</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(getTotalPayroll().toString())}
+                </div>
+              </div>
+            </div>
+
+            {/* Stats cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-600">Total Employees</p>
+                    <p className="text-2xl font-bold text-blue-800">{operators.length}</p>
+                  </div>
+                  <i className="fas fa-users text-2xl text-blue-500"></i>
+                </div>
+              </div>
+              
+              <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-600">Average Salary</p>
+                    <p className="text-2xl font-bold text-green-800">
+                      {operators.length > 0 ? formatCurrency((getTotalPayroll() / operators.length).toString()) : '$0'}
+                    </p>
+                  </div>
+                  <i className="fas fa-dollar-sign text-2xl text-green-500"></i>
+                </div>
+              </div>
+              
+              <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-600">Active Status</p>
+                    <p className="text-2xl font-bold text-purple-800">
+                      {operators.filter(op => op.status === 'active').length}
+                    </p>
+                  </div>
+                  <i className="fas fa-check-circle text-2xl text-purple-500"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de operadores */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Employee Directory</h3>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Employee
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Salary
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {operators.map((operator) => (
+                    <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            {/* CAMBIO: Usar la función renderAvatar */}
+                            {renderAvatar(operator)}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {getFullName(operator)}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Code: {operator.code}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{operator.email}</div>
+                        <div className="text-sm text-gray-500">{operator.phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {getFullName(operator)}
+                          {formatCurrency(operator.salary)}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          Code: {operator.code}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{operator.email}</div>
-                    <div className="text-sm text-gray-500">{operator.phone}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatCurrency(operator.salary)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      operator.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {operator.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          operator.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {operator.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'ranking' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">Weekly Operator Ranking</h3>
+            <p className="text-gray-500 text-sm">Most assigned operators for week {week}, {year}</p>
+          </div>
+          {rankingLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3">
+                <i className="fas fa-spinner animate-spin text-purple-600 text-xl"></i>
+                <span className="text-gray-600">Loading ranking...</span>
+              </div>
+            </div>
+          ) : rankingError ? (
+            <div className="text-center text-red-500 py-8">{rankingError}</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignments</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {ranking.map((op, idx) => {
+                    let rowClass = "";
+                    if (idx === 0) {
+                      rowClass = "bg-yellow-50";
+                    } else if (idx >= 1 && idx <= 4) {
+                      rowClass = "bg-blue-50";
+                    } else if (idx >= 5 && idx <= 14) {
+                      rowClass = "bg-green-50";
+                    }
+                    return (
+                      <tr key={op.code} className={`hover:bg-gray-50 transition-colors ${rowClass}`}>
+                        <td className="px-6 py-4">{idx + 1}</td>
+                        <td className="px-6 py-4 font-medium text-gray-900">{op.first_name} {op.last_name}</td>
+                        <td className="px-6 py-4 text-gray-700">{op.email}</td>
+                        <td className="px-6 py-4 text-purple-700 font-bold">{op.assign_count}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {activeTab === 'inactive' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">Inactive Operators</h3>
+            <p className="text-gray-500 text-sm">Operators currently inactive</p>
+          </div>
+          {inactiveLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3">
+                <i className="fas fa-spinner animate-spin text-yellow-600 text-xl"></i>
+                <span className="text-gray-600">Loading inactive operators...</span>
+              </div>
+            </div>
+          ) : inactiveError ? (
+            <div className="text-center text-red-500 py-8">{inactiveError}</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {inactiveOperators.map((op) => (
+                    <tr key={op.id_operator} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-gray-900">{op.first_name} {op.last_name}</td>
+                      <td className="px-6 py-4 text-gray-700">{op.email}</td>
+                      <td className="px-6 py-4 text-red-700 font-bold">{op.status}</td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleActivate(op.id_operator)}
+                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                        >
+                          Activate
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
