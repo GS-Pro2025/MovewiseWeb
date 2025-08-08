@@ -4,6 +4,8 @@ import { WeeklyPaymentStatusResponse, PaymentStatusStats, PaymentStatusCompariso
 import { OrdersWithClientResponse, WeeklyClientStats, ClientStats, ClientStatsComparison, FactoryStats } from '../domain/OrdersWithClientModels';
 import Cookies from 'js-cookie';
 import { OrdersBasicDataResponse } from '../domain/BasicOrdersDataModels';
+import { OrdersPaidUnpaidWeekRangeResponse, WeeklyCount } from '../domain/OrdersPaidUnpaidModels';
+import { OperatorWeeklyRanking } from '../domain/OperatorWeeklyRankingModels';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
@@ -312,7 +314,7 @@ export async function fetchPaymentStatusWithComparison(
   };
 }
 
-// NUEVA: Función para obtener órdenes semanales con cliente
+// NUEVA: Función para obtener órdenes semanales with cliente
 export async function fetchWeeklyOrdersWithClient(year: number, week: number): Promise<OrdersWithClientResponse> {
   const token = Cookies.get('authToken');
   if (!token) {
@@ -501,5 +503,80 @@ export async function fetchOrdersBasicDataList(year: number, week: number): Prom
     throw new Error(`Error fetching orders basic data list: ${response.statusText}`);
   }
 
+  return await response.json();
+}
+
+// NUEVA: Función para obtener órdenes pagadas/no pagadas por rango de semanas
+export async function fetchOrdersPaidUnpaidWeekRange(
+  startWeek: number, 
+  endWeek: number, 
+  year: number
+): Promise<OrdersPaidUnpaidWeekRangeResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching paid/unpaid orders week range: ${response.statusText}`);
+    }
+
+    const data: OrdersPaidUnpaidWeekRangeResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching paid/unpaid orders week range:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener las órdenes pagadas/no pagadas por rango de semanas'
+    );
+  }
+}
+
+// Función para procesar datos del gráfico paid unpaid orders
+export function processPaidUnpaidChartData(data: OrdersPaidUnpaidWeekRangeResponse) {
+  return data.weekly_counts.map((week: WeeklyCount) => ({
+    week: week.week,
+    paid: week.paid,
+    unpaid: week.unpaid,
+    total: week.paid + week.unpaid,
+    paidPercentage: week.paid + week.unpaid > 0 ? (week.paid / (week.paid + week.unpaid)) * 100 : 0,
+    unpaidPercentage: week.paid + week.unpaid > 0 ? (week.unpaid / (week.paid + week.unpaid)) * 100 : 0
+  }));
+}
+
+// Función para obtener ranking semanal de operadores
+export async function fetchWeeklyOperatorRanking(year: number, week: number): Promise<OperatorWeeklyRanking[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+  const url = `${BASE_URL_API}/assign/weekly-operator-ranking/?year=${year}&week=${week}`;
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) throw new Error('Error fetching weekly operator ranking');
   return await response.json();
 }
