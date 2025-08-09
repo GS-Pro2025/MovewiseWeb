@@ -37,10 +37,11 @@ const PayrollStatistics: React.FC = () => {
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   });
-
+  console.log('week and year:', year + week);
   // NUEVO: Estados para picker de semana y año
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [pendingYear, setPendingYear] = useState<number>(now.getFullYear());
+  console.log(pendingYear);
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -51,7 +52,7 @@ const PayrollStatistics: React.FC = () => {
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   });
   const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
-
+  console.log(pendingWeek);
   const getAvailableYears = (): number[] => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -61,25 +62,6 @@ const PayrollStatistics: React.FC = () => {
     return years;
   };
 
-  const handleYearInput = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setPendingYear(Number(e.target.value));
-  };
-  const handleYearConfirm = (e: React.KeyboardEvent<HTMLSelectElement>) => {
-    if (e.key === 'Enter') {
-      setSelectedYear(pendingYear);
-    }
-  };
-
-  const handleWeekInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPendingWeek(Number(e.target.value));
-  };
-  const handleWeekConfirm = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      if (pendingWeek >= 1 && pendingWeek <= 53) {
-        setSelectedWeek(pendingWeek);
-      }
-    }
-  };
 
   useEffect(() => {
     const loadOperators = async () => {
