@@ -3,11 +3,14 @@ import MonthlyTargetCard from './components/MonthlyTargetCard';
 import StatsComparisonCard from './components/StatsComparisonCard';
 import TruckStatistics from './TruckStatistics';
 import PaymentStatusChart from './components/PaymentStatusChart';
-import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison } from '../data/repositoryStatistics';
+import PaidUnpaidWeekRangeChart from './components/PaidUnpaidWeekRangeChart';
+import { fetchOrdersCountWithComparison, fetchWeeklyProfitReport, fetchPaymentStatusWithComparison, fetchClientStatsWithComparison, fetchOrdersBasicDataList } from '../data/repositoryStatistics';
 import { OrdersCountStats } from '../domain/OrdersCountModel';
 import { PaymentStatusComparison } from '../domain/PaymentStatusModels';
 import { ClientStatsComparison } from '../domain/OrdersWithClientModels';
+import { OrdersBasicDataResponse } from '../domain/BasicOrdersDataModels';
 import PayrollStatistics from './PayrollStatistics';
+import { useNavigate } from 'react-router-dom';
 
 interface StatItem {
   label: string;
@@ -31,6 +34,8 @@ interface MonthlyTargetData {
 }
 
 const Statistics = () => {
+  const navigate = useNavigate();
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,8 +120,12 @@ const Statistics = () => {
       totalOrdersChange: 0
     }
   });
+  // NUEVO: Estado para datos básicos de órdenes
+  const [basicOrdersData, setBasicOrdersData] = useState<OrdersBasicDataResponse | null>(null);
   console.log('Orders Count Stats:', ordersCountStats);
   console.log('ClientStats', clientStats);
+  console.log('basicOrdersData', basicOrdersData);
+  
   function getWeekOfYear(date: Date): number {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -155,6 +164,10 @@ const Statistics = () => {
       // 1. Cargar métricas de órdenes
       const { currentStats, comparison } = await fetchOrdersCountWithComparison(year, week);
       setOrdersCountStats(currentStats);
+
+      // NUEVO: 1.5. Cargar datos básicos de órdenes
+      const basicData = await fetchOrdersBasicDataList(year, week);
+      setBasicOrdersData(basicData);
 
       // 2. Cargar profit semanal actual y anterior
       const currentWeekProfits = await fetchWeeklyProfitReport(year, week);
@@ -205,7 +218,7 @@ const Statistics = () => {
       const clientComparison = await fetchClientStatsWithComparison(year, week);
       setClientStats(clientComparison);
 
-      // 5. NUEVO: Crear statsData con todos los datos
+      // 5. ACTUALIZADO: Crear statsData con todos los datos
       const realStatsData: StatItem[] = [
         {
           label: 'Total Orders (Week)',
@@ -260,6 +273,11 @@ const Statistics = () => {
       setLoading(false);
     }
   }, [getWeekRange, activeSection]);
+
+  // NUEVO: Handler para navegar a la página de breakdown
+  const handleOrderCardClick = () => {
+    navigate(`/order-breakdown?year=${selectedYear}&week=${selectedWeek}`);
+  };
 
   useEffect(() => {
     loadStatistics(selectedWeek, selectedYear);
@@ -426,38 +444,50 @@ const Statistics = () => {
 
           {/* Content */}
           {!loading && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              <div className="flex justify-center">
-                <MonthlyTargetCard
-                  percent={monthlyTargetData.percent}
-                  change={monthlyTargetData.change}
-                  target={monthlyTargetData.target}
-                  revenue={monthlyTargetData.revenue}
-                  today={monthlyTargetData.today}
-                  totalExpenses={monthlyTargetData.totalExpenses}
-                  grandTotal={monthlyTargetData.grandTotal}
-                  previousExpenses={monthlyTargetData.previousExpenses}
-                  previousGrandTotal={monthlyTargetData.previousGrandTotal}
-                />
+            <>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                <div className="flex justify-center">
+                  <MonthlyTargetCard
+                    percent={monthlyTargetData.percent}
+                    change={monthlyTargetData.change}
+                    target={monthlyTargetData.target}
+                    revenue={monthlyTargetData.revenue}
+                    today={monthlyTargetData.today}
+                    totalExpenses={monthlyTargetData.totalExpenses}
+                    grandTotal={monthlyTargetData.grandTotal}
+                    previousExpenses={monthlyTargetData.previousExpenses}
+                    previousGrandTotal={monthlyTargetData.previousGrandTotal}
+                  />
+                </div>
+
+                <div className="xl:col-span-1">
+                  <StatsComparisonCard
+                    title="Business Metrics"
+                    stats={statsData}
+                    onStatClick={handleOrderCardClick}
+                  />
+                </div>
+
+                {/* Payment Status Chart - ocupa toda la fila */}
+                <div className="xl:col-span-2">
+                  <PaymentStatusChart
+                    currentStats={paymentStatusData.currentStats}
+                    previousStats={paymentStatusData.previousStats}
+                    changes={paymentStatusData.changes}
+                    loading={loading}
+                  />
+                </div>
               </div>
 
-              <div className="xl:col-span-1">
-                <StatsComparisonCard
-                  title="Business Metrics"
-                  stats={statsData}
+              {/* NUEVO: Paid/Unpaid Week Range Chart - Sección adicional */}
+              <div className="mt-8">
+                <PaidUnpaidWeekRangeChart
+                  initialYear={selectedYear}
+                  initialStartWeek={Math.max(1, selectedWeek - 5)}
+                  initialEndWeek={Math.min(53, selectedWeek + 5)}
                 />
               </div>
-
-              {/* Payment Status Chart - ocupa toda la fila */}
-              <div className="xl:col-span-2">
-                <PaymentStatusChart
-                  currentStats={paymentStatusData.currentStats}
-                  previousStats={paymentStatusData.previousStats}
-                  changes={paymentStatusData.changes}
-                  loading={loading}
-                />
-              </div>
-            </div>
+            </>
           )}
         </>
       )}

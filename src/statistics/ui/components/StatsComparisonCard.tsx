@@ -3,19 +3,21 @@ import React from 'react';
 interface StatItem {
   label: string;
   value: string | number;
-  change: number; // porcentaje de cambio
-  icon: string; // clase de icono (ej: 'fa-users', 'fa-box')
+  change: number;
+  icon: string;
   color: 'blue' | 'green' | 'purple' | 'orange' | 'red';
 }
 
 interface StatsComparisonCardProps {
   title?: string;
   stats: StatItem[];
+  onStatClick?: (stat: StatItem, index: number) => void; // NUEVO
 }
 
 const StatsComparisonCard: React.FC<StatsComparisonCardProps> = ({
   title = "Performance Overview",
-  stats
+  stats,
+  onStatClick // NUEVO
 }) => {
   const getColorClasses = (color: string) => {
     const colors = {
@@ -59,11 +61,15 @@ const StatsComparisonCard: React.FC<StatsComparisonCardProps> = ({
         {stats.map((stat, index) => {
           const colorClasses = getColorClasses(stat.color);
           const isPositive = stat.change >= 0;
+          const isClickable = stat.label.includes('Total Orders') && onStatClick;
           
           return (
             <div
               key={index}
-              className={`relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border-l-4 ${colorClasses.border} hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}
+              className={`relative bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border-l-4 ${colorClasses.border} hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${
+                isClickable ? 'cursor-pointer hover:bg-blue-50 hover:border-blue-300' : ''
+              }`}
+              onClick={() => isClickable && onStatClick(stat, index)}
             >
               {/* Icon */}
               <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg ${colorClasses.bg} mb-4`}>
@@ -102,6 +108,13 @@ const StatsComparisonCard: React.FC<StatsComparisonCardProps> = ({
                 </p>
               </div>
               
+              {/* Indicador de clickeable */}
+              {isClickable && (
+                <div className="absolute bottom-3 right-3 text-blue-500 text-sm">
+                  <i className="fas fa-external-link-alt"></i>
+                </div>
+              )}
+              
               {/* Decorative element */}
               <div className={`absolute top-4 right-4 w-8 h-8 ${colorClasses.bg} rounded-full opacity-20`}></div>
             </div>
@@ -112,4 +125,4 @@ const StatsComparisonCard: React.FC<StatsComparisonCardProps> = ({
   );
 };
 
-export default StatsComparisonCard
+export default StatsComparisonCard;
