@@ -173,14 +173,15 @@ const OrderBreakdownPage: React.FC = () => {
 
     // 4. Análisis por rango de peso (mejorado con más rangos)
     const weightRanges = [
-      { min: 0, max: 5, label: '0-5 lbs' },
-      { min: 5, max: 10, label: '5-10 lbs' },
-      { min: 10, max: 15, label: '10-15 lbs' },
-      { min: 15, max: 20, label: '15-20 lbs' },
-      { min: 20, max: 30, label: '20-30 lbs' },
-      { min: 30, max: 50, label: '30-50 lbs' },
-      { min: 50, max: 100, label: '50-100 lbs' },
-      { min: 100, max: Infinity, label: '100+ lbs' }
+      { min: 0, max: 30, label: '0-30 lbs' },
+      { min: 30, max: 100, label: '30-100 lbs' },
+      { min: 100, max: 500, label: '100-500 lbs' },
+      { min: 500, max: 2000, label: '500-2000 lbs' },
+      { min: 2000, max: 5000, label: '2000-5000 lbs' },
+      { min: 5000, max: 10000, label: '5000-10000 lbs' },
+      { min: 10000, max: 15000, label: '10000-15000 lbs' },
+      { min: 15000, max: 20000, label: '15000-20000 lbs' },
+      { min: 20000, max: Infinity, label: '20000+ lbs' }
     ];
 
     let weightRangeStats: WeightRangeStats[] = weightRanges.map(range => {
