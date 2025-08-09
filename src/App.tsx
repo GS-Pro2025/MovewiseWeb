@@ -20,6 +20,7 @@ import CustomersView from './settings/customer/UI/customersView';
 import CreateAdminView from './createAdmin/ui/createAdminView';
 import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
 import OrderBreakdownPage from './statistics/ui/OrderBreakdownPage';
+import OperatorsPage from './operators/ui/OperatorsPage';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +87,7 @@ const App = () => {
             <Route path="home" element={<Home />} />
             <Route path="resume-fuel" element={<ResumeFuel />} />
             <Route path="summary-cost" element={<SummaryCost />} />
+            <Route path="/operators" element={<OperatorsPage />} />
             <Route path="payroll" element={<PayrollPage />} />
             <Route path="extra-cost" element={<ExtraCost />} />
             <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
