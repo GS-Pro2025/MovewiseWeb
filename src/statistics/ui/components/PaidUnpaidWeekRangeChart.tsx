@@ -27,6 +27,15 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
 
+  const [pendingStartWeek, setPendingStartWeek] = useState<number>(startWeek);
+  const [pendingEndWeek, setPendingEndWeek] = useState<number>(endWeek);
+
+  // Actualiza los valores pendientes cuando cambian los definitivos
+  useEffect(() => {
+    setPendingStartWeek(startWeek);
+    setPendingEndWeek(endWeek);
+  }, [startWeek, endWeek]);
+
   const loadPaidUnpaidData = async () => {
     if (startWeek > endWeek) {
       setError('Start week cannot be greater than end week');
@@ -58,17 +67,45 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     setYear(newYear);
   };
 
-  const handleStartWeekChange = (newStartWeek: number) => {
-    if (newStartWeek >= 1 && newStartWeek <= 53) {
-      setStartWeek(newStartWeek);
+  const handleStartWeekInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPendingStartWeek(Number(e.target.value));
+  };
+
+  const handleEndWeekInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPendingEndWeek(Number(e.target.value));
+  };
+
+  const handleStartWeekConfirm = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (pendingStartWeek >= 1 && pendingStartWeek <= 53) {
+        setStartWeek(pendingStartWeek);
+      }
     }
   };
 
-  const handleEndWeekChange = (newEndWeek: number) => {
-    if (newEndWeek >= 1 && newEndWeek <= 53) {
-      setEndWeek(newEndWeek);
+  const handleEndWeekConfirm = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (pendingEndWeek >= 1 && pendingEndWeek <= 53) {
+        setEndWeek(pendingEndWeek);
+      }
     }
   };
+
+  const handleTryAgain = () => {
+    setError(null);
+    loadPaidUnpaidData();
+  };
+
+  function getWeekRange(year: number, week: number): { start: string; end: string } {
+    const firstDayOfYear = new Date(year, 0, 1);
+    const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+    const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
+    const endDate = new Date(startDate.getTime() + 6 * 86400000);
+    return {
+      start: startDate.toISOString().split('T')[0],
+      end: endDate.toISOString().split('T')[0],
+    };
+  }
 
   const getAvailableYears = (): number[] => {
     const currentYear = new Date().getFullYear();
@@ -82,9 +119,12 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const range = getWeekRange(year, data.week);
       return (
         <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-semibold text-gray-800 mb-2">Week {label}</p>
+          <p className="font-semibold text-gray-800 mb-2">
+            Week {label} <span className="text-xs text-gray-500">({range.start} - {range.end})</span>
+          </p>
           <div className="space-y-1">
             <p className="text-green-600">
               <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
@@ -126,7 +166,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Chart Data</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={loadPaidUnpaidData}
+            onClick={handleTryAgain}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -149,8 +189,15 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
             <p className="text-gray-600 text-sm mt-1">
               Track payment status across week ranges
             </p>
+            {/* Mostrar rango de fechas seleccionado */}
+            <p className="text-xs text-blue-600 mt-2">
+              {(() => {
+                const start = getWeekRange(year, startWeek).start;
+                const end = getWeekRange(year, endWeek).end;
+                return `Selected range: ${start} → ${end}`;
+              })()}
+            </p>
           </div>
-          
           <button
             onClick={loadPaidUnpaidData}
             disabled={loading}
@@ -183,8 +230,9 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               type="number"
               min="1"
               max="53"
-              value={startWeek}
-              onChange={(e) => handleStartWeekChange(Number(e.target.value))}
+              value={pendingStartWeek}
+              onChange={handleStartWeekInput}
+              onKeyDown={handleStartWeekConfirm}
               className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               disabled={loading}
             />
@@ -196,8 +244,9 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               type="number"
               min="1"
               max="53"
-              value={endWeek}
-              onChange={(e) => handleEndWeekChange(Number(e.target.value))}
+              value={pendingEndWeek}
+              onChange={handleEndWeekInput}
+              onKeyDown={handleEndWeekConfirm}
               className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               disabled={loading}
             />
@@ -253,8 +302,21 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               <XAxis 
                 dataKey="week" 
                 stroke="#6b7280"
-                tick={{ fontSize: 12 }}
                 tickFormatter={(value) => `W${value}`}
+                interval={0}
+                tickLine={false}
+                axisLine={false}
+                tick={({ x, y, payload }) => {
+                  const range = getWeekRange(year, payload.value);
+                  return (
+                    <g>
+                      <title>{`${range.start} - ${range.end}`}</title>
+                      <text x={x} y={y + 10} textAnchor="middle" fill="#6b7280" fontSize={12}>
+                        {`W${payload.value}`}
+                      </text>
+                    </g>
+                  );
+                }}
               />
               <YAxis 
                 stroke="#6b7280"
@@ -283,8 +345,14 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
 
       {/* Dialog de órdenes no pagadas */}
       {showDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10"
+          onClick={() => setShowDialog(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-lg font-semibold text-gray-800">
                 Unpaid Orders - Week {selectedWeek}
