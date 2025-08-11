@@ -473,7 +473,6 @@ const CreateOrder: React.FC = () => {
                   fullWidth
                   value={order.person.email}
                   onChange={(e) => handlePersonChange('email', e.target.value)}
-                  required
                   className="bg-white/90 rounded-lg"
                 />
                 <div className="phone-input-container">
