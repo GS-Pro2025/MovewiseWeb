@@ -37,6 +37,31 @@ const PayrollStatistics: React.FC = () => {
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   });
+  console.log('week and year:', year + week);
+  // NUEVO: Estados para picker de semana y año
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
+  const [pendingYear, setPendingYear] = useState<number>(now.getFullYear());
+  console.log(pendingYear);
+  const [selectedWeek, setSelectedWeek] = useState<number>(() => {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+    const yearStartDayNum = yearStart.getUTCDay() || 7;
+    yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  });
+  const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
+  console.log(pendingWeek);
+  const getAvailableYears = (): number[] => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
 
   useEffect(() => {
     const loadOperators = async () => {
@@ -61,18 +86,18 @@ const PayrollStatistics: React.FC = () => {
         try {
           setRankingLoading(true);
           setRankingError(null);
-          const data = await fetchWeeklyOperatorRanking(year, week);
+          const data = await fetchWeeklyOperatorRanking(selectedYear, selectedWeek);
           setRanking(data);
         } catch (err) {
           setRankingError(err instanceof Error ? err.message : 'Error loading ranking');
-          enqueueSnackbar(err instanceof Error ? err.message : 'Error loading ranking', { variant: 'error' }); // <-- Snackbar error
+          enqueueSnackbar(err instanceof Error ? err.message : 'Error loading ranking', { variant: 'error' });
         } finally {
           setRankingLoading(false);
         }
       };
       loadRanking();
     }
-  }, [activeTab, year, week]);
+  }, [activeTab, selectedYear, selectedWeek]);
 
   useEffect(() => {
     if (activeTab === 'inactive') {
@@ -141,6 +166,18 @@ const PayrollStatistics: React.FC = () => {
       );
     }
   };
+
+  // Utilidad para obtener el rango de fechas de una semana
+  function getWeekRange(year: number, week: number): { start: string; end: string } {
+    const firstDayOfYear = new Date(year, 0, 1);
+    const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+    const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
+    const endDate = new Date(startDate.getTime() + 6 * 86400000);
+    return {
+      start: startDate.toISOString().split('T')[0],
+      end: endDate.toISOString().split('T')[0],
+    };
+  }
 
   if (loading) {
     return (
@@ -333,9 +370,52 @@ const PayrollStatistics: React.FC = () => {
 
       {activeTab === 'ranking' && (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">Weekly Operator Ranking</h3>
-            <p className="text-gray-500 text-sm">Most assigned operators for week {week}, {year}</p>
+          <div className="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Weekly Operator Ranking</h3>
+              <p className="text-gray-500 text-sm">
+                Most assigned operators for week {selectedWeek}, {selectedYear}
+              </p>
+              {/* Mostrar rango de fechas de la semana seleccionada */}
+              <p className="text-xs text-blue-600 mt-1">
+                {(() => {
+                  const range = getWeekRange(selectedYear, selectedWeek);
+                  return `Week range: ${range.start} → ${range.end}`;
+                })()}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Year:</label>
+                <select
+                  value={selectedYear}
+                  onChange={e => {
+                    setSelectedYear(Number(e.target.value));
+                    setPendingYear(Number(e.target.value));
+                  }}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  {getAvailableYears().map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Week:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="53"
+                  value={selectedWeek}
+                  onChange={e => {
+                    const val = Number(e.target.value);
+                    setSelectedWeek(val);
+                    setPendingWeek(val);
+                  }}
+                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
           {rankingLoading ? (
             <div className="flex items-center justify-center py-12">

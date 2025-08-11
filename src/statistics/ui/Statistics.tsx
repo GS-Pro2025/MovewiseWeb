@@ -479,7 +479,7 @@ const Statistics = () => {
                 </div>
               </div>
 
-              {/* NUEVO: Paid/Unpaid Week Range Chart - Sección adicional */}
+              {/* Paid/Unpaid Week Range Chart - Sección adicional */}
               <div className="mt-8">
                 <PaidUnpaidWeekRangeChart
                   initialYear={selectedYear}
