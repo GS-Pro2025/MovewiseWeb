@@ -288,6 +288,10 @@ const Example = () => {
       header: 'Last Name',
       size: 100,
     }),
+    columnHelper.accessor('email', {
+      header: 'Email',
+      size: 120,
+    }),
     columnHelper.accessor('phone', {
       header: 'Phone',
       size: 120,
