@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   MaterialReactTable,
@@ -33,6 +34,8 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useNavigate } from 'react-router-dom'; 
 import { Menu, ListItemIcon, ListItemText } from '@mui/material';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { processDocaiStatement } from '../data/repositoryDOCAI';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -190,6 +193,32 @@ const Example = () => {
     mouseY: number;
     row: TableData | null;
   } | null>(null);
+
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+
+  // Nueva función para subir el PDF usando repositoryDOCAI
+  const handleUploadStatement = async () => {
+    if (!uploadFile) return;
+    setUploadLoading(true);
+    try {
+      const result = await processDocaiStatement(uploadFile);
+      if (result.success) {
+        enqueueSnackbar(result.message || 'Statement uploaded and processed successfully', { variant: 'success' });
+        setUploadDialogOpen(false);
+        setUploadFile(null);
+        loadData();
+        // Opcional: puedes mostrar el resultado OCR o el resumen si lo deseas
+        // enqueueSnackbar(result.ocr_content, { variant: 'info' });
+      } else {
+        enqueueSnackbar(result.message || 'Error processing statement', { variant: 'error' });
+      }
+    } catch (error) {
+      enqueueSnackbar('Error uploading statement', { variant: 'error' });
+    }
+    setUploadLoading(false);
+  };
 
   const columns = [
     {
@@ -916,6 +945,81 @@ const Example = () => {
           setCalendarOpen(false);
         }}
       />
+      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<UploadFileIcon />}
+          onClick={() => setUploadDialogOpen(true)}
+        >
+          Upload Statement PDF
+        </Button>
+      </Box>
+
+      {/* Dialog para subir el PDF */}
+      {uploadDialogOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1300,
+            background: 'rgba(255,255,255,0.5)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setUploadDialogOpen(false)}
+        >
+          <Box
+            sx={{
+              background: '#fff',
+              borderRadius: 2,
+              boxShadow: 4,
+              p: 4,
+              minWidth: 340,
+              maxWidth: 400,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <Typography variant="h6" mb={2}>Upload Statement PDF</Typography>
+            <label htmlFor="statement-upload-input">
+              <input
+                id="statement-upload-input"
+                type="file"
+                accept="application/pdf"
+                style={{ display: 'none' }}
+                onChange={e => setUploadFile(e.target.files?.[0] || null)}
+                disabled={uploadLoading}
+              />
+              <Button
+                variant="outlined"
+                component="span"
+                disabled={uploadLoading}
+                sx={{ mb: 2 }}
+              >
+                {uploadFile ? uploadFile.name : 'Seleccionar archivo PDF'}
+              </Button>
+            </label>
+            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                disabled={!uploadFile || uploadLoading}
+                onClick={handleUploadStatement}
+              >
+                {uploadLoading ? 'Uploading...' : 'Upload'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setUploadDialogOpen(false)}
+                disabled={uploadLoading}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      )}
     </>
   );
 };
