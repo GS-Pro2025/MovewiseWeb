@@ -34,8 +34,6 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useNavigate } from 'react-router-dom'; 
 import { Menu, ListItemIcon, ListItemText } from '@mui/material';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { processDocaiStatement } from '../data/repositoryDOCAI';
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
