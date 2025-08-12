@@ -8,7 +8,10 @@ import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import OrdersByKeyRefTable from "./OrdersByKeyRefTable";
 import PaymentDialog from "./PaymentDialog";
 import PaymentIcon from "@mui/icons-material/AttachMoney";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import { processDocaiStatement } from "../../Home/data/repositoryDOCAI";
 import { enqueueSnackbar } from "notistack";
+import LoaderSpinner from "../../componets/LoadingSpinner"; // Ajusta la ruta si es necesario
 
 interface SuperOrder {
   key_ref: string;
@@ -144,6 +147,53 @@ const FinancialView = () => {
     }
   };
 
+  // OCR Upload State
+  const [ocrDialogOpen, setOcrDialogOpen] = useState(false);
+  const [ocrFiles, setOcrFiles] = useState<File[]>([]);
+  const [ocrResults, setOcrResults] = useState<{ name: string; success: boolean; message: string }[]>([]);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrStep, setOcrStep] = useState<string>("Setting data");
+
+  // OCR Upload Handler
+  const handleOcrUpload = async () => {
+    setOcrLoading(true);
+    setOcrStep("Setting data");
+    enqueueSnackbar("Setting data...", { variant: "info" });
+    const results: { name: string; success: boolean; message: string }[] = [];
+    for (const file of ocrFiles) {
+      setOcrStep(`Sending ${file.name} to server...`);
+      enqueueSnackbar(`Sending ${file.name} to server...`, { variant: "info" });
+      try {
+        const res = await processDocaiStatement(file);
+        results.push({
+          name: file.name,
+          success: res.success,
+          message: res.success ? (res.message || "Success") : (res.message || "Failed"),
+        });
+      } catch (err: any) {
+        results.push({
+          name: file.name,
+          success: false,
+          message: err?.message || "Network error",
+        });
+      }
+      setOcrStep("Updating orders...");
+      enqueueSnackbar("Updating orders...", { variant: "info" });
+    }
+    setOcrResults(results);
+    setOcrLoading(false);
+
+    // Snackbar general
+    const successCount = results.filter(r => r.success).length;
+    if (successCount === results.length) {
+      enqueueSnackbar("All files processed successfully!", { variant: "success" });
+    } else if (successCount === 0) {
+      enqueueSnackbar("All files failed to process.", { variant: "error" });
+    } else {
+      enqueueSnackbar(`${successCount} of ${results.length} files processed successfully.`, { variant: "warning" });
+    }
+  };
+
   const columns = useMemo<MRT_ColumnDef<SuperOrder>[]>(
     () => [
       { accessorKey: "key_ref", header: "Reference" },
@@ -219,6 +269,30 @@ const FinancialView = () => {
     if (newWeek >= 1 && newWeek <= 53) setWeek(newWeek);
   };
 
+  // Muestra LoaderSpinner como pantalla completa, superponiendo el layout/sidebar
+  const FullScreenLoader = ({ text }: { text: string }) => (
+    <Box
+      sx={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 2000,
+        background: "rgba(255,255,255,0.95)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <LoaderSpinner />
+      <Typography variant="h6" sx={{ mt: 4, color: "#0458AB" }}>
+        {text}
+      </Typography>
+    </Box>
+  );
+
   return (
     <Box p={2}>
       <Typography variant="h5" gutterBottom>
@@ -236,6 +310,13 @@ const FinancialView = () => {
         <Typography variant="body1" sx={{ alignSelf: 'center' }}>
           Period: {weekRange.start} → {weekRange.end}
         </Typography>
+        <Button
+          variant="contained"
+          startIcon={<UploadFileIcon />}
+          onClick={() => setOcrDialogOpen(true)}
+        >
+          Upload Statement PDFs (OCR)
+        </Button>
       </Box>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
@@ -265,6 +346,117 @@ const FinancialView = () => {
             onClose={() => setPayDialogOpen(false)}
             onConfirm={handleConfirmPay}
           />
+        </>
+      )}
+
+      {/* OCR Upload Dialog */}
+      {ocrDialogOpen && (
+        <>
+          {ocrLoading ? (
+            <FullScreenLoader text={ocrStep} />
+          ) : (
+            <Box
+              sx={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 1300,
+                background: "rgba(255,255,255,0.5)",
+                backdropFilter: "blur(2px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onClick={() => {
+                setOcrDialogOpen(false);
+                setOcrFiles([]);
+                setOcrResults([]);
+                setOcrLoading(false);
+              }}
+            >
+              <Box
+                sx={{
+                  background: "#fff",
+                  borderRadius: 2,
+                  boxShadow: 4,
+                  p: 4,
+                  minWidth: 340,
+                  maxWidth: 420,
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <Typography variant="h6" mb={2}>Upload up to 10 Statement PDFs</Typography>
+                <input
+                  id="ocr-upload-input"
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={e => {
+                    const files = Array.from(e.target.files || []);
+                    setOcrFiles(files.slice(0, 10));
+                    setOcrResults([]);
+                  }}
+                  disabled={ocrLoading}
+                />
+                <label htmlFor="ocr-upload-input">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    disabled={ocrLoading || ocrFiles.length >= 10}
+                    sx={{ mb: 2 }}
+                  >
+                    {ocrFiles.length > 0
+                      ? `${ocrFiles.length} file(s) selected`
+                      : "Select PDF files"}
+                  </Button>
+                </label>
+                <Box sx={{ mb: 2 }}>
+                  {ocrFiles.map((file, idx) => (
+                    <Typography key={file.name + idx} variant="body2">
+                      {file.name}
+                    </Typography>
+                  ))}
+                </Box>
+                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={ocrFiles.length === 0 || ocrLoading}
+                    onClick={handleOcrUpload}
+                  >
+                    {ocrLoading ? "Uploading..." : "Upload"}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setOcrDialogOpen(false);
+                      setOcrFiles([]);
+                      setOcrResults([]);
+                      setOcrLoading(false);
+                    }}
+                    disabled={ocrLoading}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+                {/* Results */}
+                {ocrResults.length > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle1" mb={1}>Results:</Typography>
+                    {ocrResults.map((res, idx) => (
+                      <Typography
+                        key={res.name + idx}
+                        variant="body2"
+                        sx={{ color: res.success ? "green" : "red" }}
+                      >
+                        {res.name}: {res.success ? "✔️ Success" : "❌ Failed"} - {res.message}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          )}
         </>
       )}
     </Box>
