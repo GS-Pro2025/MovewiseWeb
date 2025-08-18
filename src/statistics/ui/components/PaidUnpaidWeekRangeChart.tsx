@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { fetchOrdersPaidUnpaidWeekRange, processPaidUnpaidChartData } from '../../data/repositoryStatistics';
-import { PaidUnpaidChartData, OrdersPaidUnpaidWeekRangeResponse, OrderPaidUnpaidWeekRange } from '../../domain/OrdersPaidUnpaidModels';
+import { usePaidUnpaidData } from '../../hooks/usePaidUnpaidData';
+import { getWeekRange, getAvailableYears } from '../../utils/dateUtils';
+import { PaidUnpaidChartData, OrderPaidUnpaidWeekRange } from '../../domain/OrdersPaidUnpaidModels';
+import OrdersReportDialog from '../../components/OrdersReportDialog';
 
 interface PaidUnpaidWeekRangeChartProps {
   initialYear?: number;
@@ -15,53 +17,27 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   initialStartWeek = 1,
   initialEndWeek = 10
 }) => {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<PaidUnpaidChartData[]>([]);
-  const [rawData, setRawData] = useState<OrdersPaidUnpaidWeekRangeResponse | null>(null);
-  
-  // Estados para los filtros
-  const [year, setYear] = useState<number>(initialYear);
-  const [startWeek, setStartWeek] = useState<number>(initialStartWeek);
-  const [endWeek, setEndWeek] = useState<number>(initialEndWeek);
+  const {
+    loading,
+    error,
+    chartData,
+    rawData,
+    year,
+    startWeek,
+    endWeek,
+    pendingStartWeek,
+    pendingEndWeek,
+    setYear,
+    setStartWeek,
+    setEndWeek,
+    setPendingStartWeek,
+    setPendingEndWeek,
+    loadPaidUnpaidData,
+    handleTryAgain,
+  } = usePaidUnpaidData(initialYear, initialStartWeek, initialEndWeek);
+
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-
-  const [pendingStartWeek, setPendingStartWeek] = useState<number>(startWeek);
-  const [pendingEndWeek, setPendingEndWeek] = useState<number>(endWeek);
-
-  // Actualiza los valores pendientes cuando cambian los definitivos
-  useEffect(() => {
-    setPendingStartWeek(startWeek);
-    setPendingEndWeek(endWeek);
-  }, [startWeek, endWeek]);
-
-  const loadPaidUnpaidData = async () => {
-    if (startWeek > endWeek) {
-      setError('Start week cannot be greater than end week');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const data = await fetchOrdersPaidUnpaidWeekRange(startWeek, endWeek, year);
-      const processedData = processPaidUnpaidChartData(data);
-      
-      setRawData(data);
-      setChartData(processedData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error loading paid/unpaid data');
-      console.error('Error loading paid/unpaid data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadPaidUnpaidData();
-  }, [year, startWeek, endWeek]);
 
   const handleYearChange = (newYear: number) => {
     setYear(newYear);
@@ -89,31 +65,6 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
         setEndWeek(pendingEndWeek);
       }
     }
-  };
-
-  const handleTryAgain = () => {
-    setError(null);
-    loadPaidUnpaidData();
-  };
-
-  function getWeekRange(year: number, week: number): { start: string; end: string } {
-    const firstDayOfYear = new Date(year, 0, 1);
-    const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
-    const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
-    const endDate = new Date(startDate.getTime() + 6 * 86400000);
-    return {
-      start: startDate.toISOString().split('T')[0],
-      end: endDate.toISOString().split('T')[0],
-    };
-  }
-
-  const getAvailableYears = (): number[] => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
-      years.push(i);
-    }
-    return years;
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -150,7 +101,12 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     setShowDialog(true);
   };
 
-  // Obtener órdenes no pagadas de la semana seleccionada
+  // Obtener órdenes pagadas y no pagadas de la semana seleccionada
+  const paidOrders: OrderPaidUnpaidWeekRange[] =
+    selectedWeek && rawData
+      ? rawData.orders_by_week[String(selectedWeek)]?.filter(o => o.paid) || []
+      : [];
+
   const unpaidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
       ? rawData.orders_by_week[String(selectedWeek)]?.filter(o => !o.paid) || []
@@ -189,7 +145,6 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
             <p className="text-gray-600 text-sm mt-1">
               Track payment status across week ranges
             </p>
-            {/* Mostrar rango de fechas seleccionado */}
             <p className="text-xs text-blue-600 mt-2">
               {(() => {
                 const start = getWeekRange(year, startWeek).start;
@@ -290,7 +245,6 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                 left: 20,
                 bottom: 5,
               }}
-              // Evento click en barra
               onClick={(e: any) => {
                 if (e && e.activeLabel) {
                   const weekData = chartData.find(w => w.week === e.activeLabel);
@@ -343,58 +297,15 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
         </div>
       )}
 
-      {/* Dialog de órdenes no pagadas */}
-      {showDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10"
-          onClick={() => setShowDialog(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-lg font-semibold text-gray-800">
-                Unpaid Orders - Week {selectedWeek}
-              </h4>
-              <button
-                onClick={() => setShowDialog(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <i className="fas fa-times text-xl"></i>
-              </button>
-            </div>
-            {unpaidOrders.length === 0 ? (
-              <div className="text-gray-500 text-center py-8">
-                No unpaid orders for this week.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-3 text-sm text-gray-700">Order Ref</th>
-                      <th className="text-left py-2 px-3 text-sm text-gray-700">Client</th>
-                      <th className="text-left py-2 px-3 text-sm text-gray-700">Factory</th>
-                      <th className="text-left py-2 px-3 text-sm text-gray-700">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {unpaidOrders.map((order) => (
-                      <tr key={order.key} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-2 px-3 text-sm text-blue-600 font-mono">{order.key_ref}</td>
-                        <td className="py-2 px-3 text-sm text-gray-800">{order.client_name}</td>
-                        <td className="py-2 px-3 text-sm text-gray-600">{order.customer_factory}</td>
-                        <td className="py-2 px-3 text-sm text-gray-600">{order.date}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Dialog de órdenes */}
+      <OrdersReportDialog
+        show={showDialog}
+        selectedWeek={selectedWeek}
+        year={year}
+        paidOrders={paidOrders}
+        unpaidOrders={unpaidOrders}
+        onClose={() => setShowDialog(false)}
+      />
 
       {/* No Data State */}
       {!loading && chartData.length === 0 && (
