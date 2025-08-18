@@ -1,6 +1,6 @@
 import React from 'react';
 import { OrderPaidUnpaidWeekRange } from '../domain/OrdersPaidUnpaidModels';
-import { printOrdersReport } from './OrdersProfitReportPrint';
+import { printOrdersReport, printUnpaidOrdersReport } from './OrdersProfitReportPrint';
 
 interface OrdersReportDialogProps {
   show: boolean;
@@ -21,8 +21,12 @@ const OrdersReportDialog: React.FC<OrdersReportDialogProps> = ({
 }) => {
   if (!show || !selectedWeek) return null;
 
-  const handlePrintReport = () => {
+  const handlePrintFullReport = () => {
     printOrdersReport(selectedWeek, year, paidOrders, unpaidOrders);
+  };
+
+  const handlePrintUnpaidOnly = () => {
+    printUnpaidOrdersReport(selectedWeek, year, unpaidOrders);
   };
 
   return (
@@ -40,12 +44,21 @@ const OrdersReportDialog: React.FC<OrdersReportDialogProps> = ({
           </h4>
           <div className="flex gap-2">
             <button
-              onClick={handlePrintReport}
+              onClick={handlePrintFullReport}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <i className="fas fa-print"></i>
-              Print Report
+              Print Full Report
             </button>
+            {unpaidOrders.length > 0 && (
+              <button
+                onClick={handlePrintUnpaidOnly}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <i className="fas fa-exclamation-triangle"></i>
+                Print Unpaid Only
+              </button>
+            )}
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
@@ -119,6 +132,15 @@ const OrdersReportDialog: React.FC<OrdersReportDialogProps> = ({
             <h5 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
               <i className="fas fa-exclamation-circle"></i>
               Unpaid Orders ({unpaidOrders.length})
+              {unpaidOrders.length > 0 && (
+                <button
+                  onClick={handlePrintUnpaidOnly}
+                  className="ml-auto text-xs px-3 py-1 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
+                >
+                  <i className="fas fa-print mr-1"></i>
+                  Print Unpaid Only
+                </button>
+              )}
             </h5>
             {unpaidOrders.length === 0 ? (
               <div className="text-gray-500 text-center py-8 bg-gray-50 rounded-lg">
