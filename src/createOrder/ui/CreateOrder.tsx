@@ -145,6 +145,32 @@ const CreateOrder: React.FC = () => {
     }
   }, [country, state, city]);
 
+  // Este useEffect va después de cargar jobs y states
+  useEffect(() => {
+    if (continuedOrder) {
+      // JOB
+      if (
+        continuedOrder.job &&
+        !jobs.some((j) => j.id === continuedOrder.job)
+      ) {
+        setJobs((prev) => [
+          ...prev,
+          { id: continuedOrder.job, name: String(continuedOrder.job) },
+        ]);
+      }
+      // LOCATION (state_usa)
+      if (
+        continuedOrder.state_usa &&
+        !states.some((s) => s.name === continuedOrder.state_usa)
+      ) {
+        setStates((prev) => [
+          ...prev,
+          { id: prev.length + 1, name: String(continuedOrder.state_usa), code: '', },
+        ]);
+      }
+    }
+  }, [continuedOrder, jobs, states]);
+
   const handleChange = (field: keyof CreateOrderModel, value: any) => {
     setOrder((prev) => ({
       ...prev,
