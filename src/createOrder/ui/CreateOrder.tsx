@@ -288,6 +288,20 @@ const CreateOrder: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (continuedOrder && jobs.length > 0) {
+      // Busca el job por nombre exacto (ignora mayúsculas/minúsculas y espacios)
+      const jobName = String(continuedOrder.job).trim().toLowerCase();
+      const foundJob = jobs.find(j => j.name.trim().toLowerCase() === jobName);
+      if (foundJob) {
+        setOrder(prev => ({
+          ...prev,
+          job: foundJob.id
+        }));
+      }
+    }
+  }, [continuedOrder, jobs]);
+
   return (
     <div className="min-h-screen py-8 px-4 flex items-start justify-center">
       <div className="w-full max-w-5xl">
