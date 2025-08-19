@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, IconButton } from "@mui/material";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import PaymentDialog from "../../Home/ui/PaymentDialog";
@@ -7,14 +7,16 @@ import { updateOrder } from "../data/SummaryCostRepository";
 import { enqueueSnackbar } from "notistack";
 import { UpdatePaymentData } from "../domain/ModelOrderUpdate";
 import PaymentIcon from "@mui/icons-material/AttachMoney";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 interface OrdersByKeyRefTableProps {
   orders: OrderSummary[];
   keyRef: string;
-  onOrderPaid?: () => void; // Nuevo prop para notificar al padre
+  onOrderPaid?: () => void;
+  onViewOperators: (orderId: string) => void; // Nueva prop añadida
 }
 
-const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid }: OrdersByKeyRefTableProps) => {
+const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: OrdersByKeyRefTableProps) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
 
@@ -38,6 +40,46 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid }: OrdersByKeyRefTabl
   };
 
   const columns: MRT_ColumnDef<OrderSummary>[] = [
+    {
+      header: "Operators",
+      id: "operators",
+      size: 80,
+      Cell: ({ row }) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton
+            color="primary"
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewOperators(row.original.key);
+            }}
+            title="View Operators"
+            sx={{
+              minWidth: 0,
+              px: 1,
+              py: 0.5,
+              fontSize: 18,
+              fontWeight: 'bold',
+              border: '1px solid',
+              borderColor: 'primary.main',
+              borderRadius: 1,
+              '&:hover': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+                '& .MuiSvgIcon-root': {
+                  color: 'white'
+                }
+              }
+            }}
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+      enableSorting: false,
+      enableColumnFilter: false,
+    },
+    { accessorKey: "key", header: "Order ID" },
     { accessorKey: "date", header: "Date" },
     { accessorKey: "state", header: "Location" },
     { accessorKey: "income", header: "Income" },
