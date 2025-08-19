@@ -17,38 +17,9 @@ import { processDocaiStatement } from "../data/repositoryDOCAI";
 import { enqueueSnackbar } from "notistack";
 import LoaderSpinner from "../../componets/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
+import { OCRResult, ProcessDocaiResponse, SuperOrder } from "../domain/ModelsOCR";
 
-interface SuperOrder {
-  key_ref: string;
-  orders: OrderSummary[];
-  client: string;
-  expense: number;
-  fuelCost: number;
-  workCost: number;
-  driverSalaries: number;
-  otherSalaries: number;
-  totalIncome: number;
-  totalCost: number;
-  totalProfit: number;
-  payStatus: number;
-}
 
-interface OCRResult {
-  name: string;
-  success: boolean;
-  message: string;
-  data?: {
-    updated_orders: Array<{
-      key_ref: string;
-      orders_updated: number;
-      income: number;
-      payStatus: number;
-    }>;
-    not_found_orders: string[];
-    total_updated: number;
-    total_not_found: number;
-  };
-}
 
 // Utilidad para calcular el rango de fechas de la semana
 function getWeekRange(year: number, week: number): { start: string; end: string } {
@@ -189,18 +160,28 @@ const FinancialView = () => {
       enqueueSnackbar(`Processing ${file.name}...`, { variant: "info" });
       
       try {
-        const res = await processDocaiStatement(file);
+        const res: ProcessDocaiResponse = await processDocaiStatement(file);
+        
+        // Determine success based on response structure
+        const isSuccess = res.success !== false && res.data !== undefined;
+        
         results.push({
           name: file.name,
-          success: res.success,
-          message: res.message || (res.success ? "Success" : "Failed"),
-          data: res.data || undefined,
+          success: isSuccess,
+          message: res.message || (isSuccess ? "Success" : "Failed"),
+          data: res.data ? {
+            updated_orders: res.data.updated_orders || [],
+            not_found_orders: res.data.not_found_orders || [],
+            total_updated: res.data.total_updated || 0,
+            total_not_found: res.data.total_not_found || 0,
+          } : undefined,
         });
       } catch (err: any) {
         results.push({
           name: file.name,
           success: false,
           message: err?.message || "Network error",
+          data: undefined,
         });
       }
     }
@@ -231,10 +212,16 @@ const FinancialView = () => {
 
     ocrResults.forEach(result => {
       if (result.success && result.data) {
-        totalUpdated += result.data.total_updated;
-        totalNotFound += result.data.total_not_found;
-        allNotFoundOrders.push(...result.data.not_found_orders);
-        allUpdatedOrders.push(...result.data.updated_orders);
+        totalUpdated += result.data.total_updated || 0;
+        totalNotFound += result.data.total_not_found || 0;
+        
+        if (result.data.not_found_orders) {
+          allNotFoundOrders.push(...result.data.not_found_orders);
+        }
+        
+        if (result.data.updated_orders) {
+          allUpdatedOrders.push(...result.data.updated_orders);
+        }
       }
     });
 
@@ -632,16 +619,16 @@ const FinancialView = () => {
                           {result.success && result.data && (
                             <Box sx={{ ml: 3 }}>
                               <Typography variant="caption" color="success.main">
-                                ✓ {result.data.total_updated} orders updated
+                                ✓ {result.data.total_updated || 0} orders updated
                               </Typography>
-                              {result.data.total_not_found > 0 && (
+                              {(result.data.total_not_found || 0) > 0 && (
                                 <Typography variant="caption" color="warning.main" sx={{ display: 'block' }}>
-                                  ⚠ {result.data.total_not_found} orders not found
+                                  ⚠ {result.data.total_not_found || 0} orders not found
                                 </Typography>
                               )}
                               
                               {/* Show updated orders for this file */}
-                              {result.data.updated_orders.length > 0 && (
+                              {result.data.updated_orders && result.data.updated_orders.length > 0 && (
                                 <Box sx={{ mt: 1 }}>
                                   <Typography variant="caption" color="text.secondary">Updated:</Typography>
                                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
@@ -660,7 +647,7 @@ const FinancialView = () => {
                               )}
 
                               {/* Show not found orders for this file */}
-                              {result.data.not_found_orders.length > 0 && (
+                              {result.data.not_found_orders && result.data.not_found_orders.length > 0 && (
                                 <Box sx={{ mt: 1 }}>
                                   <Typography variant="caption" color="text.secondary">Not found:</Typography>
                                   <Box sx={{ 
