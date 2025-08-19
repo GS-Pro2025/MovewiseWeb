@@ -9,6 +9,9 @@ export interface OrderSummary {
     state: string;
     income: number;
     payStatus: number;
+    location: string;
+    job: string;
+    weight: number;
     summary: Summary;
 }
 

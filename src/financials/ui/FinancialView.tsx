@@ -7,11 +7,13 @@ import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import OrdersByKeyRefTable from "./OrdersByKeyRefTable";
 import PaymentDialog from "./PaymentDialog";
+import SuperOrderDetailsDialog from "./SuperOrderDetailsDialog";
 import PaymentIcon from "@mui/icons-material/AttachMoney";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { processDocaiStatement } from "../../Home/data/repositoryDOCAI";
 import { enqueueSnackbar } from "notistack";
-import LoaderSpinner from "../../componets/LoadingSpinner"; // Ajusta la ruta si es necesario
+import LoaderSpinner from "../../componets/LoadingSpinner";
+import { useNavigate } from "react-router-dom";
 
 interface SuperOrder {
   key_ref: string;
@@ -46,8 +48,9 @@ const FinancialView = () => {
   const [loading, setLoading] = useState(true);
   const [page] = useState(0);
   const [rowCount, setRowCount] = useState(0);
-  console.log("rowCount", rowCount);
+  console.log("RowCount", rowCount);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Semana y año seleccionados
   const [week, setWeek] = useState<number>(() => {
@@ -293,6 +296,15 @@ const FinancialView = () => {
     </Box>
   );
 
+  // Estado para el SuperOrderDetailsDialog
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedSuperOrder, setSelectedSuperOrder] = useState<SuperOrder | null>(null);
+
+  const handleRowClick = (superOrder: SuperOrder) => {
+    setSelectedSuperOrder(superOrder);
+    setDetailsDialogOpen(true);
+  };
+
   return (
     <Box p={2}>
       <Typography variant="h5" gutterBottom>
@@ -331,11 +343,23 @@ const FinancialView = () => {
             data={superOrders}
             enableStickyHeader
             muiTableContainerProps={{ sx: { maxHeight: 600 } }}
+            muiTableBodyRowProps={({ row }) => ({
+              onClick: () => handleRowClick(row.original),
+              sx: {
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                },
+              },
+            })}
             renderDetailPanel={({ row }) => (
               <OrdersByKeyRefTable
                 orders={row.original.orders}
                 keyRef={row.original.key_ref}
                 onOrderPaid={() => fetchData(page, week)}
+                onViewOperators={(orderId: string) => {
+                  navigate(`/add-operators-to-order/${orderId}`);
+                }}
               />
             )}
           />
@@ -345,6 +369,14 @@ const FinancialView = () => {
             income={paySuperOrder?.totalIncome ?? 0}
             onClose={() => setPayDialogOpen(false)}
             onConfirm={handleConfirmPay}
+          />
+          <SuperOrderDetailsDialog
+            open={detailsDialogOpen}
+            superOrder={selectedSuperOrder}
+            onClose={() => {
+              setDetailsDialogOpen(false);
+              setSelectedSuperOrder(null);
+            }}
           />
         </>
       )}
