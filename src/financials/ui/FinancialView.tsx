@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Box, Typography, CircularProgress, TextField, Button } from "@mui/material";
+import { Box, Typography, CircularProgress, TextField, Button, Chip, Alert, Divider } from "@mui/material";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
@@ -10,7 +10,10 @@ import PaymentDialog from "./PaymentDialog";
 import SuperOrderDetailsDialog from "./SuperOrderDetailsDialog";
 import PaymentIcon from "@mui/icons-material/AttachMoney";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { processDocaiStatement } from "../../Home/data/repositoryDOCAI";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
+import WarningIcon from "@mui/icons-material/Warning";
+import { processDocaiStatement } from "../data/repositoryDOCAI";
 import { enqueueSnackbar } from "notistack";
 import LoaderSpinner from "../../componets/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +31,23 @@ interface SuperOrder {
   totalCost: number;
   totalProfit: number;
   payStatus: number;
+}
+
+interface OCRResult {
+  name: string;
+  success: boolean;
+  message: string;
+  data?: {
+    updated_orders: Array<{
+      key_ref: string;
+      orders_updated: number;
+      income: number;
+      payStatus: number;
+    }>;
+    not_found_orders: string[];
+    total_updated: number;
+    total_not_found: number;
+  };
 }
 
 // Utilidad para calcular el rango de fechas de la semana
@@ -48,7 +68,7 @@ const FinancialView = () => {
   const [loading, setLoading] = useState(true);
   const [page] = useState(0);
   const [rowCount, setRowCount] = useState(0);
-  console.log("RowCount", rowCount);
+  console.log("rowCount", rowCount);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -153,7 +173,7 @@ const FinancialView = () => {
   // OCR Upload State
   const [ocrDialogOpen, setOcrDialogOpen] = useState(false);
   const [ocrFiles, setOcrFiles] = useState<File[]>([]);
-  const [ocrResults, setOcrResults] = useState<{ name: string; success: boolean; message: string }[]>([]);
+  const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrStep, setOcrStep] = useState<string>("Setting data");
 
@@ -162,16 +182,19 @@ const FinancialView = () => {
     setOcrLoading(true);
     setOcrStep("Setting data");
     enqueueSnackbar("Setting data...", { variant: "info" });
-    const results: { name: string; success: boolean; message: string }[] = [];
+    const results: OCRResult[] = [];
+    
     for (const file of ocrFiles) {
-      setOcrStep(`Sending ${file.name} to server...`);
-      enqueueSnackbar(`Sending ${file.name} to server...`, { variant: "info" });
+      setOcrStep(`Processing ${file.name}...`);
+      enqueueSnackbar(`Processing ${file.name}...`, { variant: "info" });
+      
       try {
         const res = await processDocaiStatement(file);
         results.push({
           name: file.name,
           success: res.success,
-          message: res.success ? (res.message || "Success") : (res.message || "Failed"),
+          message: res.message || (res.success ? "Success" : "Failed"),
+          data: res.data || undefined,
         });
       } catch (err: any) {
         results.push({
@@ -180,9 +203,8 @@ const FinancialView = () => {
           message: err?.message || "Network error",
         });
       }
-      setOcrStep("Updating orders...");
-      enqueueSnackbar("Updating orders...", { variant: "info" });
     }
+    
     setOcrResults(results);
     setOcrLoading(false);
 
@@ -195,6 +217,33 @@ const FinancialView = () => {
     } else {
       enqueueSnackbar(`${successCount} of ${results.length} files processed successfully.`, { variant: "warning" });
     }
+
+    // Refresh data after processing
+    fetchData(page, week);
+  };
+
+  // Calculate totals for results summary
+  const getResultsSummary = () => {
+    let totalUpdated = 0;
+    let totalNotFound = 0;
+    const allNotFoundOrders: string[] = [];
+    const allUpdatedOrders: Array<{ key_ref: string; income: number; orders_updated: number }> = [];
+
+    ocrResults.forEach(result => {
+      if (result.success && result.data) {
+        totalUpdated += result.data.total_updated;
+        totalNotFound += result.data.total_not_found;
+        allNotFoundOrders.push(...result.data.not_found_orders);
+        allUpdatedOrders.push(...result.data.updated_orders);
+      }
+    });
+
+    return {
+      totalUpdated,
+      totalNotFound,
+      allNotFoundOrders,
+      allUpdatedOrders,
+    };
   };
 
   const columns = useMemo<MRT_ColumnDef<SuperOrder>[]>(
@@ -411,80 +460,269 @@ const FinancialView = () => {
                   borderRadius: 2,
                   boxShadow: 4,
                   p: 4,
-                  minWidth: 340,
-                  maxWidth: 420,
+                  minWidth: 400,
+                  maxWidth: 700,
+                  maxHeight: "90vh",
+                  overflow: "auto",
                 }}
                 onClick={e => e.stopPropagation()}
               >
-                <Typography variant="h6" mb={2}>Upload up to 10 Statement PDFs</Typography>
-                <input
-                  id="ocr-upload-input"
-                  type="file"
-                  accept="application/pdf"
-                  multiple
-                  style={{ display: "none" }}
-                  onChange={e => {
-                    const files = Array.from(e.target.files || []);
-                    setOcrFiles(files.slice(0, 10));
-                    setOcrResults([]);
-                  }}
-                  disabled={ocrLoading}
-                />
-                <label htmlFor="ocr-upload-input">
-                  <Button
-                    variant="outlined"
-                    component="span"
-                    disabled={ocrLoading || ocrFiles.length >= 10}
-                    sx={{ mb: 2 }}
-                  >
-                    {ocrFiles.length > 0
-                      ? `${ocrFiles.length} file(s) selected`
-                      : "Select PDF files"}
-                  </Button>
-                </label>
-                <Box sx={{ mb: 2 }}>
-                  {ocrFiles.map((file, idx) => (
-                    <Typography key={file.name + idx} variant="body2">
-                      {file.name}
-                    </Typography>
-                  ))}
-                </Box>
-                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    disabled={ocrFiles.length === 0 || ocrLoading}
-                    onClick={handleOcrUpload}
-                  >
-                    {ocrLoading ? "Uploading..." : "Upload"}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      setOcrDialogOpen(false);
-                      setOcrFiles([]);
-                      setOcrResults([]);
-                      setOcrLoading(false);
-                    }}
-                    disabled={ocrLoading}
-                  >
-                    Cancel
-                  </Button>
-                </Box>
-                {/* Results */}
-                {ocrResults.length > 0 && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography variant="subtitle1" mb={1}>Results:</Typography>
-                    {ocrResults.map((res, idx) => (
-                      <Typography
-                        key={res.name + idx}
-                        variant="body2"
-                        sx={{ color: res.success ? "green" : "red" }}
+                <Typography variant="h6" mb={2}>Upload Statement PDFs (OCR)</Typography>
+                
+                {ocrResults.length === 0 ? (
+                  <>
+                    <input
+                      id="ocr-upload-input"
+                      type="file"
+                      accept="application/pdf"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={e => {
+                        const files = Array.from(e.target.files || []);
+                        setOcrFiles(files.slice(0, 10));
+                        setOcrResults([]);
+                      }}
+                      disabled={ocrLoading}
+                    />
+                    <label htmlFor="ocr-upload-input">
+                      <Button
+                        variant="outlined"
+                        component="span"
+                        disabled={ocrLoading || ocrFiles.length >= 10}
+                        sx={{ mb: 2 }}
                       >
-                        {res.name}: {res.success ? "✔️ Success" : "❌ Failed"} - {res.message}
+                        {ocrFiles.length > 0
+                          ? `${ocrFiles.length} file(s) selected`
+                          : "Select PDF files (max 10)"}
+                      </Button>
+                    </label>
+                    <Box sx={{ mb: 2 }}>
+                      {ocrFiles.map((file, idx) => (
+                        <Typography key={file.name + idx} variant="body2">
+                          📄 {file.name}
+                        </Typography>
+                      ))}
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        disabled={ocrFiles.length === 0 || ocrLoading}
+                        onClick={handleOcrUpload}
+                      >
+                        {ocrLoading ? "Processing..." : "Process Files"}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          setOcrDialogOpen(false);
+                          setOcrFiles([]);
+                          setOcrResults([]);
+                          setOcrLoading(false);
+                        }}
+                        disabled={ocrLoading}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </>
+                ) : (
+                  <>
+                    {/* Results Summary */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="h6" mb={2} color="primary">
+                        Processing Results
                       </Typography>
-                    ))}
-                  </Box>
+                      
+                      {(() => {
+                        const summary = getResultsSummary();
+                        return (
+                          <Box sx={{ mb: 2 }}>
+                            <Alert 
+                              severity={summary.totalNotFound > 0 ? "warning" : "success"} 
+                              sx={{ mb: 2 }}
+                            >
+                              <Typography variant="body2">
+                                <strong>Summary:</strong> {summary.totalUpdated} orders updated successfully
+                                {summary.totalNotFound > 0 && `, ${summary.totalNotFound} orders not found in the system`}
+                              </Typography>
+                            </Alert>
+                            
+                            {summary.totalUpdated > 0 && (
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="success.main" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                                  <CheckCircleIcon sx={{ mr: 1, fontSize: 18 }} />
+                                  Updated Orders ({summary.totalUpdated}):
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  {summary.allUpdatedOrders.map((order, idx) => (
+                                    <Chip 
+                                      key={idx} 
+                                      label={`${order.key_ref} ($${order.income.toLocaleString()})`}
+                                      size="small" 
+                                      color="success" 
+                                      variant="outlined"
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                            
+                            {summary.totalNotFound > 0 && (
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="warning.main" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                                  <WarningIcon sx={{ mr: 1, fontSize: 18 }} />
+                                  Orders Not Found in System ({summary.totalNotFound}):
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                                  These orders were found in the PDFs but don't exist in the system for the selected week ({weekRange.start} - {weekRange.end}).
+                                </Typography>
+                                <Box sx={{ 
+                                  display: 'grid', 
+                                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+                                  gap: 0.5,
+                                  maxHeight: 200,
+                                  overflow: 'auto',
+                                  p: 1,
+                                  border: '1px solid',
+                                  borderColor: 'grey.300',
+                                  borderRadius: 1,
+                                  backgroundColor: 'grey.50'
+                                }}>
+                                  {summary.allNotFoundOrders.map((order, idx) => (
+                                    <Chip 
+                                      key={idx} 
+                                      label={order} 
+                                      size="small" 
+                                      color="warning" 
+                                      variant="outlined"
+                                      sx={{ fontSize: '0.7rem' }}
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })()}
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    {/* Detailed Results */}
+                    <Typography variant="subtitle1" mb={2}>File Processing Details:</Typography>
+                    <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                      {ocrResults.map((result, idx) => (
+                        <Box key={idx} sx={{ mb: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            {result.success ? (
+                              <CheckCircleIcon sx={{ color: 'success.main', mr: 1, fontSize: 18 }} />
+                            ) : (
+                              <ErrorIcon sx={{ color: 'error.main', mr: 1, fontSize: 18 }} />
+                            )}
+                            <Typography variant="body2" fontWeight="medium">
+                              {result.name}
+                            </Typography>
+                          </Box>
+                          
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {result.message}
+                          </Typography>
+                          
+                          {result.success && result.data && (
+                            <Box sx={{ ml: 3 }}>
+                              <Typography variant="caption" color="success.main">
+                                ✓ {result.data.total_updated} orders updated
+                              </Typography>
+                              {result.data.total_not_found > 0 && (
+                                <Typography variant="caption" color="warning.main" sx={{ display: 'block' }}>
+                                  ⚠ {result.data.total_not_found} orders not found
+                                </Typography>
+                              )}
+                              
+                              {/* Show updated orders for this file */}
+                              {result.data.updated_orders.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Typography variant="caption" color="text.secondary">Updated:</Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                    {result.data.updated_orders.map((order, orderIdx) => (
+                                      <Chip 
+                                        key={orderIdx}
+                                        label={`${order.key_ref} ($${order.income})`}
+                                        size="small"
+                                        color="success"
+                                        variant="outlined"
+                                        sx={{ fontSize: '0.65rem', height: 20 }}
+                                      />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+
+                              {/* Show not found orders for this file */}
+                              {result.data.not_found_orders.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                  <Typography variant="caption" color="text.secondary">Not found:</Typography>
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    flexWrap: 'wrap', 
+                                    gap: 0.3, 
+                                    mt: 0.5,
+                                    maxHeight: 60,
+                                    overflow: 'auto'
+                                  }}>
+                                    {result.data.not_found_orders.slice(0, 10).map((order, orderIdx) => (
+                                      <Chip 
+                                        key={orderIdx}
+                                        label={order}
+                                        size="small"
+                                        color="warning"
+                                        variant="outlined"
+                                        sx={{ fontSize: '0.6rem', height: 18 }}
+                                      />
+                                    ))}
+                                    {result.data.not_found_orders.length > 10 && (
+                                      <Chip 
+                                        label={`+${result.data.not_found_orders.length - 10} more`}
+                                        size="small"
+                                        color="warning"
+                                        variant="outlined"
+                                        sx={{ fontSize: '0.6rem', height: 18 }}
+                                      />
+                                    )}
+                                  </Box>
+                                </Box>
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+                    </Box>
+
+                    <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          setOcrDialogOpen(false);
+                          setOcrFiles([]);
+                          setOcrResults([]);
+                          setOcrLoading(false);
+                        }}
+                      >
+                        Done
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          setOcrFiles([]);
+                          setOcrResults([]);
+                        }}
+                      >
+                        Process More Files
+                      </Button>
+                    </Box>
+                  </>
                 )}
               </Box>
             </Box>
