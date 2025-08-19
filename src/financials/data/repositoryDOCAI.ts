@@ -3,10 +3,20 @@
 import Cookies from 'js-cookie';
 
 export async function processDocaiStatement(file: File): Promise<{
-  success: boolean;
+  success?: boolean;
   message?: string;
   ocr_content?: string;
-  data?: unknown;
+  data?: {
+    updated_orders?: Array<{
+      key_ref: string;
+      orders_updated: number;
+      income: number;
+      payStatus: number;
+    }>;
+    not_found_orders?: string[];
+    total_updated?: number;
+    total_not_found?: number;
+  };
 }> {
   const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
   const url = `${BASE_URL_API}/api/utilities/pdf/process-docai/`;
