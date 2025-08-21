@@ -302,6 +302,16 @@ const CreateOrder: React.FC = () => {
     }
   }, [continuedOrder, jobs]);
 
+  useEffect(() => {
+    // Solo actualiza si no es continuedOrder y si los tres campos existen
+    if (!continuedOrder && country && state && city) {
+      setOrder(prev => ({
+        ...prev,
+        state_usa: `${country.name}, ${state.name}, ${city}`
+      }));
+    }
+  }, [country, state, city, continuedOrder]);
+
   return (
     <div className="min-h-screen py-8 px-4 flex items-start justify-center">
       <div className="w-full max-w-5xl">
