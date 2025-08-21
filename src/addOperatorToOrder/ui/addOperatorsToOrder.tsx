@@ -121,10 +121,9 @@ const AddOperatorsToOrder: React.FC = () => {
 
 const handleAssign = async (operator: OperatorAvailable) => {
   if (!orderKey) return;
-  console.log('Asignando operador:', operator);
   try {
     const now = new Date();
-    const assignedAt = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const assignedAt = now.toISOString().split('T')[0];
 
     const data: CreateAssignmentData = {
       operator: operator.id_operator,
@@ -133,16 +132,22 @@ const handleAssign = async (operator: OperatorAvailable) => {
       rol: "operator",
       additional_costs: "",
     };
-    console.log('Datos de asignación:', data);
     await assignOperatorToOrder(data);
     enqueueSnackbar('Operador asignado correctamente', { variant: 'success' });
-    // Refresca las listas
+
+    // Refresca las listas incluyendo freelancers
     const assigned = await fetchOperatorsAssignedToOrder(orderKey);
     const available = await fetchAvailable(1);
-    const assignedIds = new Set(assigned.map(op => op.id));
-    const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
+    const freelances = await fetchFreelancesOperators();
+    const assignedIds = new Set(assigned.map(op => getOperatorId(op)));
+    const filteredAvailable = available
+      .filter(op => !assignedIds.has(getOperatorId(op)))
+      .map(op => ({ ...op, is_freelance: false }));
+    const filteredFreelances = freelances
+      .filter(op => !assignedIds.has(getOperatorId(op)))
+      .map(op => ({ ...op, is_freelance: true }));
     setAssignedOperators(assigned);
-    setAvailableOperators(filteredAvailable);
+    setAvailableOperators([...filteredAvailable, ...filteredFreelances]);
   } catch (error) {
     console.error('Error assigning operator:', error);
     enqueueSnackbar('Error al asignar operador', { variant: 'error' });
@@ -171,14 +176,21 @@ const handleUnassign = async (operator: OperatorAssigned) => {
   try {
     await unassignOperatorFromOrder(operator.id_assign);
     enqueueSnackbar('Operador desasignado correctamente', { variant: 'success' });
-    // Refresca las listas
+
+    // Refresca las listas incluyendo freelancers
     if (!orderKey) return;
     const assigned = await fetchOperatorsAssignedToOrder(orderKey);
     const available = await fetchAvailable(1);
-    const assignedIds = new Set(assigned.map(op => op.id));
-    const filteredAvailable = available.filter(op => !assignedIds.has(op.id_operator));
+    const freelances = await fetchFreelancesOperators();
+    const assignedIds = new Set(assigned.map(op => getOperatorId(op)));
+    const filteredAvailable = available
+      .filter(op => !assignedIds.has(getOperatorId(op)))
+      .map(op => ({ ...op, is_freelance: false }));
+    const filteredFreelances = freelances
+      .filter(op => !assignedIds.has(getOperatorId(op)))
+      .map(op => ({ ...op, is_freelance: true }));
     setAssignedOperators(assigned);
-    setAvailableOperators(filteredAvailable);
+    setAvailableOperators([...filteredAvailable, ...filteredFreelances]);
   } catch (error) {
     console.error('Error unassigning operator:', error);
     enqueueSnackbar('Error al desasignar operador', { variant: 'error' });
