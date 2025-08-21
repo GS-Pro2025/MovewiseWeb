@@ -408,7 +408,10 @@ const CreateOrder: React.FC = () => {
                       getOptionLabel={option => option.name}
                       loading={loadingCountries}
                       value={country}
-                      onChange={(_, value) => setCountry(value)}
+                      onChange={(_, value) => {
+                        setCountry(value);
+                        setInitializingLocation(false); // <-- fuerza la carga de estados
+                      }}
                       renderInput={params => (
                         <TextField
                           {...params}
