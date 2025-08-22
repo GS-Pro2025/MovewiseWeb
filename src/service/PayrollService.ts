@@ -146,3 +146,25 @@ export async function getPaymentById(
 
   return (await res.json()) as PaymentData;
 }
+
+export async function cancelPayments(assign_ids: number[]): Promise<{ status: string; message: string }> {
+  const token: string | undefined = Cookies.get("authToken");
+  const url = `${API_BASE}/assign/cancel-payments/`;
+
+  const res: Response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+    body: JSON.stringify({ assign_ids }),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`API ${res.status}: ${msg || res.statusText}`);
+  }
+
+  return await res.json();
+}

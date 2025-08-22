@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { createPayment } from '../../service/PayrollService';
+import { cancelPayments, createPayment } from '../../service/PayrollService';
 import { updateAssign } from '../../service/AssignService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -303,10 +303,24 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
-  
+  const [cancelLoading, setCancelLoading] = useState(false);
   // SIMPLIFICAR: Usar directamente el expense que viene del operador
   const [expense, setExpense] = useState<number>(operatorData.expense || 0);
-
+  // Función para cancelar el pago
+  const handleCancelPayment = async () => {
+    if (!operatorData.assignmentIds || operatorData.assignmentIds.length === 0) return;
+    setCancelLoading(true);
+    try {
+      await cancelPayments(operatorData.assignmentIds.map(Number));
+      toast.success('Payment cancelled successfully! 🎉');
+      setIsPaid(false);
+      if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: null });
+    } catch (e: any) {
+      toast.error(e.message || 'Error cancelling payment');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
   // Inicializa dailyBonuses con el bonus de la primera asignación de cada día (si existe)
   const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
     const initial: WeekAmounts = {};
@@ -618,78 +632,102 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
           {/* Footer Actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
             {isPaid ? (
-              <PDFDownloadLink
-                document={
-                  <PayrollPDF 
-                    operatorData={{ 
-                      ...operatorData, 
-                      additionalBonuses: operatorData.additionalBonuses, 
-                      grandTotal 
-                    }} 
-                    days={days} 
-                    periodStart={periodStart} 
-                    periodEnd={periodEnd}
-                    dailyBonuses={dailyBonuses}
-                    totalDailyBonuses={calculateDailyBonusTotal()}
-                  />
-                }
-                fileName={`payment-summary-${operatorData.code}-${getCurrentDate()}.pdf`}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold text-center flex items-center justify-center"
-              >
-                {({ loading: pdfLoading }) => (
-                  <>
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {pdfLoading ? 'Generating PDF...' : 'Download PDF'}
-                  </>
-                )}
-              </PDFDownloadLink>
+              <>
+                <PDFDownloadLink
+                  document={
+                    <PayrollPDF 
+                      operatorData={{ 
+                        ...operatorData, 
+                        additionalBonuses: operatorData.additionalBonuses, 
+                        grandTotal 
+                      }} 
+                      days={days} 
+                      periodStart={periodStart} 
+                      periodEnd={periodEnd}
+                      dailyBonuses={dailyBonuses}
+                      totalDailyBonuses={calculateDailyBonusTotal()}
+                    />
+                  }
+                  fileName={`payment-summary-${operatorData.code}-${getCurrentDate()}.pdf`}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold text-center flex items-center justify-center"
+                >
+                  {({ loading: pdfLoading }) => (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {pdfLoading ? 'Generating PDF...' : 'Download PDF'}
+                    </>
+                  )}
+                </PDFDownloadLink>
+                
+                <button
+                  onClick={handleCancelPayment}
+                  disabled={cancelLoading}
+                  className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
+                    cancelLoading
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700 text-white hover:shadow-lg transform hover:scale-105'
+                  }`}
+                >
+                  {cancelLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel Payment
+                    </>
+                  )}
+                </button>
+              </>
             ) : (
-              <button 
-                disabled 
-                className="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed font-semibold flex items-center justify-center"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                PDF Locked
-              </button>
+              <>
+                <button 
+                  disabled 
+                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed font-semibold flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  PDF Locked
+                </button>
+                
+                <button
+                  onClick={handlePayment}
+                  disabled={loading}
+                  className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
+                    loading 
+                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                      : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-lg transform hover:scale-105'
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Process Payment
+                    </>
+                  )}
+                </button>
+              </>
             )}
-            
-            <button
-              onClick={handlePayment}
-              disabled={loading || isPaid}
-              className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
-                loading || isPaid 
-                  ? 'bg-gray-400 text-white cursor-not-allowed' 
-                  : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-lg transform hover:scale-105'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </>
-              ) : isPaid ? (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Paid ✅
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Process Payment
-                </>
-              )}
-            </button>
           </div>
         </div>
       </div>
