@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CompanyUsersResponse } from "../domain/AdminDomain";
 import Cookies from "js-cookie";
+import { useState } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -82,4 +83,84 @@ export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
     
     throw error;
   }
+}
+export async function requestDeactivation(personId: number): Promise<{ message: string }> {
+  const token: string | undefined = Cookies.get("authToken");
+  const url = `${API_BASE}/user/request-deactivation/${personId}/`;
+
+  const res: Response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Error ${res.status}: ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+export async function confirmDeactivation(personId: number, code: string): Promise<{ message: string }> {
+  const token: string | undefined = Cookies.get("authToken");
+  const url = `${API_BASE}/user/confirm-deactivation/${personId}/`;
+
+  const res: Response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+    body: JSON.stringify({ code }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Error ${res.status}: ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+export async function reactivateAdmin(personId: number): Promise<{ message: string }> {
+  const token: string | undefined = Cookies.get("authToken");
+  const url = `${API_BASE}/user/reactivate-admin/${personId}/`;
+
+  console.log('🔄 Reactivating admin for person_id:', personId);
+
+  const res: Response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Reactivate admin error:', errorText);
+    throw new Error(`Error ${res.status}: ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+export function useDeactivationState() {
+  const [deactivationState, setDeactivationState] = useState<{
+    personId: number | null;
+    step: 'idle' | 'pending' | 'confirming';
+    code: string;
+  }>({
+    personId: null,
+    step: 'idle',
+    code: '',
+  });
+
+  return { deactivationState, setDeactivationState };
 }

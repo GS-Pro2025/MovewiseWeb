@@ -16,6 +16,7 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
   is_active_user: boolean;
+  person_id: number;
 }
 
 export interface CompanyUsersResponse {
