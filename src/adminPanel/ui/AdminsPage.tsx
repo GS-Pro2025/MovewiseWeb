@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
-import { AdminUser } from '../domain/adminDomain';
+import { AdminUser } from '../domain/AdminDomain';
 import { getCompanyUsers, requestDeactivation, confirmDeactivation, reactivateAdmin } from '../data/RepositoryAdmin';
 
 interface DeactivationState {
