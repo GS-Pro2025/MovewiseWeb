@@ -1,166 +1,154 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CompanyUsersResponse } from "../domain/AdminDomain";
 import Cookies from "js-cookie";
-import { useState } from "react";
 
-const API_BASE = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
+// ✅ Usar la misma variable de entorno que repositoryAssign
+const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
-  const token: string | undefined = Cookies.get("authToken");
-  const url = `${API_BASE}/users/company/`;
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  const url = `${BASE_URL_API}/users/company/`;
 
   console.log('🔍 Debug Info:');
-  console.log('API_BASE:', API_BASE);
+  console.log('BASE_URL_API:', BASE_URL_API);
   console.log('Full URL:', url);
   console.log('Token:', token ? 'Present' : 'Missing');
 
   try {
-    const res: Response = await fetch(url, {
+    const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-      credentials: "include",
     });
 
     console.log('🌐 Response Info:');
-    console.log('Status:', res.status);
-    console.log('Status Text:', res.statusText);
-    console.log('Content-Type:', res.headers.get('content-type'));
+    console.log('Status:', response.status);
+    console.log('Status Text:', response.statusText);
 
-    // Leer la respuesta como texto primero
-    const responseText = await res.text();
-    console.log('📄 Raw Response (first 500 chars):', responseText.substring(0, 500));
-
-    if (!res.ok) {
-      console.error(`❌ API Error ${res.status}:`, responseText);
-      
-      // Si es un error del servidor, mostrar más info
-      if (res.status >= 500) {
-        throw new Error(`Server Error ${res.status}: The endpoint may not be implemented or there's a server issue`);
-      }
-      
-      let errorMessage = `HTTP ${res.status}: ${res.statusText}`;
-      
-      // Intentar parsear como JSON si es posible
-      try {
-        const errorJson = JSON.parse(responseText);
-        errorMessage = errorJson.message || errorMessage;
-      } catch {
-        // Si no es JSON válido, usar el texto como está
-        errorMessage = responseText || errorMessage;
-      }
-      
-      throw new Error(errorMessage);
+    // ✅ Manejo del 403 igual que en repositoryAssign
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
     }
 
-    // Verificar que el content-type sea JSON
-    const contentType = res.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      console.warn('⚠️ Response is not JSON, content-type:', contentType);
-      throw new Error('Server returned non-JSON response. Check if the endpoint exists.');
+    if (!response.ok) {
+      throw new Error('Error al obtener los usuarios de la compañía');
     }
 
-    // Intentar parsear como JSON
-    try {
-      const data = JSON.parse(responseText);
-      console.log('✅ Parsed JSON:', data);
-      return data;
-    } catch (parseError) {
-      console.error('❌ JSON Parse Error:', parseError);
-      console.error('Response was:', responseText);
-      throw new Error('Server returned invalid JSON response');
-    }
+    const data = await response.json();
+    console.log('✅ Parsed JSON:', data);
+    return data;
 
   } catch (error: any) {
     console.error('🚨 Fetch Error:', error);
-    
-    // Si es un error de red o CORS
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Network error: Check if the API server is running and accessible');
-    }
-    
     throw error;
   }
 }
+
 export async function requestDeactivation(personId: number): Promise<{ message: string }> {
-  const token: string | undefined = Cookies.get("authToken");
-  const url = `${API_BASE}/user/request-deactivation/${personId}/`;
-
-  const res: Response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Error ${res.status}: ${errorText}`);
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
   }
 
-  return await res.json();
+  try {
+    const response = await fetch(`${BASE_URL_API}/user/request-deactivation/${personId}/`, {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error('Error al solicitar la desactivación');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error requesting deactivation:', error);
+    throw error;
+  }
 }
 
 export async function confirmDeactivation(personId: number, code: string): Promise<{ message: string }> {
-  const token: string | undefined = Cookies.get("authToken");
-  const url = `${API_BASE}/user/confirm-deactivation/${personId}/`;
-
-  const res: Response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-    body: JSON.stringify({ code }),
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Error ${res.status}: ${errorText}`);
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
   }
 
-  return await res.json();
+  try {
+    const response = await fetch(`${BASE_URL_API}/user/confirm-deactivation/${personId}/`, {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error('Error al confirmar la desactivación');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error confirming deactivation:', error);
+    throw error;
+  }
 }
 
 export async function reactivateAdmin(personId: number): Promise<{ message: string }> {
-  const token: string | undefined = Cookies.get("authToken");
-  const url = `${API_BASE}/user/reactivate-admin/${personId}/`;
-
-  console.log('🔄 Reactivating admin for person_id:', personId);
-
-  const res: Response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error('Reactivate admin error:', errorText);
-    throw new Error(`Error ${res.status}: ${errorText}`);
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
   }
 
-  return await res.json();
-}
+  try {
+    const response = await fetch(`${BASE_URL_API}/user/reactivate-admin/${personId}/`, {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-export function useDeactivationState() {
-  const [deactivationState, setDeactivationState] = useState<{
-    personId: number | null;
-    step: 'idle' | 'pending' | 'confirming';
-    code: string;
-  }>({
-    personId: null,
-    step: 'idle',
-    code: '',
-  });
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
 
-  return { deactivationState, setDeactivationState };
+    if (!response.ok) {
+      throw new Error('Error al reactivar el administrador');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error reactivating admin:', error);
+    throw error;
+  }
 }
