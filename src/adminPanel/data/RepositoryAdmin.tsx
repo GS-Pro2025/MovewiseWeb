@@ -3,7 +3,7 @@ import { CompanyUsersResponse } from "../domain/AdminDomain";
 import Cookies from "js-cookie";
 import { useState } from "react";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
   const token: string | undefined = Cookies.get("authToken");
