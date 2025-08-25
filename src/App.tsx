@@ -21,6 +21,7 @@ import CreateAdminView from './createAdmin/ui/createAdminView';
 import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
 import OrderBreakdownPage from './statistics/ui/OrderBreakdownPage';
 import OperatorsPage from './operators/ui/OperatorsPage';
+import AdminsPage from './adminPanel/ui/AdminsPage';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +97,7 @@ const App = () => {
             <Route path="/warehouse" element={<WarehouseView/>}/>
             <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
             <Route path="/customers" element={<CustomersView />} />
+            <Route path="/admins" element={<AdminsPage />} />
             <Route path="/create-admin" element={<CreateAdminView />} />
             <Route path="/jobs-tools" element={<JobsAndToolsGUI />} />
             <Route path="statistics" element={<Statistics/>} />
