@@ -59,7 +59,14 @@ const AdminsPage: React.FC = () => {
     });
 
     try {
-      await requestDeactivation(user.person_id);
+      const result = await requestDeactivation(user.person_id);
+      
+      if (!result.success) {
+        enqueueSnackbar(result.errorMessage || 'Error requesting deactivation', { variant: 'error' });
+        setDeactivationState(prev => ({ ...prev, step: 'idle', isLoading: false }));
+        return;
+      }
+
       setDeactivationState(prev => ({
         ...prev,
         step: 'confirming',
@@ -82,8 +89,14 @@ const AdminsPage: React.FC = () => {
     setDeactivationState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      await confirmDeactivation(deactivationState.personId, deactivationState.code);
+      const result = await confirmDeactivation(deactivationState.personId, deactivationState.code);
       
+      if (!result.success) {
+        enqueueSnackbar(result.errorMessage || 'Error confirming deactivation', { variant: 'error' });
+        setDeactivationState(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+
       // Actualizar el usuario en la lista local
       setUsers(users.map(user => 
         user.person_id === deactivationState.personId 
@@ -110,8 +123,14 @@ const AdminsPage: React.FC = () => {
     setReactivatingUser(user.person_id);
 
     try {
-      await reactivateAdmin(user.person_id);
+      const result = await reactivateAdmin(user.person_id);
       
+      if (!result.success) {
+        enqueueSnackbar(result.errorMessage || 'Error reactivating admin', { variant: 'error' });
+        setReactivatingUser(null);
+        return;
+      }
+
       // Actualizar el usuario en la lista local
       setUsers(users.map(u => 
         u.person_id === user.person_id 

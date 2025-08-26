@@ -16,4 +16,5 @@ export interface UserProfile {
   photo: string;
   created_at: string;
   updated_at: string;
+  is_superUser: boolean;
 }
