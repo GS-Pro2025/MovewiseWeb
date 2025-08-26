@@ -2,58 +2,67 @@
 import { CompanyUsersResponse } from "../domain/AdminDomain";
 import Cookies from "js-cookie";
 
-// ✅ Usar la misma variable de entorno que repositoryAssign
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
   const token = Cookies.get('authToken');
+  
+  // 🔍 Debug temporal
+  console.log('🚀 Environment debug:');
+  console.log('VITE_URL_BASE:', import.meta.env.VITE_URL_BASE);
+  console.log('BASE_URL_API:', BASE_URL_API);
+  console.log('Token exists:', !!token);
+  console.log('Token preview:', token ? token.substring(0, 50) + '...' : 'No token');
+  
   if (!token) {
+    console.log('❌ No token found, redirecting to login');
     window.location.href = '/login';
     throw new Error('No hay token de autenticación');
   }
 
   const url = `${BASE_URL_API}/users/company/`;
+  console.log('📡 Final URL:', url);
+  
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
-  console.log('🔍 Debug Info:');
-  console.log('BASE_URL_API:', BASE_URL_API);
-  console.log('Full URL:', url);
-  console.log('Token:', token ? 'Present' : 'Missing');
+  console.log('🌐 Response status:', response.status);
+  console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
 
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('🌐 Response Info:');
-    console.log('Status:', response.status);
-    console.log('Status Text:', response.statusText);
-
-    // ✅ Manejo del 403 igual que en repositoryAssign
-    if (response.status === 403) {
-      Cookies.remove('authToken');
-      window.location.href = '/login';
-      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+  // ✅ Solo manejar 403 en funciones GET como en repositoryOrders
+  if (response.status === 403) {
+    console.log('🔒 403 Forbidden - removing token and redirecting');
+    
+    // 🔍 Debug: intentar ver la respuesta de error
+    try {
+      const errorResponse = await response.text();
+      console.log('❌ 403 Error response:', errorResponse);
+    } catch (e) {
+      console.log('❌ Could not read error response');
     }
-
-    if (!response.ok) {
-      throw new Error('Error al obtener los usuarios de la compañía');
-    }
-
-    const data = await response.json();
-    console.log('✅ Parsed JSON:', data);
-    return data;
-
-  } catch (error: any) {
-    console.error('🚨 Fetch Error:', error);
-    throw error;
+    
+    Cookies.remove('authToken');
+    window.location.href = '/login';
+    throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
   }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.log('❌ Non-OK response:', response.status, errorText);
+    throw new Error(`Error fetching data: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log('✅ Success response:', data);
+  return data;
 }
 
-export async function requestDeactivation(personId: number): Promise<{ message: string }> {
+export async function requestDeactivation(personId: number): Promise<{ success: boolean; data?: { message: string }; errorMessage?: string }> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -69,24 +78,23 @@ export async function requestDeactivation(personId: number): Promise<{ message: 
       },
     });
 
-    if (response.status === 403) {
-      Cookies.remove('authToken');
-      window.location.href = '/login';
-      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-    }
+    const data = await response.json();
 
+    // ✅ NO redirigir al login automáticamente en POST/PATCH como en repositoryOrders
     if (!response.ok) {
-      throw new Error('Error al solicitar la desactivación');
+      return { success: false, errorMessage: data.messDev || 'Error requesting deactivation' };
     }
 
-    return await response.json();
-  } catch (error) {
-    console.error('Error requesting deactivation:', error);
-    throw error;
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
   }
 }
 
-export async function confirmDeactivation(personId: number, code: string): Promise<{ message: string }> {
+export async function confirmDeactivation(personId: number, code: string): Promise<{ success: boolean; data?: { message: string }; errorMessage?: string }> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -103,24 +111,22 @@ export async function confirmDeactivation(personId: number, code: string): Promi
       body: JSON.stringify({ code }),
     });
 
-    if (response.status === 403) {
-      Cookies.remove('authToken');
-      window.location.href = '/login';
-      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-    }
+    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error('Error al confirmar la desactivación');
+      return { success: false, errorMessage: data.messDev || 'Error confirming deactivation' };
     }
 
-    return await response.json();
-  } catch (error) {
-    console.error('Error confirming deactivation:', error);
-    throw error;
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
   }
 }
 
-export async function reactivateAdmin(personId: number): Promise<{ message: string }> {
+export async function reactivateAdmin(personId: number): Promise<{ success: boolean; data?: { message: string }; errorMessage?: string }> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -136,19 +142,17 @@ export async function reactivateAdmin(personId: number): Promise<{ message: stri
       },
     });
 
-    if (response.status === 403) {
-      Cookies.remove('authToken');
-      window.location.href = '/login';
-      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-    }
+    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error('Error al reactivar el administrador');
+      return { success: false, errorMessage: data.messDev || 'Error reactivating admin' };
     }
 
-    return await response.json();
-  } catch (error) {
-    console.error('Error reactivating admin:', error);
-    throw error;
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
   }
 }
