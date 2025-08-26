@@ -189,7 +189,8 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
           <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed} to="/payroll" />
           <NavItem icon="fa-users" text="Operators" isCollapsed={isCollapsed} to="/operators" /> 
           <NavItem icon="fa-chart-bar" text="Statistics" isCollapsed={isCollapsed} to="/statistics" />
-          {/* Nuevo Dropdown Cost */}
+
+          {/* Dropdown Cost */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 1 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
             <button
               className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-700 
@@ -223,7 +224,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             </div>
           </li>
 
-          {/* Nuevo Dropdown Warehouse */}
+          {/* Dropdown Warehouse */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 2 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
             <button
               className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-700 
@@ -255,7 +256,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
             </div>
           </li>
 
-          {/* Dropdown Settings */}
+          {/* ✅ Dropdown Settings - CONDICIONADO A is_superUser */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
             <button
               className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-700 
@@ -283,7 +284,11 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
               <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
                 <DropdownLink icon="fa-building" text="Customers" to="/customers" />
                 <DropdownLink icon="fa-briefcase" text="Jobs & Tools" to="/jobs-tools" />
-                <DropdownLink icon="fa-users-cog" text="Admins" to="/admins" />
+                
+                {/* Solo mostrar "Admins" si es superUser */}
+                {user && user.is_superUser ? (
+                  <DropdownLink icon="fa-users-cog" text="Admins" to="/admins" />
+                ) : null}
               </ul>
             </div>
           </li>
