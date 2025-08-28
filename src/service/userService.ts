@@ -20,3 +20,20 @@ export async function fetchUserProfile(id: number): Promise<UserProfile> {
 
   return await response.json();
 }
+
+// Función para forgot password
+export async function sendForgotPasswordEmail(email: string): Promise<{ detail: string }> {
+  const response = await fetch(`${API_BASE}/user/forgot-password/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Error al enviar email de recuperación');
+  }
+
+  return await response.json();
+}
