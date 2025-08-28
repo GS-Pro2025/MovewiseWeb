@@ -11,6 +11,7 @@ import { ClientStatsComparison } from '../domain/OrdersWithClientModels';
 import { OrdersBasicDataResponse } from '../domain/BasicOrdersDataModels';
 import PayrollStatistics from './PayrollStatistics';
 import { useNavigate } from 'react-router-dom';
+import HistoricalAnalysis from './HistoricalAnalysis';
 
 interface StatItem {
   label: string;
@@ -39,7 +40,7 @@ const Statistics = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeSection, setActiveSection] = useState<'overview' | 'trucks' | 'payroll'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'trucks' | 'payroll' | 'historical'>('overview');
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
     const now = new Date();
     return getWeekOfYear(now);
@@ -333,7 +334,7 @@ const Statistics = () => {
         <p className="text-gray-600">Monitor your business performance and key metrics</p>
       </div>
 
-      {/* NUEVO: Navigation Tabs */}
+      {/* ACTUALIZADO: Navigation Tabs */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           {/* Tabs de navegación */}
@@ -370,6 +371,18 @@ const Statistics = () => {
             >
               <i className="fas fa-users mr-2"></i>
               Payroll Analytics
+            </button>
+            {/* 🆕 NUEVO TAB */}
+            <button
+              onClick={() => setActiveSection('historical')}
+              className={`px-4 py-2 rounded-md font-medium transition-all ${
+                activeSection === 'historical'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <i className="fas fa-history mr-2"></i>
+              Historical Analysis
             </button>
           </div>
 
@@ -503,6 +516,11 @@ const Statistics = () => {
       {/* Payroll Section */}
       {activeSection === 'payroll' && (
         <PayrollStatistics />
+      )}
+
+      {/* Historical Section */}
+      {activeSection === 'historical' && (
+        <HistoricalAnalysis />
       )}
         
     </div>
