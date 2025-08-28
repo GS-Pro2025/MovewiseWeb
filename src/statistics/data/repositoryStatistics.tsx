@@ -6,6 +6,7 @@ import Cookies from 'js-cookie';
 import { OrdersBasicDataResponse } from '../domain/BasicOrdersDataModels';
 import { OrdersPaidUnpaidWeekRangeResponse, WeeklyCount } from '../domain/OrdersPaidUnpaidModels';
 import { OperatorWeeklyRanking } from '../domain/OperatorWeeklyRankingModels';
+import { HistoricalJobWeightData, HistoricalJobWeightRequest, HistoricalJobWeightResponse, ProcessedHistoricalData, WeightRange } from '../domain/HistoricalJobWeightModels';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
@@ -506,7 +507,7 @@ export async function fetchOrdersBasicDataList(year: number, week: number): Prom
   return await response.json();
 }
 
-// NUEVA: Función para obtener órdenes pagadas/no pagadas por rango de semanas
+// Función para obtener órdenes pagadas/no pagadas por rango de semanas
 export async function fetchOrdersPaidUnpaidWeekRange(
   startWeek: number, 
   endWeek: number, 
@@ -579,4 +580,92 @@ export async function fetchWeeklyOperatorRanking(year: number, week: number): Pr
   });
   if (!response.ok) throw new Error('Error fetching weekly operator ranking');
   return await response.json();
+}
+
+// Función para obtener datos históricos de job weight
+export async function fetchHistoricalJobWeight(ranges: WeightRange[]): Promise<HistoricalJobWeightResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/orders-historic-jobweigth/?mode=historic`;
+    
+    const requestBody: HistoricalJobWeightRequest = { ranges };
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching historical job weight data: ${response.statusText}`);
+    }
+
+    const data: HistoricalJobWeightResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching historical job weight data:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener los datos históricos de job weight'
+    );
+  }
+}
+
+// Función para procesar datos históricos
+export function processHistoricalJobWeightData(data: HistoricalJobWeightResponse): ProcessedHistoricalData[] {
+  if (!data.data || data.data.length === 0) {
+    return [];
+  }
+
+  // Agrupar por rango de peso
+  const rangeMap = new Map<string, HistoricalJobWeightData[]>();
+  
+  data.data.forEach(item => {
+    if (!rangeMap.has(item.weight_range)) {
+      rangeMap.set(item.weight_range, []);
+    }
+    rangeMap.get(item.weight_range)!.push(item);
+  });
+
+  // Procesar cada rango
+  const processedData: ProcessedHistoricalData[] = [];
+  
+  rangeMap.forEach((rangeData, weightRange) => {
+    const totalOrdersInRange = rangeData.reduce((sum, item) => sum + item.orders_count, 0);
+    const rangePercentage = data.total_orders > 0 ? (totalOrdersInRange / data.total_orders) * 100 : 0;
+    
+    const jobs = rangeData
+      .filter(item => item.job !== null && item.orders_count > 0)
+      .map(item => ({
+        jobName: item.job || 'Unknown',
+        averageIncome: item.average_income,
+        ordersCount: item.orders_count,
+        percentage: totalOrdersInRange > 0 ? (item.orders_count / totalOrdersInRange) * 100 : 0
+      }))
+      .sort((a, b) => b.ordersCount - a.ordersCount);
+
+    processedData.push({
+      weightRange,
+      jobs,
+      totalOrdersInRange,
+      rangePercentage
+    });
+  });
+
+  return processedData.sort((a, b) => b.totalOrdersInRange - a.totalOrdersInRange);
 }
