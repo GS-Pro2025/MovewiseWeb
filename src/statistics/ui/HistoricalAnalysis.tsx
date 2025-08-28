@@ -146,7 +146,7 @@ const HistoricalAnalysis: React.FC = () => {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-blue-50 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
               {historicalData?.total_orders || 0}
@@ -164,14 +164,6 @@ const HistoricalAnalysis: React.FC = () => {
               {processedData.reduce((sum, range) => sum + range.jobs.length, 0)}
             </div>
             <div className="text-sm text-gray-600 mt-1">Job Types Found</div>
-          </div>
-          <div className="bg-orange-50 rounded-lg p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              ${processedData.reduce((sum, range) => 
-                sum + range.jobs.reduce((jobSum, job) => jobSum + (job.averageIncome * job.ordersCount), 0), 0
-              ).toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-600 mt-1">Total Income</div>
           </div>
         </div>
 
