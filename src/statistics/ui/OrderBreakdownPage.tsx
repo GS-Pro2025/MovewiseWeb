@@ -37,17 +37,6 @@ interface CustomerStats {
   avgIncome: number;
 }
 
-interface PricePerWeightStats {
-  jobType: string;
-  weightRange: string;
-  orderCount: number;
-  avgPricePerLb: number;
-  totalWeight: number;
-  totalIncome: number;
-  minPricePerLb: number;
-  maxPricePerLb: number;
-}
-
 const OrderBreakdownPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -63,8 +52,7 @@ const OrderBreakdownPage: React.FC = () => {
   const [showAllZones, setShowAllZones] = useState<boolean>(false);
   const [showAllJobs, setShowAllJobs] = useState<boolean>(false);
   const [showAllCustomers, setShowAllCustomers] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'zones' | 'jobs' | 'weights' | 'customers' | 'pricing'>('zones');
-  const [selectedJobForPricing, setSelectedJobForPricing] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'zones' | 'jobs' | 'weights' | 'customers'>('zones');
 
   // NUEVO: Constante para el límite máximo de elementos
   const MAX_DISPLAY_ITEMS = 15;
@@ -90,14 +78,13 @@ const OrderBreakdownPage: React.FC = () => {
     loadOrdersData();
   }, [year, week]);
 
-  const { zoneStats, jobTypeStats, weightRangeStats, customerStats, pricePerWeightStats, filteredZoneStats, filteredJobStats, filteredCustomerStats } = useMemo(() => {
+  const { zoneStats, jobTypeStats, weightRangeStats, customerStats, filteredZoneStats, filteredJobStats, filteredCustomerStats } = useMemo(() => {
     if (!ordersData?.data || ordersData.data.length === 0) {
       return { 
         zoneStats: [], 
         jobTypeStats: [], 
         weightRangeStats: [], 
         customerStats: [],
-        pricePerWeightStats: [],
         filteredZoneStats: [], 
         filteredJobStats: [],
         filteredCustomerStats: []
@@ -220,80 +207,16 @@ const OrderBreakdownPage: React.FC = () => {
       weightRangeStats = weightRangeStats.filter(stat => stat.range === selectedWeightRange);
     }
 
-    // 🆕 NUEVO: Análisis de precio por peso por job type y rango de peso
-    const priceAnalysisMap = new Map<string, {
-      orders: typeof orders;
-      totalWeight: number;
-      totalIncome: number;
-      pricesPerLb: number[];
-    }>();
-
-    // Agrupar por job type y rango de peso
-    orders.forEach(order => {
-      const jobType = order.job_name?.trim() || 'Unknown';
-      const weight = order.weight || 0;
-      const income = order.income || 0;
-      
-      if (weight === 0) return; // Evitar división por cero
-      
-      // Encontrar el rango de peso correspondiente
-      const weightRange = weightRanges.find(range => weight >= range.min && weight < range.max);
-      if (!weightRange) return;
-      
-      const key = `${jobType}|${weightRange.label}`;
-      const pricePerLb = income / weight;
-      
-      if (!priceAnalysisMap.has(key)) {
-        priceAnalysisMap.set(key, {
-          orders: [],
-          totalWeight: 0,
-          totalIncome: 0,
-          pricesPerLb: []
-        });
-      }
-      
-      const data = priceAnalysisMap.get(key)!;
-      data.orders.push(order);
-      data.totalWeight += weight;
-      data.totalIncome += income;
-      data.pricesPerLb.push(pricePerLb);
-    });
-
-    // Convertir a array de estadísticas
-    let pricePerWeightStats: PricePerWeightStats[] = Array.from(priceAnalysisMap.entries()).map(([key, data]) => {
-      const [jobType, weightRange] = key.split('|');
-      const avgPricePerLb = data.totalIncome / data.totalWeight;
-      const minPricePerLb = Math.min(...data.pricesPerLb);
-      const maxPricePerLb = Math.max(...data.pricesPerLb);
-      
-      return {
-        jobType,
-        weightRange,
-        orderCount: data.orders.length,
-        avgPricePerLb,
-        totalWeight: data.totalWeight,
-        totalIncome: data.totalIncome,
-        minPricePerLb,
-        maxPricePerLb
-      };
-    }).sort((a, b) => b.avgPricePerLb - a.avgPricePerLb);
-
-    // Filtrar por job type si está seleccionado
-    if (selectedJobForPricing !== 'all') {
-      pricePerWeightStats = pricePerWeightStats.filter(stat => stat.jobType === selectedJobForPricing);
-    }
-
     return { 
       zoneStats, 
       jobTypeStats, 
       weightRangeStats, 
       customerStats, 
-      pricePerWeightStats,
       filteredZoneStats, 
       filteredJobStats, 
       filteredCustomerStats 
     };
-  }, [ordersData, zoneSearchTerm, jobSearchTerm, customerSearchTerm, selectedWeightRange, selectedJobForPricing]);
+  }, [ordersData, zoneSearchTerm, jobSearchTerm, customerSearchTerm, selectedWeightRange]);
 
   // ACTUALIZADO: Función para limpiar filtros según el tab activo
   const clearFilters = () => {
@@ -308,13 +231,11 @@ const OrderBreakdownPage: React.FC = () => {
       setShowAllCustomers(false);
     } else if (activeTab === 'weights') {
       setSelectedWeightRange('all');
-    } else if (activeTab === 'pricing') {
-      setSelectedJobForPricing('all');
     }
   };
 
   // NUEVO: Función para cambiar de tab y limpiar filtros no relacionados
-  const handleTabChange = (tab: 'zones' | 'jobs' | 'weights' | 'customers' | 'pricing') => {
+  const handleTabChange = (tab: 'zones' | 'jobs' | 'weights' | 'customers') => {
     setActiveTab(tab);
     // Limpiar filtros de otros tabs
     if (tab !== 'zones') {
@@ -332,9 +253,6 @@ const OrderBreakdownPage: React.FC = () => {
     if (tab !== 'weights') {
       setSelectedWeightRange('all');
     }
-    if (tab !== 'pricing') {
-      setSelectedJobForPricing('all');
-    }
   };
 
   // NUEVO: Función para obtener si hay filtros activos
@@ -348,8 +266,6 @@ const OrderBreakdownPage: React.FC = () => {
         return customerSearchTerm !== '';
       case 'weights':
         return selectedWeightRange !== 'all';
-      case 'pricing':
-        return selectedJobForPricing !== 'all';
       default:
         return false;
     }
@@ -488,18 +404,6 @@ const OrderBreakdownPage: React.FC = () => {
               >
                 <i className="fas fa-weight mr-2"></i>
                 Weights ({weightRangeStats.length})
-              </button>
-              {/* 🆕 NUEVO TAB */}
-              <button
-                onClick={() => handleTabChange('pricing')}
-                className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  activeTab === 'pricing'
-                    ? 'bg-white text-orange-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                <i className="fas fa-dollar-sign mr-2"></i>
-                Price Analysis ({pricePerWeightStats.length})
               </button>
             </div>
 
@@ -652,38 +556,6 @@ const OrderBreakdownPage: React.FC = () => {
                       {selectedWeightRange === 'all' 
                         ? `Showing all ${weightRangeStats.length} weight ranges`
                         : `Filtered to: ${selectedWeightRange}`
-                      }
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 🆕 NUEVO: Filter para pricing */}
-            {activeTab === 'pricing' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Job Type</label>
-                  <select
-                    value={selectedJobForPricing}
-                    onChange={(e) => setSelectedJobForPricing(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  >
-                    <option value="all">All Job Types</option>
-                    {jobTypeStats.map((job, index) => (
-                      <option key={index} value={job.jobType}>
-                        {job.jobType} ({job.count} orders)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-end">
-                  <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Info</label>
-                    <div className="px-4 py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-sm">
-                      {selectedJobForPricing === 'all' 
-                        ? `Showing all job types (${pricePerWeightStats.length} combinations)`
-                        : `Filtered to: ${selectedJobForPricing}`
                       }
                     </div>
                   </div>
@@ -867,86 +739,6 @@ const OrderBreakdownPage: React.FC = () => {
           </div>
         )}
 
-        {/* Price Analysis Tab Content */}
-        {activeTab === 'pricing' && (
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
-              <i className="fas fa-dollar-sign text-orange-600 mr-3"></i>
-              Price per Pound Analysis by Job Type & Weight Range
-              {selectedJobForPricing !== 'all' && (
-                <span className="text-sm text-gray-500 ml-2">
-                  (filtered: {selectedJobForPricing})
-                </span>
-              )}
-            </h3>
-            
-            {pricePerWeightStats.length > 0 ? (
-              <div className="space-y-4">
-                {pricePerWeightStats.map((stat, index) => (
-                  <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
-                      {/* Job Type & Weight Range */}
-                      <div className="md:col-span-2">
-                        <div className="font-medium text-gray-800 capitalize">{stat.jobType}</div>
-                        <div className="text-sm text-gray-600">{stat.weightRange}</div>
-                        <div className="text-xs text-gray-500">{stat.orderCount} orders</div>
-                      </div>
-                      
-                      {/* Average Price per Lb */}
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-orange-600">
-                          ${stat.avgPricePerLb.toFixed(3)}
-                        </div>
-                        <div className="text-xs text-gray-500">avg $/lb</div>
-                      </div>
-                      
-                      {/* Price Range */}
-                      <div className="text-center">
-                        <div className="text-sm text-gray-700">
-                          ${stat.minPricePerLb.toFixed(3)} - ${stat.maxPricePerLb.toFixed(3)}
-                        </div>
-                        <div className="text-xs text-gray-500">min - max $/lb</div>
-                      </div>
-                      
-                      {/* Total Weight */}
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-700">
-                          {stat.totalWeight.toLocaleString()} lbs
-                        </div>
-                        <div className="text-xs text-gray-500">total weight</div>
-                      </div>
-                      
-                      {/* Total Income */}
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-green-600">
-                          ${stat.totalIncome.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-gray-500">total income</div>
-                      </div>
-                    </div>
-                    
-                    {/* Visual bar */}
-                    <div className="mt-3">
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
-                          style={{ 
-                            width: `${Math.min((stat.avgPricePerLb / Math.max(...pricePerWeightStats.map(s => s.avgPricePerLb))) * 100, 100)}%` 
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <i className="fas fa-chart-line text-4xl mb-4"></i>
-                <p>No pricing data available for the selected filters</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Orders Table */}
