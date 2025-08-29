@@ -136,14 +136,14 @@ export async function patchTruckAssignment(
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ rol: truck }),
+        body: JSON.stringify({ truck: truck }),
         });
     
         if (!response.ok) {
-        throw new Error('Error al actualizar el rol de la asignación');
+        throw new Error('Error al actualizar el camión de la asignación');
         }
     } catch (error) {
-        console.error('Error updating role assignment:', error);
+        console.error('Error updating truck assignment:', error);
         throw error;
     }
 }
