@@ -171,7 +171,10 @@ const FinancialView = () => {
           success: isSuccess,
           message: res.message || (isSuccess ? "Success" : "Failed"),
           data: res.update_result ? {
-            updated_orders: res.update_result.updated_orders || [],
+            updated_orders: (res.update_result.updated_orders || []).map(order => ({
+              ...order,
+              income: order.income ?? 0, // Ensure income is always a number
+            })),
             not_found_orders: res.update_result.not_found_orders || [],
             total_updated: res.update_result.total_updated || 0,
             total_not_found: res.update_result.total_not_found || 0,
@@ -590,7 +593,7 @@ const FinancialView = () => {
                                   Orders Not Found in System ({summary.totalNotFound}):
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                                  These orders were found in the PDFs but don't exist in the system for the selected week ({weekRange.start} - {weekRange.end}).
+                                  These orders were found in the PDFs but don't exist in the system.
                                 </Typography>
                                 <Box sx={{ 
                                   display: 'grid', 
