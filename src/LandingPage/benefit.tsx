@@ -1,7 +1,6 @@
 import ipad from "../assets/ipad.png";
 import mobile from "../assets/iPhone1.png";
 import mobileHorizontal from "../assets/HorizontaliPhone.png";
-import React from "react";
 
 const Benefits = () => {
   type MockupType = "dashboard" | "mobile" | "tablet";

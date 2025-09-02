@@ -1,4 +1,3 @@
-import React from "react";
 import Box from "../assets/Caja.png";
 import BoxStack from "../assets/CajasMonton.png";
 import BoxPile from "../assets/cajasPila.png";

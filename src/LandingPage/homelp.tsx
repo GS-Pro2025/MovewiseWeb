@@ -1,4 +1,3 @@
-import React from 'react';
 import bgImage from "../assets/fondo1lp.png";
 import Onda from "../assets/Rectanglelp.svg";
 import carmovil from "../assets/carMovil.png";
