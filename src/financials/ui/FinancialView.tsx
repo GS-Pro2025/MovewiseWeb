@@ -15,7 +15,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
 import { processDocaiStatement } from "../data/repositoryDOCAI";
 import { enqueueSnackbar } from "notistack";
-import LoaderSpinner from "../../componets/LoadingSpinner";
+import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 import { OCRResult, ProcessDocaiResponse, SuperOrder } from "../domain/ModelsOCR";
 

@@ -1,11 +1,11 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './componets/sidebar';
 import Home from './Home/ui/home';
-import LoginPage from './componets/loginPage';
+import LoginPage from './componets/Login_Register/loginPage';
 import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
-import LoadingSpinner from './componets/LoadingSpinner';
+import LoadingSpinner from './componets/Login_Register/LoadingSpinner';
 import PayrollPage from './Payroll/pages/PayrollPage';
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 import SummaryCost from './summaryCost/ui/pages/SummaryCost'
@@ -71,50 +71,48 @@ const App = () => {
           <strong>¡Session expired!</strong>Please login again.
         </div>
       )}
-      <Router>
-        <Routes>
-          {/* Login - accesible solo si no está autenticado */}
-          <Route 
-            path="/login" 
-            element={authenticated ? <Navigate to="/home" replace /> : <LoginPage />} 
-          />
-          
-          {/* Rutas protegidas */}
-          <Route 
-            path="/" 
-            element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
-          >
-            <Route index element={<Navigate to="home" replace />} />
-            <Route path="home" element={<Home />} />
-            <Route path="resume-fuel" element={<ResumeFuel />} />
-            <Route path="summary-cost" element={<SummaryCost />} />
-            <Route path="/operators" element={<OperatorsPage />} />
-            <Route path="payroll" element={<PayrollPage />} />
-            <Route path="extra-cost" element={<ExtraCost />} />
-            <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
-            <Route path="create-daily" element={<CreateOrder/>} />
-            <Route path="/financialsView" element={<FinancialView/>} />
-            <Route path="/warehouse" element={<WarehouseView/>}/>
-            <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
-            <Route path="/customers" element={<CustomersView />} />
-            <Route path="/admins" element={<AdminsPage />} />
-            <Route path="/create-admin" element={<CreateAdminView />} />
-            <Route path="/jobs-tools" element={<JobsAndToolsGUI />} />
-            <Route path="statistics" element={<Statistics/>} />
-            <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
-          </Route>
+      <Routes>
+        {/* Login - accesible solo si no está autenticado */}
+        <Route 
+          path="/login" 
+          element={authenticated ? <Navigate to="/home" replace /> : <LoginPage />} 
+        />
+        
+        {/* Rutas protegidas */}
+        <Route 
+          path="/" 
+          element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
+        >
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<Home />} />
+          <Route path="resume-fuel" element={<ResumeFuel />} />
+          <Route path="summary-cost" element={<SummaryCost />} />
+          <Route path="/operators" element={<OperatorsPage />} />
+          <Route path="payroll" element={<PayrollPage />} />
+          <Route path="extra-cost" element={<ExtraCost />} />
+          <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
+          <Route path="create-daily" element={<CreateOrder/>} />
+          <Route path="/financialsView" element={<FinancialView/>} />
+          <Route path="/warehouse" element={<WarehouseView/>}/>
+          <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
+          <Route path="/customers" element={<CustomersView />} />
+          <Route path="/admins" element={<AdminsPage />} />
+          <Route path="/create-admin" element={<CreateAdminView />} />
+          <Route path="/jobs-tools" element={<JobsAndToolsGUI />} />
+          <Route path="statistics" element={<Statistics/>} />
+          <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
+        </Route>
 
-          {/* Ruta por defecto */}
-          <Route 
-            path="*" 
-            element={
-              authenticated ? 
-                <Navigate to="/home" replace /> : 
-                <Navigate to="/login" replace />
-            } 
-          />
-        </Routes>
-      </Router>
+        {/* Ruta por defecto */}
+        <Route 
+          path="*" 
+          element={
+            authenticated ? 
+              <Navigate to="/home" replace /> : 
+              <Navigate to="/login" replace />
+          } 
+        />
+      </Routes>
     </>
   );
 };
