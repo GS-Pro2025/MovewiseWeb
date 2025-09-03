@@ -1,0 +1,35 @@
+User-agent: *
+Allow: /
+Allow: /#*
+
+# Permitir acceso a la landing page y login
+Allow: /login
+
+# Bloquear rutas protegidas de la aplicación
+Disallow: /home
+Disallow: /payroll
+Disallow: /resume-fuel
+Disallow: /summary-cost
+Disallow: /operators
+Disallow: /extra-cost
+Disallow: /add-operators-to-order/
+Disallow: /create-daily
+Disallow: /financialsView
+Disallow: /warehouse
+Disallow: /create-warehouse
+Disallow: /customers
+Disallow: /admins
+Disallow: /create-admin
+Disallow: /jobs-tools
+Disallow: /statistics
+Disallow: /order-breakdown
+
+# Bloquear archivos del build
+Disallow: /static/
+Disallow: /assets/
+Disallow: /*.js$
+Disallow: /*.css$
+Disallow: /*.map$
+
+# Sitemap location
+Sitemap: https://movingwiseapp.com/sitemap.xml
