@@ -17,8 +17,8 @@ import { processDocaiStatement } from "../data/repositoryDOCAI";
 import { enqueueSnackbar } from "notistack";
 import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
-import { OCRResult, ProcessDocaiResponse, SuperOrder } from "../domain/ModelsOCR";
-
+import { OCRResult, SuperOrder } from "../domain/ModelsOCR";
+import DocaiResultDialog from "./DocaiResultDialog"; // Asegúrate de importar el componente
 
 
 // Utilidad para calcular el rango de fechas de la semana
@@ -148,6 +148,10 @@ const FinancialView = () => {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrStep, setOcrStep] = useState<string>("Setting data");
 
+  // Estado para mostrar el dialog final de DOCAi
+  const [docaiDialogOpen, setDocaiDialogOpen] = useState(false);
+  const [docaiDialogResult, setDocaiDialogResult] = useState<any>(null);
+
   // OCR Upload Handler
   const handleOcrUpload = async () => {
     setOcrLoading(true);
@@ -160,22 +164,49 @@ const FinancialView = () => {
       enqueueSnackbar(`Processing ${file.name}...`, { variant: "info" });
       
       try {
-        const res: ProcessDocaiResponse = await processDocaiStatement(file);
-        
-        // Determine success based on response structure
-        const isSuccess = res.success !== false && res.data !== undefined;
-        
+        const res = await processDocaiStatement(file);
+        const isSuccess = res.success !== false && res.update_result !== undefined;
         results.push({
           name: file.name,
           success: isSuccess,
           message: res.message || (isSuccess ? "Success" : "Failed"),
-          data: res.data ? {
-            updated_orders: res.data.updated_orders || [],
-            not_found_orders: res.data.not_found_orders || [],
-            total_updated: res.data.total_updated || 0,
-            total_not_found: res.data.total_not_found || 0,
+          data: res.update_result ? {
+            updated_orders: (res.update_result.updated_orders || []).map(order => ({
+              ...order,
+              income: order.income ?? 0, // Ensure income is always a number
+            })),
+            not_found_orders: res.update_result.not_found_orders || [],
+            total_updated: res.update_result.total_updated || 0,
+            total_not_found: res.update_result.total_not_found || 0,
           } : undefined,
+          ocr_text: res.ocr_text,
+          order_key: res.order_key,
         });
+
+        // Si hay éxito, muestra el dialog con el resultado
+        if (isSuccess) {
+          // Normaliza updated_orders para que income nunca sea undefined y elimina payStatus
+          const normalizedUpdateResult = {
+            ...res.update_result,
+            updated_orders: (res.update_result?.updated_orders || []).map(order => ({
+              key_ref: order.key_ref,
+              orders_updated: order.orders_updated,
+              income: order.income ?? 0, // valor por defecto si falta
+              expense: order.expense ?? 0, // opcional, si lo usas
+              // payStatus: 1, // Elimina si no lo necesitas
+            })),
+            not_found_orders: res.update_result?.not_found_orders || [],
+            total_updated: res.update_result?.total_updated ?? 0,
+            total_not_found: res.update_result?.total_not_found ?? 0,
+          };
+
+          setDocaiDialogResult({
+            message: res.message,
+            ocr_text: res.ocr_text,
+            update_result: normalizedUpdateResult,
+          });
+          setDocaiDialogOpen(true);
+        }
       } catch (err: any) {
         results.push({
           name: file.name,
@@ -562,7 +593,7 @@ const FinancialView = () => {
                                   Orders Not Found in System ({summary.totalNotFound}):
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                                  These orders were found in the PDFs but don't exist in the system for the selected week ({weekRange.start} - {weekRange.end}).
+                                  These orders were found in the PDFs but don't exist in the system.
                                 </Typography>
                                 <Box sx={{ 
                                   display: 'grid', 
@@ -715,6 +746,15 @@ const FinancialView = () => {
             </Box>
           )}
         </>
+      )}
+
+      {/* 🆕 Dialog final para mostrar el resultado DOCAi */}
+      {docaiDialogOpen && (
+        <DocaiResultDialog
+          open={docaiDialogOpen}
+          onClose={() => setDocaiDialogOpen(false)}
+          result={docaiDialogResult}
+        />
       )}
     </Box>
   );
