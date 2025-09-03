@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { payrollService, WeekInfo, getPaymentById } from "../../service/PayrollService";
 import { PayrollModal } from "../components/PayrollModal";
-import LoaderSpinner from "../../componets/LoadingSpinner";
+import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
 import {
   fetchCountries,
   fetchStates,
