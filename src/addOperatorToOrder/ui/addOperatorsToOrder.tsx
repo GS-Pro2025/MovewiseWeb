@@ -20,7 +20,7 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import { fetchFreelancesOperators } from '../data/repositoryOperators'; 
 
 const AddOperatorsToOrder: React.FC = () => {
-  const ROLES = ["team leader", "operator", "driver"];
+  const ROLES = ["leader", "operator", "driver"];
 
   const { orderKey } = useParams<{ orderKey: string }>();
   const { enqueueSnackbar } = useSnackbar();
@@ -310,7 +310,7 @@ const onDragEnd = (result: DropResult) => {
                                 </MenuItem>
                               ))}
                             </Select>
-                            {(op.rol === "team leader" || op.rol === "driver") && (
+                            {(op.rol === "leader" || op.rol === "driver") && (
                               <IconButton
                                 size="small"
                                 color="primary"
