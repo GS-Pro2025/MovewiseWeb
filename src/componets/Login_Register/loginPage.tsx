@@ -4,7 +4,6 @@ import Logo from '../../assets/logo.png';
 import patron_modo_oscuro from '../../assets/patron_modo_oscuro.png';
 import RecursoMovewise from '../../assets/RecursoMovewise.png';
 import { sendForgotPasswordEmail } from '../../service/userService';
-import { RegisterFormData } from '../../types/authTypes';
 
 // Componentes
 import LoginForm from './LoginForm';
@@ -62,8 +61,8 @@ const LoginPage: React.FC = () => {
     setIsFlipped(flipped);
   };
 
-  // Handler para registro exitoso
-  const handleRegisterSuccess = (data: RegisterFormData) => {
+  // Handler para registro exitoso (corregido: parámetro _data eliminado)
+  const handleRegisterSuccess = () => {
     setSnackbarMessage('Account created successfully! Please check your email to verify your account.');
     setShowSnackbar(true);
     // Opcionalmente, cambiar a la vista de login después de registro exitoso

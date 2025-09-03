@@ -1,15 +1,14 @@
-// types/authTypes.ts
+
 export interface LoginFormData {
     email: string;
     password: string;
   }
   
   export interface RegisterFormData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
+    licenseNumber: string;
+    name: string;
+    address: string;
+    postalCode: string;
   }
   
   export interface AuthResult {

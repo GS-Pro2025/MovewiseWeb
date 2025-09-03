@@ -1,19 +1,12 @@
 import React, { useState, FormEvent } from "react";
-import { RegisterFormProps } from "../../types/authTypes";
-
-interface RegisterFormData {
-  licenseNumber: string;
-  name: string;
-  address: string;
-  postalCode: string;
-}
+import { RegisterFormProps, RegisterFormData } from "../../types/authTypes";
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   const [registerData, setRegisterData] = useState<RegisterFormData>({
     licenseNumber: "",
     name: "",
     address: "",
-    postalCode: "",
+    postalCode: ""
   });
 
   const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
@@ -60,7 +53,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         licenseNumber: "",
         name: "",
         address: "",
-        postalCode: "",
+        postalCode: ""
       });
       setErrors({});
     } catch (error) {

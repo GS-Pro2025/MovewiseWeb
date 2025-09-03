@@ -19,8 +19,8 @@ const ContactForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Datos del formulario:', formData);
-    alert('Formulario enviado con éxito!');
+    console.log('Form data:', formData);
+    alert('Form submitted successfully!');
   };
 
   const handleReset = () => {
@@ -32,19 +32,27 @@ const ContactForm: React.FC = () => {
     });
   };
 
+  // SVG style object with proper typing
+  const svgStyle: React.CSSProperties = {
+    shapeRendering: 'geometricPrecision',
+    textRendering: 'geometricPrecision',
+    fillRule: 'evenodd',
+    clipRule: 'evenodd'
+  };
+
   return (
     <div 
       className="min-h-screen py-6 flex flex-col justify-center sm:py-12 bg-[#092962] bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${Fondo})` }}
     >
       <div className="container mx-auto px-4">
-        {/* Título y subtítulo centrados */}
+        {/* Title and subtitle centered */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Comienza tu logística hoy
+            Start your logistics today
           </h1>
           <p className="text-xl md:text-2xl text-gray-200 max-w-2xl mx-auto">
-            Déjanos tus datos y un asesor te ayudará a implementar Moving Wise en tu empresa.
+            Leave us your details and an advisor will help you implement Moving Wise in your company.
           </p>
         </div>
 
@@ -58,7 +66,7 @@ const ContactForm: React.FC = () => {
               <input
                 className="shadow mb-4 appearance-none border rounded w-full py-2 px-3 text-[#092962] leading-tight focus:outline-none focus:shadow-outline"
                 type="text" 
-                placeholder="Nombre" 
+                placeholder="Name" 
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
@@ -78,7 +86,7 @@ const ContactForm: React.FC = () => {
               <input
                 className="shadow mb-4 appearance-none border rounded w-full py-2 px-3 text-[#092962] leading-tight focus:outline-none focus:shadow-outline"
                 type="text" 
-                placeholder="Teléfono" 
+                placeholder="Phone" 
                 name="telephone"
                 value={formData.telephone}
                 onChange={handleChange}
@@ -87,7 +95,7 @@ const ContactForm: React.FC = () => {
 
               <textarea
                 className="shadow mb-4 min-h-0 appearance-none border rounded h-64 w-full py-2 px-3 text-[#092962] leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="Escribe tu mensaje aquí..." 
+                placeholder="Write your message here..." 
                 name="message" 
                 value={formData.message}
                 onChange={handleChange}
@@ -96,106 +104,52 @@ const ContactForm: React.FC = () => {
               ></textarea>
 
               <div className="flex justify-between items-center mt-6">
-                {/* Botón con efecto estelar */}
+                {/* Button with star effect */}
                 <button
                   type="submit"
                   className="relative px-12 py-3 bg-[#4c83fa] font-bold text-white border-3 border-[#4c83fa] rounded-lg transition-all duration-300 ease-in-out hover:bg-transparent hover:text-[#4c83fa]"
                 >
-                  Enviar
-                  {/* Estrellas */}
+                  Send
+                  {/* Stars */}
                   <div className="star-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlSpace="preserve"
-                      version="1.1"
-                      style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', imageRendering: 'optimizeQuality', fillRule: 'evenodd', clipRule: 'evenodd' }}
-                      viewBox="0 0 784.11 815.53"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" version="1.1" style={svgStyle} viewBox="0 0 784.11 815.53">
                       <g id="Layer_x0020_1">
-                        <path
-                          className="fil0"
-                          d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"
-                        />
+                        <path className="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"/>
                       </g>
                     </svg>
                   </div>
                   <div className="star-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlSpace="preserve"
-                      version="1.1"
-                      style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', imageRendering: 'optimizeQuality', fillRule: 'evenodd', clipRule: 'evenodd' }}
-                      viewBox="0 0 784.11 815.53"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" version="1.1" style={svgStyle} viewBox="0 0 784.11 815.53">
                       <g id="Layer_x0020_1">
-                        <path
-                          className="fil0"
-                          d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"
-                        />
+                        <path className="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"/>
                       </g>
                     </svg>
                   </div>
                   <div className="star-3">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlSpace="preserve"
-                      version="1.1"
-                      style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', imageRendering: 'optimizeQuality', fillRule: 'evenodd', clipRule: 'evenodd' }}
-                      viewBox="0 0 784.11 815.53"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" version="1.1" style={svgStyle} viewBox="0 0 784.11 815.53">
                       <g id="Layer_x0020_1">
-                        <path
-                          className="fil0"
-                          d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"
-                        />
+                        <path className="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"/>
                       </g>
                     </svg>
                   </div>
                   <div className="star-4">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlSpace="preserve"
-                      version="1.1"
-                      style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', imageRendering: 'optimizeQuality', fillRule: 'evenodd', clipRule: 'evenodd' }}
-                      viewBox="0 0 784.11 815.53"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" version="1.1" style={svgStyle} viewBox="0 0 784.11 815.53">
                       <g id="Layer_x0020_1">
-                        <path
-                          className="fil0"
-                          d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"
-                        />
+                        <path className="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"/>
                       </g>
                     </svg>
                   </div>
                   <div className="star-5">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlSpace="preserve"
-                      version="1.1"
-                      style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', imageRendering: 'optimizeQuality', fillRule: 'evenodd', clipRule: 'evenodd' }}
-                      viewBox="0 0 784.11 815.53"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" version="1.1" style={svgStyle} viewBox="0 0 784.11 815.53">
                       <g id="Layer_x0020_1">
-                        <path
-                          className="fil0"
-                          d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"
-                        />
+                        <path className="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"/>
                       </g>
                     </svg>
                   </div>
                   <div className="star-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      xmlSpace="preserve"
-                      version="1.1"
-                      style={{ shapeRendering: 'geometricPrecision', textRendering: 'geometricPrecision', imageRendering: 'optimizeQuality', fillRule: 'evenodd', clipRule: 'evenodd' }}
-                      viewBox="0 0 784.11 815.53"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlSpace="preserve" version="1.1" style={svgStyle} viewBox="0 0 784.11 815.53">
                       <g id="Layer_x0020_1">
-                        <path
-                          className="fil0"
-                          d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"
-                        />
+                        <path className="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"/>
                       </g>
                     </svg>
                   </div>
@@ -206,7 +160,7 @@ const ContactForm: React.FC = () => {
                   type="button"
                   onClick={handleReset}
                 >
-                  Limpiar
+                  Clear
                 </button>
               </div>
             </form>
@@ -214,7 +168,7 @@ const ContactForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Estilos para el botón con efecto estelar */}
+      {/* Styles for the button with star effect */}
       <style>{`
         .star-1, .star-2, .star-3, .star-4, .star-5, .star-6 {
           position: absolute;
