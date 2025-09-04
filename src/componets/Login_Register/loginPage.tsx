@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import Logo from '../../assets/logo.png';
 import patron_modo_oscuro from '../../assets/patron_modo_oscuro.png';
 import RecursoMovewise from '../../assets/RecursoMovewise.png';
@@ -13,6 +13,7 @@ import ForgotPasswordDialog from './ForgotPasswordDialog';
 import Snackbar from './Snackbar';
 
 const LoginPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   
   // Estados para el dialog de forgot password
@@ -24,6 +25,23 @@ const LoginPage: React.FC = () => {
   const [showSnackbar, setShowSnackbar] = useState<boolean>(false);
 
   console.log('env:', import.meta.env.VITE_URL_BASE);
+
+  // Efecto para detectar si viene de selección de plan
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'register') {
+      setIsFlipped(true);
+      
+      // Mostrar información del plan seleccionado
+      const planName = localStorage.getItem('selectedPlanName');
+      const planPrice = localStorage.getItem('selectedPlanPrice');
+      
+      if (planName && planPrice) {
+        setSnackbarMessage(`Selected plan: ${planName} - ${planPrice}. Complete registration to continue.`);
+        setShowSnackbar(true);
+      }
+    }
+  }, [searchParams]);
 
   // Handler para forgot password
   const handleForgotPasswordSubmit = async (email: string) => {
@@ -61,12 +79,14 @@ const LoginPage: React.FC = () => {
     setIsFlipped(flipped);
   };
 
-  // Handler para registro exitoso (corregido: parámetro _data eliminado)
+  // Handler para registro exitoso
   const handleRegisterSuccess = () => {
-    setSnackbarMessage('Account created successfully! Please check your email to verify your account.');
+    setSnackbarMessage('Account created successfully!');
     setShowSnackbar(true);
-    // Opcionalmente, cambiar a la vista de login después de registro exitoso
-    // setIsFlipped(false);
+    // Limpiar datos del plan del localStorage después del registro exitoso
+    localStorage.removeItem('selectedPlanId');
+    localStorage.removeItem('selectedPlanName');
+    localStorage.removeItem('selectedPlanPrice');
   };
 
   // Handler para cerrar snackbar

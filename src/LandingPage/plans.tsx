@@ -1,10 +1,14 @@
+import { useNavigate } from "react-router-dom";
 import Box from "../assets/Caja.png";
 import BoxStack from "../assets/CajasMonton.png";
 import BoxPile from "../assets/cajasPila.png";
 
 const PricingPlans = () => {
+  const navigate = useNavigate();
+  
   const plans = [
     {
+      number_id: 1,
       id: "trial",
       name: "TRIAL PLAN",
       price: "$0.00",
@@ -19,6 +23,7 @@ const PricingPlans = () => {
       buttonText: "Start Free Trial",
     },
     {
+      number_id: 2,
       id: "monthly",
       name: "MONTHLY PLAN",
       price: "$19.99",
@@ -36,6 +41,7 @@ const PricingPlans = () => {
       buttonText: "Start Subscription",
     },
     {
+      number_id: 3,
       id: "quarterly",
       name: "QUARTERLY PLAN",
       price: "$56.97",
@@ -53,6 +59,7 @@ const PricingPlans = () => {
       buttonText: "Start Subscription",
     },
     {
+      number_id: 4,
       id: "semiannual",
       name: "SEMI-ANNUAL PLAN",
       price: "$107.95",
@@ -69,6 +76,7 @@ const PricingPlans = () => {
       buttonText: "Start Subscription",
     },
     {
+      number_id: 5,
       id: "annual",
       name: "ANNUAL PLAN",
       price: "$191.91",
@@ -89,6 +97,22 @@ const PricingPlans = () => {
     },
   ];
 
+  // Handler para seleccionar el plan y redirigir al registro
+  const handlePlanSelect = (planIndex: number) => {
+    const selectedPlan = plans[planIndex];
+    const selectedPlanNumber = planIndex + 1; // 1 a 5 según el orden
+    
+    // Guardar información del plan en localStorage
+    window.localStorage.setItem("selectedPlanId", String(selectedPlanNumber));
+    window.localStorage.setItem("selectedPlanName", selectedPlan.name);
+    window.localStorage.setItem("selectedPlanPrice", selectedPlan.price);
+    
+    console.log("Plan seleccionado:", selectedPlanNumber);
+    
+    // Redirigir al loginPage con parámetro para mostrar registro
+    navigate("/login?mode=register");
+  };
+
   return (
     <section className="relative bg-[#EEF4FF] py-20 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -104,7 +128,7 @@ const PricingPlans = () => {
 
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-12">
-          {plans.map((plan) => (
+          {plans.map((plan, idx) => (
             <div
               key={plan.id}
               className={`relative rounded-2xl shadow-lg border w-full h-full flex flex-col justify-between transition-all duration-300 hover:shadow-xl
@@ -202,6 +226,7 @@ const PricingPlans = () => {
                       ? "bg-orange-500 hover:bg-orange-600 text-white"
                       : "bg-orange-400 hover:bg-orange-500 text-white"
                   }`}
+                  onClick={() => handlePlanSelect(idx)}
                 >
                   {plan.buttonText}
                 </button>
