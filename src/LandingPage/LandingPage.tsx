@@ -20,7 +20,7 @@ function App() {
         <Feature />
       </Element>
 
-      <Element name="benefits" className=" pt-40">
+      <Element name="benefits" >
         <Benefits />
       </Element>
 

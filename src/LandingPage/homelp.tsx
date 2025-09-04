@@ -1,7 +1,7 @@
 import bgImage from "../assets/fondo1lp.png";
 import Onda from "../assets/Rectanglelp.svg";
 import carmovil from "../assets/carMovil.png";
-import textoMW from "../assets/textoMW.png";
+import textoMW from "../assets/textoMWb.png";
 
 const MovingWiseLanding = () => {
   return (

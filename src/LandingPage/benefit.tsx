@@ -44,39 +44,33 @@ const Benefits = () => {
   ];
 
   const DashboardMockup = () => (
-    <div className="shadow-2xl">
       <div className="relative">
         <img
           src={mobileHorizontal}
           alt="Dashboard horizontal"
-          className="w-full max-w-lg mx-auto"
+          className="w-full min-w-2xl mx-auto  drop-shadow-2xl"
         />
       </div>
-    </div>
   );
 
   const MobileMockup = () => (
-    <div className="bg-white px-30 shadow-2xl">
       <div className="flex justify-center items-center space-x-8">
         <img
           src={mobile}
           alt="iPhone mockup"
-          className="w-full max-w-lg mx-auto"
+          className="w-full min-w-2xl mx-auto  drop-shadow-2xl"
         />
       </div>
-    </div>
   );
 
   const TabletMockup = () => (
-    <div className="shadow-2xl">
       <div className="flex justify-center">
         <img
           src={ipad}
           alt="iPad mockup"
-          className="w-full max-w-lg mx-auto"
+          className="w-full min-w-2xl mx-auto drop-shadow-2xl"
         />
       </div>
-    </div>
   );
 
   const renderMockup = (type: MockupType) => {
@@ -93,7 +87,7 @@ const Benefits = () => {
   };
 
   return (
-    <section className="bg-orange-100 py-32">
+    <section className="bg-[#F09F52] py-32">
       <div className="max-w-7xl mx-auto px-8">
         {/* Section Title */}
         <h2 className="text-5xl font-bold text-blue-900 text-center mb-32">

@@ -243,7 +243,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       </div>
 
       {/* Form Container */}
-      <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-white/20">
+      <div className=" p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Error general */}
@@ -258,13 +258,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
               {/* Company Section */}
               <div>
                 <div className="flex items-center mb-6">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-12 h-12 bg-[#F09F52] rounded-full flex items-center justify-center mr-3">
                     <span className="text-white font-semibold">1</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900">Company Information</h3>
+                  <h3 className="text-xl font-semibold text-white">Company Information</h3>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 ">
                   <InputField
                     type="text"
                     placeholder="License Number"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
-import textoMW from "../assets/textoMW.png";
+import textoMW from "../assets/textoMWb.png";
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -39,7 +39,11 @@ const Navbar: React.FC = () => {
               smooth={true}
               duration={500}
               offset={-80}
-              className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
+              className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
+                isScrolled
+                  ? "text-[#0B2863]"
+                  : "text-white"
+              }`}
             >
               Features
             </Link>
@@ -48,7 +52,11 @@ const Navbar: React.FC = () => {
               smooth={true}
               duration={500}
               offset={-80}
-              className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
+              className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
+                isScrolled
+                  ? "text-[#0B2863]"
+                  : "text-white"
+              }`}
             >
               Benefits
             </Link>
@@ -57,7 +65,11 @@ const Navbar: React.FC = () => {
               smooth={true}
               duration={500}
               offset={-80}
-              className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
+              className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
+                isScrolled
+                  ? "text-[#0B2863]"
+                  : "text-white"
+              }`}
             >
               Plans
             </Link>
@@ -66,7 +78,7 @@ const Navbar: React.FC = () => {
               smooth={true}
               duration={500}
               offset={-80}
-              className="cursor-pointer bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
+              className="cursor-pointer text-[#0B2863] bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
             >
               Contact Us
             </Link>
@@ -76,7 +88,7 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex ml-auto">
             <RouterLink 
               to="/login"
-              className="bg-blue-950 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-800 transition inline-block"
+              className="bg-[#FFE67B] text-[#0B2863] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC] transition inline-block"
             >
               Login / Register
             </RouterLink>
