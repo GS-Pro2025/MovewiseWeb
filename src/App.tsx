@@ -78,6 +78,12 @@ const App = () => {
           element={authenticated ? <Navigate to="/home" replace /> : <LoginPage />} 
         />
         
+        {/* Register redirect to login - para mantener compatibilidad */}
+        <Route 
+          path="/register" 
+          element={<Navigate to="/login?mode=register" replace />} 
+        />
+
         {/* Rutas protegidas */}
         <Route 
           path="/" 
