@@ -42,13 +42,13 @@ const MovingWiseLanding = () => {
               {/* Main Heading */}
               <div className="space-y-4">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-black leading-tight drop-shadow-lg">
-                  Smart logistic{' '}
+                   Smart logistic{' '}
                   <span>management</span> for your{' '}
                   <span>moving company</span>
                 </h2>
                 
                 <p className="text-lg sm:text-xl text-black max-w-md mx-auto md:mx-0 drop-shadow">
-                  Organize your trucks, personnel, and moves in one place. In real time, without confusion.
+                With MovingWise, organize your trucks, personnel, and transfers in one place. In real time, without confusion.
                 </p>
               </div>
 

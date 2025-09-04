@@ -1,11 +1,10 @@
 User-agent: *
-Allow: /
-Allow: /#*
 
-# Permitir acceso a la landing page y login
+# Permitir acceso completo a páginas públicas
+Allow: /
 Allow: /login
 
-# Bloquear rutas protegidas de la aplicación
+# Bloquear rutas protegidas de la aplicación (después del login)
 Disallow: /home
 Disallow: /payroll
 Disallow: /resume-fuel
@@ -24,12 +23,14 @@ Disallow: /jobs-tools
 Disallow: /statistics
 Disallow: /order-breakdown
 
-# Bloquear archivos del build
+# Bloquear archivos técnicos innecesarios para SEO
 Disallow: /static/
-Disallow: /assets/
-Disallow: /*.js$
-Disallow: /*.css$
 Disallow: /*.map$
 
-# Sitemap location
+# PERMITIR recursos CSS y JS (IMPORTANTE para SEO moderno)
+Allow: /assets/
+Allow: /*.js$
+Allow: /*.css$
+
+# Ubicación del sitemap
 Sitemap: https://movingwiseapp.com/sitemap.xml

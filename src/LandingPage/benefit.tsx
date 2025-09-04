@@ -97,7 +97,7 @@ const Benefits = () => {
       <div className="max-w-7xl mx-auto px-8">
         {/* Section Title */}
         <h2 className="text-5xl font-bold text-blue-900 text-center mb-32">
-          Benefits
+          Benefits the MovingWise
         </h2>
 
         {/* Benefits List */}
