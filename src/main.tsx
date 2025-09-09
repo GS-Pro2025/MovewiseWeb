@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import { SnackbarProvider } from 'notistack';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,10 +15,11 @@ createRoot(document.getElementById('root')!).render(
           {/* Ruta para la Landing Page */}
           <Route path="/" element={<LandingPage />} />
           
-          {/* Todas las rutas de la aplicación principal con /* */}
+          {/* Todas las rutas de la aplicación principal */}
           <Route path="/*" element={<App />} />
         </Routes>
       </BrowserRouter>
     </SnackbarProvider>
+    <SpeedInsights />
   </StrictMode>
 );
