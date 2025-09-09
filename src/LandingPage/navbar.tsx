@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import textoMW from "../assets/textoMWb.png";
+import textoMWScroll from "../assets/textoMW.png";
+
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -26,9 +28,11 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <Link to="homeLp" smooth={true} duration={500} offset={-80}>
             <img
-              src={textoMW}
+              src={isScrolled ? textoMWScroll : textoMW}
               alt="MOVING WISE"
-              className="h-12 sm:h-16 w-auto py-2 transition-transform duration-300 hover:scale-110 cursor-pointer"
+              className={`h-12 sm:h-16 w-auto py-2 transition-all duration-300 hover:scale-110 cursor-pointer ${
+                isScrolled ? "opacity-100" : "opacity-100"
+              }`}
             />
           </Link>
 
@@ -40,9 +44,7 @@ const Navbar: React.FC = () => {
               duration={500}
               offset={-80}
               className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
-                isScrolled
-                  ? "text-[#0B2863]"
-                  : "text-white"
+                isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
               Features
@@ -53,9 +55,7 @@ const Navbar: React.FC = () => {
               duration={500}
               offset={-80}
               className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
-                isScrolled
-                  ? "text-[#0B2863]"
-                  : "text-white"
+                isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
               Benefits
@@ -66,9 +66,7 @@ const Navbar: React.FC = () => {
               duration={500}
               offset={-80}
               className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
-                isScrolled
-                  ? "text-[#0B2863]"
-                  : "text-white"
+                isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
               Plans
@@ -86,7 +84,7 @@ const Navbar: React.FC = () => {
 
           {/* Login/Register button - Ahora a la derecha con ml-auto */}
           <div className="hidden md:flex ml-auto">
-            <RouterLink 
+            <RouterLink
               to="/login"
               className="bg-[#FFE67B] text-[#0B2863] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC] transition inline-block"
             >

@@ -114,7 +114,7 @@ const PricingPlans = () => {
   };
 
   return (
-    <section className="relative bg-[#EEF4FF] py-20 overflow-hidden">
+    <section className="relative py-20 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
@@ -240,17 +240,17 @@ const PricingPlans = () => {
       <img
         src={Box}
         alt="decorative box"
-        className="absolute bottom-10 left-10 w-100 h-auto opacity-70"
+        className="absolute bottom-10 left-10 w-100 h-auto"
       />
       <img
         src={BoxStack}
         alt="decorative box stack"
-        className="absolute top-20 right-20 w-100 h-auto opacity-70"
+        className="absolute top-20 right-20 w-100 h-auto"
       />
       <img
         src={BoxPile}
         alt="decorative box pile"
-        className="absolute bottom-0 right-1/4 w-100 h-auto opacity-60"
+        className="absolute bottom-0 right-1/4 w-100 h-auto"
       />
     </section>
   );

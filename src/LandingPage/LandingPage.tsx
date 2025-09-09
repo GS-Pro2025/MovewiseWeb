@@ -7,29 +7,42 @@ import Benefits from "./benefit";
 import Plans from "./plans";
 import ContactUs from "./contactus";
 import Footer from "./footer";
+import bg from "../assets/fondo1lp.png";
+
 function App() {
   return (
-    <div className="w-full flex flex-col overflow-x-hidden">
+    <div 
+      className="w-full flex flex-col overflow-x-hidden min-h-screen"
+      style={{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat'
+      }}
+    > 
       <Navbar />
 
       <Element name="homeLp">
         <Homelp />
       </Element>
 
-      <Element name="feature" className=" py-20">
+      <Element name="feature" className="py-20">
         <Feature />
       </Element>
 
-      <Element name="benefits" >
+      <Element name="benefits">
         <Benefits />
       </Element>
 
       <Element name="plans">
         <Plans />
       </Element>
+      
       <Element name="contactUs">
         <ContactUs />
       </Element>
+      
       <Element name="footer">
         <Footer />
       </Element>
