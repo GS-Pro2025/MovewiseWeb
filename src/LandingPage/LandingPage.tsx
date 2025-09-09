@@ -12,7 +12,7 @@ function App() {
     <div className="w-full flex flex-col overflow-x-hidden">
       <Navbar />
 
-      <Element name="home">
+      <Element name="homeLp">
         <Homelp />
       </Element>
 

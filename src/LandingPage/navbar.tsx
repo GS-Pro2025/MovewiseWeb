@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-8">
           {/* Logo */}
-          <Link to="home" smooth={true} duration={500} offset={-80}>
+          <Link to="homeLp" smooth={true} duration={500} offset={-80}>
             <img
               src={textoMW}
               alt="MOVING WISE"
