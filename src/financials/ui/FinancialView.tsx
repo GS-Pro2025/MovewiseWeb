@@ -19,7 +19,7 @@ import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 import { OCRResult, SuperOrder } from "../domain/ModelsOCR";
 import DocaiResultDialog from "./DocaiResultDialog"; // Asegúrate de importar el componente
-
+import { searchOrdersByKeyRefLike } from "../data/OrdersRepository";
 
 // Utilidad para calcular el rango de fechas de la semana
 function getWeekRange(year: number, week: number): { start: string; end: string } {
@@ -372,23 +372,74 @@ const FinancialView = () => {
     setDetailsDialogOpen(true);
   };
 
+  // Nueva lógica para búsqueda de referencias
+  const [searchRef, setSearchRef] = useState("");
+  const [searchResults, setSearchResults] = useState<OrderSummary[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Handler para búsqueda histórica
+  const handleSearch = async () => {
+    if (!searchRef.trim()) return;
+    setSearchLoading(true);
+    try {
+      const results = await searchOrdersByKeyRefLike(searchRef.trim());
+      setSearchResults(results);
+      if (results.length === 0) enqueueSnackbar("No results found.", { variant: "info" });
+    } catch (err) {
+      enqueueSnackbar(`Error searching reference: ${err}`, { variant: "error" });
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Botón para volver a la vista normal
+  const handleClearSearch = () => {
+    setSearchResults(null);
+    setSearchRef("");
+  };
+
   return (
     <Box p={2}>
       <Typography variant="h5" gutterBottom>
         Financial Summary
       </Typography>
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+        {/* Solo mostrar semana y periodo si NO hay búsqueda */}
+        {!searchResults && (
+          <>
+            <TextField
+              label="Week"
+              type="number"
+              value={week}
+              onChange={handleWeekChange}
+              inputProps={{ min: 1, max: 53 }}
+              size="small"
+            />
+            <Typography variant="body1" sx={{ alignSelf: 'center' }}>
+              Period: {weekRange.start} → {weekRange.end}
+            </Typography>
+          </>
+        )}
         <TextField
-          label="Week"
-          type="number"
-          value={week}
-          onChange={handleWeekChange}
-          inputProps={{ min: 1, max: 53 }}
+          label="Search by Reference"
+          value={searchRef}
+          onChange={e => setSearchRef(e.target.value)}
           size="small"
+          sx={{ minWidth: 200 }}
         />
-        <Typography variant="body1" sx={{ alignSelf: 'center' }}>
-          Period: {weekRange.start} → {weekRange.end}
-        </Typography>
+        <Button
+          variant="outlined"
+          onClick={handleSearch}
+          disabled={searchLoading || !searchRef.trim()}
+        >
+          Search
+        </Button>
+        {searchResults && (
+          <Button variant="text" color="secondary" onClick={handleClearSearch}>
+            Clear Search
+          </Button>
+        )}
         <Button
           variant="contained"
           startIcon={<UploadFileIcon />}
@@ -397,13 +448,40 @@ const FinancialView = () => {
           Upload Statement PDFs (OCR)
         </Button>
       </Box>
-      {loading ? (
+      {searchResults ? (
+        <MaterialReactTable
+          columns={columns}
+          data={groupByKeyRef(searchResults)}
+          enableStickyHeader
+          muiTableContainerProps={{ sx: { maxHeight: 600 } }}
+          muiTableBodyRowProps={({ row }) => ({
+            onClick: () => handleRowClick(row.original),
+            sx: {
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              },
+            },
+          })}
+          renderDetailPanel={({ row }) => (
+            <OrdersByKeyRefTable
+              orders={row.original.orders}
+              keyRef={row.original.key_ref}
+              onOrderPaid={() => handleSearch()}
+              onViewOperators={(orderId: string) => {
+                navigate(`/add-operators-to-order/${orderId}`);
+              }}
+            />
+          )}
+        />
+      ) : loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
           <CircularProgress />
         </Box>
       ) : error ? (
         <Typography color="error">{error}</Typography>
       ) : (
+        // ...tabla normal...
         <>
           <MaterialReactTable
             columns={columns}
