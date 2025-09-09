@@ -5,7 +5,8 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import { SnackbarProvider } from 'notistack';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/react";
+
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -20,6 +21,6 @@ createRoot(document.getElementById('root')!).render(
         </Routes>
       </BrowserRouter>
     </SnackbarProvider>
-    <SpeedInsights />
+    <SpeedInsights /> 
   </StrictMode>
 );
