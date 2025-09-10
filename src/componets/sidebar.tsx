@@ -362,7 +362,7 @@ const MainContent: FC = () => {
       {/* Overlay opcional para mejorar legibilidad */}
       <div className="absolute inset-0 bg-white/10 pointer-events-none" />
       
-      <div className="p-10 relative z-10">
+      <div className=" relative z-10">
         <Outlet />
       </div>
     </div>
