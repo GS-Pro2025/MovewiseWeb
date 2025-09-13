@@ -167,8 +167,6 @@ const Example = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState<TableData | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<TableData | null>(null);
 
   const [weekdayFilter, setWeekdayFilter] = useState<string>('');
   const [calendarOpen, setCalendarOpen] = useState(false);
