@@ -268,3 +268,40 @@ export const getRegisteredLocations = async (): Promise<{ success: boolean; data
     return { success: false, errorMessage: error?.message || 'An unexpected error occurred' };
   }
 };
+
+export const deleteOrderAbsolute = async (orderKey: string): Promise<{ success: boolean; data?: any; errorMessage?: string }> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/order-delete/${orderKey}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Si el backend responde con algún contenido, lo parseamos
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      // Puede que no haya body
+    }
+
+    if (!response.ok) {
+      return { success: false, errorMessage: data?.messDev || 'Error deleting the order' };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
+  }
+};
