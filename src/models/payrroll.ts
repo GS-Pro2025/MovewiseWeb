@@ -34,6 +34,7 @@ export interface WeekInfo {
         bonus?: number;
       }[];
     };
+    netTotal: number; 
   }
   
   export interface PaymentStats {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import { payrollService, WeekInfo, getPaymentById } from "../../service/PayrollService";
 import { PayrollModal } from "../components/PayrollModal";
@@ -31,14 +32,12 @@ export default function PayrollPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [grouped, setGrouped] = useState<OperatorRow[]>([]);
+  const [selectedOperator, setSelectedOperator] = useState<OperatorRow | null>(null);
   const [weekInfo, setWeekInfo] = useState<WeekInfo | null>(null);
   const [weekDates, setWeekDates] = useState<{
     [key in keyof WeekAmounts]?: string;
   }>({});
   const [week, setWeek] = useState(() => getISOWeek(new Date()));
-  const [selectedOperator, setSelectedOperator] = useState<OperatorRow | null>(
-    null
-  );
   const [searchTerm, setSearchTerm] = useState("");
 
   // Estados para país, estado y ciudad
