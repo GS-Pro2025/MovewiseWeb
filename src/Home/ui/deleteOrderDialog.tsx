@@ -7,6 +7,10 @@ interface DeleteOrderDialogProps {
   onConfirm: () => void;
   orderRef?: string;
   orderDate?: string;
+  title?: string;
+  description?: string;
+  confirmText?: string;
+  icon?: React.ReactNode;
 }
 
 const DeleteOrderDialog: React.FC<DeleteOrderDialogProps> = ({
@@ -15,23 +19,24 @@ const DeleteOrderDialog: React.FC<DeleteOrderDialogProps> = ({
   onConfirm,
   orderRef,
   orderDate,
+  title = "Delete Order",
+  description = "Are you sure you want to delete this order?",
+  confirmText = "Delete",
+  icon,
 }) => (
   <Dialog open={open} onClose={onClose}>
-    <DialogTitle>Delete Order</DialogTitle>
+    <DialogTitle>
+      {icon} {title}
+    </DialogTitle>
     <DialogContent>
-      <Typography>
-        Are you sure you want to delete the order
-        {orderRef ? ` (Reference: "${orderRef}")` : ""}
-        {orderDate ? ` from ${orderDate}` : ""}
-        ? This action cannot be undone.
-      </Typography>
+      <Typography>{description}</Typography>
+      {orderRef && <Typography>Reference: {orderRef}</Typography>}
+      {orderDate && <Typography>Date: {orderDate}</Typography>}
     </DialogContent>
     <DialogActions>
-      <Button onClick={onClose} color="inherit">
-        Cancel
-      </Button>
+      <Button onClick={onClose}>Cancel</Button>
       <Button onClick={onConfirm} color="error" variant="contained">
-        Delete
+        {confirmText}
       </Button>
     </DialogActions>
   </Dialog>

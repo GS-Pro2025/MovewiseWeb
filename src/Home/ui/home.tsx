@@ -19,6 +19,9 @@ import { UpdateOrderData } from '../domain/ModelOrderUpdate';
 import { TableData, TableDataExport } from '../domain/TableData';
 import OperatorsTable from './operatorsTable';
 
+import BlockIcon from '@mui/icons-material/Block'; // Para inactivar
+import { deleteOrderAbsolute } from '../data/repositoryOrders'; // Eliminar absoluto
+
 import CheckIcon from '@mui/icons-material/Check';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FinishOrderDialog from './FinishOrderDialog';
@@ -182,7 +185,11 @@ const Example = () => {
     'Friday',
     'Saturday',
   ];
+  const [inactivateDialogOpen, setInactivateDialogOpen] = useState(false);
+  const [orderToInactivate, setOrderToInactivate] = useState<TableData | null>(null);
 
+  const [deleteAbsoluteDialogOpen, setDeleteAbsoluteDialogOpen] = useState(false);
+  const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<TableData | null>(null);
   const navigate = useNavigate();
 
   // NUEVO: Estado para menú contextual
@@ -618,24 +625,6 @@ const Example = () => {
     }
   };
 
-  const handleDeleteOrderClick = (order: TableData) => {
-    setOrderToDelete(order);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDeleteOrder = async () => {
-    if (!orderToDelete) return;
-    const result = await deleteOrder(orderToDelete.id);
-    if (result.success) {
-      enqueueSnackbar('Order deleted', { variant: 'success' });
-      loadData();
-    } else {
-      enqueueSnackbar(result.errorMessage || 'Error deleting order', { variant: 'error' });
-    }
-    setDeleteDialogOpen(false);
-    setOrderToDelete(null);
-  };
-
   // Continuar la orden
   const handleContinueOrder = (order: TableData) => {
     const orderData = mapTableDataToCreateOrderModel(order);
@@ -805,8 +794,13 @@ const Example = () => {
       case 'edit':
         handleEditOrder(row);
         break;
-      case 'delete':
-        handleDeleteOrderClick(row);
+      case 'inactivate':
+        setOrderToInactivate(row);
+        setInactivateDialogOpen(true);
+        break;
+      case 'deleteAbsolute':
+        setOrderToDeleteAbsolute(row);
+        setDeleteAbsoluteDialogOpen(true);
         break;
     }
     
@@ -865,15 +859,25 @@ const Example = () => {
           </ListItemIcon>
           <ListItemText>Edit Order</ListItemText>
         </MenuItem>
-        
+
         <MenuItem 
-          onClick={() => handleContextAction('delete')}
+          onClick={() => handleContextAction('inactivate')}
+          sx={{ color: 'warning.main' }}
+        >
+          <ListItemIcon>
+            <BlockIcon fontSize="small" color="warning" />
+          </ListItemIcon>
+          <ListItemText>Inactivate Order</ListItemText>
+        </MenuItem>
+
+        <MenuItem 
+          onClick={() => handleContextAction('deleteAbsolute')}
           sx={{ color: 'error.main' }}
         >
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText>Delete Order</ListItemText>
+          <ListItemText>Delete Order (Absolute)</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -901,16 +905,6 @@ const Example = () => {
         onClose={() => setPaymentDialogOpen(false)}
         onConfirm={handleConfirmPayment}
       />
-      <DeleteOrderDialog
-        open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setOrderToDelete(null);
-        }}
-        onConfirm={handleConfirmDeleteOrder}
-        orderRef={orderToDelete?.key_ref}
-        orderDate={orderToDelete?.dateReference}
-      />
       <CalendarDialog
         open={calendarOpen}
         onClose={() => setCalendarOpen(false)}
@@ -921,6 +915,64 @@ const Example = () => {
           setCalendarOpen(false);
         }}
       />
+
+      {/* Diálogo para inactivar */}
+      {inactivateDialogOpen && (
+        <DeleteOrderDialog
+          open={inactivateDialogOpen}
+          onClose={() => {
+            setInactivateDialogOpen(false);
+            setOrderToInactivate(null);
+          }}
+          onConfirm={async () => {
+            if (!orderToInactivate) return;
+            const result = await deleteOrder(orderToInactivate.id);
+            if (result.success) {
+              enqueueSnackbar('Order inactivated', { variant: 'success' });
+              loadData();
+            } else {
+              enqueueSnackbar(result.errorMessage || 'Error inactivating order', { variant: 'error' });
+            }
+            setInactivateDialogOpen(false);
+            setOrderToInactivate(null);
+          }}
+          orderRef={orderToInactivate?.key_ref}
+          orderDate={orderToInactivate?.dateReference}
+          title="Inactivate Order"
+          description="This will inactivate the order. You can restore it later if needed."
+          confirmText="Inactivate"
+          icon={<BlockIcon color="warning" />}
+        />
+      )}
+
+      {/* Diálogo para eliminar absoluto */}
+      {deleteAbsoluteDialogOpen && (
+        <DeleteOrderDialog
+          open={deleteAbsoluteDialogOpen}
+          onClose={() => {
+            setDeleteAbsoluteDialogOpen(false);
+            setOrderToDeleteAbsolute(null);
+          }}
+          onConfirm={async () => {
+            if (!orderToDeleteAbsolute) return;
+            const result = await deleteOrderAbsolute(orderToDeleteAbsolute.id);
+            if (result.success) {
+              enqueueSnackbar('Order deleted permanently', { variant: 'success' });
+              loadData();
+            } else {
+              enqueueSnackbar(result.errorMessage || 'Error deleting order', { variant: 'error' });
+            }
+            setDeleteAbsoluteDialogOpen(false);
+            setOrderToDeleteAbsolute(null);
+          }}
+          orderRef={orderToDeleteAbsolute?.key_ref}
+          orderDate={orderToDeleteAbsolute?.dateReference}
+          title="Delete Order Permanently"
+          description="This will permanently delete the order. This action cannot be undone."
+          confirmText="Delete"
+          icon={<DeleteIcon color="error" />}
+        />
+      )}
     </>
   );
 };
