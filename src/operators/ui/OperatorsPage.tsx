@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { fetchOperators, fetchInactiveOperators, activateOperator } from '../data/RepositoryOperators';
+import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator } from '../data/RepositoryOperators';
 import { Operator } from '../domain/OperatorsModels';
 import { InactiveOperator } from '../domain/OperatorsModels';
+import EditOperatorModal from './components/EditOperatorModal';
+import ManageChildrenModal from './components/ManageChildrenModal';
 
 const OperatorsPage: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -14,7 +16,14 @@ const OperatorsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+  const [isChildrenModalOpen, setIsChildrenModalOpen] = useState<boolean>(false);
+  const [operatorToEdit, setOperatorToEdit] = useState<Operator | null>(null);
+  const [operatorToDelete, setOperatorToDelete] = useState<Operator | null>(null);
+  const [operatorForChildren, setOperatorForChildren] = useState<Operator | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     const loadOperators = async () => {
@@ -59,6 +68,52 @@ const OperatorsPage: React.FC = () => {
       enqueueSnackbar('Operator activated successfully', { variant: 'success' });
     } catch (err) {
       enqueueSnackbar('Error activating operator', { variant: 'error' });
+    }
+  };
+
+  const handleEditOperator = (operator: Operator) => {
+    setOperatorToEdit(operator);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (operatorData: Partial<Operator>) => {
+    if (!operatorToEdit) return;
+    
+    try {
+      await updateOperator(operatorToEdit.id_operator, operatorData);
+      // Recargar operadores
+      const response = await fetchOperators();
+      setOperators(response.results);
+      setIsEditDialogOpen(false);
+      setOperatorToEdit(null);
+      enqueueSnackbar('Operator updated successfully', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar('Error updating operator', { variant: 'error' });
+    }
+  };
+
+  const handleDeleteOperator = (operator: Operator) => {
+    setOperatorToDelete(operator);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!operatorToDelete) return;
+    
+    try {
+      await deleteOperator(operatorToDelete.id_operator);
+      // Mover a inactivos y recargar listas
+      const [operatorsResponse, inactiveResponse] = await Promise.all([
+        fetchOperators(),
+        fetchInactiveOperators()
+      ]);
+      setOperators(operatorsResponse.results);
+      setInactiveOperators(inactiveResponse.results);
+      setIsDeleteDialogOpen(false);
+      setOperatorToDelete(null);
+      enqueueSnackbar('Operator deactivated successfully', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar('Error deactivating operator', { variant: 'error' });
     }
   };
 
@@ -116,6 +171,71 @@ const OperatorsPage: React.FC = () => {
     setSelectedOperator(null);
   };
 
+  const handleManageChildren = (operator: Operator) => {
+    setOperatorForChildren(operator);
+    setIsChildrenModalOpen(true);
+  };
+
+  const handleAddChild = async (childData: { name: string; birth_date: string; gender: string }) => {
+    if (!operatorForChildren) return;
+    
+    try {
+      await updateOperator(operatorForChildren.id_operator, childData);
+      // Recargar operadores para actualizar la información
+      const response = await fetchOperators();
+      setOperators(response.results);
+      
+      // Actualizar el operador seleccionado si está abierto el modal de detalles
+      if (selectedOperator && selectedOperator.id_operator === operatorForChildren.id_operator) {
+        const updatedOperator = response.results.find(op => op.id_operator === operatorForChildren.id_operator);
+        if (updatedOperator) {
+          setSelectedOperator(updatedOperator);
+          setOperatorForChildren(updatedOperator);
+        }
+      } else {
+        // Actualizar el operador en el modal de hijos
+        const updatedOperator = response.results.find(op => op.id_operator === operatorForChildren.id_operator);
+        if (updatedOperator) {
+          setOperatorForChildren(updatedOperator);
+        }
+      }
+      
+      enqueueSnackbar('Child added successfully', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar('Error adding child', { variant: 'error' });
+    }
+  };
+
+  // Filtrar operadores basado en el término de búsqueda
+  const filteredOperators = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return operators;
+    }
+
+    const term = searchTerm.toLowerCase();
+    return operators.filter(operator =>
+      operator.first_name.toLowerCase().includes(term) ||
+      operator.last_name.toLowerCase().includes(term) ||
+      operator.code.toLowerCase().includes(term) ||
+      operator.email.toLowerCase().includes(term) ||
+      operator.phone.toLowerCase().includes(term) ||
+      operator.number_licence.toLowerCase().includes(term)
+    );
+  }, [operators, searchTerm]);
+
+  const filteredInactiveOperators = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return inactiveOperators;
+    }
+
+    const term = searchTerm.toLowerCase();
+    return inactiveOperators.filter(operator =>
+      operator.first_name.toLowerCase().includes(term) ||
+      operator.last_name.toLowerCase().includes(term) ||
+      operator.email.toLowerCase().includes(term)
+    );
+  }, [inactiveOperators, searchTerm]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -143,7 +263,7 @@ const OperatorsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Search */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -156,8 +276,24 @@ const OperatorsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i className="fas fa-search text-gray-400"></i>
+            </div>
+            <input
+              type="text"
+              placeholder="Search operators by name, code, email, phone, or license..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
         {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div 
             className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500 cursor-pointer hover:bg-green-100 transition-colors"
             onClick={() => setActiveTab('active')}
@@ -195,6 +331,18 @@ const OperatorsPage: React.FC = () => {
               <i className="fas fa-baby text-2xl text-purple-500"></i>
             </div>
           </div>
+
+          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600">Search Results</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  {activeTab === 'active' ? filteredOperators.length : filteredInactiveOperators.length}
+                </p>
+              </div>
+              <i className="fas fa-filter text-2xl text-blue-500"></i>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -228,7 +376,9 @@ const OperatorsPage: React.FC = () => {
       {activeTab === 'active' && (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">Active Operators</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Active Operators {searchTerm && `(${filteredOperators.length} results)`}
+            </h3>
           </div>
           
           <div className="overflow-x-auto">
@@ -245,7 +395,7 @@ const OperatorsPage: React.FC = () => {
                     License
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Shift
+                    Family
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
@@ -256,7 +406,7 @@ const OperatorsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {operators.map((operator) => (
+                {filteredOperators.map((operator) => (
                   <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -281,8 +431,12 @@ const OperatorsPage: React.FC = () => {
                       <div className="text-sm text-gray-900">{operator.number_licence}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{operator.name_t_shift}</div>
-                      <div className="text-sm text-gray-500">Size: {operator.size_t_shift}</div>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-900 mr-2">{operator.n_children} children</span>
+                        {operator.n_children > 0 && (
+                          <i className="fas fa-baby text-purple-500"></i>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
@@ -290,18 +444,50 @@ const OperatorsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => openDialog(operator)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => openDialog(operator)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
+                          title="View Details"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </button>
+                        <button
+                          onClick={() => handleEditOperator(operator)}
+                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
+                          title="Edit"
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button
+                          onClick={() => handleManageChildren(operator)}
+                          className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm"
+                          title="Manage Children"
+                        >
+                          <i className="fas fa-baby"></i>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOperator(operator)}
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
+                          title="Deactivate"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {filteredOperators.length === 0 && searchTerm && (
+            <div className="text-center py-12">
+              <i className="fas fa-search text-gray-400 text-4xl mb-4"></i>
+              <h3 className="text-lg font-medium text-gray-600 mb-2">No operators found</h3>
+              <p className="text-gray-500">Try adjusting your search terms</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -309,7 +495,9 @@ const OperatorsPage: React.FC = () => {
       {activeTab === 'inactive' && (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">Inactive Operators</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Inactive Operators {searchTerm && `(${filteredInactiveOperators.length} results)`}
+            </h3>
           </div>
           
           {inactiveLoading ? (
@@ -339,7 +527,7 @@ const OperatorsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {inactiveOperators.map((operator) => (
+                  {filteredInactiveOperators.map((operator) => (
                     <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -376,6 +564,45 @@ const OperatorsPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit Dialog Modal */}
+      {isEditDialogOpen && operatorToEdit && (
+        <EditOperatorModal
+          operator={operatorToEdit}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setOperatorToEdit(null);
+          }}
+          onSave={handleSaveEdit}
+        />
+      )}
+
+      {/* Manage Children Modal */}
+      {isChildrenModalOpen && operatorForChildren && (
+        <ManageChildrenModal
+          operator={operatorForChildren}
+          isOpen={isChildrenModalOpen}
+          onClose={() => {
+            setIsChildrenModalOpen(false);
+            setOperatorForChildren(null);
+          }}
+          onSave={handleAddChild}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {isDeleteDialogOpen && operatorToDelete && (
+        <ConfirmDeleteDialog
+          operator={operatorToDelete}
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setOperatorToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+        />
       )}
 
       {/* Dialog Modal */}
@@ -540,6 +767,47 @@ const OperatorsPage: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Componente para confirmar eliminación
+const ConfirmDeleteDialog: React.FC<{
+  operator: Operator;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}> = ({ operator, isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+        <div className="p-6">
+          <div className="flex items-center mb-4">
+            <i className="fas fa-exclamation-triangle text-red-500 text-2xl mr-3"></i>
+            <h3 className="text-lg font-semibold text-gray-800">Confirm Deactivation</h3>
+          </div>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to deactivate operator <strong>{operator.first_name} {operator.last_name}</strong>? 
+            This will move them to the inactive operators list.
+          </p>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+            >
+              Deactivate
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { OperatorsResponse } from '../domain/OperatorsModels';
+import { Operator, OperatorsResponse } from '../domain/OperatorsModels';
 import { InactiveOperatorsResponse } from '../domain/OperatorsModels';
 import Cookies from 'js-cookie';
 
@@ -99,6 +99,70 @@ export const activateOperator = async (id_operator: number): Promise<void> => {
     }
   } catch (error) {
     console.error('Error activating operator:', error);
+    throw error;
+  }
+};
+
+export const deleteOperator = async (id_operator: number): Promise<void> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/operators/${id_operator}/delete/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error deleting operator:', error);
+    throw error;
+  }
+};
+
+
+export const updateOperator = async (id_operator: number, operatorData: Partial<Operator>): Promise<void> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/operators/update/${id_operator}/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(operatorData),
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error updating operator:', error);
     throw error;
   }
 };
