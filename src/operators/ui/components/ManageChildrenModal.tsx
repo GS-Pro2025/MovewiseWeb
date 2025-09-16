@@ -4,7 +4,7 @@ import { Operator } from '../../domain/OperatorsModels';
 interface Child {
   name: string;
   birth_date: string;
-  gender: 'M' | 'F' | '';
+  gender: string; 
 }
 
 interface ManageChildrenModalProps {
@@ -40,7 +40,7 @@ const ManageChildrenModal: React.FC<ManageChildrenModalProps> = ({
     
     try {
       await onSave(childData);
-      // Reset form
+      // Reset form after successful submission
       setChildData({
         name: '',
         birth_date: '',
@@ -110,7 +110,11 @@ const ManageChildrenModal: React.FC<ManageChildrenModalProps> = ({
                       <div>
                         <span className="font-medium text-gray-700">Gender:</span>
                         <div className="text-gray-900">
-                          {son.gender === 'M' ? 'Male' : son.gender === 'F' ? 'Female' : 'Not specified'}
+                          {son.gender === 'M' ? 'Male' : 
+                           son.gender === 'F' ? 'Female' : 
+                           son.gender === 'male' ? 'Male' : 
+                           son.gender === 'female' ? 'Female' : 
+                           'Not specified'}
                         </div>
                       </div>
                       <div>
@@ -120,7 +124,9 @@ const ManageChildrenModal: React.FC<ManageChildrenModalProps> = ({
                     </div>
                     <div className="flex items-center">
                       <div className={`h-3 w-3 rounded-full mr-2 ${
-                        son.gender === 'M' ? 'bg-blue-500' : son.gender === 'F' ? 'bg-pink-500' : 'bg-gray-400'
+                        ['m', 'male'].includes(son.gender?.toLowerCase()) ? 'bg-blue-500' : 
+                        ['f', 'female'].includes(son.gender?.toLowerCase()) ? 'bg-pink-500' : 
+                        'bg-gray-400'
                       }`}></div>
                     </div>
                   </div>
@@ -179,14 +185,14 @@ const ManageChildrenModal: React.FC<ManageChildrenModalProps> = ({
                   </label>
                   <select
                     value={childData.gender}
-                    onChange={(e) => handleChange('gender', e.target.value as 'M' | 'F' | '')}
+                    onChange={(e) => handleChange('gender', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                     disabled={loading}
                   >
                     <option value="">Select Gender</option>
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
                   </select>
                 </div>
 

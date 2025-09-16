@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator } from '../data/RepositoryOperators';
+import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator } from '../data/RepositoryOperators';
 import { Operator } from '../domain/OperatorsModels';
 import { InactiveOperator } from '../domain/OperatorsModels';
 import EditOperatorModal from './components/EditOperatorModal';
@@ -76,11 +77,72 @@ const OperatorsPage: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleSaveEdit = async (operatorData: Partial<Operator>) => {
+  // Helper function para crear FormData según la estructura del backend
+  const createOperatorFormData = (operatorData: any): FormData => {
+    const formData = new FormData();
+
+    // Campos del operador
+    if (operatorData.code) formData.append('code', operatorData.code);
+    if (operatorData.number_licence) formData.append('number_licence', operatorData.number_licence);
+    if (operatorData.n_children !== undefined) formData.append('n_children', operatorData.n_children.toString());
+    if (operatorData.size_t_shift) formData.append('size_t_shift', operatorData.size_t_shift);
+    if (operatorData.name_t_shift) formData.append('name_t_shift', operatorData.name_t_shift);
+    if (operatorData.salary) formData.append('salary', operatorData.salary);
+    if (operatorData.status) formData.append('status', operatorData.status);
+
+    // Datos de la persona (formato person.campo)
+    if (operatorData.person) {
+      const person = operatorData.person;
+      if (person.first_name) formData.append('person.first_name', person.first_name);
+      if (person.last_name) formData.append('person.last_name', person.last_name);
+      if (person.birth_date) formData.append('person.birth_date', person.birth_date);
+      if (person.phone) formData.append('person.phone', person.phone);
+      if (person.address) formData.append('person.address', person.address);
+      if (person.id_number) formData.append('person.id_number', person.id_number);
+      if (person.type_id) formData.append('person.type_id', person.type_id);
+      if (person.email) formData.append('person.email', person.email);
+      if (person.status) formData.append('person.status', person.status);
+    } else {
+      // Si los datos vienen en formato plano (compatibilidad)
+      if (operatorData.first_name) formData.append('person.first_name', operatorData.first_name);
+      if (operatorData.last_name) formData.append('person.last_name', operatorData.last_name);
+      if (operatorData.birth_date) formData.append('person.birth_date', operatorData.birth_date);
+      if (operatorData.phone) formData.append('person.phone', operatorData.phone);
+      if (operatorData.address) formData.append('person.address', operatorData.address);
+      if (operatorData.id_number) formData.append('person.id_number', operatorData.id_number);
+      if (operatorData.type_id) formData.append('person.type_id', operatorData.type_id);
+      if (operatorData.email) formData.append('person.email', operatorData.email);
+    }
+
+    // Archivos (solo si se van a actualizar)
+    if (operatorData.photo && operatorData.photo instanceof File) {
+      formData.append('photo', operatorData.photo);
+    }
+    if (operatorData.license_front && operatorData.license_front instanceof File) {
+      formData.append('license_front', operatorData.license_front);
+    }
+    if (operatorData.license_back && operatorData.license_back instanceof File) {
+      formData.append('license_back', operatorData.license_back);
+    }
+
+    return formData;
+  };
+
+  const handleSaveEdit = async (operatorData: Partial<Operator> | FormData) => {
     if (!operatorToEdit) return;
     
     try {
-      await updateOperator(operatorToEdit.id_operator, operatorData);
+      let dataToSend: FormData;
+      
+      // Si ya es FormData, usarlo directamente; si no, convertirlo
+      if (operatorData instanceof FormData) {
+        dataToSend = operatorData;
+      } else {
+        dataToSend = createOperatorFormData(operatorData);
+      }
+
+      await updateOperator(operatorToEdit.id_operator, dataToSend);
+      
       // Recargar operadores
       const response = await fetchOperators();
       setOperators(response.results);
@@ -180,7 +242,16 @@ const OperatorsPage: React.FC = () => {
     if (!operatorForChildren) return;
     
     try {
-      await updateOperator(operatorForChildren.id_operator, childData);
+      // Preparar los datos para el endpoint específico de agregar hijo
+      const childPayload = {
+        operator: operatorForChildren.id_operator,
+        name: childData.name,
+        birth_date: childData.birth_date,
+        gender: childData.gender
+      };
+
+      await addChildToOperator(childPayload);
+      
       // Recargar operadores para actualizar la información
       const response = await fetchOperators();
       setOperators(response.results);

@@ -135,7 +135,7 @@ export const deleteOperator = async (id_operator: number): Promise<void> => {
 };
 
 
-export const updateOperator = async (id_operator: number, operatorData: Partial<Operator>): Promise<void> => {
+export const updateOperator = async (id_operator: number, operatorData: Partial<Operator> | FormData): Promise<void> => {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -143,13 +143,22 @@ export const updateOperator = async (id_operator: number, operatorData: Partial<
   }
 
   try {
+    // Determinar si los datos son FormData o un objeto regular
+    const isFormData = operatorData instanceof FormData;
+    
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${token}`,
+    };
+
+    // Solo agregar Content-Type si NO es FormData (el navegador lo maneja automáticamente para FormData)
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${BASE_URL_API}/operators/update/${id_operator}/`, {
       method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(operatorData),
+      headers,
+      body: isFormData ? operatorData : JSON.stringify(operatorData),
     });
 
     if (response.status === 403) {
@@ -163,6 +172,43 @@ export const updateOperator = async (id_operator: number, operatorData: Partial<
     }
   } catch (error) {
     console.error('Error updating operator:', error);
+    throw error;
+  }
+};
+
+export const addChildToOperator = async (childData: {
+  operator: number;
+  name: string;
+  birth_date: string;
+  gender: string;
+}): Promise<void> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/sons/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(childData),
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error adding child to operator:', error);
     throw error;
   }
 };
