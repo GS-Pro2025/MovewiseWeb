@@ -1,10 +1,12 @@
 import React from 'react';
 import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
-import EditIcon from '@mui/icons-material/Edit';
-import BlockIcon from '@mui/icons-material/Block';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { 
+  Check, 
+  Edit, 
+  Ban, 
+  Trash2, 
+  Copy 
+} from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
 interface ContextMenuProps {
@@ -75,7 +77,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         disabled={!row}
       >
         <ListItemIcon>
-          <ContentCopyIcon fontSize="small" color="primary" />
+          <Copy size={20} color="#3b82f6" />
         </ListItemIcon>
         <ListItemText>Continue Order</ListItemText>
       </MenuItem>
@@ -85,7 +87,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         disabled={row?.status === 'finished'}
       >
         <ListItemIcon>
-          <CheckIcon fontSize="small" color="success" />
+          <Check size={20} color={row?.status === 'finished' ? '#9ca3af' : '#22c55e'} />
         </ListItemIcon>
         <ListItemText>
           {row?.status === 'finished' ? 'Already Finished' : 'Finish Order'}
@@ -94,7 +96,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       
       <MenuItem onClick={() => handleAction('edit')}>
         <ListItemIcon>
-          <EditIcon fontSize="small" color="primary" />
+          <Edit size={20} color="#3b82f6" />
         </ListItemIcon>
         <ListItemText>Edit Order</ListItemText>
       </MenuItem>
@@ -104,7 +106,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         sx={{ color: 'warning.main' }}
       >
         <ListItemIcon>
-          <BlockIcon fontSize="small" color="warning" />
+          <Ban size={20} color="#f59e0b" />
         </ListItemIcon>
         <ListItemText>Inactivate Order</ListItemText>
       </MenuItem>
@@ -114,7 +116,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         sx={{ color: 'error.main' }}
       >
         <ListItemIcon>
-          <DeleteIcon fontSize="small" color="error" />
+          <Trash2 size={20} color="#ef4444" />
         </ListItemIcon>
         <ListItemText>Delete Order (Absolute)</ListItemText>
       </MenuItem>

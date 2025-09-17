@@ -1,5 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, MapPin, ChevronDown, Box, X } from 'lucide-react';
+import { 
+  Calendar, 
+  MapPin, 
+  ChevronDown,
+  X,
+  Filter,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  XCircle,
+  ClipboardList,
+  Target,
+  Activity
+} from 'lucide-react';
 
 // Import the centralized TableData type
 import type { TableData } from '../domain/TableData';
@@ -141,23 +154,20 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   return (
     <div>
       {/* Main Filter Card */}
-      <div className=" rounded-2xl shadow-lg border-2 p-6 mb-6 week-dropdown-container" style={{ borderColor: '#0B2863' }}>
+      <div className="rounded-2xl shadow-lg border-2 p-6 mb-6 week-dropdown-container" style={{ borderColor: '#0B2863' }}>
         {/* Header with Gradient Background */}
-        <div 
-          className="rounded-xl p-4 mb-6 -mx-2 -mt-2"
-        >
+        <div className="rounded-xl p-4 mb-6 -mx-2 -mt-2">
           <div className="flex items-center space-x-3">
             <div 
               className="p-2 rounded-lg"
               style={{ backgroundColor: '#F09F52' }}
             >
-              <Box size={20} className="text-[#0B2863]" />
+              <ClipboardList size={20} className="text-[#0B2863]" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#0B2863]">
                 ORDERS 
               </h2>
-
             </div>
           </div>
         </div>
@@ -172,7 +182,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           >
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
-                📅 Week Number
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} />
+                  Week Number
+                </div>
               </label>
               <button
                 onClick={() => setViewMode(viewMode === 'select' ? 'input' : 'select')}
@@ -184,7 +197,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 }}
                 title={`Switch to ${viewMode === 'select' ? 'input' : 'dropdown'} view`}
               >
-                {viewMode === 'select' ? '⌨️' : '▼'}
+                {viewMode === 'select' ? <Filter size={12} /> : <ChevronDown size={12} />}
               </button>
             </div>
             
@@ -321,7 +334,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           >
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
-                📆 Weekday Filter
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} />
+                  Weekday Filter
+                </div>
               </label>
               {weekdayFilter && (
                 <button
@@ -378,7 +394,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           >
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
-                📍 Location Filter
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} />
+                  Location Filter
+                </div>
               </label>
               {locationFilter && (
                 <button
@@ -436,7 +455,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             style={{ borderColor: '#8b5cf6' }}
           >
             <label className="block text-sm font-bold mb-3" style={{ color: '#0B2863' }}>
-              📊 Quick Actions
+              <div className="flex items-center gap-2">
+                <BarChart3 size={16} />
+                Quick Actions
+              </div>
             </label>
             <button
               onClick={onCalendarOpen}
@@ -519,8 +541,9 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         {/* Active Filters Summary */}
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold" style={{ color: '#0B2863' }}>
-              🏷️ Active Filters
+            <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+              <Filter size={16} />
+              Active Filters
             </h4>
             <span className="text-xs text-gray-500">
               {[week && 'Week', weekdayFilter && 'Day', locationFilter && 'Location'].filter(Boolean).length} active
@@ -530,38 +553,42 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           <div className="flex flex-wrap gap-2">
             {week && (
               <div 
-                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm"
+                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
                 style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
               >
-                📅 Week {week}
+                <Calendar size={12} />
+                Week {week}
               </div>
             )}
             {weekdayFilter && (
               <div 
-                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm"
+                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
                 style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
               >
-                📆 {weekdayFilter}
+                <Calendar size={12} />
+                {weekdayFilter}
               </div>
             )}
             {locationFilter && (
               <div 
-                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm"
+                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
                 style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
               >
-                📍 {locationFilter}
+                <MapPin size={12} />
+                {locationFilter}
               </div>
             )}
             {(!week && !weekdayFilter && !locationFilter) && (
               <div 
-                className="px-3 py-1 rounded-full text-xs font-semibold border-2"
+                className="px-3 py-1 rounded-full text-xs font-semibold border-2 flex items-center gap-1"
                 style={{ 
                   backgroundColor: '#f3f4f6',
                   borderColor: '#d1d5db',
                   color: '#6b7280'
                 }}
               >
-                ✨ No active filters - showing all data
+                <Activity size={12} />
+                No active filters - showing all data
               </div>
             )}
           </div>
@@ -571,17 +598,19 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         <div className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-lg font-bold" style={{ color: '#0B2863' }}>
-                📊 Week {week} Statistics
+              <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+                <BarChart3 size={20} />
+                Week {week} Statistics
               </h4>
               <p className="text-sm text-gray-600">
                 Orders for {weekRange.start} → {weekRange.end}
               </p>
             </div>
             <div 
-              className="px-3 py-1 rounded-full text-xs font-bold text-white"
+              className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1"
               style={{ backgroundColor: '#F09F52' }}
             >
+              <Activity size={12} />
               Live Data
             </div>
           </div>
@@ -596,7 +625,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: '#0B2863' }}
               >
-                <span className="text-white font-bold text-lg">📋</span>
+                <ClipboardList size={20} className="text-white" />
               </div>
               <div className="text-2xl font-bold mb-1" style={{ color: '#0B2863' }}>
                 {weeklyStats.totalOrders.toLocaleString()}
@@ -615,7 +644,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: '#22c55e' }}
               >
-                <span className="text-white font-bold text-lg">✅</span>
+                <CheckCircle size={20} className="text-white" />
               </div>
               <div className="text-2xl font-bold mb-1" style={{ color: '#22c55e' }}>
                 {weeklyStats.finishedOrders.toLocaleString()}
@@ -639,7 +668,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: '#F09F52' }}
               >
-                <span className="text-white font-bold text-lg">⏳</span>
+                <Clock size={20} className="text-white" />
               </div>
               <div className="text-2xl font-bold mb-1" style={{ color: '#F09F52' }}>
                 {weeklyStats.pendingOrders.toLocaleString()}
@@ -663,7 +692,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: '#ef4444' }}
               >
-                <span className="text-white font-bold text-lg">❌</span>
+                <XCircle size={20} className="text-white" />
               </div>
               <div className="text-2xl font-bold mb-1" style={{ color: '#ef4444' }}>
                 {weeklyStats.inactiveOrders.toLocaleString()}
@@ -683,8 +712,9 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           {weeklyStats.totalOrders > 0 && (
             <div className="mt-4 p-4 bg-white rounded-xl border-2 shadow-md" style={{ borderColor: '#0B2863' }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold" style={{ color: '#0B2863' }}>
-                  🎯 Week {week} Progress
+                <span className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+                  <Target size={16} />
+                  Week {week} Progress
                 </span>
                 <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>
                   {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
@@ -716,9 +746,18 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 </div>
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>✅ {weeklyStats.finishedOrders} finished</span>
-                <span>⏳ {weeklyStats.pendingOrders} pending</span>
-                <span>❌ {weeklyStats.inactiveOrders} inactive</span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle size={12} />
+                  {weeklyStats.finishedOrders} finished
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock size={12} />
+                  {weeklyStats.pendingOrders} pending
+                </span>
+                <span className="flex items-center gap-1">
+                  <XCircle size={12} />
+                  {weeklyStats.inactiveOrders} inactive
+                </span>
               </div>
             </div>
           )}

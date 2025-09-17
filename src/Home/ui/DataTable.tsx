@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import type { TableData } from '../domain/TableData';
 
@@ -230,10 +230,30 @@ export const DataTable: React.FC<DataTableProps> = ({
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 1} className="text-center py-12">
-                  <div className="text-gray-500">
-                    <p className="text-lg font-semibold">No data available</p>
-                    <p className="text-sm">Try adjusting your filters or create a new order</p>
+                <td colSpan={columns.length + 1} className="text-center py-16">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="mb-4">
+                      <Inbox 
+                        size={80}
+                        style={{ color: '#0B2863', opacity: 0.6 }}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <h3 
+                        className="text-xl font-bold mb-2"
+                        style={{ color: '#0B2863' }}
+                      >
+                        No Orders Found
+                      </h3>
+                      <p className="text-gray-600 mb-4 max-w-md">
+                        There are no orders available for the selected filters. 
+                        Try adjusting your search criteria or create a new order.
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                        <FileX size={16} />
+                        <span>Tip: Check your week and filter settings above</span>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>
