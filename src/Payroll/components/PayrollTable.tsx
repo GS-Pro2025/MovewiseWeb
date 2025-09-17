@@ -1,12 +1,13 @@
 import React from 'react';
-import { OperatorRow, weekdayKeys } from '../../models/payrroll';
+import { weekdayKeys } from '../../models/payrroll';
 import { formatCurrency, formatDateForHeader } from '../util/PayrollUtil';
+import { OperatorRowExtended } from '../types/payroll.types';
 
 interface PayrollTableProps {
-  filteredOperators: OperatorRow[];
+  filteredOperators: OperatorRowExtended[];
   weekDates: { [key: string]: string };
   searchTerm: string;
-  onOperatorClick: (operator: OperatorRow) => void;
+  onOperatorClick: (operator: OperatorRowExtended) => void;
 }
 
 export const PayrollTable: React.FC<PayrollTableProps> = ({

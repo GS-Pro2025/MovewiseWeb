@@ -1,27 +1,25 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Box, Typography, CircularProgress, TextField, Button, Chip, Alert, Divider } from "@mui/material";
+import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
-import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
-import OrdersByKeyRefTable from "./OrdersByKeyRefTable";
-import PaymentDialog from "./PaymentDialog";
-import SuperOrderDetailsDialog from "./SuperOrderDetailsDialog";
-import PaymentIcon from "@mui/icons-material/AttachMoney";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorIcon from "@mui/icons-material/Error";
-import WarningIcon from "@mui/icons-material/Warning";
 import { processDocaiStatement } from "../data/repositoryDOCAI";
+import { searchOrdersByKeyRefLike } from "../data/OrdersRepository";
 import { enqueueSnackbar } from "notistack";
-import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 import { OCRResult, SuperOrder } from "../domain/ModelsOCR";
-import DocaiResultDialog from "./DocaiResultDialog"; // Asegúrate de importar el componente
-import { searchOrdersByKeyRefLike } from "../data/OrdersRepository";
 
-// Utilidad para calcular el rango de fechas de la semana
+// Imported Components
+import FinancialSummaryCards from "./FinancialSummaryCards";
+import FinancialControls from "./FinancialControls";
+import FinancialTable from "./FinancialTable";
+import OCRUploadDialog from "./OCRUploadDialog";
+import PaymentDialog from "./PaymentDialog";
+import SuperOrderDetailsDialog from "./SuperOrderDetailsDialog";
+import DocaiResultDialog from "./DocaiResultDialog";
+
+// Utility function for week range calculation
 function getWeekRange(year: number, week: number): { start: string; end: string } {
   const firstDayOfYear = new Date(year, 0, 1);
   const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
@@ -35,25 +33,51 @@ function getWeekRange(year: number, week: number): { start: string; end: string 
 
 const FinancialView = () => {
   const repository = new SummaryCostRepository();
+  const navigate = useNavigate();
+
+  // Core data states
   const [data, setData] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page] = useState(0);
   const [rowCount, setRowCount] = useState(0);
   console.log("rowCount", rowCount);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
-  // Semana y año seleccionados
+  // Week and year controls
   const [week, setWeek] = useState<number>(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
   const [year] = useState<number>(new Date().getFullYear());
-
   const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
 
-  // Agrupa las órdenes por key_ref y calcula totales
+  // Table states
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<keyof SuperOrder>('totalProfit');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Search states
+  const [searchRef, setSearchRef] = useState("");
+  const [searchResults, setSearchResults] = useState<OrderSummary[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Modal states
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [paySuperOrder, setPaySuperOrder] = useState<SuperOrder | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedSuperOrder, setSelectedSuperOrder] = useState<SuperOrder | null>(null);
+
+  // OCR states
+  const [ocrDialogOpen, setOcrDialogOpen] = useState(false);
+  const [ocrFiles, setOcrFiles] = useState<File[]>([]);
+  const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrStep, setOcrStep] = useState<string>("Setting data");
+  const [docaiDialogOpen, setDocaiDialogOpen] = useState(false);
+  const [docaiDialogResult, setDocaiDialogResult] = useState<any>(null);
+
+  // Group orders by key_ref and calculate totals
   function groupByKeyRef(data: OrderSummary[]): SuperOrder[] {
     const map = new Map<string, SuperOrder>();
     data.forEach((item) => {
@@ -90,7 +114,7 @@ const FinancialView = () => {
     return Array.from(map.values());
   }
 
-  // fetchData adaptado para semana y año
+  // Fetch data function
   const fetchData = useCallback(async (pageNumber: number, week: number) => {
     const currentYear = new Date().getFullYear();
     setLoading(true);
@@ -106,53 +130,120 @@ const FinancialView = () => {
     }
   }, [repository]);
 
+  // Load data on component mount and when week changes
   useEffect(() => {
     fetchData(page, week);
   }, [page, week, year]);
 
-  const superOrders = useMemo(() => groupByKeyRef(data), [data]);
+  // Process and sort super orders
+  const superOrders = useMemo(() => {
+    const grouped = groupByKeyRef(data);
+    return grouped.sort((a, b) => {
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
+      const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [data, sortBy, sortOrder]);
 
-  // Estado para el PaymentDialog
-  const [payDialogOpen, setPayDialogOpen] = useState(false);
-  const [paySuperOrder, setPaySuperOrder] = useState<SuperOrder | null>(null);
+  // Calculate summary totals
+  const totalSummary = useMemo(() => {
+    const currentData = searchResults ? groupByKeyRef(searchResults) : superOrders;
+    return currentData.reduce((acc, order) => ({
+      totalIncome: acc.totalIncome + order.totalIncome,
+      totalCost: acc.totalCost + order.totalCost,
+      totalProfit: acc.totalProfit + order.totalProfit,
+      paidOrders: acc.paidOrders + (order.payStatus === 1 ? 1 : 0),
+      unpaidOrders: acc.unpaidOrders + (order.payStatus === 0 ? 1 : 0),
+    }), {
+      totalIncome: 0,
+      totalCost: 0,
+      totalProfit: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+    });
+  }, [superOrders, searchResults]);
 
-  // Abre el modal y guarda el superOrder a pagar
+  // Current data for display and export
+  const currentExportData = searchResults ? groupByKeyRef(searchResults) : superOrders;
+
+  // Event Handlers
+  const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newWeek = parseInt(event.target.value, 10);
+    if (newWeek >= 1 && newWeek <= 53) setWeek(newWeek);
+  };
+
+  const handleSort = (column: keyof SuperOrder) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('desc');
+    }
+  };
+
+  const toggleRowExpansion = (keyRef: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(keyRef)) {
+      newExpanded.delete(keyRef);
+    } else {
+      newExpanded.add(keyRef);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const handleSearch = async () => {
+    if (!searchRef.trim()) return;
+    setSearchLoading(true);
+    try {
+      const results = await searchOrdersByKeyRefLike(searchRef.trim());
+      setSearchResults(results);
+      if (results.length === 0) enqueueSnackbar("No results found.", { variant: "info" });
+    } catch (err) {
+      enqueueSnackbar(`Error searching reference: ${err}`, { variant: "error" });
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchResults(null);
+    setSearchRef("");
+  };
+
   const handleOpenPayDialog = (superOrder: SuperOrder) => {
     setPaySuperOrder(superOrder);
     setPayDialogOpen(true);
   };
 
-  // Cuando se confirma el pago en el modal
   const handleConfirmPay = async (expense: number, income: number) => {
     if (!paySuperOrder) return;
-    const res = await payByKey_ref(
-      paySuperOrder.key_ref,
-      expense,
-      income
-    );
+    const res = await payByKey_ref(paySuperOrder.key_ref, expense, income);
     setPayDialogOpen(false);
     setPaySuperOrder(null);
     if (res.success) {
       enqueueSnackbar("Payment registered successfully", { variant: "success" });
       fetchData(page, week);
     } else {
-      enqueueSnackbar (res.errorMessage || "Error processing payment", { variant: "error" });
-      alert(res.errorMessage || "Error processing payment");
+      enqueueSnackbar(res.errorMessage || "Error processing payment", { variant: "error" });
     }
   };
 
-  // OCR Upload State
-  const [ocrDialogOpen, setOcrDialogOpen] = useState(false);
-  const [ocrFiles, setOcrFiles] = useState<File[]>([]);
-  const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrStep, setOcrStep] = useState<string>("Setting data");
+  const handleViewDetails = (superOrder: SuperOrder) => {
+    setSelectedSuperOrder(superOrder);
+    setDetailsDialogOpen(true);
+  };
 
-  // Estado para mostrar el dialog final de DOCAi
-  const [docaiDialogOpen, setDocaiDialogOpen] = useState(false);
-  const [docaiDialogResult, setDocaiDialogResult] = useState<any>(null);
+  const handleOrderPaid = () => {
+    if (searchResults) {
+      handleSearch();
+    } else {
+      fetchData(page, week);
+    }
+  };
 
-  // OCR Upload Handler
+  // OCR Handlers
   const handleOcrUpload = async () => {
     setOcrLoading(true);
     setOcrStep("Setting data");
@@ -173,7 +264,7 @@ const FinancialView = () => {
           data: res.update_result ? {
             updated_orders: (res.update_result.updated_orders || []).map(order => ({
               ...order,
-              income: order.income ?? 0, // Ensure income is always a number
+              income: order.income ?? 0,
             })),
             not_found_orders: res.update_result.not_found_orders || [],
             total_updated: res.update_result.total_updated || 0,
@@ -183,17 +274,14 @@ const FinancialView = () => {
           order_key: res.order_key,
         });
 
-        // Si hay éxito, muestra el dialog con el resultado
         if (isSuccess) {
-          // Normaliza updated_orders para que income nunca sea undefined y elimina payStatus
           const normalizedUpdateResult = {
             ...res.update_result,
             updated_orders: (res.update_result?.updated_orders || []).map(order => ({
               key_ref: order.key_ref,
               orders_updated: order.orders_updated,
-              income: order.income ?? 0, // valor por defecto si falta
-              expense: order.expense ?? 0, // opcional, si lo usas
-              // payStatus: 1, // Elimina si no lo necesitas
+              income: order.income ?? 0,
+              expense: order.expense ?? 0,
             })),
             not_found_orders: res.update_result?.not_found_orders || [],
             total_updated: res.update_result?.total_updated ?? 0,
@@ -220,7 +308,6 @@ const FinancialView = () => {
     setOcrResults(results);
     setOcrLoading(false);
 
-    // Snackbar general
     const successCount = results.filter(r => r.success).length;
     if (successCount === results.length) {
       enqueueSnackbar("All files processed successfully!", { variant: "success" });
@@ -230,603 +317,119 @@ const FinancialView = () => {
       enqueueSnackbar(`${successCount} of ${results.length} files processed successfully.`, { variant: "warning" });
     }
 
-    // Refresh data after processing
     fetchData(page, week);
   };
 
-  // Calculate totals for results summary
-  const getResultsSummary = () => {
-    let totalUpdated = 0;
-    let totalNotFound = 0;
-    const allNotFoundOrders: string[] = [];
-    const allUpdatedOrders: Array<{ key_ref: string; income: number; orders_updated: number }> = [];
-
-    ocrResults.forEach(result => {
-      if (result.success && result.data) {
-        totalUpdated += result.data.total_updated || 0;
-        totalNotFound += result.data.total_not_found || 0;
-        
-        if (result.data.not_found_orders) {
-          allNotFoundOrders.push(...result.data.not_found_orders);
-        }
-        
-        if (result.data.updated_orders) {
-          allUpdatedOrders.push(...result.data.updated_orders);
-        }
-      }
-    });
-
-    return {
-      totalUpdated,
-      totalNotFound,
-      allNotFoundOrders,
-      allUpdatedOrders,
-    };
+  const handleOcrClose = () => {
+    setOcrDialogOpen(false);
+    setOcrFiles([]);
+    setOcrResults([]);
+    setOcrLoading(false);
   };
 
-  const columns = useMemo<MRT_ColumnDef<SuperOrder>[]>(
-    () => [
-      { accessorKey: "key_ref", header: "Reference" },
-      {
-        accessorKey: "totalProfit",
-        header: "Profit",
-        Cell: ({ cell }) => {
-          const value = cell.getValue<number>();
-          return (
-            <span
-              style={{
-                color: "#fff",
-                background: value >= 0 ? "#4caf50" : "#f44336",
-                padding: "4px 12px",
-                borderRadius: "16px",
-                fontWeight: 600,
-                display: "inline-block",
-                minWidth: 60,
-                textAlign: "center",
-              }}
-            >
-              {value}
-            </span>
-          );
-        },
-      },
-      {
-        accessorKey: "payStatus",
-        header: "Paystatus",
-        Cell: ({ cell }) => (
-          <Typography sx={{ color: cell.getValue<number>() === 1 ? "green" : "orange", fontWeight: 600 }}>
-            {cell.getValue<number>() === 1 ? "Paid" : "Unpaid"}
-          </Typography>
-        ),
-      },
-      {
-        header: "Pay",
-        id: "pay",
-        size: 120,
-        Cell: ({ row }) => {
-          const isPaid = row.original.payStatus === 1;
-          return (
-            <Button
-              size="small"
-              variant="contained"
-              color="success"
-              startIcon={<PaymentIcon />}
-              disabled={isPaid}
-              onClick={() => handleOpenPayDialog(row.original)}
-            >
-              Pay
-            </Button>
-          );
-        },
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      { accessorKey: "totalIncome", header: "Income" },
-      { accessorKey: "totalCost", header: "Total Cost" },
-      { accessorKey: "expense", header: "Expense" },
-      { accessorKey: "fuelCost", header: "Fuel Cost" },
-      { accessorKey: "workCost", header: "Work Cost" },
-      { accessorKey: "driverSalaries", header: "Driver Salaries" },
-      { accessorKey: "otherSalaries", header: "Operator Salaries" },
-      { accessorKey: "client", header: "Client" },
-    ],
-    [week]
-  );
-
-  // Inputs para cambiar semana y año
-  const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newWeek = parseInt(event.target.value, 10);
-    if (newWeek >= 1 && newWeek <= 53) setWeek(newWeek);
-  };
-
-  // Muestra LoaderSpinner como pantalla completa, superponiendo el layout/sidebar
-  const FullScreenLoader = ({ text }: { text: string }) => (
-    <Box
-      sx={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 2000,
-        background: "rgba(255,255,255,0.95)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <LoaderSpinner />
-      <Typography variant="h6" sx={{ mt: 4, color: "#0458AB" }}>
-        {text}
-      </Typography>
-    </Box>
-  );
-
-  // Estado para el SuperOrderDetailsDialog
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [selectedSuperOrder, setSelectedSuperOrder] = useState<SuperOrder | null>(null);
-
-  const handleRowClick = (superOrder: SuperOrder) => {
-    setSelectedSuperOrder(superOrder);
-    setDetailsDialogOpen(true);
-  };
-
-  // Nueva lógica para búsqueda de referencias
-  const [searchRef, setSearchRef] = useState("");
-  const [searchResults, setSearchResults] = useState<OrderSummary[] | null>(null);
-  const [searchLoading, setSearchLoading] = useState(false);
-
-  // Handler para búsqueda histórica
-  const handleSearch = async () => {
-    if (!searchRef.trim()) return;
-    setSearchLoading(true);
-    try {
-      const results = await searchOrdersByKeyRefLike(searchRef.trim());
-      setSearchResults(results);
-      if (results.length === 0) enqueueSnackbar("No results found.", { variant: "info" });
-    } catch (err) {
-      enqueueSnackbar(`Error searching reference: ${err}`, { variant: "error" });
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  // Botón para volver a la vista normal
-  const handleClearSearch = () => {
-    setSearchResults(null);
-    setSearchRef("");
+  const handleOcrProcessMore = () => {
+    setOcrFiles([]);
+    setOcrResults([]);
   };
 
   return (
-    <Box p={2}>
-      <Typography variant="h5" gutterBottom>
-        Financial Summary
-      </Typography>
-      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-        {/* Solo mostrar semana y periodo si NO hay búsqueda */}
-        {!searchResults && (
-          <>
-            <TextField
-              label="Week"
-              type="number"
-              value={week}
-              onChange={handleWeekChange}
-              inputProps={{ min: 1, max: 53 }}
-              size="small"
-            />
-            <Typography variant="body1" sx={{ alignSelf: 'center' }}>
-              Period: {weekRange.start} → {weekRange.end}
-            </Typography>
-          </>
-        )}
-        <TextField
-          label="Search by Reference"
-          value={searchRef}
-          onChange={e => setSearchRef(e.target.value)}
-          size="small"
-          sx={{ minWidth: 200 }}
-        />
-        <Button
-          variant="outlined"
-          onClick={handleSearch}
-          disabled={searchLoading || !searchRef.trim()}
+    <Box p={3} sx={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography 
+          variant="h4" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 700, 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            color: 'transparent',
+          }}
         >
-          Search
-        </Button>
-        {searchResults && (
-          <Button variant="text" color="secondary" onClick={handleClearSearch}>
-            Clear Search
-          </Button>
-        )}
-        <Button
-          variant="contained"
-          startIcon={<UploadFileIcon />}
-          onClick={() => setOcrDialogOpen(true)}
-        >
-          Upload Statement PDFs (OCR)
-        </Button>
+          📊 Financial Summary
+        </Typography>
+        <Typography variant="body1" color="textSecondary">
+          Track your financial performance with detailed insights and analytics
+        </Typography>
       </Box>
-      {searchResults ? (
-        <MaterialReactTable
-          columns={columns}
-          data={groupByKeyRef(searchResults)}
-          enableStickyHeader
-          muiTableContainerProps={{ sx: { maxHeight: 600 } }}
-          muiTableBodyRowProps={({ row }) => ({
-            onClick: () => handleRowClick(row.original),
-            sx: {
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              },
-            },
-          })}
-          renderDetailPanel={({ row }) => (
-            <OrdersByKeyRefTable
-              orders={row.original.orders}
-              keyRef={row.original.key_ref}
-              onOrderPaid={() => handleSearch()}
-              onViewOperators={(orderId: string) => {
-                navigate(`/add-operators-to-order/${orderId}`);
-              }}
-            />
-          )}
-        />
-      ) : loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-          <CircularProgress />
+
+      {/* Summary Cards */}
+      <FinancialSummaryCards summary={totalSummary} />
+
+      {/* Controls */}
+      <FinancialControls
+        week={week}
+        onWeekChange={handleWeekChange}
+        weekRange={weekRange}
+        showWeekControls={!searchResults}
+        searchRef={searchRef}
+        onSearchRefChange={setSearchRef}
+        onSearch={handleSearch}
+        onClearSearch={handleClearSearch}
+        searchLoading={searchLoading}
+        hasSearchResults={!!searchResults}
+        onUploadClick={() => setOcrDialogOpen(true)}
+        exportData={currentExportData}
+        isSearchResults={!!searchResults}
+        year={year}
+        loading={loading}
+      />
+
+      {/* Main Content */}
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
+          <CircularProgress size={60} sx={{ color: '#667eea' }} />
         </Box>
       ) : error ? (
-        <Typography color="error">{error}</Typography>
+        <Alert severity="error" sx={{ borderRadius: 4 }}>
+          {error}
+        </Alert>
       ) : (
-        // ...tabla normal...
-        <>
-          <MaterialReactTable
-            columns={columns}
-            data={superOrders}
-            enableStickyHeader
-            muiTableContainerProps={{ sx: { maxHeight: 600 } }}
-            muiTableBodyRowProps={({ row }) => ({
-              onClick: () => handleRowClick(row.original),
-              sx: {
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                },
-              },
-            })}
-            renderDetailPanel={({ row }) => (
-              <OrdersByKeyRefTable
-                orders={row.original.orders}
-                keyRef={row.original.key_ref}
-                onOrderPaid={() => fetchData(page, week)}
-                onViewOperators={(orderId: string) => {
-                  navigate(`/add-operators-to-order/${orderId}`);
-                }}
-              />
-            )}
-          />
-          <PaymentDialog
-            open={payDialogOpen}
-            expense={paySuperOrder?.expense ?? 0}
-            income={paySuperOrder?.totalIncome ?? 0}
-            onClose={() => setPayDialogOpen(false)}
-            onConfirm={handleConfirmPay}
-          />
-          <SuperOrderDetailsDialog
-            open={detailsDialogOpen}
-            superOrder={selectedSuperOrder}
-            onClose={() => {
-              setDetailsDialogOpen(false);
-              setSelectedSuperOrder(null);
-            }}
-          />
-        </>
+        <FinancialTable
+          data={currentExportData}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          expandedRows={expandedRows}
+          onSort={handleSort}
+          onToggleExpand={toggleRowExpansion}
+          onPayOrder={handleOpenPayDialog}
+          onViewDetails={handleViewDetails}
+          onOrderPaid={handleOrderPaid}
+          onViewOperators={(orderId: string) => navigate(`/add-operators-to-order/${orderId}`)}
+        />
       )}
 
-      {/* OCR Upload Dialog */}
-      {ocrDialogOpen && (
-        <>
-          {ocrLoading ? (
-            <FullScreenLoader text={ocrStep} />
-          ) : (
-            <Box
-              sx={{
-                position: "fixed",
-                inset: 0,
-                zIndex: 1300,
-                background: "rgba(255,255,255,0.5)",
-                backdropFilter: "blur(2px)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onClick={() => {
-                setOcrDialogOpen(false);
-                setOcrFiles([]);
-                setOcrResults([]);
-                setOcrLoading(false);
-              }}
-            >
-              <Box
-                sx={{
-                  background: "#fff",
-                  borderRadius: 2,
-                  boxShadow: 4,
-                  p: 4,
-                  minWidth: 400,
-                  maxWidth: 700,
-                  maxHeight: "90vh",
-                  overflow: "auto",
-                }}
-                onClick={e => e.stopPropagation()}
-              >
-                <Typography variant="h6" mb={2}>Upload Statement PDFs (OCR)</Typography>
-                
-                {ocrResults.length === 0 ? (
-                  <>
-                    <input
-                      id="ocr-upload-input"
-                      type="file"
-                      accept="application/pdf"
-                      multiple
-                      style={{ display: "none" }}
-                      onChange={e => {
-                        const files = Array.from(e.target.files || []);
-                        setOcrFiles(files.slice(0, 10));
-                        setOcrResults([]);
-                      }}
-                      disabled={ocrLoading}
-                    />
-                    <label htmlFor="ocr-upload-input">
-                      <Button
-                        variant="outlined"
-                        component="span"
-                        disabled={ocrLoading || ocrFiles.length >= 10}
-                        sx={{ mb: 2 }}
-                      >
-                        {ocrFiles.length > 0
-                          ? `${ocrFiles.length} file(s) selected`
-                          : "Select PDF files (max 10)"}
-                      </Button>
-                    </label>
-                    <Box sx={{ mb: 2 }}>
-                      {ocrFiles.map((file, idx) => (
-                        <Typography key={file.name + idx} variant="body2">
-                          📄 {file.name}
-                        </Typography>
-                      ))}
-                    </Box>
-                    <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={ocrFiles.length === 0 || ocrLoading}
-                        onClick={handleOcrUpload}
-                      >
-                        {ocrLoading ? "Processing..." : "Process Files"}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          setOcrDialogOpen(false);
-                          setOcrFiles([]);
-                          setOcrResults([]);
-                          setOcrLoading(false);
-                        }}
-                        disabled={ocrLoading}
-                      >
-                        Cancel
-                      </Button>
-                    </Box>
-                  </>
-                ) : (
-                  <>
-                    {/* Results Summary */}
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="h6" mb={2} color="primary">
-                        Processing Results
-                      </Typography>
-                      
-                      {(() => {
-                        const summary = getResultsSummary();
-                        return (
-                          <Box sx={{ mb: 2 }}>
-                            <Alert 
-                              severity={summary.totalNotFound > 0 ? "warning" : "success"} 
-                              sx={{ mb: 2 }}
-                            >
-                              <Typography variant="body2">
-                                <strong>Summary:</strong> {summary.totalUpdated} orders updated successfully
-                                {summary.totalNotFound > 0 && `, ${summary.totalNotFound} orders not found in the system`}
-                              </Typography>
-                            </Alert>
-                            
-                            {summary.totalUpdated > 0 && (
-                              <Box sx={{ mb: 3 }}>
-                                <Typography variant="subtitle2" color="success.main" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-                                  <CheckCircleIcon sx={{ mr: 1, fontSize: 18 }} />
-                                  Updated Orders ({summary.totalUpdated}):
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                  {summary.allUpdatedOrders.map((order, idx) => (
-                                    <Chip 
-                                      key={idx} 
-                                      label={`${order.key_ref} ($${order.income.toLocaleString()})`}
-                                      size="small" 
-                                      color="success" 
-                                      variant="outlined"
-                                    />
-                                  ))}
-                                </Box>
-                              </Box>
-                            )}
-                            
-                            {summary.totalNotFound > 0 && (
-                              <Box sx={{ mb: 3 }}>
-                                <Typography variant="subtitle2" color="warning.main" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-                                  <WarningIcon sx={{ mr: 1, fontSize: 18 }} />
-                                  Orders Not Found in System ({summary.totalNotFound}):
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                                  These orders were found in the PDFs but don't exist in the system.
-                                </Typography>
-                                <Box sx={{ 
-                                  display: 'grid', 
-                                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
-                                  gap: 0.5,
-                                  maxHeight: 200,
-                                  overflow: 'auto',
-                                  p: 1,
-                                  border: '1px solid',
-                                  borderColor: 'grey.300',
-                                  borderRadius: 1,
-                                  backgroundColor: 'grey.50'
-                                }}>
-                                  {summary.allNotFoundOrders.map((order, idx) => (
-                                    <Chip 
-                                      key={idx} 
-                                      label={order} 
-                                      size="small" 
-                                      color="warning" 
-                                      variant="outlined"
-                                      sx={{ fontSize: '0.7rem' }}
-                                    />
-                                  ))}
-                                </Box>
-                              </Box>
-                            )}
-                          </Box>
-                        );
-                      })()}
-                    </Box>
+      {/* Dialogs */}
+      <PaymentDialog
+        open={payDialogOpen}
+        expense={paySuperOrder?.expense ?? 0}
+        income={paySuperOrder?.totalIncome ?? 0}
+        onClose={() => setPayDialogOpen(false)}
+        onConfirm={handleConfirmPay}
+      />
 
-                    <Divider sx={{ my: 2 }} />
+      <SuperOrderDetailsDialog
+        open={detailsDialogOpen}
+        superOrder={selectedSuperOrder}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedSuperOrder(null);
+        }}
+      />
 
-                    {/* Detailed Results */}
-                    <Typography variant="subtitle1" mb={2}>File Processing Details:</Typography>
-                    <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
-                      {ocrResults.map((result, idx) => (
-                        <Box key={idx} sx={{ mb: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            {result.success ? (
-                              <CheckCircleIcon sx={{ color: 'success.main', mr: 1, fontSize: 18 }} />
-                            ) : (
-                              <ErrorIcon sx={{ color: 'error.main', mr: 1, fontSize: 18 }} />
-                            )}
-                            <Typography variant="body2" fontWeight="medium">
-                              {result.name}
-                            </Typography>
-                          </Box>
-                          
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            {result.message}
-                          </Typography>
-                          
-                          {result.success && result.data && (
-                            <Box sx={{ ml: 3 }}>
-                              <Typography variant="caption" color="success.main">
-                                ✓ {result.data.total_updated || 0} orders updated
-                              </Typography>
-                              {(result.data.total_not_found || 0) > 0 && (
-                                <Typography variant="caption" color="warning.main" sx={{ display: 'block' }}>
-                                  ⚠ {result.data.total_not_found || 0} orders not found
-                                </Typography>
-                              )}
-                              
-                              {/* Show updated orders for this file */}
-                              {result.data.updated_orders && result.data.updated_orders.length > 0 && (
-                                <Box sx={{ mt: 1 }}>
-                                  <Typography variant="caption" color="text.secondary">Updated:</Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                    {result.data.updated_orders.map((order, orderIdx) => (
-                                      <Chip 
-                                        key={orderIdx}
-                                        label={`${order.key_ref} ($${order.income})`}
-                                        size="small"
-                                        color="success"
-                                        variant="outlined"
-                                        sx={{ fontSize: '0.65rem', height: 20 }}
-                                      />
-                                    ))}
-                                  </Box>
-                                </Box>
-                              )}
+      <OCRUploadDialog
+        open={ocrDialogOpen}
+        loading={ocrLoading}
+        step={ocrStep}
+        files={ocrFiles}
+        results={ocrResults}
+        onClose={handleOcrClose}
+        onFilesSelected={setOcrFiles}
+        onUpload={handleOcrUpload}
+        onProcessMore={handleOcrProcessMore}
+      />
 
-                              {/* Show not found orders for this file */}
-                              {result.data.not_found_orders && result.data.not_found_orders.length > 0 && (
-                                <Box sx={{ mt: 1 }}>
-                                  <Typography variant="caption" color="text.secondary">Not found:</Typography>
-                                  <Box sx={{ 
-                                    display: 'flex', 
-                                    flexWrap: 'wrap', 
-                                    gap: 0.3, 
-                                    mt: 0.5,
-                                    maxHeight: 60,
-                                    overflow: 'auto'
-                                  }}>
-                                    {result.data.not_found_orders.slice(0, 10).map((order, orderIdx) => (
-                                      <Chip 
-                                        key={orderIdx}
-                                        label={order}
-                                        size="small"
-                                        color="warning"
-                                        variant="outlined"
-                                        sx={{ fontSize: '0.6rem', height: 18 }}
-                                      />
-                                    ))}
-                                    {result.data.not_found_orders.length > 10 && (
-                                      <Chip 
-                                        label={`+${result.data.not_found_orders.length - 10} more`}
-                                        size="small"
-                                        color="warning"
-                                        variant="outlined"
-                                        sx={{ fontSize: '0.6rem', height: 18 }}
-                                      />
-                                    )}
-                                  </Box>
-                                </Box>
-                              )}
-                            </Box>
-                          )}
-                        </Box>
-                      ))}
-                    </Box>
-
-                    <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => {
-                          setOcrDialogOpen(false);
-                          setOcrFiles([]);
-                          setOcrResults([]);
-                          setOcrLoading(false);
-                        }}
-                      >
-                        Done
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          setOcrFiles([]);
-                          setOcrResults([]);
-                        }}
-                      >
-                        Process More Files
-                      </Button>
-                    </Box>
-                  </>
-                )}
-              </Box>
-            </Box>
-          )}
-        </>
-      )}
-
-      {/* 🆕 Dialog final para mostrar el resultado DOCAi */}
       {docaiDialogOpen && (
         <DocaiResultDialog
           open={docaiDialogOpen}
@@ -839,5 +442,3 @@ const FinancialView = () => {
 };
 
 export default FinancialView;
-
-

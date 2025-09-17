@@ -1,42 +1,56 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_Row,
-  createMRTColumnHelper,
-} from 'material-react-table';
-import { Box, Button, IconButton, TextField, Typography, Select, MenuItem } from '@mui/material';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { mkConfig, generateCsv, download } from 'export-to-csv';
-import { fetchOrdersReport } from '../data/repositoryOrdersReport';
-import { finishOrderRepo, updateOrder, deleteOrder } from '../data/repositoryOrders';
+import { Box } from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 
-import EditIcon from '@mui/icons-material/Edit';
+// Components
+import { TableFilters } from './TableFilters';
+import { TableToolbar } from './TableToolbar';
+import { DataTable } from './DataTable';
+import { ContextMenu } from './ContextMenu';
 import EditOrderDialog from './editOrderModal';
-import { UpdateOrderData } from '../domain/ModelOrderUpdate';
-import { TableData, TableDataExport } from '../domain/TableData';
-import OperatorsTable from './operatorsTable';
-
-import BlockIcon from '@mui/icons-material/Block'; // Para inactivar
-import { deleteOrderAbsolute } from '../data/repositoryOrders'; // Eliminar absoluto
-
-import CheckIcon from '@mui/icons-material/Check';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
-import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOrderDialog from './deleteOrderDialog';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CalendarDialog from './calendarDialog';
+
+// Services
+import { fetchOrdersReport } from '../data/repositoryOrdersReport';
+import { finishOrderRepo, updateOrder, deleteOrder, deleteOrderAbsolute } from '../data/repositoryOrders';
 import { getRegisteredLocations } from '../data/repositoryOrders';
 
-import Autocomplete from '@mui/material/Autocomplete';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { useNavigate } from 'react-router-dom'; 
-import { Menu, ListItemIcon, ListItemText } from '@mui/material';
+// Utils
+import { exportToExcel, exportToPDF } from './exportUtils';
+
+// Types
+import { UpdateOrderData } from '../domain/ModelOrderUpdate';
+import { TableData } from '../domain/TableData';
+
+// Icons
+import BlockIcon from '@mui/icons-material/Block';
+import DeleteIcon from '@mui/icons-material/Delete';
+
+// Utility functions
+const getWeekOfYear = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const yearStartDayNum = yearStart.getUTCDay() || 7;
+  yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+};
+
+const getWeekRange = (year: number, week: number): { start: string; end: string } => {
+  const firstDayOfYear = new Date(year, 0, 1);
+  const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+  const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
+  const endDate = new Date(startDate.getTime() + 6 * 86400000);
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0],
+  };
+};
 
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
@@ -60,106 +74,55 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   job: item.job_id 
 });
 
-// Reemplaza tu función getWeekOfYear con esta versión ISO
-const getWeekOfYear = (date: Date): number => {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
-  const yearStartDayNum = yearStart.getUTCDay() || 7;
-  yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-};
+const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
+  date: (() => {
+    const originalDate = new Date(order.dateReference);
+    const nextDay = new Date(originalDate);
+    nextDay.setDate(originalDate.getDate() + 1);
+    return nextDay.toISOString().split('T')[0];
+  })(),
+  key_ref: order.key_ref,
+  address: order.city || '',
+  state_usa: order.state || '',
+  status: 'Pending',
+  paystatus: 0,
+  person: {
+    first_name: order.firstName || '',
+    last_name: order.lastName || '',
+    address: order.city || '',
+    email: order.email || '',
+    phone: order.phone || '',
+  },
+  weight: order.weight || 0,
+  job: order.job || 0,
+  customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
+});
 
-
-const getWeekRange = (year: number, week: number): { start: string; end: string } => {
-  const firstDayOfYear = new Date(year, 0, 1);
-  const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
-  const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
-  const endDate = new Date(startDate.getTime() + 6 * 86400000);
-  return {
-    start: startDate.toISOString().split('T')[0],
-    end: endDate.toISOString().split('T')[0],
-  };
-};
-
-const columnHelper = createMRTColumnHelper<TableData>();
-
-// Función para limpiar los datos antes de exportar
-const mapTableDataForExport = (data: TableData[]): TableDataExport[] =>
-  data.map(
-    ({
-      id,
-      status,
-      key_ref,
-      firstName,
-      lastName,
-      phone,
-      email,
-      company,
-      customer_factory,
-      city,
-      state,
-      weekday,
-      expense,
-      income,
-      dateReference,
-      job,
-      job_id,
-      weight,
-      truckType,
-      totalCost,
-      payStatus,
-      distance,
-      week,
-    }) => ({
-      id,
-      key_ref,
-      status,
-      firstName,
-      lastName,
-      phone,
-      email,
-      company,
-      customer_factory,
-      city,
-      state,
-      weekday,
-      expense, 
-      income,  
-      dateReference,
-      job,
-      job_id,
-      weight,
-      truckType,
-      totalCost,
-      payStatus,
-      distance,
-      week,
-    })
-  );
-  
-
-const Example = () => {
+const OrdersTable: React.FC = () => {
+  // State
   const [data, setData] = useState<TableData[]>([]);
   const [filteredData, setFilteredData] = useState<TableData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedRows, setSelectedRows] = useState<TableData[]>([]);
+  
   const [week, setWeek] = useState<number>(() => {
     const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
+    return getWeekOfYear(now);
   });
+  
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 100 });
   const [totalRows, setTotalRows] = useState(0);
-  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  
   const currentYear = new Date().getFullYear();
-  const weekRange = useMemo(() => {
-    return getWeekRange(currentYear, week);
-  }, [currentYear, week]);
-  const { enqueueSnackbar } = useSnackbar();
-
+  const weekRange = useMemo(() => getWeekRange(currentYear, week), [currentYear, week]);
+  
+  // Filters
+  const [weekdayFilter, setWeekdayFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState<string>('');
+  const [locations, setLocations] = useState<string[]>([]);
+  
+  // Modals
   const [editModalOpen, setEditModalOpen] = useState(false);
-
   const [finishModalOpen, setFinishModalOpen] = useState(false);
   const [finishImage, setFinishImage] = useState<File | null>(null);
   const [finishLoading, setFinishLoading] = useState(false);
@@ -167,278 +130,24 @@ const Example = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState<TableData | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
-
-  const [weekdayFilter, setWeekdayFilter] = useState<string>('');
   const [calendarOpen, setCalendarOpen] = useState(false);
-
-  const [locationFilter, setLocationFilter] = useState<string>('');
-  const [locations, setLocations] = useState<string[]>([]);
-
-  const weekDays = [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-  ];
   const [inactivateDialogOpen, setInactivateDialogOpen] = useState(false);
   const [orderToInactivate, setOrderToInactivate] = useState<TableData | null>(null);
-
   const [deleteAbsoluteDialogOpen, setDeleteAbsoluteDialogOpen] = useState(false);
   const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<TableData | null>(null);
-  const navigate = useNavigate();
-
-  // NUEVO: Estado para menú contextual
+  
+  // Context menu
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
     row: TableData | null;
   } | null>(null);
 
-  const columns = [
-    {
-      header: 'Actions',
-      id: 'actions',
-      size: 80, // REDUCIDO de 200 a 80
-      headerProps: { style: { textAlign: 'center' } },
-      Cell: ({ row }: { row: MRT_Row<TableData> }) => {
-        const isFinished = row.original.status === 'finished';
-        return (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            {/* Solo mostrar el botón más importante */}
-            <IconButton
-              color={isFinished ? 'default' : 'success'}
-              size="small"
-              disabled={isFinished}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isFinished) handleOpenFinishModal(row.original.id);
-              }}
-              title={isFinished ? "Order finished" : "Finish Order"}
-              sx={{
-                backgroundColor: isFinished ? '#e8f5e8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: isFinished ? '#e8f5e8' : 'rgba(76, 175, 80, 0.08)'
-                }
-              }}
-            >
-              {isFinished ? (
-                <CheckCircleIcon sx={{ color: '#4caf50' }} />
-              ) : (
-                <CheckIcon />
-              )}
-            </IconButton>
-          </Box>
-        );
-      },
-      enableSorting: false,
-      enableColumnFilter: false,
-    },
-    columnHelper.accessor('status', {
-      header: 'Status',
-      size: 100,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<string>().toLowerCase();
-        let color = '';
-        if (value === 'finished') color = 'green';
-        else if (value === 'pending') color = 'orange';
-        else if (value === 'inactive') color = 'red';
-        else color = 'inherit';
-        return (
-          <Typography sx={{ color, fontWeight: 600 }}>
-            {value.charAt(0).toUpperCase() + value.slice(1)}
-          </Typography>
-        );
-      },
-    }),
-    columnHelper.accessor('key_ref', {
-      header: 'Reference',
-      size: 100,
-    }),
-    columnHelper.accessor('firstName', {
-      header: 'First Name',
-      size: 100,
-    }),
-    columnHelper.accessor('lastName', {
-      header: 'Last Name',
-      size: 100,
-    }),
-    columnHelper.accessor('email', {
-      header: 'Email',
-      size: 120,
-    }),
-    columnHelper.accessor('phone', {
-      header: 'Phone',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<string>();
-        return value ? value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : 'N/A';
-      },
-    }),
-    columnHelper.accessor('company', {
-      header: 'Company',
-      size: 120,
-    }),
-    columnHelper.accessor('state', {//USA state
-      header: 'Location',
-      size: 120,
-    }),
-    columnHelper.accessor('weekday', {
-      header: 'Weekday',
-      size: 100,
-    }),
-    columnHelper.accessor('dateReference', {
-      header: 'Date',
-      size: 120,
-    }),
-    columnHelper.accessor('job', {
-      header: 'Job',
-      size: 120,
-    }),
-    columnHelper.accessor('weight', {
-      header: 'Weight (lb)',
-      size: 100,
-    }),
-    columnHelper.accessor('distance', {
-      header: 'Distance (mi)',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<number>();
-        return value ? `${value.toLocaleString('en-US')} mi` : 'N/A';
-      },
-    }),
-    columnHelper.accessor('expense', {
-      header: 'Expense',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<string>();
-        return value ? `$${Number(value).toLocaleString('en-US')}` : 'N/A';
-      },
-    }),
-    columnHelper.accessor('income', {
-      header: 'Income',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<string>();
-        return value ? `$${Number(value).toLocaleString('en-US')}` : 'N/A';
-      },
-    }),
-    columnHelper.accessor('totalCost', {
-      header: 'Total Cost',
-      size: 120,
-      Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
-    }),
-    columnHelper.accessor('week', {
-      header: 'Week of Year',
-      size: 100,
-    }),
-    columnHelper.accessor('payStatus', {
-      header: 'Pay Status',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<number>();
-        const color = value === 0 ? 'red' : 'green';
-        return (
-          <Typography sx={{ color, fontWeight: 600 }}>
-            {value === 0 ? 'Unpaid' : 'Paid'}
-          </Typography>
-        );
-      },
-    }),
-    columnHelper.accessor('created_by', {
-      header: 'Created By',
-      size: 120,
-      Cell: ({ cell }) => {
-        const value = cell.getValue<string>();
-        return (
-          <Typography sx={{ color: '#1976d2', fontWeight: 500 }}>
-            {value || 'N/A'}
-          </Typography>
-        );
-      },
-    }),
-  ];
-  const finishOrder = async (orderId: string, image?: File) => {
-    try{
-      await finishOrderRepo(orderId, image);
-      enqueueSnackbar('Order finished', { variant: 'success' });
-      setFinishModalOpen(false);
-      setFinishImage(null);
-    } catch (error) {
-      enqueueSnackbar('Sorry there was an error finishing the order', { variant: 'error' });
-      console.error('Error finishing order:', error);
-      throw error;
-    }
-  };
+  // Hooks
+  const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
-  // Mapea TableData a CreateOrderModel para continuar orden
-  const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
-    date: (() => {
-      const originalDate = new Date(order.dateReference);
-      const nextDay = new Date(originalDate);
-      nextDay.setDate(originalDate.getDate() + 1);
-      return nextDay.toISOString().split('T')[0];
-    })(),
-    key_ref: order.key_ref,
-    address: order.city || '',
-    state_usa: order.state || '',
-    status: 'Pending',
-    paystatus: 0,
-    person: {
-      first_name: order.firstName || '',
-      last_name: order.lastName || '',
-      address: order.city || '',
-      email: order.email || '',
-      phone: order.phone || '',
-    },
-    weight: order.weight || 0,
-    job: order.job || 0,
-    customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
-  });
-
-  const handleConfirmPayment = async (expense: number, income: number) => {
-    if (!expense) return;
-    if (!paymentOrder) return;
-    paymentOrder.expense = expense;
-    paymentOrder.income = income;
-    await updateOrder(paymentOrder.id, {
-      ...mapTableDataToUpdateOrderData(paymentOrder),
-      expense,
-      income,
-      payStatus: 1, 
-    });
-    enqueueSnackbar('Payment registered', { variant: 'success' });
-    loadData(); // refresca la tabla
-    setPaymentDialogOpen(false);
-    setPaymentOrder(null);
-  };
-
-  const handleOpenFinishModal = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    setFinishModalOpen(true);
-    setFinishImage(null);
-  };
-
-  const handleFinishOrder = async () => {
-    if (!selectedOrderId) return;
-    setFinishLoading(true);
-    try {
-      await finishOrder(selectedOrderId, finishImage || undefined);
-      enqueueSnackbar('Order finished', { variant: 'success' });
-      setFinishModalOpen(false);
-      setFinishImage(null);
-      setSelectedOrderId(null);
-      loadData(); // refresca la tabla
-    } catch (error) {
-      enqueueSnackbar('Sorry there was an error finishing the order', { variant: 'error' });
-      console.error('Error finishing order:', error);
-    }
-    setFinishLoading(false);
-  };
-
-  // Función para cargar los datos desde el servicio
+  // Load data function
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -457,10 +166,7 @@ const Example = () => {
           Number(dateParts[2])
         );
         
-        // Usar la función ISO para calcular la semana
         const calculatedWeek = getWeekOfYear(date);
-        
-        console.log(`Fecha: ${item.date}, Día: ${date.toLocaleDateString('en-US', { weekday: 'long' })}, Semana calculada: ${calculatedWeek}`);
         
         return {
           id: item.key,
@@ -481,7 +187,7 @@ const Example = () => {
           weight: item.weight,
           truckType: item.vehicles[0]?.type,
           totalCost: item.summaryCost?.totalCost,
-          week: calculatedWeek, // Usar la función ISO
+          week: calculatedWeek,
           state: item.state_usa,
           operators: item.operators,
           distance: item.distance ?? 0,
@@ -495,15 +201,15 @@ const Example = () => {
       
       setData(mappedData);
       setTotalRows(response.count);
-      console.log('Datos mapeados:', mappedData);
     } catch (error) {
       console.error('Error loading data:', error);
+      enqueueSnackbar('Error loading data', { variant: 'error' });
     } finally {
       setLoading(false);
     }
   }, [pagination, week, currentYear]);
-  // Filtrar datos por semana seleccionada
 
+  // Effects
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -520,43 +226,80 @@ const Example = () => {
   }, [data, week, weekdayFilter, locationFilter]);
 
   useEffect(() => {
-      getRegisteredLocations().then((res) => {
-        if (res.success && Array.isArray(res.data)) {
-          setLocations(res.data);
-        }
-      });
+    getRegisteredLocations().then((res) => {
+      if (res.success && Array.isArray(res.data)) {
+        setLocations(res.data);
+      }
+    });
   }, []);
-  const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newWeek = parseInt(event.target.value, 10);
-    if (newWeek >= 1 && newWeek <= 53) {
-      setWeek(newWeek);
+
+  // Event handlers
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, pageIndex: newPage }));
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    setPagination({ pageIndex: 0, pageSize: newRowsPerPage });
+  };
+
+  const handleRowSelect = (row: TableData) => {
+    setSelectedRows(prev => {
+      const isSelected = prev.some(selected => selected.id === row.id);
+      if (isSelected) {
+        return prev.filter(selected => selected.id !== row.id);
+      } else {
+        return [...prev, row];
+      }
+    });
+  };
+
+  const handleSelectAll = (selectAll: boolean) => {
+    if (selectAll) {
+      setSelectedRows([...filteredData]);
+    } else {
+      setSelectedRows([]);
     }
   };
-  
-  const csvConfig = mkConfig({
-    fieldSeparator: ',',
-    decimalSeparator: '.',
-    useKeysAsHeaders: true,
-  });
 
-  const handleExportRows = (rows: MRT_Row<TableData>[]) => {
-    if (!rows || rows.length === 0) return;
-    const rowData = mapTableDataForExport(rows.map((row) => row.original));
-    const csv = generateCsv(csvConfig)(rowData);
-    download(csvConfig)(csv);
+  const handleContextMenu = (event: React.MouseEvent, row: TableData) => {
+    event.preventDefault();
+    setContextMenu({
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+      row,
+    });
   };
 
-  const handleExportData = () => {
-    if (!filteredData || filteredData.length === 0) return;
-    const csv = generateCsv(csvConfig)(mapTableDataForExport(filteredData));
-    download(csvConfig)(csv);
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
   };
 
-  const handleRowClick = (row: MRT_Row<TableData>) => {
-    if (!row.original.operators || row.original.operators.length === 0) {
-      enqueueSnackbar('There are not operators assigned to the order.', { variant: 'info' });
+  const handleContinueOrder = (order: TableData) => {
+    const orderData = mapTableDataToCreateOrderModel(order);
+    navigate('/create-daily', { state: { orderToContinue: orderData } });
+  };
+
+  const handleFinishOrder = async (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setFinishModalOpen(true);
+    setFinishImage(null);
+  };
+
+  const confirmFinishOrder = async () => {
+    if (!selectedOrderId) return;
+    setFinishLoading(true);
+    try {
+      await finishOrderRepo(selectedOrderId, finishImage || undefined);
+      enqueueSnackbar('Order finished', { variant: 'success' });
+      setFinishModalOpen(false);
+      setFinishImage(null);
+      setSelectedOrderId(null);
+      loadData();
+    } catch (error) {
+      enqueueSnackbar('Sorry there was an error finishing the order', { variant: 'error' });
+      console.error('Error finishing order:', error);
     }
-    setExpandedRowId((prev) => (prev === row.original.id ? null : row.original.id));
+    setFinishLoading(false);
   };
 
   const handleEditOrder = (order: TableData) => {
@@ -564,40 +307,12 @@ const Example = () => {
     setEditModalOpen(true);
   };
 
-  const handleCloseEditModal = () => {
-    setEditModalOpen(false);
-    setOrderToEdit(null);
-  };
-
   const handleSaveEdit = async (key: string, order: UpdateOrderData) => {
-    console.log('Saving order:', order);
-    // Mapea order a UpdateOrderData según tu modelo
-    const orderData: UpdateOrderData = {
-      key: key,
-      key_ref: order.key_ref,
-      date: order.date,
-      distance: order.distance, 
-      expense: order.expense,
-      income: order.income,
-      weight: order.weight,
-      state_usa: order.state_usa,
-      customer_factory: order.customer_factory,
-      person: {
-        email: order.person.email, 
-        first_name: order.person.first_name,
-        last_name: order.person.last_name,
-        phone: order.person.phone,
-        address: order.person.address
-      },
-      job: order.job, 
-    };
-    console.log('Order Data to Update:', orderData);
-    const result = await updateOrder(key, orderData);
+    const result = await updateOrder(key, order);
     if (result.success) {
       enqueueSnackbar('Order updated', { variant: 'success' });
-      loadData(); // Recarga los datos después de la edición
+      loadData();
     } else {
-      // Muestra el error
       enqueueSnackbar(`Sorry there was an error updating the order: ${result.errorMessage}`, { variant: 'error' });
     }
     setEditModalOpen(false);
@@ -623,298 +338,132 @@ const Example = () => {
     }
   };
 
-  // Continuar la orden
-  const handleContinueOrder = (order: TableData) => {
-    const orderData = mapTableDataToCreateOrderModel(order);
-    navigate('/create-daily', { state: { orderToContinue: orderData } });
+  const handleInactivateOrder = (order: TableData) => {
+    setOrderToInactivate(order);
+    setInactivateDialogOpen(true);
   };
 
-  const table = useMaterialReactTable({
-    columns,
-    data: filteredData,
-    enableRowSelection: true,
-    columnFilterDisplayMode: 'popover',
-    manualPagination: true,
-    rowCount: totalRows,
-    state: { isLoading: loading, pagination },
-    onPaginationChange: setPagination,
-    muiTableBodyRowProps: ({ row }) => ({
-      onClick: () => handleRowClick(row),
-      onContextMenu: (event) => handleContextMenu(event, row.original),
-      sx: { 
-        cursor: 'pointer',
-        '&:hover': {
-          backgroundColor: '#f5f5f5'
-        }
-      },
-      style: { textAlign: 'center' },
-    }),
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Box
-        sx={{
-          display: 'flex',
-          gap: '16px',
-          padding: '8px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <TextField
-          label="Week"
-          type="number"
-          value={week}
-          onChange={handleWeekChange}
-          inputProps={{ min: 1, max: 53 }}
-          size="small"
-        />
-        <Select
-          value={weekdayFilter}
-          onChange={(e) => setWeekdayFilter(e.target.value)}
-          displayEmpty
-          size="small"
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="">All Days</MenuItem>
-          {weekDays.map((day) => (
-            <MenuItem key={day} value={day}>
-              {day}
-            </MenuItem>
-          ))}
-        </Select>
-        <Autocomplete
-          options={locations}
-          value={locationFilter}
-          onChange={(_, newValue) => setLocationFilter(newValue || '')}
-          clearOnEscape
-          size="small"
-          sx={{ minWidth: 200 }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Location"
-              InputProps={{
-                ...params.InputProps,
-                startAdornment: (
-                  <>
-                    <LocationOnIcon fontSize="small" sx={{ mr: 1 }} />
-                    {params.InputProps.startAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-        />
-        <Button
-          variant="outlined"
-          startIcon={<CalendarMonthIcon />}
-          onClick={() => setCalendarOpen(true)}
-        >
-          Calendar View
-        </Button>
-        <Typography variant="body1" sx={{ alignSelf: 'center' }}>
-          Period: {weekRange.start} → {weekRange.end}
-        </Typography>
-        <Button onClick={handleExportData} startIcon={<FileDownloadIcon />}>
-          Export All Data
-        </Button>
-        <Button
-          disabled={table.getPrePaginationRowModel().rows.length === 0}
-          onClick={() =>
-            handleExportRows(table.getPrePaginationRowModel().rows)
-          }
-          startIcon={<FileDownloadIcon />}
-        >
-          Export All Rows
-        </Button>
-        <Button
-          disabled={table.getRowModel().rows.length === 0}
-          onClick={() => handleExportRows(table.getRowModel().rows)}
-          startIcon={<FileDownloadIcon />}
-        >
-          Export Page Rows
-        </Button>
-        <Button
-          disabled={
-            !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
-          }
-          onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
-          startIcon={<FileDownloadIcon />}
-        >
-          Export Selected Rows
-        </Button>
-      </Box>
-    ),
-    renderDetailPanel: ({ row }) =>
-      expandedRowId === row.original.id ? (
-        <Box
-          sx={{
-            p: 3,
-            bgcolor: '#ffffff',
-            borderRadius: 2,
-            boxShadow: 3,
-            border: '1px solid #e0e0e0',
-          }}
-        >
-          <OperatorsTable 
-            operators={row.original.operators || []}
-            orderKey={row.original.id} 
-          />
-        </Box>
-      ) : null,
-      });
-
-  const handleContextMenu = (event: React.MouseEvent, row: TableData) => {
-    event.preventDefault();
-    setContextMenu({
-      mouseX: event.clientX - 2,
-      mouseY: event.clientY - 4,
-      row,
-    });
+  const handleDeleteOrder = (order: TableData) => {
+    setOrderToDeleteAbsolute(order);
+    setDeleteAbsoluteDialogOpen(true);
   };
 
-  const handleCloseContextMenu = () => {
-    setContextMenu(null);
+  // Export handlers
+  const handleExportExcel = (data: TableData[], filename: string) => {
+    exportToExcel(data, filename);
   };
 
-  const handleContextAction = (action: string) => {
-    if (!contextMenu?.row) return;
-    
-    const row = contextMenu.row;
-    
-    switch (action) {
-      case 'continue':
-        handleContinueOrder(row);
-        break;
-      case 'finish':
-        if (row.status !== 'finished') {
-          handleOpenFinishModal(row.id);
-        }
-        break;
-      case 'edit':
-        handleEditOrder(row);
-        break;
-      case 'inactivate':
-        setOrderToInactivate(row);
-        setInactivateDialogOpen(true);
-        break;
-      case 'deleteAbsolute':
-        setOrderToDeleteAbsolute(row);
-        setDeleteAbsoluteDialogOpen(true);
-        break;
-    }
-    
-    handleCloseContextMenu();
+  const handleExportPDF = (data: TableData[], filename: string) => {
+    exportToPDF(data, filename);
   };
 
   return (
-    <>
-      <MaterialReactTable table={table} />
-      
-      {/* NUEVO: Menú Contextual */}
-      <Menu
-        open={contextMenu !== null}
+    <Box sx={{ width: '100%', height: '100%' }}>
+      {/* Filters with Statistics */}
+      <TableFilters
+        week={week}
+        weekdayFilter={weekdayFilter}
+        locationFilter={locationFilter}
+        locations={locations}
+        weekRange={weekRange}
+        onWeekChange={setWeek}
+        onWeekdayChange={setWeekdayFilter}
+        onLocationChange={setLocationFilter}
+        onCalendarOpen={() => setCalendarOpen(true)}
+        // NUEVAS PROPS PARA ESTADÍSTICAS EN TIEMPO REAL
+        data={data}                 // Todos los datos sin filtrar
+        filteredData={filteredData} // Datos con filtros aplicados
+      />
+
+      {/* Toolbar */}
+      <TableToolbar
+        data={filteredData}
+        selectedRows={selectedRows}
+        onExportExcel={handleExportExcel}
+        onExportPDF={handleExportPDF}
+      />
+
+      {/* Data Table */}
+      <DataTable
+        data={filteredData}
+        loading={loading}
+        page={pagination.pageIndex}
+        rowsPerPage={pagination.pageSize}
+        totalRows={totalRows}
+        selectedRows={selectedRows}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        onRowSelect={handleRowSelect}
+        onSelectAll={handleSelectAll}
+        onFinishOrder={handleFinishOrder}
+        onContextMenu={handleContextMenu}
+      />
+
+      {/* Context Menu */}
+      <ContextMenu
+        anchorPosition={contextMenu ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : null}
+        row={contextMenu?.row || null}
         onClose={handleCloseContextMenu}
-        anchorReference="anchorPosition"
-        anchorPosition={
-          contextMenu !== null
-            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : undefined
-        }
-        slotProps={{
-          paper: {
-            sx: {
-              minWidth: 180,
-              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
-              border: '1px solid #e0e0e0',
-            }
-          }
-        }}
-      >
-        <MenuItem 
-          onClick={() => handleContextAction('continue')}
-          disabled={!contextMenu?.row}
-        >
-          <ListItemIcon>
-            <ContentCopyIcon fontSize="small" color="primary" />
-          </ListItemIcon>
-          <ListItemText>Continue Order</ListItemText>
-        </MenuItem>
-        
-        <MenuItem 
-          onClick={() => handleContextAction('finish')}
-          disabled={contextMenu?.row?.status === 'finished'}
-        >
-          <ListItemIcon>
-            <CheckIcon fontSize="small" color="success" />
-          </ListItemIcon>
-          <ListItemText>
-            {contextMenu?.row?.status === 'finished' ? 'Already Finished' : 'Finish Order'}
-          </ListItemText>
-        </MenuItem>
-        
-        <MenuItem onClick={() => handleContextAction('edit')}>
-          <ListItemIcon>
-            <EditIcon fontSize="small" color="primary" />
-          </ListItemIcon>
-          <ListItemText>Edit Order</ListItemText>
-        </MenuItem>
+        onContinueOrder={handleContinueOrder}
+        onFinishOrder={handleFinishOrder}
+        onEditOrder={handleEditOrder}
+        onInactivateOrder={handleInactivateOrder}
+        onDeleteOrder={handleDeleteOrder}
+      />
 
-        <MenuItem 
-          onClick={() => handleContextAction('inactivate')}
-          sx={{ color: 'warning.main' }}
-        >
-          <ListItemIcon>
-            <BlockIcon fontSize="small" color="warning" />
-          </ListItemIcon>
-          <ListItemText>Inactivate Order</ListItemText>
-        </MenuItem>
-
-        <MenuItem 
-          onClick={() => handleContextAction('deleteAbsolute')}
-          sx={{ color: 'error.main' }}
-        >
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Delete Order (Absolute)</ListItemText>
-        </MenuItem>
-      </Menu>
-
+      {/* Modals */}
       {editModalOpen && (
         <EditOrderDialog
           open={editModalOpen}
           order={orderToEdit}
-          onClose={handleCloseEditModal}
+          onClose={() => setEditModalOpen(false)}
           onSave={(order) => handleSaveEdit(order.key, order)}
           onChange={handleChangeOrder}
         />
       )}
+
       <FinishOrderDialog
         open={finishModalOpen}
         loading={finishLoading}
         image={finishImage}
         onClose={() => setFinishModalOpen(false)}
-        onOk={handleFinishOrder}
+        onOk={confirmFinishOrder}
         onImageChange={setFinishImage}
       />
+
       <PaymentDialog
         open={paymentDialogOpen}
         expense={paymentOrder?.expense ?? 0}
         income={paymentOrder?.income ?? 0}
         onClose={() => setPaymentDialogOpen(false)}
-        onConfirm={handleConfirmPayment}
+        onConfirm={async (expense: number, income: number) => {
+          if (!paymentOrder) return;
+          paymentOrder.expense = expense;
+          paymentOrder.income = income;
+          await updateOrder(paymentOrder.id, {
+            ...mapTableDataToUpdateOrderData(paymentOrder),
+            expense,
+            income,
+            payStatus: 1, 
+          });
+          enqueueSnackbar('Payment registered', { variant: 'success' });
+          loadData();
+          setPaymentDialogOpen(false);
+          setPaymentOrder(null);
+        }}
       />
+
       <CalendarDialog
         open={calendarOpen}
         onClose={() => setCalendarOpen(false)}
         onDaySelect={(date: Date) => {
-          // Cambia la semana y el filtro de día
           setWeek(getWeekOfYear(date));
           setWeekdayFilter(date.toLocaleDateString('en-US', { weekday: 'long' }));
           setCalendarOpen(false);
         }}
       />
 
-      {/* Diálogo para inactivar */}
+      {/* Delete Dialogs */}
       {inactivateDialogOpen && (
         <DeleteOrderDialog
           open={inactivateDialogOpen}
@@ -943,7 +492,6 @@ const Example = () => {
         />
       )}
 
-      {/* Diálogo para eliminar absoluto */}
       {deleteAbsoluteDialogOpen && (
         <DeleteOrderDialog
           open={deleteAbsoluteDialogOpen}
@@ -971,8 +519,8 @@ const Example = () => {
           icon={<DeleteIcon color="error" />}
         />
       )}
-    </>
+    </Box>
   );
 };
 
-export default Example;
+export default OrdersTable;

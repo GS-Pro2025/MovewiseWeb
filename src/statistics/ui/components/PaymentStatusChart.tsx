@@ -21,11 +21,28 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div 
+        className="rounded-2xl shadow-lg p-6 border-2"
+        style={{ 
+          backgroundColor: '#ffffff',
+          borderColor: '#0B2863'
+        }}
+      >
         <div className="flex items-center justify-center h-80">
-          <div className="flex items-center gap-3">
-            <i className="fas fa-spinner animate-spin text-blue-600 text-xl"></i>
-            <span className="text-gray-600">Loading payment status...</span>
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-gray-200 rounded-full"></div>
+              <div 
+                className="w-12 h-12 border-4 rounded-full animate-spin absolute top-0 left-0"
+                style={{ 
+                  borderColor: '#0B2863',
+                  borderTopColor: 'transparent'
+                }}
+              ></div>
+            </div>
+            <span className="text-lg font-semibold" style={{ color: '#0B2863' }}>
+              Loading payment status...
+            </span>
           </div>
         </div>
       </div>
@@ -59,52 +76,82 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
   // Path para la sección de no pagadas (el resto del círculo)
   const unpaidPath = `M ${centerX} ${centerY} L ${x2} ${y2} A ${radius} ${radius} 0 ${1 - largeArcFlag} 1 ${x1} ${y1} Z`;
 
+  const ChangeIndicator = ({ change, positive }: { change: number, positive?: boolean }) => {
+    if (change === 0) return null;
+    
+    const isPositive = positive !== undefined ? positive : change > 0;
+    return (
+      <div className={`text-xs flex items-center gap-1 mt-1 font-semibold ${
+        isPositive ? 'text-green-600' : 'text-red-600'
+      }`}>
+        <i className={`fas fa-arrow-${isPositive ? 'up' : 'down'}`}></i>
+        {Math.abs(change).toFixed(1)}% vs last week
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div 
+      className="rounded-2xl shadow-lg p-6 border-2"
+      style={{ 
+        backgroundColor: '#ffffff',
+        borderColor: '#0B2863'
+      }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">Payment Status</h3>
-          <p className="text-sm text-gray-600">Weekly orders payment breakdown</p>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">📊</span>
+            <h3 className="text-2xl font-bold" style={{ color: '#0B2863' }}>
+              Payment Status
+            </h3>
+          </div>
+          <p className="text-gray-600 font-medium">
+            Weekly orders payment breakdown
+          </p>
         </div>
         <div className="text-right">
-          <div className="text-sm text-gray-600">Total Orders</div>
-          <div className="text-2xl font-bold text-gray-800">{currentStats.totalOrders}</div>
-          {changes.totalOrdersChange !== 0 && (
-            <div className={`text-xs flex items-center justify-end gap-1 ${
-              changes.totalOrdersChange > 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
-              <i className={`fas fa-arrow-${changes.totalOrdersChange > 0 ? 'up' : 'down'}`}></i>
-              {Math.abs(changes.totalOrdersChange)}%
-            </div>
-          )}
+          <div 
+            className="text-sm font-semibold mb-1"
+            style={{ color: '#0B2863' }}
+          >
+            Total Orders
+          </div>
+          <div 
+            className="text-3xl font-bold mb-1"
+            style={{ color: '#0B2863' }}
+          >
+            {currentStats.totalOrders}
+          </div>
+          <ChangeIndicator change={changes.totalOrdersChange} />
         </div>
       </div>
 
       {/* Chart Container */}
-      <div className="flex items-center">
+      <div className="flex flex-col lg:flex-row items-center gap-8">
         {/* SVG Pie Chart */}
         <div className="flex-1 flex justify-center">
           <div className="relative">
-            <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
+            <svg width="240" height="240" viewBox="0 0 200 200" className="transform -rotate-90">
               {/* Fondo gris claro */}
               <circle 
                 cx="100" 
                 cy="100" 
                 r="80" 
-                fill="#f3f4f6" 
+                fill="#f8fafc" 
                 stroke="#e5e7eb" 
-                strokeWidth="1"
+                strokeWidth="2"
               />
               
               {/* Sección de órdenes pagadas */}
               {currentStats.paidOrders > 0 && (
                 <path
                   d={paidPath}
-                  fill="#10B981"
+                  fill="#22c55e"
                   stroke="white"
-                  strokeWidth="2"
-                  className="hover:opacity-80 transition-opacity cursor-pointer"
+                  strokeWidth="3"
+                  className="hover:opacity-80 transition-opacity cursor-pointer drop-shadow-lg"
                 />
               )}
               
@@ -112,10 +159,10 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
               {currentStats.unpaidOrders > 0 && (
                 <path
                   d={unpaidPath}
-                  fill="#EF4444"
+                  fill="#FFE67B"
                   stroke="white"
-                  strokeWidth="2"
-                  className="hover:opacity-80 transition-opacity cursor-pointer"
+                  strokeWidth="3"
+                  className="hover:opacity-80 transition-opacity cursor-pointer drop-shadow-lg"
                 />
               )}
               
@@ -123,31 +170,47 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
               <circle 
                 cx="100" 
                 cy="100" 
-                r="45" 
+                r="50" 
                 fill="white" 
-                stroke="#e5e7eb" 
-                strokeWidth="1"
+                stroke="#0B2863" 
+                strokeWidth="2"
               />
             </svg>
             
             {/* Centro con estadísticas */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="text-2xl font-bold text-gray-800">{currentStats.totalOrders}</div>
-              <div className="text-xs text-gray-600">Total Orders</div>
+              <div 
+                className="text-3xl font-bold"
+                style={{ color: '#0B2863' }}
+              >
+                {currentStats.totalOrders}
+              </div>
+              <div className="text-sm font-semibold text-gray-600">
+                Total Orders
+              </div>
             </div>
             
             {/* Labels de porcentajes */}
             {currentStats.paidOrders > 0 && (
-              <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
-                <div className="bg-green-600 text-white text-xs px-2 py-1 rounded font-medium">
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2">
+                <div 
+                  className="text-sm px-3 py-1 rounded-full font-bold text-white shadow-lg"
+                  style={{ backgroundColor: '#22c55e' }}
+                >
                   {paidPercentage.toFixed(1)}%
                 </div>
               </div>
             )}
             
             {currentStats.unpaidOrders > 0 && (
-              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-                <div className="bg-red-600 text-white text-xs px-2 py-1 rounded font-medium">
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+                <div 
+                  className="text-sm px-3 py-1 rounded-full font-bold shadow-lg"
+                  style={{ 
+                    backgroundColor: '#FFE67B',
+                    color: '#0B2863'
+                  }}
+                >
                   {unpaidPercentage.toFixed(1)}%
                 </div>
               </div>
@@ -156,60 +219,152 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
         </div>
 
         {/* Stats Cards */}
-        <div className="flex flex-col gap-4 ml-6 min-w-[200px]">
+        <div className="flex flex-col gap-4 w-full lg:w-auto lg:min-w-[280px]">
           {/* Paid Orders */}
-          <div className="border border-green-200 rounded-lg p-4 bg-green-50 hover:bg-green-100 transition-colors">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-700">Paid Orders</span>
+          <div 
+            className="border-2 rounded-xl p-5 transition-all duration-200 hover:shadow-md"
+            style={{ 
+              backgroundColor: '#f0fdf4',
+              borderColor: '#22c55e'
+            }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div 
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: '#22c55e' }}
+              ></div>
+              <span 
+                className="font-semibold"
+                style={{ color: '#0B2863' }}
+              >
+                Paid Orders
+              </span>
             </div>
-            <div className="text-2xl font-bold text-green-600">{currentStats.paidOrders}</div>
-            <div className="text-sm text-gray-600">{currentStats.paidPercentage.toFixed(1)}% of total</div>
-            <div className="text-xs text-gray-500">
-              Income: ${(currentStats.paidIncome / 1000).toFixed(1)}K
+            <div 
+              className="text-3xl font-bold mb-1"
+              style={{ color: '#22c55e' }}
+            >
+              {currentStats.paidOrders}
             </div>
-            {changes.paidOrdersChange !== 0 && (
-              <div className={`text-xs flex items-center gap-1 mt-1 ${
-                changes.paidOrdersChange > 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <i className={`fas fa-arrow-${changes.paidOrdersChange > 0 ? 'up' : 'down'}`}></i>
-                {Math.abs(changes.paidOrdersChange).toFixed(1)}% vs last week
-              </div>
-            )}
+            <div 
+              className="text-sm font-medium mb-2"
+              style={{ color: '#0B2863' }}
+            >
+              {currentStats.paidPercentage.toFixed(1)}% of total
+            </div>
+            <div className="text-sm text-gray-600 font-medium">
+              Income: 
+              <span 
+                className="font-bold ml-1"
+                style={{ color: '#22c55e' }}
+              >
+                ${(currentStats.paidIncome / 1000).toFixed(1)}K
+              </span>
+            </div>
+            <ChangeIndicator change={changes.paidOrdersChange} />
           </div>
 
           {/* Unpaid Orders */}
-          <div className="border border-red-200 rounded-lg p-4 bg-red-50 hover:bg-red-100 transition-colors">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-700">Unpaid Orders</span>
+          <div 
+            className="border-2 rounded-xl p-5 transition-all duration-200 hover:shadow-md"
+            style={{ 
+              backgroundColor: '#fffbeb',
+              borderColor: '#FFE67B'
+            }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div 
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: '#FFE67B' }}
+              ></div>
+              <span 
+                className="font-semibold"
+                style={{ color: '#0B2863' }}
+              >
+                Unpaid Orders
+              </span>
             </div>
-            <div className="text-2xl font-bold text-red-600">{currentStats.unpaidOrders}</div>
-            <div className="text-sm text-gray-600">{currentStats.unpaidPercentage.toFixed(1)}% of total</div>
-            <div className="text-xs text-gray-500">
-              Pending: ${(currentStats.unpaidIncome / 1000).toFixed(1)}K
+            <div 
+              className="text-3xl font-bold mb-1"
+              style={{ color: '#0B2863' }}
+            >
+              {currentStats.unpaidOrders}
             </div>
-            {changes.unpaidOrdersChange !== 0 && (
-              <div className={`text-xs flex items-center gap-1 mt-1 ${
-                changes.unpaidOrdersChange > 0 ? 'text-red-600' : 'text-green-600'
-              }`}>
-                <i className={`fas fa-arrow-${changes.unpaidOrdersChange > 0 ? 'up' : 'down'}`}></i>
-                {Math.abs(changes.unpaidOrdersChange).toFixed(1)}% vs last week
-              </div>
-            )}
+            <div 
+              className="text-sm font-medium mb-2"
+              style={{ color: '#0B2863' }}
+            >
+              {currentStats.unpaidPercentage.toFixed(1)}% of total
+            </div>
+            <div className="text-sm text-gray-600 font-medium">
+              Pending: 
+              <span 
+                className="font-bold ml-1"
+                style={{ color: '#0B2863' }}
+              >
+                ${(currentStats.unpaidIncome / 1000).toFixed(1)}K
+              </span>
+            </div>
+            <ChangeIndicator change={changes.unpaidOrdersChange} positive={changes.unpaidOrdersChange < 0} />
           </div>
 
           {/* Previous Week Comparison */}
-          <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-            <div className="text-xs font-medium text-gray-700 mb-2">Previous Week</div>
-            <div className="text-xs text-gray-600 space-y-1">
-              <div className="flex justify-between">
-                <span>Paid:</span>
-                <span>{previousStats.paidOrders} ({previousStats.paidPercentage.toFixed(1)}%)</span>
+          <div 
+            className="border-2 rounded-xl p-4 transition-all duration-200"
+            style={{ 
+              backgroundColor: '#f8fafc',
+              borderColor: '#0B2863'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">📈</span>
+              <span 
+                className="font-semibold"
+                style={{ color: '#0B2863' }}
+              >
+                Previous Week
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-600">Paid:</span>
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="font-bold"
+                    style={{ color: '#22c55e' }}
+                  >
+                    {previousStats.paidOrders}
+                  </span>
+                  <span 
+                    className="text-xs px-2 py-1 rounded-full font-semibold"
+                    style={{ 
+                      backgroundColor: '#22c55e',
+                      color: '#ffffff'
+                    }}
+                  >
+                    {previousStats.paidPercentage.toFixed(1)}%
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Unpaid:</span>
-                <span>{previousStats.unpaidOrders} ({previousStats.unpaidPercentage.toFixed(1)}%)</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-600">Unpaid:</span>
+                <div className="flex items-center gap-2">
+                  <span 
+                    className="font-bold"
+                    style={{ color: '#0B2863' }}
+                  >
+                    {previousStats.unpaidOrders}
+                  </span>
+                  <span 
+                    className="text-xs px-2 py-1 rounded-full font-semibold"
+                    style={{ 
+                      backgroundColor: '#FFE67B',
+                      color: '#0B2863'
+                    }}
+                  >
+                    {previousStats.unpaidPercentage.toFixed(1)}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -217,14 +372,33 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="flex justify-center gap-6 mt-6 pt-4 border-t border-gray-200">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span className="text-sm text-gray-700">Paid Orders ({currentStats.paidOrders})</span>
+      <div 
+        className="flex flex-wrap justify-center gap-6 mt-6 pt-4 border-t-2"
+        style={{ borderTopColor: '#0B2863' }}
+      >
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-5 h-5 rounded shadow-sm"
+            style={{ backgroundColor: '#22c55e' }}
+          ></div>
+          <span 
+            className="font-semibold"
+            style={{ color: '#0B2863' }}
+          >
+            Paid Orders ({currentStats.paidOrders})
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-500 rounded"></div>
-          <span className="text-sm text-gray-700">Unpaid Orders ({currentStats.unpaidOrders})</span>
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-5 h-5 rounded shadow-sm"
+            style={{ backgroundColor: '#FFE67B' }}
+          ></div>
+          <span 
+            className="font-semibold"
+            style={{ color: '#0B2863' }}
+          >
+            Unpaid Orders ({currentStats.unpaidOrders})
+          </span>
         </div>
       </div>
     </div>
