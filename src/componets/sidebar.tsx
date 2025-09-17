@@ -219,7 +219,6 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar }) => {
                 <DropdownLink icon="fa-calculator" text="Summary Costs" to="/summary-cost" />
                 <DropdownLink icon="fa-gas-pump" text="Resume Fuel" to="/resume-fuel" />
                 <DropdownLink icon="fa-dollar-sign" text="Extra Cost" to="/extra-cost" />
-                <DropdownLink icon="fa-chart-line" text="Financials" to="/financialsView" />
               </ul>
             </div>
           </li>

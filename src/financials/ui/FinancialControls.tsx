@@ -4,6 +4,7 @@ import {TextField, Typography} from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { SuperOrder } from '../domain/ModelsOCR';
 import ExportMenuComponent from './ExportMenuComponent';
+import { Calendar, Search, RotateCcw } from 'lucide-react';
 
 interface FinancialControlsProps {
   // Week controls
@@ -91,7 +92,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
   const ClearButton = ({ onClick }: { onClick: () => void }) => (
     <button
       onClick={onClick}
-      className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 hover:shadow-md"
+      className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 hover:shadow-md flex items-center gap-2"
       style={{
         color: '#0B2863',
         borderColor: '#0B2863',
@@ -106,6 +107,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
         e.currentTarget.style.color = '#0B2863';
       }}
     >
+      <RotateCcw size={16} />
       Clear Search
     </button>
   );
@@ -186,7 +188,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
                   color: '#0B2863'
                 }}
               >
-                <span className="text-lg">📅</span>
+                <Calendar size={18} />
                 <Typography variant="body2" className="!font-bold">
                   {weekRange.start} → {weekRange.end}
                 </Typography>
@@ -197,43 +199,60 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
         
         {/* Search Controls */}
         <div className="flex gap-3 items-center flex-wrap">
-          <TextField
-            label="🔍 Search by Reference"
-            value={searchRef}
-            onChange={(e) => onSearchRefChange(e.target.value)}
-            onKeyPress={handleKeyPress}
-            size="small"
-            sx={{ 
-              minWidth: 250,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 3,
-                '& fieldset': {
-                  borderColor: '#0B2863',
-                  borderWidth: 2
+          <div className="relative">
+            <TextField
+              label="Search by Reference"
+              value={searchRef}
+              onChange={(e) => onSearchRefChange(e.target.value)}
+              onKeyPress={handleKeyPress}
+              size="small"
+              sx={{ 
+                minWidth: 250,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                  '& fieldset': {
+                    borderColor: '#0B2863',
+                    borderWidth: 2
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#FFE67B'
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#0B2863'
+                  }
                 },
-                '&:hover fieldset': {
-                  borderColor: '#FFE67B'
+                '& .MuiInputLabel-root': {
+                  color: '#0B2863',
+                  fontWeight: 600
                 },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#0B2863'
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#0B2863'
                 }
-              },
-              '& .MuiInputLabel-root': {
-                color: '#0B2863',
-                fontWeight: 600
-              },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: '#0B2863'
-              }
-            }}
-            placeholder="Enter order reference..."
-          />
+              }}
+              placeholder="Enter order reference..."
+              InputProps={{
+                startAdornment: (
+                  <Search size={20} style={{ color: '#0B2863', marginRight: '8px' }} />
+                )
+              }}
+            />
+          </div>
           
           <SearchButton
             onClick={onSearch}
             disabled={searchLoading || !searchRef.trim()}
           >
-            {searchLoading ? '🔄 Searching...' : 'Search'}
+            {searchLoading ? (
+              <>
+                <RotateCcw size={16} className="animate-spin" />
+                Searching...
+              </>
+            ) : (
+              <>
+                <Search size={16} />
+                Search
+              </>
+            )}
           </SearchButton>
           
           {hasSearchResults && (
@@ -266,7 +285,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
           }}
         >
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
+            <Search size={24} style={{ color: '#0B2863' }} />
             <Typography 
               variant="body1" 
               className="!font-semibold"
