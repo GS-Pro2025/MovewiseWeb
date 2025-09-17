@@ -1,7 +1,8 @@
 import type { Operator } from './ModelOrdersReport';
+
 export interface TableData {
   id: string;
-  status: string;
+  status: "finished" | "pending" | "inactive"; 
   key_ref: string;
   firstName: string;
   lastName: string;
@@ -25,7 +26,9 @@ export interface TableData {
   distance: number;
   created_by: string | null;
   operators: Operator[];
+  dispatch_ticket: string; // Agregado ya que se usa en el código
 }
+
 // Interfaz para exportar solo los campos planos
 export interface TableDataExport {
   [key: string]: string | number;
@@ -49,5 +52,5 @@ export interface TableDataExport {
   totalCost: number;
   payStatus: number;
   distance: number;
-  week: number; 
+  week: number;
 }

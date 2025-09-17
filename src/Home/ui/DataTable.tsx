@@ -3,15 +3,12 @@ import { Check, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import type { TableData } from '../domain/TableData';
 
-// Mock component para tabla de operadores - REMOVIDO
-// Ahora usamos el componente original OperatorsTable
-
 interface Column {
   id: keyof TableData | 'actions' | 'expand';
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
-  format?: (value: string | number | null | undefined) => string | React.ReactNode;
+  format?: (value: string | number | null | undefined | unknown) => string | React.ReactNode;
 }
 
 const columns: Column[] = [
@@ -21,7 +18,7 @@ const columns: Column[] = [
     id: 'status', 
     label: 'Status', 
     minWidth: 100,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const status = String(value || '');
       const getStatusStyle = (status: string) => {
         switch (status) {
@@ -51,7 +48,7 @@ const columns: Column[] = [
     id: 'phone', 
     label: 'Phone', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const phone = String(value || '');
       return phone ? phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : 'N/A';
     }
@@ -66,19 +63,19 @@ const columns: Column[] = [
     id: 'weight', 
     label: 'Weight', 
     minWidth: 100,
-    format: (value: string | number | null | undefined) => String(value || 'N/A')
+    format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
   },
   { 
     id: 'truckType', 
     label: 'Truck Type', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => String(value || 'N/A')
+    format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
   },
   { 
     id: 'distance', 
     label: 'Distance (mi)', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
       return num ? `${num.toLocaleString('en-US')} mi` : 'N/A';
     }
@@ -87,7 +84,7 @@ const columns: Column[] = [
     id: 'expense', 
     label: 'Expense', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
       return num ? `${num.toLocaleString('en-US')}` : 'N/A';
     }
@@ -96,7 +93,7 @@ const columns: Column[] = [
     id: 'income', 
     label: 'Income', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
       return num ? `${num.toLocaleString('en-US')}` : 'N/A';
     }
@@ -105,7 +102,7 @@ const columns: Column[] = [
     id: 'totalCost', 
     label: 'Total Cost', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value || 0);
       return `${num.toLocaleString('en-US')}`;
     }
@@ -115,7 +112,7 @@ const columns: Column[] = [
     id: 'payStatus', 
     label: 'Pay Status', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => {
+    format: (value: string | number | null | undefined | unknown) => {
       const status = Number(value || 0);
       return (
         <span className={`px-3 py-1 rounded-full text-xs font-bold text-white`} style={{ 
@@ -130,7 +127,7 @@ const columns: Column[] = [
     id: 'created_by', 
     label: 'Created By', 
     minWidth: 120,
-    format: (value: string | number | null | undefined) => (
+    format: (value: string | number | null | undefined | unknown) => (
       <span className="font-semibold" style={{ color: '#0B2863' }}>
         {String(value || 'N/A')}
       </span>
@@ -185,6 +182,11 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   const isSelected = (row: TableData) => selectedRows.some(selected => selected.id === row.id);
   const isAllSelected = data.length > 0 && selectedRows.length === data.length;
+
+  // Helper function to safely get value from TableData
+  const getColumnValue = (row: TableData, columnId: keyof TableData): unknown => {
+    return row[columnId];
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border-2 overflow-hidden" style={{ borderColor: '#0B2863' }}>
@@ -305,7 +307,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                         
                         {/* Data columns */}
                         {columns.slice(2).map((column, columnIndex) => {
-                          const value = row[column.id as keyof TableData];
+                          const value = getColumnValue(row, column.id as keyof TableData);
                           let displayValue: React.ReactNode;
                           
                           if (column.format) {

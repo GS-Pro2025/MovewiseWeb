@@ -1,30 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, MapPin, ChevronDown, Box, X } from 'lucide-react';
 
-// Tipos para los datos de las órdenes
-interface TableData {
-  id: string;
-  status: 'finished' | 'pending' | 'inactive';
-  key_ref: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  company: string;
-  state: string;
-  weekday: string;
-  dateReference: string;
-  job: string;
-  weight: number;
-  distance: number;
-  expense: string;
-  income: string;
-  totalCost: number;
-  week: number;
-  payStatus: number;
-  created_by: string;
-  operators?: any[];
-}
+// Import the centralized TableData type
+import type { TableData } from '../domain/TableData';
 
 interface TableFiltersProps {
   week: number;

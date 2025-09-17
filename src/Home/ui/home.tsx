@@ -52,6 +52,27 @@ const getWeekRange = (year: number, week: number): { start: string; end: string 
   };
 };
 
+// Helper function to normalize status to expected union type
+const normalizeStatus = (status: string): "finished" | "pending" | "inactive" => {
+  const normalized = status.toLowerCase();
+  switch (normalized) {
+    case 'finished':
+    case 'completed':
+    case 'done':
+      return 'finished';
+    case 'inactive':
+    case 'cancelled':
+    case 'canceled':
+      return 'inactive';
+    case 'pending':
+    case 'active':
+    case 'in-progress':
+    case 'in progress':
+    default:
+      return 'pending';
+  }
+};
+
 const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
   key_ref: item.key_ref,
@@ -98,12 +119,17 @@ const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
   customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
 });
 
+// Type for the normalized TableData with proper status type
+type NormalizedTableData = Omit<TableData, 'status'> & {
+  status: "finished" | "pending" | "inactive";
+};
+
 const OrdersTable: React.FC = () => {
   // State
-  const [data, setData] = useState<TableData[]>([]);
-  const [filteredData, setFilteredData] = useState<TableData[]>([]);
+  const [data, setData] = useState<NormalizedTableData[]>([]);
+  const [filteredData, setFilteredData] = useState<NormalizedTableData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedRows, setSelectedRows] = useState<TableData[]>([]);
+  const [selectedRows, setSelectedRows] = useState<NormalizedTableData[]>([]);
   
   const [week, setWeek] = useState<number>(() => {
     const now = new Date();
@@ -128,19 +154,19 @@ const OrdersTable: React.FC = () => {
   const [finishLoading, setFinishLoading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentOrder, setPaymentOrder] = useState<TableData | null>(null);
+  const [paymentOrder, setPaymentOrder] = useState<NormalizedTableData | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<UpdateOrderData | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [inactivateDialogOpen, setInactivateDialogOpen] = useState(false);
-  const [orderToInactivate, setOrderToInactivate] = useState<TableData | null>(null);
+  const [orderToInactivate, setOrderToInactivate] = useState<NormalizedTableData | null>(null);
   const [deleteAbsoluteDialogOpen, setDeleteAbsoluteDialogOpen] = useState(false);
-  const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<TableData | null>(null);
+  const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<NormalizedTableData | null>(null);
   
   // Context menu
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
-    row: TableData | null;
+    row: NormalizedTableData | null;
   } | null>(null);
 
   // Hooks
@@ -158,7 +184,7 @@ const OrdersTable: React.FC = () => {
         pagination.pageSize
       );
       
-      const mappedData = response.results.map((item) => {
+      const mappedData: NormalizedTableData[] = response.results.map((item) => {
         const dateParts = item.date.split('-');
         const date = new Date(
           Number(dateParts[0]),
@@ -170,7 +196,7 @@ const OrdersTable: React.FC = () => {
         
         return {
           id: item.key,
-          status: item.status.toLowerCase(),
+          status: normalizeStatus(item.status), // Use the normalize function here
           key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
@@ -242,7 +268,7 @@ const OrdersTable: React.FC = () => {
     setPagination({ pageIndex: 0, pageSize: newRowsPerPage });
   };
 
-  const handleRowSelect = (row: TableData) => {
+  const handleRowSelect = (row: NormalizedTableData) => {
     setSelectedRows(prev => {
       const isSelected = prev.some(selected => selected.id === row.id);
       if (isSelected) {
@@ -261,7 +287,7 @@ const OrdersTable: React.FC = () => {
     }
   };
 
-  const handleContextMenu = (event: React.MouseEvent, row: TableData) => {
+  const handleContextMenu = (event: React.MouseEvent, row: NormalizedTableData) => {
     event.preventDefault();
     setContextMenu({
       mouseX: event.clientX - 2,
@@ -274,7 +300,7 @@ const OrdersTable: React.FC = () => {
     setContextMenu(null);
   };
 
-  const handleContinueOrder = (order: TableData) => {
+  const handleContinueOrder = (order: NormalizedTableData) => {
     const orderData = mapTableDataToCreateOrderModel(order);
     navigate('/create-daily', { state: { orderToContinue: orderData } });
   };
@@ -302,7 +328,7 @@ const OrdersTable: React.FC = () => {
     setFinishLoading(false);
   };
 
-  const handleEditOrder = (order: TableData) => {
+  const handleEditOrder = (order: NormalizedTableData) => {
     setOrderToEdit(mapTableDataToUpdateOrderData(order));
     setEditModalOpen(true);
   };
@@ -338,23 +364,27 @@ const OrdersTable: React.FC = () => {
     }
   };
 
-  const handleInactivateOrder = (order: TableData) => {
+  const handleInactivateOrder = (order: NormalizedTableData) => {
     setOrderToInactivate(order);
     setInactivateDialogOpen(true);
   };
 
-  const handleDeleteOrder = (order: TableData) => {
+  const handleDeleteOrder = (order: NormalizedTableData) => {
     setOrderToDeleteAbsolute(order);
     setDeleteAbsoluteDialogOpen(true);
   };
 
   // Export handlers
-  const handleExportExcel = (data: TableData[], filename: string) => {
-    exportToExcel(data, filename);
+  const handleExportExcel = (data: NormalizedTableData[], filename: string) => {
+    // Convert to original TableData format for export
+    const exportData = data.map(item => ({ ...item } as TableData));
+    exportToExcel(exportData, filename);
   };
 
-  const handleExportPDF = (data: TableData[], filename: string) => {
-    exportToPDF(data, filename);
+  const handleExportPDF = (data: NormalizedTableData[], filename: string) => {
+    // Convert to original TableData format for export
+    const exportData = data.map(item => ({ ...item } as TableData));
+    exportToPDF(exportData, filename);
   };
 
   return (
@@ -370,9 +400,9 @@ const OrdersTable: React.FC = () => {
         onWeekdayChange={setWeekdayFilter}
         onLocationChange={setLocationFilter}
         onCalendarOpen={() => setCalendarOpen(true)}
-        // NUEVAS PROPS PARA ESTADÍSTICAS EN TIEMPO REAL
-        data={data}                 // Todos los datos sin filtrar
-        filteredData={filteredData} // Datos con filtros aplicados
+        // Props for real-time statistics
+        data={data}
+        filteredData={filteredData}
       />
 
       {/* Toolbar */}
