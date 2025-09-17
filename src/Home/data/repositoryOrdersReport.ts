@@ -1,4 +1,3 @@
-
 import { OrdersReportResponse } from '../domain/ModelOrdersReport';
 import Cookies from 'js-cookie';
 
@@ -8,7 +7,8 @@ export async function fetchOrdersReport(
   page: number = 1,
   number_week: number,
   year: number,
-  page_size: number = 5
+  page_size: number = 5,
+  search?: string // Nuevo parámetro opcional
 ): Promise<OrdersReportResponse> {
   const token = Cookies.get('authToken');
   if (!token) {
@@ -16,8 +16,23 @@ export async function fetchOrdersReport(
     throw new Error('No hay token de autenticación');
   }
 
-  const url = 
-    `${BASE_URL_API}/assigns/list-report/?number_week=${number_week}&year=${year}&page_size=${page_size}&page=${page}`;
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page_size: page_size.toString(),
+    page: page.toString(),
+  });
+
+  // Si hay search, SOLO mandar search y paginación
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  } else {
+    // Si NO hay search, mandar los filtros normales
+    params.append('number_week', number_week.toString());
+    params.append('year', year.toString());
+  }
+
+  const url = `${BASE_URL_API}/assigns/list-report/?${params.toString()}`;
+  
   const response = await fetch(url, {
     method: 'GET',
     headers: {

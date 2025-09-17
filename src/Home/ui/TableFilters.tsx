@@ -11,7 +11,9 @@ import {
   XCircle,
   ClipboardList,
   Target,
-  Activity
+  Activity,
+  Search,
+  Globe
 } from 'lucide-react';
 
 // Import the centralized TableData type
@@ -28,8 +30,15 @@ interface TableFiltersProps {
   onLocationChange: (location: string) => void;
   onCalendarOpen: () => void;
   // Props para datos reales
-  data: TableData[];  // Todos los datos sin filtrar
-  filteredData: TableData[];  // Datos filtrados por la semana y otros filtros
+  data: TableData[];
+  filteredData: TableData[];
+  // Props para búsqueda global
+  globalSearch: string;
+  onGlobalSearchChange: (search: string) => void;
+  onGlobalSearchSubmit: () => void;
+  onGlobalSearchClear: () => void; // AGREGAR ESTA PROP
+  globalSearchLoading: boolean;
+  isGlobalSearchActive: boolean;
 }
 
 const weekDays = [
@@ -48,6 +57,12 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   onLocationChange,
   onCalendarOpen,
   data = [],
+  globalSearch,
+  onGlobalSearchChange,
+  onGlobalSearchSubmit,
+  onGlobalSearchClear, // USAR ESTA PROP
+  globalSearchLoading,
+  isGlobalSearchActive,
 }) => {
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
@@ -55,6 +70,21 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 
   // Calcular estadísticas basadas en los datos filtrados de la semana actual
   const weeklyStats = React.useMemo(() => {
+    // Si hay búsqueda global activa, mostrar estadísticas de resultados de búsqueda
+    if (isGlobalSearchActive) {
+      const totalOrders = data.length;
+      const finishedOrders = data.filter(item => item.status === 'finished').length;
+      const pendingOrders = data.filter(item => item.status === 'pending').length;
+      const inactiveOrders = data.filter(item => item.status === 'inactive').length;
+      
+      return {
+        totalOrders,
+        finishedOrders,
+        pendingOrders,
+        inactiveOrders
+      };
+    }
+
     // Filtrar datos solo por la semana seleccionada (sin otros filtros aplicados)
     const weekData = data.filter(item => item.week === week);
     
@@ -69,7 +99,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
       pendingOrders,
       inactiveOrders
     };
-  }, [data, week]);
+  }, [data, week, isGlobalSearchActive]);
 
   // Estilos para el scrollbar personalizado
   useEffect(() => {
@@ -151,6 +181,13 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     }
   };
 
+  // Manejar Enter en el campo de búsqueda global
+  const handleGlobalSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !globalSearchLoading && globalSearch.trim()) {
+      onGlobalSearchSubmit();
+    }
+  };
+
   return (
     <div>
       {/* Main Filter Card */}
@@ -172,144 +209,282 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           </div>
         </div>
 
-        {/* Filters Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Week Input Card - Implementación mejorada */}
+        {/* Global Search Section */}
+        <div className="mb-6">
           <div 
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
-            style={{ borderColor: '#0B2863' }}
-            ref={dropdownRef}
+            className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
+            style={{ borderColor: '#8b5cf6' }}
           >
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
                 <div className="flex items-center gap-2">
-                  <Calendar size={16} />
-                  Week Number
+                  <Globe size={16} />
+                  Global Search
                 </div>
               </label>
-              <button
-                onClick={() => setViewMode(viewMode === 'select' ? 'input' : 'select')}
-                className="text-xs px-2 py-1 rounded-md border transition-colors duration-200"
-                style={{ 
-                  backgroundColor: '#F09F52',
-                  borderColor: '#0B2863',
-                  color: 'white'
-                }}
-                title={`Switch to ${viewMode === 'select' ? 'input' : 'dropdown'} view`}
-              >
-                {viewMode === 'select' ? <Filter size={12} /> : <ChevronDown size={12} />}
-              </button>
+              {isGlobalSearchActive && (
+                <button
+                  onClick={onGlobalSearchClear} // USAR LA FUNCIÓN CORRECTA
+                  className="p-1 rounded transition-colors"
+                  style={{ backgroundColor: '#ef4444', color: 'white' }}
+                  title="Clear global search"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
             
-            {viewMode === 'select' ? (
-              // Modo dropdown mejorado
-              <div className="relative">
-                <div
-                  className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm"
-                  style={{ borderColor: '#F09F52' }}
-                  onClick={() => setShowWeekDropdown(!showWeekDropdown)}
-                  onKeyDown={handleWeekKeyDown}
-                  tabIndex={0}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                >
-                  <span style={{ color: '#0B2863' }}>Week {week}</span>
-                  <ChevronDown 
-                    size={16}
-                    className={`transition-transform duration-200 ${showWeekDropdown ? 'rotate-180' : ''}`}
-                    style={{ color: '#F09F52' }}
-                  />
-                </div>
-
-                {showWeekDropdown && (
-                  <div className="week-dropdown mt-2 bg-white border-2 rounded-lg shadow-xl w-[350px]" style={{ borderColor: '#0B2863' }}>
-                    <div className="p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-semibold" style={{ color: '#0B2863' }}>Select week (1-53):</span>
-                        <button
-                          onClick={() => setShowWeekDropdown(false)}
-                          className="p-1 rounded transition-colors"
-                          style={{ backgroundColor: '#ef4444', color: 'white' }}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                      
-                      {/* Quick actions */}
-                      <div className="flex gap-1 mb-3">
-                        {[
-                          { label: 'First', week: 1 },
-                          { label: 'Q1', week: 13 },
-                          { label: 'Mid', week: 26 },
-                          { label: 'Q3', week: 39 },
-                          { label: 'Last', week: 53 }
-                        ].map((item) => (
-                          <button
-                            key={item.label}
-                            onClick={() => handleWeekSelect(item.week)}
-                            className="text-xs px-2 py-1 rounded transition-colors"
-                            style={{ 
-                              backgroundColor: '#F09F52',
-                              color: 'white'
-                            }}
-                          >
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                      
-                      <div className="grid grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-                        {weeks.map((weekNum) => (
-                          <button
-                            key={weekNum}
-                            onClick={() => handleWeekSelect(weekNum)}
-                            className={`p-2 text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105`}
-                            style={{
-                              backgroundColor: week === weekNum ? '#22c55e' : '#f9fafb',
-                              color: week === weekNum ? 'white' : '#0B2863',
-                              borderColor: week === weekNum ? '#22c55e' : '#e5e7eb'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (week !== weekNum) {
-                                e.currentTarget.style.backgroundColor = '#F09F52';
-                                e.currentTarget.style.color = 'white';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (week !== weekNum) {
-                                e.currentTarget.style.backgroundColor = '#f9fafb';
-                                e.currentTarget.style.color = '#0B2863';
-                              }
-                            }}
-                            title={`Select week ${weekNum}`}
-                          >
-                            {weekNum}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Modo input numérico
-              <div className="relative">
+            <div className="flex gap-3">
+              <div className="flex-1 relative">
+                <Search 
+                  size={16} 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
+                  style={{ color: '#8b5cf6' }}
+                />
                 <input
-                  type="number"
-                  min="1"
-                  max="53"
-                  value={week}
-                  onChange={handleWeekInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white shadow-sm"
+                  type="text"
+                  value={globalSearch}
+                  onChange={(e) => onGlobalSearchChange(e.target.value)}
+                  onKeyPress={handleGlobalSearchKeyPress}
+                  placeholder="Search by order ref, person name, job, or location..."
+                  className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   style={{ 
                     borderColor: '#0B2863',
+                    backgroundColor: 'white',
                     color: '#0B2863'
                   }}
-                  placeholder="1-53"
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = `0 0 0 3px rgba(139, 92, 246, 0.3)`;
+                    e.target.style.transform = 'scale(1.02)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                  disabled={globalSearchLoading}
+                />
+              </div>
+              
+              <button
+                onClick={onGlobalSearchSubmit}
+                disabled={globalSearchLoading || !globalSearch.trim()}
+                className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+                  globalSearchLoading || !globalSearch.trim()
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
+                }`}
+                style={{
+                  backgroundColor: globalSearchLoading || !globalSearch.trim() ? '#d1d5db' : '#8b5cf6'
+                }}
+              >
+                {globalSearchLoading ? (
+                  <>
+                    <Search size={16} className="animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search size={16} />
+                    Search
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-2 text-xs text-gray-600">
+              <strong>Search tips:</strong> Enter order reference (e.g., ORD-2025-001), person name, job type, or location
+            </div>
+          </div>
+        </div>
+
+        {/* Conditional rendering: Show regular filters only when NOT in global search mode */}
+        {!isGlobalSearchActive && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Week Input Card - Implementación mejorada */}
+            <div 
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
+              style={{ borderColor: '#0B2863' }}
+              ref={dropdownRef}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} />
+                    Week Number
+                  </div>
+                </label>
+                <button
+                  onClick={() => setViewMode(viewMode === 'select' ? 'input' : 'select')}
+                  className="text-xs px-2 py-1 rounded-md border transition-colors duration-200"
+                  style={{ 
+                    backgroundColor: '#F09F52',
+                    borderColor: '#0B2863',
+                    color: 'white'
+                  }}
+                  title={`Switch to ${viewMode === 'select' ? 'input' : 'dropdown'} view`}
+                >
+                  {viewMode === 'select' ? <Filter size={12} /> : <ChevronDown size={12} />}
+                </button>
+              </div>
+              
+              {viewMode === 'select' ? (
+                // Modo dropdown mejorado
+                <div className="relative">
+                  <div
+                    className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm"
+                    style={{ borderColor: '#F09F52' }}
+                    onClick={() => setShowWeekDropdown(!showWeekDropdown)}
+                    onKeyDown={handleWeekKeyDown}
+                    tabIndex={0}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    <span style={{ color: '#0B2863' }}>Week {week}</span>
+                    <ChevronDown 
+                      size={16}
+                      className={`transition-transform duration-200 ${showWeekDropdown ? 'rotate-180' : ''}`}
+                      style={{ color: '#F09F52' }}
+                    />
+                  </div>
+
+                  {showWeekDropdown && (
+                    <div className="week-dropdown mt-2 bg-white border-2 rounded-lg shadow-xl w-[350px]" style={{ borderColor: '#0B2863' }}>
+                      <div className="p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-xs font-semibold" style={{ color: '#0B2863' }}>Select week (1-53):</span>
+                          <button
+                            onClick={() => setShowWeekDropdown(false)}
+                            className="p-1 rounded transition-colors"
+                            style={{ backgroundColor: '#ef4444', color: 'white' }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                        
+                        {/* Quick actions */}
+                        <div className="flex gap-1 mb-3">
+                          {[
+                            { label: 'First', week: 1 },
+                            { label: 'Q1', week: 13 },
+                            { label: 'Mid', week: 26 },
+                            { label: 'Q3', week: 39 },
+                            { label: 'Last', week: 53 }
+                          ].map((item) => (
+                            <button
+                              key={item.label}
+                              onClick={() => handleWeekSelect(item.week)}
+                              className="text-xs px-2 py-1 rounded transition-colors"
+                              style={{ 
+                                backgroundColor: '#F09F52',
+                                color: 'white'
+                              }}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <div className="grid grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
+                          {weeks.map((weekNum) => (
+                            <button
+                              key={weekNum}
+                              onClick={() => handleWeekSelect(weekNum)}
+                              className={`p-2 text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105`}
+                              style={{
+                                backgroundColor: week === weekNum ? '#22c55e' : '#f9fafb',
+                                color: week === weekNum ? 'white' : '#0B2863',
+                                borderColor: week === weekNum ? '#22c55e' : '#e5e7eb'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (week !== weekNum) {
+                                  e.currentTarget.style.backgroundColor = '#F09F52';
+                                  e.currentTarget.style.color = 'white';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (week !== weekNum) {
+                                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                                  e.currentTarget.style.color = '#0B2863';
+                                }
+                              }}
+                              title={`Select week ${weekNum}`}
+                            >
+                              {weekNum}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Modo input numérico
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max="53"
+                    value={week}
+                    onChange={handleWeekInputChange}
+                    className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white shadow-sm"
+                    style={{ 
+                      borderColor: '#0B2863',
+                      color: '#0B2863'
+                    }}
+                    placeholder="1-53"
+                    onFocus={(e) => {
+                      e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+                      e.target.style.transform = 'scale(1.02)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.transform = 'scale(1)';
+                    }}
+                  />
+                </div>
+              )}
+              <div 
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
+                style={{ backgroundColor: week ? '#22c55e' : '#ef4444' }}
+              ></div>
+            </div>
+
+            {/* Weekday Select Card */}
+            <div 
+              className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-2 shadow-md"
+              style={{ borderColor: '#F09F52' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} />
+                    Weekday Filter
+                  </div>
+                </label>
+                {weekdayFilter && (
+                  <button
+                    onClick={() => onWeekdayChange('')}
+                    className="p-1 rounded transition-colors"
+                    style={{ backgroundColor: '#ef4444', color: 'white' }}
+                    title="Clear weekday filter"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <select
+                  value={weekdayFilter}
+                  onChange={(e) => onWeekdayChange(e.target.value)}
+                  className="w-full px-4 py-3 pr-10 border-2 rounded-lg text-sm font-semibold appearance-none bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                  style={{ 
+                    borderColor: '#0B2863',
+                    color: weekdayFilter ? '#0B2863' : '#6b7280'
+                  }}
                   onFocus={(e) => {
                     e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
                     e.target.style.transform = 'scale(1.02)';
@@ -318,225 +493,218 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                     e.target.style.boxShadow = 'none';
                     e.target.style.transform = 'scale(1)';
                   }}
+                >
+                  <option value="">All Weekdays</option>
+                  {weekDays.map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown 
+                  size={16} 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                  style={{ color: '#F09F52' }}
                 />
+                <div 
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
+                  style={{ backgroundColor: weekdayFilter ? '#22c55e' : '#ef4444' }}
+                ></div>
               </div>
-            )}
+            </div>
+
+            {/* Location Input Card - Con botón clear individual */}
             <div 
-              className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-              style={{ backgroundColor: week ? '#22c55e' : '#ef4444' }}
-            ></div>
-          </div>
-
-          {/* Weekday Select Card */}
-          <div 
-            className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-2 shadow-md"
-            style={{ borderColor: '#F09F52' }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
-                <div className="flex items-center gap-2">
-                  <Calendar size={16} />
-                  Weekday Filter
-                </div>
-              </label>
-              {weekdayFilter && (
-                <button
-                  onClick={() => onWeekdayChange('')}
-                  className="p-1 rounded transition-colors"
-                  style={{ backgroundColor: '#ef4444', color: 'white' }}
-                  title="Clear weekday filter"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-            <div className="relative">
-              <select
-                value={weekdayFilter}
-                onChange={(e) => onWeekdayChange(e.target.value)}
-                className="w-full px-4 py-3 pr-10 border-2 rounded-lg text-sm font-semibold appearance-none bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                style={{ 
-                  borderColor: '#0B2863',
-                  color: weekdayFilter ? '#0B2863' : '#6b7280'
-                }}
-                onFocus={(e) => {
-                  e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-                  e.target.style.transform = 'scale(1.02)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.boxShadow = 'none';
-                  e.target.style.transform = 'scale(1)';
-                }}
-              >
-                <option value="">All Weekdays</option>
-                {weekDays.map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown 
-                size={16} 
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                style={{ color: '#F09F52' }}
-              />
-              <div 
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-                style={{ backgroundColor: weekdayFilter ? '#22c55e' : '#ef4444' }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Location Input Card - Con botón clear individual */}
-          <div 
-            className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 shadow-md"
-            style={{ borderColor: '#22c55e' }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
-                <div className="flex items-center gap-2">
-                  <MapPin size={16} />
-                  Location Filter
-                </div>
-              </label>
-              {locationFilter && (
-                <button
-                  onClick={() => onLocationChange('')}
-                  className="p-1 rounded transition-colors"
-                  style={{ backgroundColor: '#ef4444', color: 'white' }}
-                  title="Clear location filter"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-            <div className="relative">
-              <MapPin 
-                size={16} 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
-                style={{ color: '#22c55e' }}
-              />
-              <input
-                type="text"
-                value={locationFilter}
-                onChange={(e) => onLocationChange(e.target.value)}
-                list="locations-list"
-                placeholder="Search location..."
-                className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                style={{ 
-                  borderColor: '#0B2863',
-                  backgroundColor: 'white',
-                  color: '#0B2863'
-                }}
-                onFocus={(e) => {
-                  e.target.style.boxShadow = `0 0 0 3px rgba(34, 197, 94, 0.3)`;
-                  e.target.style.transform = 'scale(1.02)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.boxShadow = 'none';
-                  e.target.style.transform = 'scale(1)';
-                }}
-              />
-              <datalist id="locations-list">
-                {locations.map((location) => (
-                  <option key={location} value={location} />
-                ))}
-              </datalist>
-              <div 
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-                style={{ backgroundColor: locationFilter ? '#22c55e' : '#ef4444' }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Calendar Button Card */}
-          <div 
-            className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 shadow-md flex flex-col justify-between"
-            style={{ borderColor: '#8b5cf6' }}
-          >
-            <label className="block text-sm font-bold mb-3" style={{ color: '#0B2863' }}>
-              <div className="flex items-center gap-2">
-                <BarChart3 size={16} />
-                Quick Actions
-              </div>
-            </label>
-            <button
-              onClick={onCalendarOpen}
-              className="w-full px-4 py-3 border-2 rounded-lg text-sm font-bold transition-all duration-200 hover:shadow-lg flex items-center justify-center space-x-2"
-              style={{ 
-                borderColor: '#8b5cf6',
-                backgroundColor: '#8b5cf6',
-                color: 'white'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 shadow-md"
+              style={{ borderColor: '#22c55e' }}
             >
-              <Calendar size={18} />
-              <span>Calendar View</span>
-            </button>
-          </div>
-        </div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} />
+                    Location Filter
+                  </div>
+                </label>
+                {locationFilter && (
+                  <button
+                    onClick={() => onLocationChange('')}
+                    className="p-1 rounded transition-colors"
+                    style={{ backgroundColor: '#ef4444', color: 'white' }}
+                    title="Clear location filter"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <MapPin 
+                  size={16} 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
+                  style={{ color: '#22c55e' }}
+                />
+                <input
+                  type="text"
+                  value={locationFilter}
+                  onChange={(e) => onLocationChange(e.target.value)}
+                  list="locations-list"
+                  placeholder="Search location..."
+                  className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                  style={{ 
+                    borderColor: '#0B2863',
+                    backgroundColor: 'white',
+                    color: '#0B2863'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = `0 0 0 3px rgba(34, 197, 94, 0.3)`;
+                    e.target.style.transform = 'scale(1.02)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                />
+                <datalist id="locations-list">
+                  {locations.map((location) => (
+                    <option key={location} value={location} />
+                  ))}
+                </datalist>
+                <div 
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
+                  style={{ backgroundColor: locationFilter ? '#22c55e' : '#ef4444' }}
+                ></div>
+              </div>
+            </div>
 
-        {/* Period Display Section */}
-        <div 
-          className="mt-6 rounded-xl p-4 border-2"
-          style={{ 
-            borderColor: '#F09F52',
-            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'
-          }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <div 
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: '#0B2863' }}
+            {/* Calendar Button Card */}
+            <div 
+              className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 shadow-md flex flex-col justify-between"
+              style={{ borderColor: '#8b5cf6' }}
+            >
+              <label className="block text-sm font-bold mb-3" style={{ color: '#0B2863' }}>
+                <div className="flex items-center gap-2">
+                  <BarChart3 size={16} />
+                  Quick Actions
+                </div>
+              </label>
+              <button
+                onClick={onCalendarOpen}
+                className="w-full px-4 py-3 border-2 rounded-lg text-sm font-bold transition-all duration-200 hover:shadow-lg flex items-center justify-center space-x-2"
+                style={{ 
+                  borderColor: '#8b5cf6',
+                  backgroundColor: '#8b5cf6',
+                  color: 'white'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <Calendar size={16} className="text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg" style={{ color: '#0B2863' }}>
-                  Current Period
-                </h3>
-                <p className="text-sm text-gray-600">Active date range for your data</p>
-              </div>
+                <Calendar size={18} />
+                <span>Calendar View</span>
+              </button>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <div 
-                className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
-                style={{ 
-                  borderColor: '#22c55e',
-                  backgroundColor: '#22c55e',
-                  color: 'white'
-                }}
-              >
-                {weekRange.start}
+          </div>
+        )}
+
+        {/* Period Display Section - Solo mostrar si NO hay búsqueda global activa */}
+        {!isGlobalSearchActive && (
+          <div 
+            className="mt-6 rounded-xl p-4 border-2"
+            style={{ 
+              borderColor: '#F09F52',
+              background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'
+            }}
+          >
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: '#0B2863' }}
+                >
+                  <Calendar size={16} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg" style={{ color: '#0B2863' }}>
+                    Current Period
+                  </h3>
+                  <p className="text-sm text-gray-600">Active date range for your data</p>
+                </div>
               </div>
-              <div 
-                className="p-2 rounded-full"
-                style={{ backgroundColor: '#F09F52' }}
-              >
-                <span className="text-white font-bold">→</span>
-              </div>
-              <div 
-                className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
-                style={{ 
-                  borderColor: '#22c55e',
-                  backgroundColor: '#22c55e',
-                  color: 'white'
-                }}
-              >
-                {weekRange.end}
+              
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
+                  style={{ 
+                    borderColor: '#22c55e',
+                    backgroundColor: '#22c55e',
+                    color: 'white'
+                  }}
+                >
+                  {weekRange.start}
+                </div>
+                <div 
+                  className="p-2 rounded-full"
+                  style={{ backgroundColor: '#F09F52' }}
+                >
+                  <span className="text-white font-bold">→</span>
+                </div>
+                <div 
+                  className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
+                  style={{ 
+                    borderColor: '#22c55e',
+                    backgroundColor: '#22c55e',
+                    color: 'white'
+                  }}
+                >
+                  {weekRange.end}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Active Search Indicator */}
+        {isGlobalSearchActive && (
+          <div 
+            className="mt-6 rounded-xl p-4 border-2"
+            style={{ 
+              borderColor: '#8b5cf6',
+              background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: '#8b5cf6' }}
+                >
+                  <Globe size={16} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg" style={{ color: '#0B2863' }}>
+                    Global Search Results
+                  </h3>
+                  <p className="text-sm text-gray-600">Search results for "{globalSearch}"</p>
+                </div>
+              </div>
+              
+              <div 
+                className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
+                style={{ 
+                  borderColor: '#8b5cf6',
+                  backgroundColor: '#8b5cf6',
+                  color: 'white'
+                }}
+              >
+                {weeklyStats.totalOrders} results found
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Active Filters Summary */}
         <div className="mt-4">
@@ -546,12 +714,26 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               Active Filters
             </h4>
             <span className="text-xs text-gray-500">
-              {[week && 'Week', weekdayFilter && 'Day', locationFilter && 'Location'].filter(Boolean).length} active
+              {[
+                isGlobalSearchActive && 'Global Search',
+                !isGlobalSearchActive && week && 'Week', 
+                !isGlobalSearchActive && weekdayFilter && 'Day', 
+                !isGlobalSearchActive && locationFilter && 'Location'
+              ].filter(Boolean).length} active
             </span>
           </div>
           
           <div className="flex flex-wrap gap-2">
-            {week && (
+            {isGlobalSearchActive && (
+              <div 
+                className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
+                style={{ backgroundColor: '#8b5cf6', borderColor: '#0B2863' }}
+              >
+                <Globe size={12} />
+                Global: "{globalSearch.length > 20 ? globalSearch.substring(0, 20) + '...' : globalSearch}"
+              </div>
+            )}
+            {!isGlobalSearchActive && week && (
               <div 
                 className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
                 style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
@@ -600,18 +782,21 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             <div>
               <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <BarChart3 size={20} />
-                Week {week} Statistics
+                {isGlobalSearchActive ? 'Global Search Results' : `Week ${week} Statistics`}
               </h4>
               <p className="text-sm text-gray-600">
-                Orders for {weekRange.start} → {weekRange.end}
+                {isGlobalSearchActive 
+                  ? `Global search results for "${globalSearch}" (no week/date filters applied)`
+                  : `Orders for ${weekRange.start} → ${weekRange.end}`
+                }
               </p>
             </div>
             <div 
               className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1"
-              style={{ backgroundColor: '#F09F52' }}
+              style={{ backgroundColor: isGlobalSearchActive ? '#8b5cf6' : '#F09F52' }}
             >
               <Activity size={12} />
-              Live Data
+              {isGlobalSearchActive ? 'Global Search' : 'Week Filter'}
             </div>
           </div>
           
@@ -631,7 +816,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 {weeklyStats.totalOrders.toLocaleString()}
               </div>
               <div className="text-sm font-semibold text-gray-600">
-                Total This Week
+                {isGlobalSearchActive ? 'Total Found' : 'Total This Week'}
               </div>
             </div>
 
@@ -650,7 +835,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 {weeklyStats.finishedOrders.toLocaleString()}
               </div>
               <div className="text-sm font-semibold text-gray-600">
-                Finished This Week
+                {isGlobalSearchActive ? 'Finished Found' : 'Finished This Week'}
               </div>
               {weeklyStats.totalOrders > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
@@ -714,7 +899,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
                   <Target size={16} />
-                  Week {week} Progress
+                  {isGlobalSearchActive ? 'Search Results Progress' : `Week ${week} Progress`}
                 </span>
                 <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>
                   {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
