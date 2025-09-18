@@ -13,7 +13,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import { OCRResult } from '../domain/ModelsOCR';
-import LoaderSpinner from '../../componets/Login_Register/LoadingSpinner';
+import LoaderSpinner from '../../components/Login_Register/LoadingSpinner';
 
 interface OCRUploadDialogProps {
   open: boolean;
