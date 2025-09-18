@@ -18,6 +18,7 @@ import PayrollStatistics from "./PayrollStatistics";
 import { useNavigate } from "react-router-dom";
 import HistoricalAnalysis from "./HistoricalAnalysis";
 import FinancialView from "../../financials/ui/FinancialView"; 
+import IncomeCalculator from './components/IncomeCalculator';
 interface StatItem {
   label: string;
   value: string | number;
@@ -839,6 +840,11 @@ const Statistics = () => {
                       onStatClick={handleOrderCardClick}
                     />
                   </div>
+                </div>
+                
+                {/* Income Calculator*/}
+                <div>
+                  <IncomeCalculator />
                 </div>
                 
                 {/* Paid/Unpaid Week Range Chart */}
