@@ -3,7 +3,7 @@ import StatsComparisonCard from "./components/StatsComparisonCard";
 import TruckStatistics from "./TruckStatistics";
 import PaymentStatusChart from "./components/PaymentStatusChart";
 import PaidUnpaidWeekRangeChart from "./components/PaidUnpaidWeekRangeChart";
-import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
+import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import {
   fetchOrdersCountWithComparison,
   fetchPaymentStatusWithComparison,
@@ -478,7 +478,7 @@ const Statistics = () => {
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#f8fafc" }}>
+    <div className="min-h-screen p-6">
       <div className="min-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center mb-8">

@@ -1,11 +1,11 @@
 import './App.css'
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './componets/sidebar';
+import Layout from './components/sidebar';
 import Home from './Home/ui/home';
-import LoginPage from './componets/Login_Register/loginPage';
+import LoginPage from './components/Login_Register/loginPage';
 import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
-import LoadingSpinner from './componets/Login_Register/LoadingSpinner';
+import LoadingSpinner from './components/Login_Register/LoadingSpinner';
 import PayrollPage from './Payroll/pages/PayrollPage';
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 import SummaryCost from './summaryCost/ui/pages/SummaryCost'

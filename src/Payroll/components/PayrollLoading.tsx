@@ -1,5 +1,5 @@
 import React from 'react';
-import LoaderSpinner from "../../componets/Login_Register/LoadingSpinner";
+import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 
 export const PayrollLoading: React.FC = () => {
   return (

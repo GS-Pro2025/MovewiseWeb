@@ -36,7 +36,7 @@ interface TableFiltersProps {
   globalSearch: string;
   onGlobalSearchChange: (search: string) => void;
   onGlobalSearchSubmit: () => void;
-  onGlobalSearchClear: () => void; // AGREGAR ESTA PROP
+  onGlobalSearchClear: () => void;
   globalSearchLoading: boolean;
   isGlobalSearchActive: boolean;
 }
@@ -60,7 +60,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   globalSearch,
   onGlobalSearchChange,
   onGlobalSearchSubmit,
-  onGlobalSearchClear, // USAR ESTA PROP
+  onGlobalSearchClear,
   globalSearchLoading,
   isGlobalSearchActive,
 }) => {
@@ -190,7 +190,179 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 
   return (
     <div>
-      {/* Main Filter Card */}
+      {/* Statistics Panel - NOW AT THE TOP */}
+      <div className="rounded-2xl shadow-lg border-2 p-6 mb-6" style={{ borderColor: '#0B2863' }}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+              <BarChart3 size={20} />
+              {isGlobalSearchActive ? 'Global Search Results' : `Week ${week} Statistics`}
+            </h4>
+            <p className="text-sm text-gray-600">
+              {isGlobalSearchActive 
+                ? `Global search results for "${globalSearch}" (no week/date filters applied)`
+                : `Orders for ${weekRange.start} → ${weekRange.end}`
+              }
+            </p>
+          </div>
+          <div 
+            className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1"
+            style={{ backgroundColor: isGlobalSearchActive ? '#8b5cf6' : '#F09F52' }}
+          >
+            <Activity size={12} />
+            {isGlobalSearchActive ? 'Global Search' : 'Week Filter'}
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Total Orders */}
+          <div 
+            className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+            style={{ borderColor: '#0B2863' }}
+          >
+            <div 
+              className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#0B2863' }}
+            >
+              <ClipboardList size={20} className="text-white" />
+            </div>
+            <div className="text-2xl font-bold mb-1" style={{ color: '#0B2863' }}>
+              {weeklyStats.totalOrders.toLocaleString()}
+            </div>
+            <div className="text-sm font-semibold text-gray-600">
+              {isGlobalSearchActive ? 'Total Found' : 'Total This Week'}
+            </div>
+          </div>
+
+          {/* Finished Orders */}
+          <div 
+            className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+            style={{ borderColor: '#22c55e' }}
+          >
+            <div 
+              className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#22c55e' }}
+            >
+              <CheckCircle size={20} className="text-white" />
+            </div>
+            <div className="text-2xl font-bold mb-1" style={{ color: '#22c55e' }}>
+              {weeklyStats.finishedOrders.toLocaleString()}
+            </div>
+            <div className="text-sm font-semibold text-gray-600">
+              {isGlobalSearchActive ? 'Finished Found' : 'Finished This Week'}
+            </div>
+            {weeklyStats.totalOrders > 0 && (
+              <div className="text-xs text-gray-500 mt-1">
+                {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}%
+              </div>
+            )}
+          </div>
+
+          {/* Pending Orders */}
+          <div 
+            className="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+            style={{ borderColor: '#F09F52' }}
+          >
+            <div 
+              className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#F09F52' }}
+            >
+              <Clock size={20} className="text-white" />
+            </div>
+            <div className="text-2xl font-bold mb-1" style={{ color: '#F09F52' }}>
+              {weeklyStats.pendingOrders.toLocaleString()}
+            </div>
+            <div className="text-sm font-semibold text-gray-600">
+              Pending This Week
+            </div>
+            {weeklyStats.totalOrders > 0 && (
+              <div className="text-xs text-gray-500 mt-1">
+                {Math.round((weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100)}%
+              </div>
+            )}
+          </div>
+
+          {/* Inactive Orders */}
+          <div 
+            className="bg-gradient-to-br from-red-50 to-pink-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+            style={{ borderColor: '#ef4444' }}
+          >
+            <div 
+              className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#ef4444' }}
+            >
+              <XCircle size={20} className="text-white" />
+            </div>
+            <div className="text-2xl font-bold mb-1" style={{ color: '#ef4444' }}>
+              {weeklyStats.inactiveOrders.toLocaleString()}
+            </div>
+            <div className="text-sm font-semibold text-gray-600">
+              Inactive This Week
+            </div>
+            {weeklyStats.totalOrders > 0 && (
+              <div className="text-xs text-gray-500 mt-1">
+                {Math.round((weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100)}%
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        {weeklyStats.totalOrders > 0 && (
+          <div className="mt-4 p-4 bg-white rounded-xl border-2 shadow-md" style={{ borderColor: '#0B2863' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+                <Target size={16} />
+                {isGlobalSearchActive ? 'Search Results Progress' : `Week ${week} Progress`}
+              </span>
+              <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>
+                {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="h-full flex">
+                <div 
+                  className="transition-all duration-500"
+                  style={{ 
+                    width: `${(weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100}%`,
+                    backgroundColor: '#22c55e'
+                  }}
+                ></div>
+                <div 
+                  className="transition-all duration-500"
+                  style={{ 
+                    width: `${(weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100}%`,
+                    backgroundColor: '#F09F52'
+                  }}
+                ></div>
+                <div 
+                  className="transition-all duration-500"
+                  style={{ 
+                    width: `${(weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100}%`,
+                    backgroundColor: '#ef4444'
+                  }}
+                ></div>
+              </div>
+            </div>
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span className="flex items-center gap-1">
+                <CheckCircle size={12} />
+                {weeklyStats.finishedOrders} finished
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock size={12} />
+                {weeklyStats.pendingOrders} pending
+              </span>
+              <span className="flex items-center gap-1">
+                <XCircle size={12} />
+                {weeklyStats.inactiveOrders} inactive
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Filter Card - NOW BELOW STATISTICS */}
       <div className="rounded-2xl shadow-lg border-2 p-6 mb-6 week-dropdown-container" style={{ borderColor: '#0B2863' }}>
         {/* Header with Gradient Background */}
         <div className="rounded-xl p-4 mb-6 -mx-2 -mt-2">
@@ -203,7 +375,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#0B2863]">
-                ORDERS 
+                FILTERS & SEARCH
               </h2>
             </div>
           </div>
@@ -224,7 +396,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               </label>
               {isGlobalSearchActive && (
                 <button
-                  onClick={onGlobalSearchClear} // USAR LA FUNCIÓN CORRECTA
+                  onClick={onGlobalSearchClear}
                   className="p-1 rounded transition-colors"
                   style={{ backgroundColor: '#ef4444', color: 'white' }}
                   title="Clear global search"
@@ -300,7 +472,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         {/* Conditional rendering: Show regular filters only when NOT in global search mode */}
         {!isGlobalSearchActive && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Week Input Card - Implementación mejorada */}
+            {/* Week Input Card */}
             <div 
               className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
               style={{ borderColor: '#0B2863' }}
@@ -513,7 +685,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               </div>
             </div>
 
-            {/* Location Input Card - Con botón clear individual */}
+            {/* Location Input Card */}
             <div 
               className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 shadow-md"
               style={{ borderColor: '#22c55e' }}
@@ -774,178 +946,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               </div>
             )}
           </div>
-        </div>
-
-        {/* Statistics Panel - DATOS REALES */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
-                <BarChart3 size={20} />
-                {isGlobalSearchActive ? 'Global Search Results' : `Week ${week} Statistics`}
-              </h4>
-              <p className="text-sm text-gray-600">
-                {isGlobalSearchActive 
-                  ? `Global search results for "${globalSearch}" (no week/date filters applied)`
-                  : `Orders for ${weekRange.start} → ${weekRange.end}`
-                }
-              </p>
-            </div>
-            <div 
-              className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1"
-              style={{ backgroundColor: isGlobalSearchActive ? '#8b5cf6' : '#F09F52' }}
-            >
-              <Activity size={12} />
-              {isGlobalSearchActive ? 'Global Search' : 'Week Filter'}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Total Orders */}
-            <div 
-              className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-              style={{ borderColor: '#0B2863' }}
-            >
-              <div 
-                className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: '#0B2863' }}
-              >
-                <ClipboardList size={20} className="text-white" />
-              </div>
-              <div className="text-2xl font-bold mb-1" style={{ color: '#0B2863' }}>
-                {weeklyStats.totalOrders.toLocaleString()}
-              </div>
-              <div className="text-sm font-semibold text-gray-600">
-                {isGlobalSearchActive ? 'Total Found' : 'Total This Week'}
-              </div>
-            </div>
-
-            {/* Finished Orders */}
-            <div 
-              className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-              style={{ borderColor: '#22c55e' }}
-            >
-              <div 
-                className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: '#22c55e' }}
-              >
-                <CheckCircle size={20} className="text-white" />
-              </div>
-              <div className="text-2xl font-bold mb-1" style={{ color: '#22c55e' }}>
-                {weeklyStats.finishedOrders.toLocaleString()}
-              </div>
-              <div className="text-sm font-semibold text-gray-600">
-                {isGlobalSearchActive ? 'Finished Found' : 'Finished This Week'}
-              </div>
-              {weeklyStats.totalOrders > 0 && (
-                <div className="text-xs text-gray-500 mt-1">
-                  {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}%
-                </div>
-              )}
-            </div>
-
-            {/* Pending Orders */}
-            <div 
-              className="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-              style={{ borderColor: '#F09F52' }}
-            >
-              <div 
-                className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: '#F09F52' }}
-              >
-                <Clock size={20} className="text-white" />
-              </div>
-              <div className="text-2xl font-bold mb-1" style={{ color: '#F09F52' }}>
-                {weeklyStats.pendingOrders.toLocaleString()}
-              </div>
-              <div className="text-sm font-semibold text-gray-600">
-                Pending This Week
-              </div>
-              {weeklyStats.totalOrders > 0 && (
-                <div className="text-xs text-gray-500 mt-1">
-                  {Math.round((weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100)}%
-                </div>
-              )}
-            </div>
-
-            {/* Inactive Orders */}
-            <div 
-              className="bg-gradient-to-br from-red-50 to-pink-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-              style={{ borderColor: '#ef4444' }}
-            >
-              <div 
-                className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: '#ef4444' }}
-              >
-                <XCircle size={20} className="text-white" />
-              </div>
-              <div className="text-2xl font-bold mb-1" style={{ color: '#ef4444' }}>
-                {weeklyStats.inactiveOrders.toLocaleString()}
-              </div>
-              <div className="text-sm font-semibold text-gray-600">
-                Inactive This Week
-              </div>
-              {weeklyStats.totalOrders > 0 && (
-                <div className="text-xs text-gray-500 mt-1">
-                  {Math.round((weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100)}%
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          {weeklyStats.totalOrders > 0 && (
-            <div className="mt-4 p-4 bg-white rounded-xl border-2 shadow-md" style={{ borderColor: '#0B2863' }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
-                  <Target size={16} />
-                  {isGlobalSearchActive ? 'Search Results Progress' : `Week ${week} Progress`}
-                </span>
-                <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>
-                  {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div className="h-full flex">
-                  <div 
-                    className="transition-all duration-500"
-                    style={{ 
-                      width: `${(weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100}%`,
-                      backgroundColor: '#22c55e'
-                    }}
-                  ></div>
-                  <div 
-                    className="transition-all duration-500"
-                    style={{ 
-                      width: `${(weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100}%`,
-                      backgroundColor: '#F09F52'
-                    }}
-                  ></div>
-                  <div 
-                    className="transition-all duration-500"
-                    style={{ 
-                      width: `${(weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100}%`,
-                      backgroundColor: '#ef4444'
-                    }}
-                  ></div>
-                </div>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span className="flex items-center gap-1">
-                  <CheckCircle size={12} />
-                  {weeklyStats.finishedOrders} finished
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock size={12} />
-                  {weeklyStats.pendingOrders} pending
-                </span>
-                <span className="flex items-center gap-1">
-                  <XCircle size={12} />
-                  {weeklyStats.inactiveOrders} inactive
-                </span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
