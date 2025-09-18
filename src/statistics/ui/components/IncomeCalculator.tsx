@@ -224,7 +224,6 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                     </h4>
                     <div className="mt-2 space-y-1 text-sm">
                       <p><span className="font-semibold">Weight Range:</span> {result.data.min_weight.toLocaleString()} - {result.data.max_weight.toLocaleString()} lbs</p>
-                      <p><span className="font-semibold">Job ID:</span> {result.data.job_id}</p>
                     </div>
                   </div>
                   
