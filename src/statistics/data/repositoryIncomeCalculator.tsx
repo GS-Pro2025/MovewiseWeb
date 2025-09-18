@@ -2,23 +2,21 @@ import Cookies from 'js-cookie';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-export interface IncomeCalculatorResponse {
+export interface IncomeRegressionResponse {
   status: string;
   messDev: string;
   messUser: string;
   data: {
-    min_weight: number;
-    max_weight: number;
+    weight: number;
     job_id: number;
-    average_income: number;
+    predicted_income: number;
   };
 }
 
-export async function fetchAverageIncome(
+export async function fetchPredictedIncome(
   jobName: string,
-  minWeight: number,
-  maxWeight: number
-): Promise<IncomeCalculatorResponse> {
+  weight: number
+): Promise<IncomeRegressionResponse> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -27,12 +25,11 @@ export async function fetchAverageIncome(
 
   const params = new URLSearchParams({
     job_name: jobName,
-    min_weight: minWeight.toString(),
-    max_weight: maxWeight.toString()
+    weight: weight.toString(),
   });
 
-  const url = `${BASE_URL_API}/orders-average-income/?${params.toString()}`;
-  
+  const url = `${BASE_URL_API}/orders-linearRegresion-income/?${params.toString()}`;
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -48,7 +45,7 @@ export async function fetchAverageIncome(
   }
 
   if (!response.ok) {
-    throw new Error(`Error fetching average income: ${response.statusText}`);
+    throw new Error(`Error fetching predicted income: ${response.statusText}`);
   }
 
   return await response.json();
