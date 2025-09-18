@@ -173,15 +173,23 @@ const OrdersTable: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
+  // Nuevos estados para búsqueda global
+  const [globalSearch, setGlobalSearch] = useState<string>('');
+  const [isGlobalSearchActive, setIsGlobalSearchActive] = useState<boolean>(false);
+  const [globalSearchLoading, setGlobalSearchLoading] = useState<boolean>(false);
+
   // Load data function
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (searchTerm?: string) => {
     try {
       setLoading(true);
+      
+      // Si hay searchTerm, es búsqueda global, si no, usar filtros normales
       const response = await fetchOrdersReport(
         pagination.pageIndex + 1,
-        week,
-        currentYear,
-        pagination.pageSize
+        searchTerm ? 1 : week, // Si hay búsqueda, mandar week dummy
+        searchTerm ? 2025 : currentYear, // Si hay búsqueda, mandar year dummy
+        pagination.pageSize,
+        searchTerm // Solo se usa si hay searchTerm
       );
       
       const mappedData: NormalizedTableData[] = response.results.map((item) => {
@@ -196,7 +204,7 @@ const OrdersTable: React.FC = () => {
         
         return {
           id: item.key,
-          status: normalizeStatus(item.status), // Use the normalize function here
+          status: normalizeStatus(item.status),
           key_ref: item.key_ref,
           firstName: item.person.first_name,
           lastName: item.person.last_name,
@@ -233,23 +241,78 @@ const OrdersTable: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination, week, currentYear]);
+  }, [pagination, week, currentYear, isGlobalSearchActive]); // Agregar isGlobalSearchActive como dependencia
 
-  // Effects
-  useEffect(() => {
-    loadData();
+  // Función separada para búsqueda global
+  const handleGlobalSearch = useCallback(async () => {
+    if (!globalSearch.trim()) {
+      // Si no hay término de búsqueda, volver a datos normales
+      setIsGlobalSearchActive(false);
+      setGlobalSearchLoading(false);
+      await loadData(); // Cargar datos normales sin búsqueda
+      return;
+    }
+
+    try {
+      setGlobalSearchLoading(true);
+      setIsGlobalSearchActive(true);
+      
+      // Reset pagination cuando se hace búsqueda global
+      setPagination({ pageIndex: 0, pageSize: 100 });
+      
+      await loadData(globalSearch.trim());
+      enqueueSnackbar(`Search completed for "${globalSearch}"`, { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar('Error performing search', { variant: 'error' });
+      console.error('Error searching:', error);
+    } finally {
+      setGlobalSearchLoading(false);
+    }
+  }, [globalSearch, loadData]);
+
+  // Función para limpiar búsqueda global
+  const handleClearGlobalSearch = useCallback(async () => {
+    setGlobalSearch('');
+    setIsGlobalSearchActive(false);
+    setGlobalSearchLoading(false);
+    
+    // Reset pagination cuando se limpia búsqueda
+    setPagination({ pageIndex: 0, pageSize: 100 });
+    
+    await loadData(); // Recargar datos normales
   }, [loadData]);
 
+  // Effects - Mejorar la lógica
   useEffect(() => {
-    let filtered = data.filter((item) => item.week === week);
-    if (weekdayFilter) {
-      filtered = filtered.filter((item) => item.weekday === weekdayFilter);
+    // Solo cargar datos automáticamente si NO hay búsqueda global activa
+    if (!isGlobalSearchActive) {
+      loadData();
     }
-    if (locationFilter) {
-      filtered = filtered.filter((item) => item.state === locationFilter);
+  }, [pagination, week, currentYear]); // Remover loadData de las dependencias para evitar loops
+
+  useEffect(() => {
+    if (!isGlobalSearchActive) {
+      loadData();
     }
-    setFilteredData(filtered);
-  }, [data, week, weekdayFilter, locationFilter]);
+  }, [loadData, isGlobalSearchActive]);
+
+  // Modificar el filtrado de datos para manejar búsqueda global
+  useEffect(() => {
+    if (isGlobalSearchActive) {
+      // En modo de búsqueda global, mostrar todos los resultados sin filtro adicional
+      setFilteredData(data);
+    } else {
+      // Filtrado normal por semana y otros filtros
+      let filtered = data.filter((item) => item.week === week);
+      if (weekdayFilter) {
+        filtered = filtered.filter((item) => item.weekday === weekdayFilter);
+      }
+      if (locationFilter) {
+        filtered = filtered.filter((item) => item.state === locationFilter);
+      }
+      setFilteredData(filtered);
+    }
+  }, [data, week, weekdayFilter, locationFilter, isGlobalSearchActive]); // AGREGAR isGlobalSearchActive
 
   useEffect(() => {
     getRegisteredLocations().then((res) => {
@@ -403,6 +466,13 @@ const OrdersTable: React.FC = () => {
         // Props for real-time statistics
         data={data}
         filteredData={filteredData}
+        // Props para búsqueda global
+        globalSearch={globalSearch}
+        onGlobalSearchChange={setGlobalSearch}
+        onGlobalSearchSubmit={handleGlobalSearch}
+        onGlobalSearchClear={handleClearGlobalSearch} 
+        globalSearchLoading={globalSearchLoading}
+        isGlobalSearchActive={isGlobalSearchActive}
       />
 
       {/* Toolbar */}

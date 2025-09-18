@@ -12,7 +12,6 @@ import SummaryCost from './summaryCost/ui/pages/SummaryCost'
 import ExtraCost from './extraCost/ui/pages/ExtraCost';
 import AddOperatorsToOrder from './addOperatorToOrder/ui/addOperatorsToOrder';
 import CreateOrder from './createOrder/ui/CreateOrder';
-import FinancialView from './financials/ui/FinancialView';
 import WarehouseView from './warehouse/ui/WarehouseView';
 import CreateWarehouseView from './warehouse/ui/CreateWarehouseView';
 import Statistics from './statistics/ui/Statistics';
@@ -98,7 +97,6 @@ const App = () => {
           <Route path="extra-cost" element={<ExtraCost />} />
           <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
           <Route path="create-daily" element={<CreateOrder/>} />
-          <Route path="/financialsView" element={<FinancialView/>} />
           <Route path="/warehouse" element={<WarehouseView/>}/>
           <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
           <Route path="/customers" element={<CustomersView />} />
