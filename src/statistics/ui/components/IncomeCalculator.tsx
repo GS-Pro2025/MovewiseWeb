@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, DollarSign, Weight, Briefcase, TrendingUp, AlertCircle } from 'lucide-react';
-import { fetchAverageIncome, IncomeCalculatorResponse } from '../../data/repositoryIncomeCalculator';
+import { fetchPredictedIncome, IncomeRegressionResponse } from '../../data/repositoryIncomeCalculator';
 import { jobsAndToolRepository } from '../../../settings/jobAndTools/data/JobsAndToolsRepository';
 import { JobModel } from '../../../settings/jobAndTools/data/JobsAndToolsRepository';
 
@@ -11,13 +11,12 @@ interface IncomeCalculatorProps {
 const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<IncomeCalculatorResponse | null>(null);
+  const [result, setResult] = useState<IncomeRegressionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Form states
   const [selectedJob, setSelectedJob] = useState('');
-  const [minWeight, setMinWeight] = useState<number>(1000);
-  const [maxWeight, setMaxWeight] = useState<number>(9000);
+  const [weight, setWeight] = useState<number>(2500);
   const [jobs, setJobs] = useState<JobModel[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
 
@@ -39,15 +38,15 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
   }, []);
 
   const handleCalculate = async () => {
-    if (!selectedJob || minWeight >= maxWeight) {
-      setError('Please select a job and ensure min weight is less than max weight');
+    if (!selectedJob || weight <= 0) {
+      setError('Please select a job and enter a valid weight');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      const response = await fetchAverageIncome(selectedJob, minWeight, maxWeight);
+      const response = await fetchPredictedIncome(selectedJob, weight);
       setResult(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error calculating income');
@@ -59,8 +58,7 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
 
   const resetForm = () => {
     setSelectedJob('');
-    setMinWeight(1000);
-    setMaxWeight(9000);
+    setWeight(2500);
     setResult(null);
     setError(null);
   };
@@ -85,10 +83,10 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
             </div>
             <div>
               <h3 className="font-bold text-lg" style={{ color: '#0B2863' }}>
-                Income Calculator
+                Income Predictor
               </h3>
               <p className="text-sm text-gray-600">
-                Calculate average earnings by job & weight
+                Predict income by job & weight
               </p>
             </div>
           </div>
@@ -100,7 +98,7 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                 style={{ backgroundColor: '#059669', color: 'white' }}
               >
                 <DollarSign size={12} />
-                ${result.data.average_income.toFixed(2)}
+                ${result.data.predicted_income.toFixed(2)}
               </div>
             )}
             <div 
@@ -115,7 +113,7 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
         {isExpanded && (
           <div className="px-4 pb-4 space-y-4 border-t border-emerald-200">
             {/* Form */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               {/* Job Selection */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
@@ -137,36 +135,19 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                 </select>
               </div>
 
-              {/* Min Weight */}
+              {/* Weight */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
                   <Weight size={14} className="inline mr-1" />
-                  Min Weight (lbs)
+                  Weight (lbs)
                 </label>
                 <input
                   type="number"
-                  value={minWeight}
-                  onChange={(e) => setMinWeight(Number(e.target.value))}
+                  value={weight}
+                  onChange={(e) => setWeight(Number(e.target.value))}
                   className="w-full px-3 py-2 border-2 border-emerald-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                  placeholder="1000"
-                  min="0"
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Max Weight */}
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
-                  <Weight size={14} className="inline mr-1" />
-                  Max Weight (lbs)
-                </label>
-                <input
-                  type="number"
-                  value={maxWeight}
-                  onChange={(e) => setMaxWeight(Number(e.target.value))}
-                  className="w-full px-3 py-2 border-2 border-emerald-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                  placeholder="9000"
-                  min="0"
+                  placeholder="2500"
+                  min="1"
                   disabled={loading}
                 />
               </div>
@@ -183,25 +164,25 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
               </button>
               <button
                 onClick={handleCalculate}
-                disabled={loading || !selectedJob || minWeight >= maxWeight}
+                disabled={loading || !selectedJob || weight <= 0}
                 className={`px-6 py-2 text-sm font-semibold rounded-lg text-white transition-all duration-200 flex items-center gap-2 ${
-                  loading || !selectedJob || minWeight >= maxWeight
+                  loading || !selectedJob || weight <= 0
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'hover:shadow-lg hover:-translate-y-0.5'
                 }`}
                 style={{
-                  backgroundColor: loading || !selectedJob || minWeight >= maxWeight ? '#9ca3af' : '#059669'
+                  backgroundColor: loading || !selectedJob || weight <= 0 ? '#9ca3af' : '#059669'
                 }}
               >
                 {loading ? (
                   <>
                     <Calculator size={14} className="animate-spin" />
-                    Calculating...
+                    Predicting...
                   </>
                 ) : (
                   <>
                     <Calculator size={14} />
-                    Calculate
+                    Predict
                   </>
                 )}
               </button>
@@ -220,10 +201,10 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                   <div>
                     <h4 className="font-bold text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
                       <DollarSign size={20} style={{ color: '#059669' }} />
-                      Average Income Estimate
+                      Predicted Income
                     </h4>
                     <div className="mt-2 space-y-1 text-sm">
-                      <p><span className="font-semibold">Weight Range:</span> {result.data.min_weight.toLocaleString()} - {result.data.max_weight.toLocaleString()} lbs</p>
+                      <p><span className="font-semibold">Weight:</span> {result.data.weight.toLocaleString()} lbs</p>
                     </div>
                   </div>
                   
@@ -232,16 +213,16 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                       className="text-3xl font-bold"
                       style={{ color: '#059669' }}
                     >
-                      ${result.data.average_income.toFixed(2)}
+                      ${result.data.predicted_income.toFixed(2)}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      per unit average
+                      predicted by regression
                     </div>
                   </div>
                 </div>
                 
                 <div className="mt-3 text-xs text-gray-600 bg-white/50 rounded-lg p-2">
-                  💡 <strong>Tip:</strong> This is an average based on historical data for similar jobs and weight ranges
+                  💡 <strong>Tip:</strong> This is a prediction based on historical data for this job and weight.
                 </div>
               </div>
             )}
