@@ -17,7 +17,8 @@ import { OrdersBasicDataResponse } from "../domain/BasicOrdersDataModels";
 import PayrollStatistics from "./PayrollStatistics";
 import { useNavigate } from "react-router-dom";
 import HistoricalAnalysis from "./HistoricalAnalysis";
-
+import FinancialView from "../../financials/ui/FinancialView"; 
+import IncomeCalculator from './components/IncomeCalculator';
 interface StatItem {
   label: string;
   value: string | number;
@@ -47,7 +48,7 @@ const Statistics = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState<
-    "overview" | "trucks" | "payroll" | "historical"
+    "overview" | "trucks" | "payroll" | "historical" | "financials"
   >("overview");
 
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
@@ -538,6 +539,14 @@ const Statistics = () => {
               >
                 Historical Analysis
               </TabButton>
+              {/* New Tab Button */}
+              <TabButton
+                active={activeSection === "financials"}
+                onClick={() => setActiveSection("financials")}
+                icon="fa-coins" // Choose an appropriate icon
+              >
+                Financials
+              </TabButton>
             </div>
 
             {/* Period Info & Refresh (overview only) */}
@@ -833,6 +842,11 @@ const Statistics = () => {
                   </div>
                 </div>
                 
+                {/* Income Calculator*/}
+                <div>
+                  <IncomeCalculator />
+                </div>
+                
                 {/* Paid/Unpaid Week Range Chart */}
                 <div>
                   <PaidUnpaidWeekRangeChart
@@ -857,6 +871,12 @@ const Statistics = () => {
         {activeSection === "payroll" && <PayrollStatistics />}
 
         {activeSection === "historical" && <HistoricalAnalysis />}
+
+        {activeSection === "financials" && (
+          <div className="rounded-2xl shadow-lg p-6 border-2" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
+            <FinancialView />
+          </div>
+        )}
       </div>
 
       <style>{`

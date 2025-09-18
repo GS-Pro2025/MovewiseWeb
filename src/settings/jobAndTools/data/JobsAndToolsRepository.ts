@@ -75,61 +75,35 @@ export interface JobsAndToolRepositoryInterface {
 export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
     private baseUrl: string = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-    
-    private async fetchWithAuth(url: string, options?: RequestInit): Promise<Response> {
-        // Retrieve the authentication token from cookies
-        const token = Cookies.get('authToken');
-        if (!token) {
-            // Redirect to login if no token is found
-            window.location.href = '/login';
-            throw new Error('No hay token de autenticación. Por favor, inicia sesión.');
-        }
-
-        // Set authorization and content-type headers
-        const headers = {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            ...options?.headers // Allow overriding or adding more headers
-        };
-
-        try {
-            // Perform the fetch request
-            const response = await fetch(url, {
-                ...options,
-                headers,
-            });
-
-            // Handle 403 Forbidden status (session expired)
-            if (response.status === 403) {
-                Cookies.remove('authToken'); // Remove expired token
-                window.location.href = '/login'; // Redirect to login
-                throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-            }
-
-            // Handle non-OK responses (e.g., 400, 404, 500)
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-                throw new Error(errorData.message || 'Error en la solicitud');
-            }
-
-            return response;
-        } catch (error) {
-            // Re-throw specific errors or throw a general network error
-            if (error instanceof Error) {
-                throw error;
-            }
-            throw new Error('Error en la solicitud de red');
-        }
-    }
-
     /**
      * Lists all jobs.
      * @returns A promise that resolves to an array of JobModel.
      */
     async listJobs(): Promise<JobModel[]> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/jobs/`, {
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/jobs/`, {
             method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
         });
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error fetching jobs: ${response.statusText}`);
+        }
+
         return await response.json();
     }
 
@@ -139,10 +113,31 @@ export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
      * @returns A promise that resolves to the created JobModel.
      */
     async createJob(name: string): Promise<JobModel> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/jobs/`, {
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/jobs/`, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ name }),
         });
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error creating job: ${response.statusText}`);
+        }
+
         return await response.json();
     }
 
@@ -152,13 +147,30 @@ export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
      * @returns A promise that resolves when the deletion is successful.
      */
     async deleteJob(id: number): Promise<void> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/job/${id}/delete/`, {
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/job/${id}/delete/`, {
             method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
         });
-        // Check for success status codes for deletion (204 No Content, 200 OK)
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
         if (response.status === 204 || response.status === 200) {
             return;
         }
+
         throw new Error('Error al eliminar el job');
     }
 
@@ -169,10 +181,31 @@ export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
      * @returns A promise that resolves to the updated JobModel.
      */
     async editJob(id: number, name: string): Promise<JobModel> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/jobs/${id}/`, {
-            method: 'PATCH', // Use PATCH for partial updates
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/jobs/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ name }),
         });
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error editing job: ${response.statusText}`);
+        }
+
         return await response.json();
     }
 
@@ -182,9 +215,30 @@ export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
      * @returns A promise that resolves to a PaginatedToolsResponse.
      */
     async listToolsByJob(jobId: number): Promise<PaginatedToolsResponse> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/toolsByJob/${jobId}/`, {
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/toolsByJob/${jobId}/`, {
             method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
         });
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error fetching tools: ${response.statusText}`);
+        }
+
         return await response.json();
     }
 
@@ -195,10 +249,31 @@ export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
      * @returns A promise that resolves to the created ToolModel.
      */
     async createTool(name: string, jobId: number): Promise<ToolModel> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/tools/create/`, {
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/tools/create/`, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ name, job: jobId }),
         });
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error creating tool: ${response.statusText}`);
+        }
+
         return await response.json();
     }
 
@@ -208,13 +283,33 @@ export class JobsAndToolRepository implements JobsAndToolRepositoryInterface {
      * @returns A promise that resolves when the operation is complete.
      */
     async deleteTool(id: number): Promise<void> {
-        const response = await this.fetchWithAuth(`${this.baseUrl}/tools/${id}/delete/`, {
+        const token = Cookies.get('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+
+        const response = await fetch(`${this.baseUrl}/tools/${id}/delete/`, {
             method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
         });
-        // Check for success status codes for deletion
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
         if (response.status === 204 || response.status === 200) {
             return;
         }
+
         throw new Error('Error al eliminar la herramienta');
     }
 }
+
+// Create singleton instance
+export const jobsAndToolRepository = new JobsAndToolRepository();

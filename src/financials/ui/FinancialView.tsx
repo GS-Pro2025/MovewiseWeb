@@ -9,6 +9,7 @@ import { searchOrdersByKeyRefLike } from "../data/OrdersRepository";
 import { enqueueSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import { OCRResult, SuperOrder } from "../domain/ModelsOCR";
+import { BarChart3 } from "lucide-react";
 
 // Imported Components
 import FinancialSummaryCards from "./FinancialSummaryCards";
@@ -336,19 +337,26 @@ const FinancialView = () => {
     <Box p={3} sx={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography 
-          variant="h4" 
-          gutterBottom 
-          sx={{ 
-            fontWeight: 700, 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            color: 'transparent',
-          }}
-        >
-          📊 Financial Summary
-        </Typography>
+        <div className="flex items-center gap-3 mb-2">
+          <BarChart3 
+            size={40} 
+            style={{ color: '#667eea' }}
+          />
+          <Typography 
+            variant="h4" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 700, 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
+              margin: 0
+            }}
+          >
+            Financial Summary
+          </Typography>
+        </div>
         <Typography variant="body1" color="textSecondary">
           Track your financial performance with detailed insights and analytics
         </Typography>

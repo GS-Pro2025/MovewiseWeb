@@ -1,6 +1,15 @@
 // components/FinancialSummaryCards.tsx
 import React from 'react';
 import { Typography } from '@mui/material';
+import { 
+  DollarSign, 
+  TrendingDown, 
+  TrendingUp, 
+  TrendingDown as Loss,
+  FileText,
+  CheckCircle,
+  Clock
+} from 'lucide-react';
 
 interface FinancialSummary {
   totalIncome: number;
@@ -27,12 +36,12 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-3xl">💰</span>
+            <DollarSign size={32} style={{ color: '#FFE67B' }} />
             <div 
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{ backgroundColor: 'rgba(255, 230, 123, 0.2)' }}
             >
-              <span className="text-lg font-bold" style={{ color: '#FFE67B' }}>$</span>
+              <DollarSign size={20} style={{ color: '#FFE67B' }} />
             </div>
           </div>
           <Typography variant="h6" className="!text-white !font-semibold !mb-2">
@@ -57,12 +66,12 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-3xl">💸</span>
+            <TrendingDown size={32} style={{ color: 'white' }} />
             <div 
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
             >
-              <span className="text-lg font-bold text-white">-</span>
+              <TrendingDown size={20} style={{ color: 'white' }} />
             </div>
           </div>
           <Typography variant="h6" className="!text-white !font-semibold !mb-2">
@@ -89,14 +98,20 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-3xl">{summary.totalProfit >= 0 ? '📈' : '📉'}</span>
+            {summary.totalProfit >= 0 ? (
+              <TrendingUp size={32} style={{ color: 'white' }} />
+            ) : (
+              <Loss size={32} style={{ color: 'white' }} />
+            )}
             <div 
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
             >
-              <span className="text-lg font-bold text-white">
-                {summary.totalProfit >= 0 ? '+' : '-'}
-              </span>
+              {summary.totalProfit >= 0 ? (
+                <TrendingUp size={20} style={{ color: 'white' }} />
+              ) : (
+                <Loss size={20} style={{ color: 'white' }} />
+              )}
             </div>
           </div>
           <Typography variant="h6" className="!text-white !font-semibold !mb-2">
@@ -121,12 +136,12 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-3xl">📋</span>
+            <FileText size={32} style={{ color: '#0B2863' }} />
             <div 
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{ backgroundColor: 'rgba(11, 40, 99, 0.1)' }}
             >
-              <span className="text-lg font-bold" style={{ color: '#0B2863' }}>#</span>
+              <FileText size={20} style={{ color: '#0B2863' }} />
             </div>
           </div>
           <Typography 
@@ -140,8 +155,9 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span 
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white bg-green-500"
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white bg-green-500 gap-1"
               >
+                <CheckCircle size={16} />
                 {summary.paidOrders} Paid
               </span>
               <span className="text-lg font-bold" style={{ color: '#0B2863' }}>
@@ -151,13 +167,14 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }
             
             <div className="flex items-center justify-between">
               <span 
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border-2"
+                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border-2 gap-1"
                 style={{ 
                   color: '#0B2863',
                   borderColor: '#0B2863',
                   backgroundColor: 'rgba(11, 40, 99, 0.1)'
                 }}
               >
+                <Clock size={16} />
                 {summary.unpaidOrders} Unpaid
               </span>
               <span className="text-lg font-bold" style={{ color: '#0B2863' }}>
