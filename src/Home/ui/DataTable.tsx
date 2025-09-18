@@ -55,7 +55,7 @@ const columns: Column[] = [
   },
   { id: 'company', label: 'Company', minWidth: 120 },
   { id: 'city', label: 'City', minWidth: 100 },
-  { id: 'state', label: 'State', minWidth: 100 },
+  { id: 'state', label: 'Location', minWidth: 100 },
   { id: 'weekday', label: 'Weekday', minWidth: 100 },
   { id: 'dateReference', label: 'Date', minWidth: 120 },
   { id: 'job', label: 'Job', minWidth: 120 },
