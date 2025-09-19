@@ -294,7 +294,7 @@ const HistoricalAnalysis: React.FC = () => {
     subtitle?: string;
   }> = ({ title, value, Icon, color, subtitle }) => (
     <Card hover className="p-6 text-center">
-      <Icon className="mx-auto mb-3 h-8 w-8" style={{ color }} />
+      <Icon className="mx-auto mb-3 h-8 w-8"/>
       <div className="text-2xl font-bold mb-1" style={{ color }}>{value}</div>
       <div className="text-sm font-medium text-slate-600">{title}</div>
       {subtitle && <div className="text-xs text-slate-500 mt-1">{subtitle}</div>}
