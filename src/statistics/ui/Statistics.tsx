@@ -19,12 +19,13 @@ import { useNavigate } from "react-router-dom";
 import HistoricalAnalysis from "./HistoricalAnalysis";
 import FinancialView from "../../financials/ui/FinancialView"; 
 import IncomeCalculator from './components/IncomeCalculator';
+
 interface StatItem {
   label: string;
   value: string | number;
   change: number;
   icon: string;
-  color: "blue" | "green" | "orange" | "red"; // Removed "purple"
+  color: "blue" | "green" | "orange" | "red";
 }
 
 // Service to get available years from 2015 to current year + 1
@@ -46,6 +47,7 @@ const Statistics = () => {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const [activeSection, setActiveSection] = useState<
     "overview" | "trucks" | "payroll" | "historical" | "financials"
@@ -64,6 +66,7 @@ const Statistics = () => {
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<"select" | "input">("select");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Available years from service
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -191,6 +194,51 @@ const Statistics = () => {
         left: 0;
         right: 0;
       }
+
+      /* Mobile menu animation */
+      .mobile-menu-enter {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      
+      .mobile-menu-enter-active {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 200ms, transform 200ms;
+      }
+      
+      .mobile-menu-exit {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .mobile-menu-exit-active {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 200ms, transform 200ms;
+      }
+
+      /* Responsive grid for stats */
+      @media (max-width: 640px) {
+        .stats-grid {
+          grid-template-columns: 1fr !important;
+        }
+      }
+
+      @media (min-width: 641px) and (max-width: 1024px) {
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+      }
+
+      /* Responsive week dropdown */
+      @media (max-width: 640px) {
+        .week-dropdown {
+          left: -50px;
+          right: -50px;
+          width: auto;
+        }
+      }
     `;
     document.head.appendChild(style);
 
@@ -202,7 +250,7 @@ const Statistics = () => {
     };
   }, []);
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -210,6 +258,13 @@ const Statistics = () => {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setShowWeekDropdown(false);
+      }
+      
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
       }
     };
 
@@ -303,7 +358,7 @@ const Statistics = () => {
             value: currentStats.peakDay?.count || 0,
             change: comparison.peakDayChange,
             icon: "fa-arrow-up",
-            color: "orange", // Changed from "purple" to "orange"
+            color: "orange",
           },
           {
             label: "Active Days (Week)",
@@ -377,6 +432,11 @@ const Statistics = () => {
     setSelectedYear(year);
   };
 
+  const handleTabClick = (section: typeof activeSection) => {
+    setActiveSection(section);
+    setIsMobileMenuOpen(false); // Close mobile menu when tab is selected
+  };
+
   const weekRange = getWeekRange(selectedYear, selectedWeek);
   const weeks = Array.from({ length: 53 }, (_, i) => i + 1);
 
@@ -390,38 +450,45 @@ const Statistics = () => {
     active: boolean;
     onClick: () => void;
     icon: string;
-    children: React.ReactNode;
-  }) => (
-    <button
-      onClick={onClick}
-      className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 ${
-        active ? "text-white shadow-lg" : "hover:shadow-md"
-      }`}
-      style={{
-        backgroundColor: active ? "#0B2863" : "transparent",
-        color: active ? "#ffffff" : "#0B2863",
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          e.currentTarget.style.backgroundColor = "rgba(11, 40, 99, 0.1)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          e.currentTarget.style.backgroundColor = "transparent";
-        }
-      }}
-    >
-      <i className={`fas ${icon}`}></i>
-      {children}
-    </button>
-  );
+    children: string;
+  }) => {
+    const shortText = children.split(' ')[0];
+    
+    return (
+      <button
+        onClick={onClick}
+        className={`px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 text-sm sm:text-base ${
+          active ? "text-white shadow-lg" : "hover:shadow-md"
+        }`}
+        style={{
+          backgroundColor: active ? "#0B2863" : "transparent",
+          color: active ? "#ffffff" : "#0B2863",
+        }}
+        onMouseEnter={(e) => {
+          if (!active) {
+            e.currentTarget.style.backgroundColor = "rgba(11, 40, 99, 0.1)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!active) {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }
+        }}
+      >
+        <i className={`fas ${icon} text-xs sm:text-sm`}></i>
+        <span className="hidden sm:inline">{children}</span>
+        <span className="sm:hidden">
+          {shortText}
+        </span>
+      </button>
+    );
+  };
 
   const RefreshButton = () => (
     <button
       onClick={() => loadStatistics(selectedWeek, selectedYear)}
       disabled={loading}
-      className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 border-2 hover:shadow-md disabled:opacity-50"
+      className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 border-2 hover:shadow-md disabled:opacity-50 text-sm"
       style={{
         color: "#0B2863",
         borderColor: "#0B2863",
@@ -441,33 +508,33 @@ const Statistics = () => {
       }}
     >
       <i className={`fas fa-sync-alt ${loading ? "animate-spin" : ""}`}></i>
-      Refresh
+      <span className="hidden sm:inline">Refresh</span>
     </button>
   );
 
   if (error && activeSection === "overview") {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center p-4"
         style={{ backgroundColor: "#f8fafc" }}
       >
         <div
-          className="text-center p-8 rounded-2xl border-2 shadow-lg"
+          className="text-center p-6 sm:p-8 rounded-2xl border-2 shadow-lg max-w-md w-full"
           style={{
             backgroundColor: "#ffffff",
             borderColor: "#ef4444",
           }}
         >
           <div className="text-red-500 mb-4">
-            <i className="fas fa-exclamation-triangle text-5xl"></i>
+            <i className="fas fa-exclamation-triangle text-4xl sm:text-5xl"></i>
           </div>
-          <h3 className="text-xl font-bold mb-3" style={{ color: "#0B2863" }}>
+          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ color: "#0B2863" }}>
             Error Loading Statistics
           </h3>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6 text-sm sm:text-base">{error}</p>
           <button
             onClick={() => loadStatistics(selectedWeek, selectedYear)}
-            className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+            className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm sm:text-base"
             style={{ backgroundColor: "#0B2863" }}
           >
             Try Again
@@ -478,21 +545,21 @@ const Statistics = () => {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="min-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen p-3 sm:p-6">
+      <div className="max-w-full mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-3" style={{ color: "#0B2863" }}>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3" style={{ color: "#0B2863" }}>
             Statistics Dashboard
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-sm sm:text-lg text-gray-600 px-4">
             Monitor your business performance and key metrics
           </p>
         </div>
 
         {/* Navigation Card */}
         <div
-          className="rounded-2xl shadow-lg p-6 border-2 week-dropdown-container relative"
+          className="rounded-2xl shadow-lg p-4 sm:p-6 border-2 week-dropdown-container relative"
           style={{
             backgroundColor: "#ffffff",
             borderColor: "#0B2863",
@@ -508,52 +575,119 @@ const Statistics = () => {
             }}
           ></div>
 
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="flex flex-col space-y-4 sm:space-y-6">
             {/* Navigation Tabs */}
-            <div className="flex flex-wrap gap-2">
-              <TabButton
-                active={activeSection === "overview"}
-                onClick={() => setActiveSection("overview")}
-                icon="fa-chart-line"
-              >
-                Business Overview
-              </TabButton>
-              <TabButton
-                active={activeSection === "trucks"}
-                onClick={() => setActiveSection("trucks")}
-                icon="fa-truck"
-              >
-                Vehicle Logistics
-              </TabButton>
-              <TabButton
-                active={activeSection === "payroll"}
-                onClick={() => setActiveSection("payroll")}
-                icon="fa-users"
-              >
-                Payroll Analytics
-              </TabButton>
-              <TabButton
-                active={activeSection === "historical"}
-                onClick={() => setActiveSection("historical")}
-                icon="fa-history"
-              >
-                Historical Analysis
-              </TabButton>
-              {/* New Tab Button */}
-              <TabButton
-                active={activeSection === "financials"}
-                onClick={() => setActiveSection("financials")}
-                icon="fa-coins" // Choose an appropriate icon
-              >
-                Financials
-              </TabButton>
+            <div className="flex flex-col space-y-4">
+              {/* Mobile menu button */}
+              <div className="flex items-center justify-between lg:hidden">
+                <span className="text-lg font-semibold" style={{ color: "#0B2863" }}>
+                  {activeSection === "overview" && "Business Overview"}
+                  {activeSection === "trucks" && "Vehicle Logistics"}
+                  {activeSection === "payroll" && "Payroll Analytics"}
+                  {activeSection === "historical" && "Historical Analysis"}
+                  {activeSection === "financials" && "Financials"}
+                </span>
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2 rounded-lg border-2 transition-all duration-200"
+                  style={{
+                    borderColor: "#0B2863",
+                    color: "#0B2863"
+                  }}
+                >
+                  <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                </button>
+              </div>
+
+              {/* Desktop navigation */}
+              <div className="hidden lg:flex flex-wrap gap-2">
+                <TabButton
+                  active={activeSection === "overview"}
+                  onClick={() => handleTabClick("overview")}
+                  icon="fa-chart-line"
+                >
+                  Business Overview
+                </TabButton>
+                <TabButton
+                  active={activeSection === "trucks"}
+                  onClick={() => handleTabClick("trucks")}
+                  icon="fa-truck"
+                >
+                  Vehicle Logistics
+                </TabButton>
+                <TabButton
+                  active={activeSection === "payroll"}
+                  onClick={() => handleTabClick("payroll")}
+                  icon="fa-users"
+                >
+                  Payroll Analytics
+                </TabButton>
+                <TabButton
+                  active={activeSection === "historical"}
+                  onClick={() => handleTabClick("historical")}
+                  icon="fa-history"
+                >
+                  Historical Analysis
+                </TabButton>
+                <TabButton
+                  active={activeSection === "financials"}
+                  onClick={() => handleTabClick("financials")}
+                  icon="fa-coins"
+                >
+                  Financials
+                </TabButton>
+              </div>
+
+              {/* Mobile navigation menu */}
+              {isMobileMenuOpen && (
+                <div 
+                  ref={mobileMenuRef}
+                  className="lg:hidden bg-white border-2 border-gray-200 rounded-xl p-4 shadow-lg space-y-2"
+                >
+                  <TabButton
+                    active={activeSection === "overview"}
+                    onClick={() => handleTabClick("overview")}
+                    icon="fa-chart-line"
+                  >
+                    Business Overview
+                  </TabButton>
+                  <TabButton
+                    active={activeSection === "trucks"}
+                    onClick={() => handleTabClick("trucks")}
+                    icon="fa-truck"
+                  >
+                    Vehicle Logistics
+                  </TabButton>
+                  <TabButton
+                    active={activeSection === "payroll"}
+                    onClick={() => handleTabClick("payroll")}
+                    icon="fa-users"
+                  >
+                    Payroll Analytics
+                  </TabButton>
+                  <TabButton
+                    active={activeSection === "historical"}
+                    onClick={() => handleTabClick("historical")}
+                    icon="fa-history"
+                  >
+                    Historical Analysis
+                  </TabButton>
+                  <TabButton
+                    active={activeSection === "financials"}
+                    onClick={() => handleTabClick("financials")}
+                    icon="fa-coins"
+                  >
+                    Financials
+                  </TabButton>
+                </div>
+              )}
             </div>
 
             {/* Period Info & Refresh (overview only) */}
             {activeSection === "overview" && (
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 sm:gap-4">
                 <div
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg border-2"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 text-sm sm:text-base"
                   style={{
                     backgroundColor: "#FFE67B",
                     borderColor: "#0B2863",
@@ -562,11 +696,12 @@ const Statistics = () => {
                 >
                   <i className="fas fa-calendar-alt"></i>
                   <span className="font-semibold">
-                    {weekRange.start} → {weekRange.end}
+                    <span className="hidden sm:inline">{weekRange.start} → {weekRange.end}</span>
+                    <span className="sm:hidden">W{selectedWeek} {selectedYear}</span>
                   </span>
                 </div>
                 <div
-                  className="flex items-center gap-2 text-sm"
+                  className="hidden sm:flex items-center gap-2 text-sm"
                   style={{ color: "#0B2863" }}
                 >
                   <i className="fas fa-chart-line"></i>
@@ -580,19 +715,19 @@ const Statistics = () => {
           {/* Enhanced Filters (overview only) */}
           {activeSection === "overview" && (
             <div
-              className="flex flex-wrap items-start gap-6 mt-6 pt-6 border-t"
+              className="flex flex-col xl:flex-row items-start gap-4 sm:gap-6 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t"
               style={{ borderColor: "rgba(11, 40, 99, 0.2)" }}
             >
-              {/* Year Select Dropdown - Vertical */}
-              <div className="min-w-[180px]">
-                <div className="bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm rounded-xl p-4 border-2 border-blue-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
+              {/* Year Select Dropdown */}
+              <div className="w-full sm:w-auto sm:min-w-[180px]">
+                <div className="bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-blue-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">
                     Year
                   </label>
                   <select
                     value={selectedYear}
                     onChange={handleYearChange}
-                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 font-semibold text-center bg-white shadow-sm text-blue-700 hover:border-blue-300 cursor-pointer"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 font-semibold text-center bg-white shadow-sm text-blue-700 hover:border-blue-300 cursor-pointer text-sm sm:text-base"
                     disabled={loading}
                   >
                     {availableYears.map((year) => (
@@ -610,13 +745,13 @@ const Statistics = () => {
               </div>
 
               {/* Enhanced Week Selector */}
-              <div className="min-w-[200px]">
+              <div className="w-full sm:w-auto sm:min-w-[200px]">
                 <div
-                  className="bg-gradient-to-br from-white/90 to-green-50/50 backdrop-blur-sm rounded-xl p-4 border-2 border-green-100 shadow-sm hover:shadow-md transition-all duration-300"
+                  className="bg-gradient-to-br from-white/90 to-green-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-green-100 shadow-sm hover:shadow-md transition-all duration-300"
                   ref={dropdownRef}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-gray-700">
+                    <label className="block text-xs sm:text-sm font-bold text-gray-700">
                       Week Number
                     </label>
                     <button
@@ -636,7 +771,7 @@ const Statistics = () => {
                     // Week dropdown mode
                     <div className="relative">
                       <div
-                        className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:border-green-300 hover:shadow-sm"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:border-green-300 hover:shadow-sm text-sm sm:text-base"
                         onClick={() => setShowWeekDropdown(!showWeekDropdown)}
                         onKeyDown={handleWeekKeyDown}
                         tabIndex={0}
@@ -662,8 +797,8 @@ const Statistics = () => {
                       </div>
 
                       {showWeekDropdown && (
-                        <div className="week-dropdown mt-2 bg-white border-2 border-green-200 rounded-lg shadow-xl w-[350px]">
-                          <div className="p-4">
+                        <div className="week-dropdown mt-2 bg-white border-2 border-green-200 rounded-lg shadow-xl w-full sm:w-[350px]">
+                          <div className="p-3 sm:p-4">
                             <div className="flex justify-between items-center mb-3">
                               <span className="text-xs font-semibold text-gray-600">
                                 Select week (1-53):
@@ -689,7 +824,7 @@ const Statistics = () => {
                             </div>
 
                             {/* Quick actions */}
-                            <div className="flex gap-1 mb-3">
+                            <div className="flex gap-1 mb-3 flex-wrap">
                               <button
                                 onClick={() => handleWeekSelect(1)}
                                 className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded transition-colors"
@@ -722,12 +857,12 @@ const Statistics = () => {
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
+                            <div className="grid grid-cols-6 sm:grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
                               {weeks.map((weekNum) => (
                                 <button
                                   key={weekNum}
                                   onClick={() => handleWeekSelect(weekNum)}
-                                  className={`p-2 text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105 ${
+                                  className={`p-1 sm:p-2 text-xs sm:text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105 ${
                                     selectedWeek === weekNum
                                       ? "bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-300"
                                       : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-100 hover:border-green-300 hover:text-green-700"
@@ -751,7 +886,7 @@ const Statistics = () => {
                         max="53"
                         value={selectedWeek}
                         onChange={handleWeekChange}
-                        className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 font-bold text-center bg-white shadow-sm"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 font-bold text-center bg-white shadow-sm text-sm sm:text-base"
                         placeholder="1-53"
                         disabled={loading}
                       />
@@ -764,24 +899,25 @@ const Statistics = () => {
               </div>
 
               {/* Quick Date Info */}
-              <div className="flex-1 min-w-[300px]">
-                <div className="bg-gradient-to-br from-white/90 to-amber-50/50 backdrop-blur-sm rounded-xl p-4 border-2 border-amber-100 shadow-sm">
-                  <div className="flex items-center justify-between">
+              <div className="w-full xl:flex-1 xl:min-w-[300px]">
+                <div className="bg-gradient-to-br from-white/90 to-amber-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
                     <div className="flex items-center gap-3">
                       <div className="bg-amber-100 p-2 rounded-full">
-                        <span className="text-amber-700 text-lg">📅</span>
+                        <span className="text-amber-700 text-base sm:text-lg">📅</span>
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-amber-800 uppercase tracking-wide">
+                        <div className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">
                           Selected Period
                         </div>
-                        <div className="text-amber-700 font-semibold text-lg">
-                          {weekRange.start} → {weekRange.end}
+                        <div className="text-amber-700 font-semibold text-sm sm:text-lg">
+                          <span className="hidden sm:inline">{weekRange.start} → {weekRange.end}</span>
+                          <span className="sm:hidden">Week {selectedWeek}, {selectedYear}</span>
                         </div>
                       </div>
                     </div>
                     <div
-                      className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-amber-100 border border-amber-200"
+                      className="hidden sm:flex items-center gap-2 text-xs sm:text-sm px-3 py-2 rounded-lg bg-amber-100 border border-amber-200"
                       style={{ color: "#0B2863" }}
                     >
                       <i className="fas fa-chart-line"></i>
@@ -800,7 +936,7 @@ const Statistics = () => {
             {/* Loading State with LoadingSpinner */}
             {loading && (
               <div
-                className="flex items-center justify-center py-16 rounded-2xl border-2"
+                className="flex items-center justify-center py-12 sm:py-16 rounded-2xl border-2"
                 style={{
                   backgroundColor: "#ffffff",
                   borderColor: "#0B2863",
@@ -809,7 +945,7 @@ const Statistics = () => {
                 <div className="flex flex-col items-center gap-4">
                   <LoaderSpinner />
                   <span
-                    className="text-lg font-semibold"
+                    className="text-base sm:text-lg font-semibold"
                     style={{ color: "#0B2863" }}
                   >
                     Loading statistics...
@@ -820,9 +956,9 @@ const Statistics = () => {
 
             {/* Main Content */}
             {!loading && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* Payment Status Chart */}
-                <div>
+                <div className="w-full">
                   <PaymentStatusChart
                     currentStats={paymentStatusData.currentStats}
                     previousStats={paymentStatusData.previousStats}
@@ -832,23 +968,21 @@ const Statistics = () => {
                 </div>
                 
                 {/* Stats Comparison Card */}
-                <div className="min-w-7xl">
-                  <div>
-                    <StatsComparisonCard
-                      title="Business Metrics"
-                      stats={statsData}
-                      onStatClick={handleOrderCardClick}
-                    />
-                  </div>
+                <div className="w-full">
+                  <StatsComparisonCard
+                    title="Business Metrics"
+                    stats={statsData}
+                    onStatClick={handleOrderCardClick}
+                  />
                 </div>
                 
                 {/* Income Calculator*/}
-                <div>
+                <div className="w-full">
                   <IncomeCalculator />
                 </div>
                 
                 {/* Paid/Unpaid Week Range Chart */}
-                <div>
+                <div className="w-full overflow-x-auto">
                   <PaidUnpaidWeekRangeChart
                     initialYear={selectedYear}
                     initialStartWeek={Math.max(1, selectedWeek - 5)}
@@ -862,18 +996,28 @@ const Statistics = () => {
 
         {/* Other sections */}
         {activeSection === "trucks" && (
-          <TruckStatistics
-            initialWeek={selectedWeek}
-            initialYear={selectedYear}
-          />
+          <div className="w-full">
+            <TruckStatistics
+              initialWeek={selectedWeek}
+              initialYear={selectedYear}
+            />
+          </div>
         )}
 
-        {activeSection === "payroll" && <PayrollStatistics />}
+        {activeSection === "payroll" && (
+          <div className="w-full">
+            <PayrollStatistics />
+          </div>
+        )}
 
-        {activeSection === "historical" && <HistoricalAnalysis />}
+        {activeSection === "historical" && (
+          <div className="w-full">
+            <HistoricalAnalysis />
+          </div>
+        )}
 
         {activeSection === "financials" && (
-          <div className="rounded-2xl shadow-lg p-6 border-2" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
+          <div className="w-full rounded-2xl shadow-lg p-4 sm:p-6 border-2 overflow-x-auto" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
             <FinancialView />
           </div>
         )}
@@ -886,6 +1030,58 @@ const Statistics = () => {
           }
           50% {
             background-position: 100% 50%;
+          }
+        }
+
+        /* Responsive utilities */
+        @media (max-width: 640px) {
+          .mobile-nav-button {
+            min-width: 44px;
+            min-height: 44px;
+          }
+          
+          .week-dropdown {
+            position: fixed !important;
+            left: 1rem !important;
+            right: 1rem !important;
+            width: auto !important;
+            z-index: 50 !important;
+          }
+          
+          .week-dropdown .grid {
+            grid-template-columns: repeat(6, 1fr) !important;
+          }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .week-dropdown .grid {
+            grid-template-columns: repeat(8, 1fr) !important;
+          }
+        }
+
+        /* Improved touch targets for mobile */
+        @media (max-width: 768px) {
+          button {
+            min-height: 44px;
+          }
+          
+          select, input {
+            min-height: 44px;
+          }
+        }
+
+        /* Custom scrollbar for mobile */
+        @media (max-width: 640px) {
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+          }
+        }
+
+        /* Prevent horizontal scroll on mobile */
+        @media (max-width: 640px) {
+          html, body {
+            overflow-x: hidden;
           }
         }
       `}</style>
