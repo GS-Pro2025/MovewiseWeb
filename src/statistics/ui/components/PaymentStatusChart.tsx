@@ -1,5 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import { ResponsivePie } from '@nivo/pie';
+import { ResponsiveBar } from '@nivo/bar';
 import { PaymentStatusStats } from '../../domain/PaymentStatusModels';
+import { 
+  BarChart3, 
+  DollarSign, 
+  CreditCard, 
+  TrendingUp, 
+  TrendingDown,
+  Receipt,
+  Target,
+  PiggyBank
+} from 'lucide-react';
 
 interface PaymentStatusChartProps {
   currentStats: PaymentStatusStats;
@@ -9,6 +22,9 @@ interface PaymentStatusChartProps {
     paidOrdersChange: number;
     unpaidOrdersChange: number;
     paidPercentageChange: number;
+    totalIncomeChange?: number;
+    totalExpenseChange?: number;
+    netProfitChange?: number;
   };
   loading?: boolean;
 }
@@ -19,16 +35,80 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
   changes,
   loading = false
 }) => {
+  // Función helper para asegurar que los valores son números válidos
+  const safeNumber = (value: number | undefined | null): number => {
+    return typeof value === 'number' && !isNaN(value) ? value : 0;
+  };
+
+  // Calcular métricas financieras con validación
+  const paidIncome = safeNumber(currentStats.paidIncome);
+  const unpaidIncome = safeNumber(currentStats.unpaidIncome);
+  const totalIncome = paidIncome + unpaidIncome;
+  const totalExpenses = safeNumber(currentStats.totalExpenses);
+  const netProfit = totalIncome - totalExpenses;
+  const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
+
+  // Métricas de la semana anterior con validación
+  const previousPaidIncome = safeNumber(previousStats.paidIncome);
+  const previousUnpaidIncome = safeNumber(previousStats.unpaidIncome);
+  const previousTotalIncome = previousPaidIncome + previousUnpaidIncome;
+  const previousTotalExpenses = safeNumber(previousStats.totalExpenses);
+  const previousNetProfit = previousTotalIncome - previousTotalExpenses;
+
+  // Debug: Agregar logs para diagnosticar
+  console.log('PaymentStatusChart Debug:', {
+    currentStats,
+    paidIncome,
+    unpaidIncome,
+    totalIncome,
+    totalExpenses,
+    netProfit
+  });
+
+  // Datos para el gráfico de pie de Nivo
+  const pieData = [
+    {
+      id: 'paid',
+      label: 'Paid Orders',
+      value: currentStats.paidOrders,
+      color: '#22c55e',
+      amount: currentStats.paidIncome
+    },
+    {
+      id: 'unpaid',
+      label: 'Unpaid Orders',
+      value: currentStats.unpaidOrders,
+      color: '#f59e0b',
+      amount: currentStats.unpaidIncome
+    }
+  ];
+
+  // Datos para el gráfico de barras comparativo - convertir explícitamente a números
+  const barData = [
+    {
+      metric: 'This Week',
+      income: Number((totalIncome / 1000).toFixed(2)),
+      expenses: Number((totalExpenses / 1000).toFixed(2)),
+      profit: Number((netProfit / 1000).toFixed(2))
+    },
+    {
+      metric: 'Last Week',
+      income: Number((previousTotalIncome / 1000).toFixed(2)),
+      expenses: Number((previousTotalExpenses / 1000).toFixed(2)),
+      profit: Number((previousNetProfit / 1000).toFixed(2))
+    }
+  ];
+
   if (loading) {
     return (
       <div 
-        className="rounded-2xl shadow-lg p-6 border-2"
+        className="rounded-2xl shadow-lg p-4 sm:p-6 border-2"
         style={{ 
           backgroundColor: '#ffffff',
           borderColor: '#0B2863'
         }}
       >
-        <div className="flex items-center justify-center h-80">
+        <div className="flex items-center justify-center h-60 sm:h-80">
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <div className="w-12 h-12 border-4 border-gray-200 rounded-full"></div>
@@ -40,7 +120,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
                 }}
               ></div>
             </div>
-            <span className="text-lg font-semibold" style={{ color: '#0B2863' }}>
+            <span className="text-lg font-semibold text-center" style={{ color: '#0B2863' }}>
               Loading payment status...
             </span>
           </div>
@@ -49,34 +129,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
     );
   }
 
-  // Calcular los ángulos para el gráfico de pastel
-  const paidPercentage = currentStats.paidPercentage;
-  const unpaidPercentage = currentStats.unpaidPercentage;
-  
-  // Para SVG, necesitamos convertir porcentajes a coordenadas
-  const radius = 80;
-  const centerX = 100;
-  const centerY = 100;
-  
-  // Calcular el ángulo para la sección de pagadas (en radianes)
-  const paidAngle = (paidPercentage / 100) * 2 * Math.PI;
-  
-  // Coordenadas para el arco de pagadas
-  const x1 = centerX + radius * Math.cos(-Math.PI / 2);
-  const y1 = centerY + radius * Math.sin(-Math.PI / 2);
-  const x2 = centerX + radius * Math.cos(-Math.PI / 2 + paidAngle);
-  const y2 = centerY + radius * Math.sin(-Math.PI / 2 + paidAngle);
-  
-  // Flag para arcos grandes (más de 180 grados)
-  const largeArcFlag = paidAngle > Math.PI ? 1 : 0;
-  
-  // Path para la sección de pagadas
-  const paidPath = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-  
-  // Path para la sección de no pagadas (el resto del círculo)
-  const unpaidPath = `M ${centerX} ${centerY} L ${x2} ${y2} A ${radius} ${radius} 0 ${1 - largeArcFlag} 1 ${x1} ${y1} Z`;
-
-  const ChangeIndicator = ({ change, positive }: { change: number, positive?: boolean }) => {
+  const ChangeIndicator = ({ change, positive, prefix = '' }: { change: number, positive?: boolean, prefix?: string }) => {
     if (change === 0) return null;
     
     const isPositive = positive !== undefined ? positive : change > 0;
@@ -84,34 +137,93 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
       <div className={`text-xs flex items-center gap-1 mt-1 font-semibold ${
         isPositive ? 'text-green-600' : 'text-red-600'
       }`}>
-        <i className={`fas fa-arrow-${isPositive ? 'up' : 'down'}`}></i>
-        {Math.abs(change).toFixed(1)}% vs last week
+        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+        <span className="hidden sm:inline">{prefix}{Math.abs(change).toFixed(1)}% vs last week</span>
+        <span className="sm:hidden">{prefix}{Math.abs(change).toFixed(1)}%</span>
       </div>
     );
   };
 
+  const formatCurrency = (amount: number): string => {
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}K`;
+    } else {
+      return `$${amount.toFixed(0)}`;
+    }
+  };
+
+  // Tema responsivo para Nivo
+  const nivoTheme = {
+    background: 'transparent',
+    text: {
+      fontSize: 11,
+      fill: '#0B2863',
+      fontWeight: 600
+    },
+    axis: {
+      domain: {
+        line: {
+          stroke: '#0B2863',
+          strokeWidth: 2
+        }
+      },
+      legend: {
+        text: {
+          fontSize: 11,
+          fill: '#0B2863',
+          fontWeight: 600
+        }
+      },
+      ticks: {
+        line: {
+          stroke: '#0B2863',
+          strokeWidth: 1
+        },
+        text: {
+          fontSize: 10,
+          fill: '#0B2863'
+        }
+      }
+    },
+    grid: {
+      line: {
+        stroke: '#e5e7eb',
+        strokeWidth: 1
+      }
+    },
+    legends: {
+      text: {
+        fontSize: 10,
+        fill: '#0B2863',
+        fontWeight: 600
+      }
+    }
+  };
+
   return (
     <div 
-      className="rounded-2xl shadow-lg p-6 border-2"
+      className="rounded-2xl shadow-lg p-4 sm:p-6 border-2 w-full overflow-x-auto"
       style={{ 
         backgroundColor: '#ffffff',
         borderColor: '#0B2863'
       }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl">📊</span>
-            <h3 className="text-2xl font-bold" style={{ color: '#0B2863' }}>
-              Payment Status
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
+        <div className="flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+            <BarChart3 size={28} className="sm:w-8 sm:h-8" style={{ color: '#0B2863' }} />
+            <h3 className="text-xl sm:text-2xl font-bold leading-tight" style={{ color: '#0B2863' }}>
+              Weekly Financial Summary
             </h3>
           </div>
-          <p className="text-gray-600 font-medium">
-            Weekly orders payment breakdown
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            Payment status & financial overview
           </p>
         </div>
-        <div className="text-right">
+        <div className="text-center sm:text-right flex-shrink-0">
           <div 
             className="text-sm font-semibold mb-1"
             style={{ color: '#0B2863' }}
@@ -119,7 +231,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
             Total Orders
           </div>
           <div 
-            className="text-3xl font-bold mb-1"
+            className="text-2xl sm:text-3xl font-bold mb-1"
             style={{ color: '#0B2863' }}
           >
             {currentStats.totalOrders}
@@ -128,277 +240,333 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
         </div>
       </div>
 
-      {/* Chart Container */}
-      <div className="flex flex-col lg:flex-row items-center gap-8">
-        {/* SVG Pie Chart */}
-        <div className="flex-1 flex justify-center">
-          <div className="relative">
-            <svg width="240" height="240" viewBox="0 0 200 200" className="transform -rotate-90">
-              {/* Fondo gris claro */}
-              <circle 
-                cx="100" 
-                cy="100" 
-                r="80" 
-                fill="#f8fafc" 
-                stroke="#e5e7eb" 
-                strokeWidth="2"
-              />
-              
-              {/* Sección de órdenes pagadas */}
-              {currentStats.paidOrders > 0 && (
-                <path
-                  d={paidPath}
-                  fill="#22c55e"
-                  stroke="white"
-                  strokeWidth="3"
-                  className="hover:opacity-80 transition-opacity cursor-pointer drop-shadow-lg"
-                />
-              )}
-              
-              {/* Sección de órdenes no pagadas */}
-              {currentStats.unpaidOrders > 0 && (
-                <path
-                  d={unpaidPath}
-                  fill="#FFE67B"
-                  stroke="white"
-                  strokeWidth="3"
-                  className="hover:opacity-80 transition-opacity cursor-pointer drop-shadow-lg"
-                />
-              )}
-              
-              {/* Círculo interior para crear efecto donut */}
-              <circle 
-                cx="100" 
-                cy="100" 
-                r="50" 
-                fill="white" 
-                stroke="#0B2863" 
-                strokeWidth="2"
-              />
-            </svg>
-            
-            {/* Centro con estadísticas */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div 
-                className="text-3xl font-bold"
-                style={{ color: '#0B2863' }}
-              >
-                {currentStats.totalOrders}
-              </div>
-              <div className="text-sm font-semibold text-gray-600">
-                Total Orders
-              </div>
-            </div>
-            
-            {/* Labels de porcentajes */}
-            {currentStats.paidOrders > 0 && (
-              <div className="absolute top-6 left-1/2 transform -translate-x-1/2">
-                <div 
-                  className="text-sm px-3 py-1 rounded-full font-bold text-white shadow-lg"
-                  style={{ backgroundColor: '#22c55e' }}
-                >
-                  {paidPercentage.toFixed(1)}%
-                </div>
-              </div>
+      {/* Financial Summary Cards - Responsive Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        {/* Total Income */}
+        <div 
+          className="border-2 rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1"
+          style={{ 
+            backgroundColor: '#f0f9ff',
+            borderColor: '#0ea5e9'
+          }}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <DollarSign size={20} className="sm:w-6 sm:h-6" style={{ color: '#0ea5e9' }} />
+            <span 
+              className="font-semibold text-base sm:text-lg"
+              style={{ color: '#0B2863' }}
+            >
+              Total Income
+            </span>
+          </div>
+          <div 
+            className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2"
+            style={{ color: '#0ea5e9' }}
+          >
+            {formatCurrency(totalIncome)}
+          </div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">
+            Paid: <span className="font-bold text-green-600">{formatCurrency(currentStats.paidIncome)}</span>
+          </div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">
+            Pending: <span className="font-bold text-yellow-600">{formatCurrency(currentStats.unpaidIncome)}</span>
+          </div>
+          <ChangeIndicator change={changes.totalIncomeChange || 0} />
+        </div>
+
+        {/* Total Expenses */}
+        <div 
+          className="border-2 rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1"
+          style={{ 
+            backgroundColor: '#fef2f2',
+            borderColor: '#ef4444'
+          }}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <CreditCard size={20} className="sm:w-6 sm:h-6" style={{ color: '#ef4444' }} />
+            <span 
+              className="font-semibold text-base sm:text-lg"
+              style={{ color: '#0B2863' }}
+            >
+              Total Expenses
+            </span>
+          </div>
+          <div 
+            className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2"
+            style={{ color: '#ef4444' }}
+          >
+            {formatCurrency(totalExpenses)}
+          </div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">
+            Operating costs & expenses
+          </div>
+          <ChangeIndicator change={changes.totalExpenseChange || 0} positive={changes.totalExpenseChange !== undefined ? changes.totalExpenseChange < 0 : undefined} />
+        </div>
+
+        {/* Net Profit */}
+        <div 
+          className="border-2 rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1 sm:col-span-2 lg:col-span-1"
+          style={{ 
+            backgroundColor: netProfit >= 0 ? '#f0fdf4' : '#fef2f2',
+            borderColor: netProfit >= 0 ? '#22c55e' : '#ef4444'
+          }}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+            {netProfit >= 0 ? (
+              <TrendingUp size={20} className="sm:w-6 sm:h-6" style={{ color: '#22c55e' }} />
+            ) : (
+              <TrendingDown size={20} className="sm:w-6 sm:h-6" style={{ color: '#ef4444' }} />
             )}
-            
-            {currentStats.unpaidOrders > 0 && (
-              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-                <div 
-                  className="text-sm px-3 py-1 rounded-full font-bold shadow-lg"
-                  style={{ 
-                    backgroundColor: '#FFE67B',
-                    color: '#0B2863'
+            <span 
+              className="font-semibold text-base sm:text-lg"
+              style={{ color: '#0B2863' }}
+            >
+              Net Profit
+            </span>
+          </div>
+          <div 
+            className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2"
+            style={{ color: netProfit >= 0 ? '#22c55e' : '#ef4444' }}
+          >
+            {formatCurrency(netProfit)}
+          </div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium mb-1">
+            Margin: <span className={`font-bold ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {profitMargin.toFixed(1)}%
+            </span>
+          </div>
+          <ChangeIndicator change={changes.netProfitChange || 0} />
+        </div>
+      </div>
+
+      {/* Charts Container - Responsive Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-4 sm:mb-6">
+        {/* Pie Chart - Payment Status */}
+        <div className="bg-gray-50 rounded-xl p-3 sm:p-4 lg:p-6 border border-gray-200">
+          <h4 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-center flex items-center justify-center gap-2" style={{ color: '#0B2863' }}>
+            <Target size={18} className="sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Payment Distribution</span>
+            <span className="sm:hidden">Payments</span>
+          </h4>
+          <div className="h-64 sm:h-72 lg:h-80">
+            <ResponsivePie
+              data={pieData}
+              theme={nivoTheme}
+              margin={{ 
+                top: 15, 
+                right: window.innerWidth < 640 ? 40 : window.innerWidth < 1024 ? 60 : 80, 
+                bottom: window.innerWidth < 640 ? 60 : 80, 
+                left: window.innerWidth < 640 ? 40 : window.innerWidth < 1024 ? 60 : 80 
+              }}
+              innerRadius={0.4}
+              padAngle={2}
+              cornerRadius={6}
+              activeOuterRadiusOffset={8}
+              colors={['#22c55e', '#f59e0b']}
+              borderWidth={3}
+              borderColor="#ffffff"
+              arcLinkLabelsSkipAngle={10}
+              arcLinkLabelsTextColor="#0B2863"
+              arcLinkLabelsThickness={2}
+              arcLinkLabelsColor={{ from: 'color' }}
+              arcLabelsSkipAngle={15}
+              arcLabelsTextColor="#ffffff"
+              arcLabel={(d) => `${d.value}`}
+              enableArcLinkLabels={window.innerWidth >= 640}
+              tooltip={({ datum }) => (
+                <div
+                  style={{
+                    background: '#ffffff',
+                    padding: '8px 12px',
+                    border: '2px solid #0B2863',
+                    borderRadius: '8px',
+                    color: '#0B2863',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    maxWidth: '200px'
                   }}
                 >
-                  {unpaidPercentage.toFixed(1)}%
+                  <div style={{ marginBottom: '4px' }}>{datum.label}</div>
+                  <div style={{ color: datum.color }}>
+                    {datum.value} orders ({((datum.value / currentStats.totalOrders) * 100).toFixed(1)}%)
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                    Amount: {formatCurrency(datum.data.amount)}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+              legends={[
+                {
+                  anchor: 'bottom',
+                  direction: window.innerWidth < 640 ? 'column' : 'row',
+                  justify: false,
+                  translateX: 0,
+                  translateY: window.innerWidth < 640 ? 45 : 56,
+                  itemsSpacing: window.innerWidth < 640 ? 8 : 20,
+                  itemWidth: window.innerWidth < 640 ? 80 : 100,
+                  itemHeight: 18,
+                  itemTextColor: '#0B2863',
+                  itemDirection: 'left-to-right',
+                  itemOpacity: 1,
+                  symbolSize: 12,
+                  symbolShape: 'circle'
+                }
+              ]}
+            />
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="flex flex-col gap-4 w-full lg:w-auto lg:min-w-[280px]">
-          {/* Paid Orders */}
-          <div 
-            className="border-2 rounded-xl p-5 transition-all duration-200 hover:shadow-md"
-            style={{ 
-              backgroundColor: '#f0fdf4',
-              borderColor: '#22c55e'
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div 
-                className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: '#22c55e' }}
-              ></div>
-              <span 
-                className="font-semibold"
-                style={{ color: '#0B2863' }}
-              >
-                Paid Orders
-              </span>
-            </div>
-            <div 
-              className="text-3xl font-bold mb-1"
-              style={{ color: '#22c55e' }}
-            >
-              {currentStats.paidOrders}
-            </div>
-            <div 
-              className="text-sm font-medium mb-2"
-              style={{ color: '#0B2863' }}
-            >
-              {currentStats.paidPercentage.toFixed(1)}% of total
-            </div>
-            <div className="text-sm text-gray-600 font-medium">
-              Income: 
-              <span 
-                className="font-bold ml-1"
-                style={{ color: '#22c55e' }}
-              >
-                ${(currentStats.paidIncome / 1000).toFixed(1)}K
-              </span>
-            </div>
-            <ChangeIndicator change={changes.paidOrdersChange} />
-          </div>
-
-          {/* Unpaid Orders */}
-          <div 
-            className="border-2 rounded-xl p-5 transition-all duration-200 hover:shadow-md"
-            style={{ 
-              backgroundColor: '#fffbeb',
-              borderColor: '#FFE67B'
-            }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div 
-                className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: '#FFE67B' }}
-              ></div>
-              <span 
-                className="font-semibold"
-                style={{ color: '#0B2863' }}
-              >
-                Unpaid Orders
-              </span>
-            </div>
-            <div 
-              className="text-3xl font-bold mb-1"
-              style={{ color: '#0B2863' }}
-            >
-              {currentStats.unpaidOrders}
-            </div>
-            <div 
-              className="text-sm font-medium mb-2"
-              style={{ color: '#0B2863' }}
-            >
-              {currentStats.unpaidPercentage.toFixed(1)}% of total
-            </div>
-            <div className="text-sm text-gray-600 font-medium">
-              Pending: 
-              <span 
-                className="font-bold ml-1"
-                style={{ color: '#0B2863' }}
-              >
-                ${(currentStats.unpaidIncome / 1000).toFixed(1)}K
-              </span>
-            </div>
-            <ChangeIndicator change={changes.unpaidOrdersChange} positive={changes.unpaidOrdersChange < 0} />
-          </div>
-
-          {/* Previous Week Comparison */}
-          <div 
-            className="border-2 rounded-xl p-4 transition-all duration-200"
-            style={{ 
-              backgroundColor: '#f8fafc',
-              borderColor: '#0B2863'
-            }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">📈</span>
-              <span 
-                className="font-semibold"
-                style={{ color: '#0B2863' }}
-              >
-                Previous Week
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-600">Paid:</span>
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="font-bold"
-                    style={{ color: '#22c55e' }}
-                  >
-                    {previousStats.paidOrders}
-                  </span>
-                  <span 
-                    className="text-xs px-2 py-1 rounded-full font-semibold"
-                    style={{ 
-                      backgroundColor: '#22c55e',
-                      color: '#ffffff'
-                    }}
-                  >
-                    {previousStats.paidPercentage.toFixed(1)}%
-                  </span>
+        {/* Bar Chart - Financial Comparison */}
+        <div className="bg-gray-50 rounded-xl p-3 sm:p-4 lg:p-6 border border-gray-200">
+          <h4 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-center flex items-center justify-center gap-2" style={{ color: '#0B2863' }}>
+            <BarChart3 size={18} className="sm:w-5 sm:h-5" />
+            <span className="hidden lg:inline">Weekly Comparison (in thousands)</span>
+            <span className="lg:hidden">Weekly Compare ($K)</span>
+          </h4>
+          <div className="h-64 sm:h-72 lg:h-80">
+            <ResponsiveBar
+              data={barData}
+              theme={nivoTheme}
+              keys={['income', 'expenses', 'profit']}
+              indexBy="metric"
+              margin={{ 
+                top: 15, 
+                right: window.innerWidth < 640 ? 60 : window.innerWidth < 1024 ? 80 : 100, 
+                bottom: window.innerWidth < 640 ? 60 : 80, 
+                left: window.innerWidth < 640 ? 50 : window.innerWidth < 1024 ? 60 : 80 
+              }}
+              padding={0.2}
+              valueScale={{ type: 'linear' }}
+              indexScale={{ type: 'band', round: true }}
+              colors={['#0ea5e9', '#ef4444', '#22c55e']}
+              borderRadius={4}
+              borderWidth={2}
+              borderColor="#ffffff"
+              axisTop={null}
+              axisRight={null}
+              axisBottom={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: window.innerWidth < 640 ? -45 : 0,
+                legend: window.innerWidth >= 640 ? 'Period' : '',
+                legendPosition: 'middle',
+                legendOffset: window.innerWidth < 640 ? 50 : 40
+              }}
+              axisLeft={{
+                tickSize: 5,
+                tickPadding: 5,
+                tickRotation: 0,
+                legend: window.innerWidth >= 640 ? 'Amount ($K)' : '$K',
+                legendPosition: 'middle',
+                legendOffset: window.innerWidth < 640 ? -40 : -60
+              }}
+              labelSkipWidth={12}
+              labelSkipHeight={12}
+              labelTextColor="#ffffff"
+              animate={true}
+              motionConfig="gentle"
+              tooltip={({ id, value, color, data }) => (
+                <div
+                  style={{
+                    background: '#ffffff',
+                    padding: '8px 12px',
+                    border: '2px solid #0B2863',
+                    borderRadius: '8px',
+                    color: '#0B2863',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    maxWidth: '180px'
+                  }}
+                >
+                  <div style={{ marginBottom: '4px' }}>{data.metric}</div>
+                  <div style={{ color }}>
+                    {id}: ${value.toFixed(1)}K
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                    ${(value * 1000).toLocaleString()}
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-600">Unpaid:</span>
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="font-bold"
-                    style={{ color: '#0B2863' }}
-                  >
-                    {previousStats.unpaidOrders}
-                  </span>
-                  <span 
-                    className="text-xs px-2 py-1 rounded-full font-semibold"
-                    style={{ 
-                      backgroundColor: '#FFE67B',
-                      color: '#0B2863'
-                    }}
-                  >
-                    {previousStats.unpaidPercentage.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-            </div>
+              )}
+              legends={[
+                {
+                  dataFrom: 'keys',
+                  anchor: window.innerWidth < 1024 ? 'bottom' : 'bottom-right',
+                  direction: window.innerWidth < 1024 ? 'row' : 'column',
+                  justify: false,
+                  translateX: window.innerWidth < 1024 ? 0 : 120,
+                  translateY: window.innerWidth < 1024 ? 50 : 0,
+                  itemsSpacing: window.innerWidth < 1024 ? 15 : 8,
+                  itemWidth: window.innerWidth < 1024 ? 70 : 100,
+                  itemHeight: 20,
+                  itemDirection: 'left-to-right',
+                  itemOpacity: 0.85,
+                  symbolSize: 12,
+                  itemTextColor: '#0B2863',
+                  effects: [
+                    {
+                      on: 'hover',
+                      style: {
+                        itemOpacity: 1
+                      }
+                    }
+                  ]
+                }
+              ]}
+            />
           </div>
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Summary Stats - Responsive Grid */}
       <div 
-        className="flex flex-wrap justify-center gap-6 mt-6 pt-4 border-t-2"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4 sm:pt-6 border-t-2"
         style={{ borderTopColor: '#0B2863' }}
       >
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-5 h-5 rounded shadow-sm"
-            style={{ backgroundColor: '#22c55e' }}
-          ></div>
-          <span 
-            className="font-semibold"
-            style={{ color: '#0B2863' }}
-          >
-            Paid Orders ({currentStats.paidOrders})
-          </span>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1 sm:mb-2">
+            <Receipt size={14} className="sm:w-4 sm:h-4" style={{ color: '#22c55e' }} />
+          </div>
+          <div className="text-xl sm:text-2xl font-bold" style={{ color: '#22c55e' }}>
+            {currentStats.paidOrders}
+          </div>
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Paid Orders</div>
+          <div className="text-xs font-bold" style={{ color: '#22c55e' }}>
+            {formatCurrency(currentStats.paidIncome)}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-5 h-5 rounded shadow-sm"
-            style={{ backgroundColor: '#FFE67B' }}
-          ></div>
-          <span 
-            className="font-semibold"
-            style={{ color: '#0B2863' }}
-          >
-            Unpaid Orders ({currentStats.unpaidOrders})
-          </span>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1 sm:mb-2">
+            <Receipt size={14} className="sm:w-4 sm:h-4" style={{ color: '#f59e0b' }} />
+          </div>
+          <div className="text-xl sm:text-2xl font-bold" style={{ color: '#f59e0b' }}>
+            {currentStats.unpaidOrders}
+          </div>
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Unpaid Orders</div>
+          <div className="text-xs font-bold" style={{ color: '#f59e0b' }}>
+            {formatCurrency(currentStats.unpaidIncome)}
+          </div>
+        </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1 sm:mb-2">
+            <CreditCard size={14} className="sm:w-4 sm:h-4" style={{ color: '#ef4444' }} />
+          </div>
+          <div className="text-xl sm:text-2xl font-bold" style={{ color: '#ef4444' }}>
+            {formatCurrency(totalExpenses)}
+          </div>
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Total Expenses</div>
+          <div className="text-xs text-gray-500">This Week</div>
+        </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-1 sm:mb-2">
+            <PiggyBank size={14} className="sm:w-4 sm:h-4" style={{ color: netProfit >= 0 ? '#22c55e' : '#ef4444' }} />
+          </div>
+          <div className={`text-xl sm:text-2xl font-bold`} style={{ color: netProfit >= 0 ? '#22c55e' : '#ef4444' }}>
+            {formatCurrency(netProfit)}
+          </div>
+          <div className="text-xs sm:text-sm font-semibold text-gray-600">Net Profit</div>
+          <div className="text-xs text-gray-500">{profitMargin.toFixed(1)}% margin</div>
         </div>
       </div>
     </div>

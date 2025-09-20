@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX } from 'lucide-react';
+import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import type { TableData } from '../domain/TableData';
 
@@ -8,16 +8,24 @@ interface Column {
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
+  sortable?: boolean; // Nueva propiedad para indicar si la columna es ordenable
   format?: (value: string | number | null | undefined | unknown) => string | React.ReactNode;
 }
 
+// Tipo para el estado de ordenamiento
+interface SortConfig {
+  key: keyof TableData | null;
+  direction: 'asc' | 'desc' | null;
+}
+
 const columns: Column[] = [
-  { id: 'expand', label: '', minWidth: 50, align: 'center' },
-  { id: 'actions', label: 'Actions', minWidth: 80, align: 'center' },
+  { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
+  { id: 'actions', label: 'Actions', minWidth: 80, align: 'center', sortable: false },
   { 
     id: 'status', 
     label: 'Status', 
     minWidth: 100,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const status = String(value || '');
       const getStatusStyle = (status: string) => {
@@ -40,41 +48,45 @@ const columns: Column[] = [
       );
     }
   },
-  { id: 'key_ref', label: 'Reference', minWidth: 100 },
-  { id: 'firstName', label: 'First Name', minWidth: 100 },
-  { id: 'lastName', label: 'Last Name', minWidth: 100 },
-  { id: 'email', label: 'Email', minWidth: 120 },
+  { id: 'key_ref', label: 'Reference', minWidth: 100, sortable: true },
+  { id: 'firstName', label: 'First Name', minWidth: 100, sortable: true },
+  { id: 'lastName', label: 'Last Name', minWidth: 100, sortable: true },
+  { id: 'email', label: 'Email', minWidth: 120, sortable: true },
   { 
     id: 'phone', 
     label: 'Phone', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const phone = String(value || '');
       return phone ? phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : 'N/A';
     }
   },
-  { id: 'company', label: 'Company', minWidth: 120 },
-  { id: 'city', label: 'City', minWidth: 100 },
-  { id: 'state', label: 'Location', minWidth: 100 },
-  { id: 'weekday', label: 'Weekday', minWidth: 100 },
-  { id: 'dateReference', label: 'Date', minWidth: 120 },
-  { id: 'job', label: 'Job', minWidth: 120 },
+  { id: 'company', label: 'Company', minWidth: 120, sortable: true },
+  { id: 'city', label: 'City', minWidth: 100, sortable: true },
+  { id: 'state', label: 'Location', minWidth: 100, sortable: true },
+  { id: 'weekday', label: 'Weekday', minWidth: 100, sortable: true },
+  { id: 'dateReference', label: 'Date', minWidth: 120, sortable: true },
+  { id: 'job', label: 'Job', minWidth: 120, sortable: true },
   { 
     id: 'weight', 
     label: 'Weight', 
     minWidth: 100,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
   },
   { 
     id: 'truckType', 
     label: 'Truck Type', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
   },
   { 
     id: 'distance', 
     label: 'Distance (mi)', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
       return num ? `${num.toLocaleString('en-US')} mi` : 'N/A';
@@ -84,6 +96,7 @@ const columns: Column[] = [
     id: 'expense', 
     label: 'Expense', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
       return num ? `${num.toLocaleString('en-US')}` : 'N/A';
@@ -93,6 +106,7 @@ const columns: Column[] = [
     id: 'income', 
     label: 'Income', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
       return num ? `${num.toLocaleString('en-US')}` : 'N/A';
@@ -102,16 +116,18 @@ const columns: Column[] = [
     id: 'totalCost', 
     label: 'Total Cost', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value || 0);
       return `${num.toLocaleString('en-US')}`;
     }
   },
-  { id: 'week', label: 'Week of Year', minWidth: 100 },
+  { id: 'week', label: 'Week of Year', minWidth: 100, sortable: true },
   { 
     id: 'payStatus', 
     label: 'Pay Status', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const status = Number(value || 0);
       return (
@@ -127,6 +143,7 @@ const columns: Column[] = [
     id: 'created_by', 
     label: 'Created By', 
     minWidth: 120,
+    sortable: true,
     format: (value: string | number | null | undefined | unknown) => (
       <span className="font-semibold" style={{ color: '#0B2863' }}>
         {String(value || 'N/A')}
@@ -154,6 +171,59 @@ const LoadingSpinner = () => (
   <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#0B2863' }}></div>
 );
 
+// Función para ordenar los datos
+const sortData = (data: TableData[], sortConfig: SortConfig): TableData[] => {
+  if (!sortConfig.key || !sortConfig.direction) {
+    return data;
+  }
+
+  return [...data].sort((a, b) => {
+    const aValue = a[sortConfig.key!];
+    const bValue = b[sortConfig.key!];
+
+    // Manejar valores nulos o undefined
+    if (aValue === null || aValue === undefined) return sortConfig.direction === 'asc' ? 1 : -1;
+    if (bValue === null || bValue === undefined) return sortConfig.direction === 'asc' ? -1 : 1;
+
+    // Convertir a string para comparación
+    const aStr = String(aValue).toLowerCase();
+    const bStr = String(bValue).toLowerCase();
+
+    // Intentar comparación numérica primero
+    const aNum = Number(aValue);
+    const bNum = Number(bValue);
+    
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+    }
+
+    // Comparación de strings
+    if (aStr < bStr) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aStr > bStr) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+};
+
+// Componente para el icono de ordenamiento
+const SortIcon: React.FC<{ column: Column; sortConfig: SortConfig }> = ({ column, sortConfig }) => {
+  if (!column.sortable) return null;
+
+  const isActive = sortConfig.key === column.id;
+  const iconColor = isActive ? '#0B2863' : '#9CA3AF';
+
+  if (isActive) {
+    return sortConfig.direction === 'asc' ? 
+      <ArrowUp size={14} style={{ color: iconColor }} /> : 
+      <ArrowDown size={14} style={{ color: iconColor }} />;
+  }
+
+  return <ArrowUpDown size={14} style={{ color: iconColor }} />;
+};
+
 export const DataTable: React.FC<DataTableProps> = ({
   data,
   loading,
@@ -169,6 +239,10 @@ export const DataTable: React.FC<DataTableProps> = ({
   onContextMenu,
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
+
+  // Ordenar los datos basándose en la configuración actual
+  const sortedData = sortData(data, sortConfig);
 
   const handleExpandClick = (rowId: string) => {
     const newExpandedRows = new Set(expandedRows);
@@ -180,8 +254,27 @@ export const DataTable: React.FC<DataTableProps> = ({
     setExpandedRows(newExpandedRows);
   };
 
+  // Función para manejar el click en las cabeceras de columna
+  const handleSort = (columnId: keyof TableData) => {
+    const column = columns.find(col => col.id === columnId);
+    if (!column?.sortable) return;
+
+    setSortConfig(prevConfig => {
+      if (prevConfig.key === columnId) {
+        // Si ya estamos ordenando por esta columna, cambiar dirección
+        if (prevConfig.direction === 'asc') {
+          return { key: columnId, direction: 'desc' };
+        } else if (prevConfig.direction === 'desc') {
+          return { key: null, direction: null }; // Quitar ordenamiento
+        }
+      }
+      // Nueva columna de ordenamiento
+      return { key: columnId, direction: 'asc' };
+    });
+  };
+
   const isSelected = (row: TableData) => selectedRows.some(selected => selected.id === row.id);
-  const isAllSelected = data.length > 0 && selectedRows.length === data.length;
+  const isAllSelected = sortedData.length > 0 && selectedRows.length === sortedData.length;
 
   // Helper function to safely get value from TableData
   const getColumnValue = (row: TableData, columnId: keyof TableData): unknown => {
@@ -202,16 +295,22 @@ export const DataTable: React.FC<DataTableProps> = ({
                   className="rounded border-2 border-white"
                   checked={isAllSelected}
                   onChange={(e) => onSelectAll(e.target.checked)}
-                  disabled={data.length === 0}
+                  disabled={sortedData.length === 0}
                 />
               </th>
               {columns.map((column, index) => (
                 <th
                   key={`header-${String(column.id)}-${index}`}
-                  className={`px-4 py-3 text-${column.align || 'left'} font-bold text-sm whitespace-nowrap`}
+                  className={`px-4 py-3 text-${column.align || 'left'} font-bold text-sm whitespace-nowrap ${
+                    column.sortable ? 'cursor-pointer hover:bg-blue-800 transition-colors duration-200' : ''
+                  }`}
                   style={{ minWidth: column.minWidth }}
+                  onClick={() => column.sortable && handleSort(column.id as keyof TableData)}
                 >
-                  {column.label}
+                  <div className="flex items-center gap-2">
+                    <span>{column.label}</span>
+                    <SortIcon column={column} sortConfig={sortConfig} />
+                  </div>
                 </th>
               ))}
             </tr>
@@ -228,7 +327,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   </div>
                 </td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : sortedData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length + 1} className="text-center py-16">
                   <div className="flex flex-col items-center justify-center space-y-4">
@@ -259,7 +358,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               </tr>
             ) : (
               <>
-                {data.map((row, rowIndex) => {
+                {sortedData.map((row, rowIndex) => {
                   const isRowSelected = isSelected(row);
                   const isExpanded = expandedRows.has(row.id);
                   

@@ -334,16 +334,24 @@ const FinancialView = () => {
   };
 
   return (
-    <Box p={3} sx={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+    <Box 
+      p={{ xs: 1, sm: 2, md: 3 }} 
+      sx={{ 
+        backgroundColor: '#f8fafc', 
+        minHeight: '100vh',
+        width: '100%',
+        overflowX: 'hidden'
+      }}
+    >
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <div className="flex items-center gap-3 mb-2">
+      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
           <BarChart3 
-            size={40} 
+            size={window.innerWidth < 768 ? 32 : 40} 
             style={{ color: '#667eea' }}
           />
           <Typography 
-            variant="h4" 
+            variant={window.innerWidth < 768 ? "h5" : "h4"} 
             gutterBottom 
             sx={{ 
               fontWeight: 700, 
@@ -351,46 +359,71 @@ const FinancialView = () => {
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               color: 'transparent',
-              margin: 0
+              margin: 0,
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
             }}
           >
             Financial Summary
           </Typography>
         </div>
-        <Typography variant="body1" color="textSecondary">
+        <Typography 
+          variant="body1" 
+          color="textSecondary"
+          sx={{
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+            px: { xs: 1, sm: 0 }
+          }}
+        >
           Track your financial performance with detailed insights and analytics
         </Typography>
       </Box>
 
-      {/* Summary Cards */}
-      <FinancialSummaryCards summary={totalSummary} />
+      {/* Summary Cards - Responsive */}
+      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+        <FinancialSummaryCards summary={totalSummary} />
+      </Box>
 
-      {/* Controls */}
-      <FinancialControls
-        week={week}
-        onWeekChange={handleWeekChange}
-        weekRange={weekRange}
-        showWeekControls={!searchResults}
-        searchRef={searchRef}
-        onSearchRefChange={setSearchRef}
-        onSearch={handleSearch}
-        onClearSearch={handleClearSearch}
-        searchLoading={searchLoading}
-        hasSearchResults={!!searchResults}
-        onUploadClick={() => setOcrDialogOpen(true)}
-        exportData={currentExportData}
-        isSearchResults={!!searchResults}
-        year={year}
-        loading={loading}
-      />
+      {/* Controls - Responsive */}
+      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+        <FinancialControls
+          week={week}
+          onWeekChange={handleWeekChange}
+          weekRange={weekRange}
+          showWeekControls={!searchResults}
+          searchRef={searchRef}
+          onSearchRefChange={setSearchRef}
+          onSearch={handleSearch}
+          onClearSearch={handleClearSearch}
+          searchLoading={searchLoading}
+          hasSearchResults={!!searchResults}
+          onUploadClick={() => setOcrDialogOpen(true)}
+          exportData={currentExportData}
+          isSearchResults={!!searchResults}
+          year={year}
+          loading={loading}
+        />
+      </Box>
 
-      {/* Main Content */}
+      {/* Main Content - Responsive */}
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
-          <CircularProgress size={60} sx={{ color: '#667eea' }} />
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          minHeight={{ xs: 200, md: 400 }}
+          px={{ xs: 2, sm: 0 }}
+        >
+          <CircularProgress size={window.innerWidth < 768 ? 40 : 60} sx={{ color: '#667eea' }} />
         </Box>
       ) : error ? (
-        <Alert severity="error" sx={{ borderRadius: 4 }}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            borderRadius: 4,
+            mx: { xs: 1, sm: 0 },
+            fontSize: { xs: '0.875rem', sm: '1rem' }
+          }}
+        >
           {error}
         </Alert>
       ) : (
@@ -408,7 +441,7 @@ const FinancialView = () => {
         />
       )}
 
-      {/* Dialogs */}
+      {/* Dialogs - Responsive */}
       <PaymentDialog
         open={payDialogOpen}
         expense={paySuperOrder?.expense ?? 0}
