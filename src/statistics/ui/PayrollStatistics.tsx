@@ -33,6 +33,7 @@ const PayrollStatistics: React.FC = () => {
   const now = new Date();
   const [year] = useState<number>(now.getFullYear());
   const [week] = useState<number>(() => {
+    console.log('date:', year, week);
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
@@ -45,6 +46,7 @@ const PayrollStatistics: React.FC = () => {
   // Estados para picker de semana y año
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [pendingYear, setPendingYear] = useState<number>(now.getFullYear());
+  console.log('selectedYear:', selectedYear, 'pendingYear:', pendingYear);
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const dayNum = d.getUTCDay() || 7;
