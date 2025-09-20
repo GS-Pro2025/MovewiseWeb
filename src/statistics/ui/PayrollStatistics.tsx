@@ -57,7 +57,7 @@ const PayrollStatistics: React.FC = () => {
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   });
   const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
-
+  console.log('selectedWeek:', selectedWeek, 'pendingWeek:', pendingWeek);
   // Filtros con useMemo para optimizar rendimiento
   const filteredOperators = useMemo(() => {
     if (!searchTerm.trim()) return operators;
