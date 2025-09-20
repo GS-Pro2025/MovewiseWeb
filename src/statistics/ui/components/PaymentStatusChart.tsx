@@ -1,7 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { ResponsivePie } from '@nivo/pie';
 import { ResponsiveBar } from '@nivo/bar';
 import { PaymentStatusStats } from '../../domain/PaymentStatusModels';
+import { 
+  BarChart3, 
+  DollarSign, 
+  CreditCard, 
+  TrendingUp, 
+  TrendingDown,
+  Receipt,
+  Target,
+  PiggyBank
+} from 'lucide-react';
 
 interface PaymentStatusChartProps {
   currentStats: PaymentStatusStats;
@@ -24,15 +35,15 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
   changes,
   loading = false
 }) => {
-  // Calcular métricas financieras
+  // Calcular métricas financieras - usar nullish coalescing para evitar errores
   const totalIncome = currentStats.paidIncome + currentStats.unpaidIncome;
-  const totalExpenses = currentStats.totalExpenses || 0;
+  const totalExpenses = (currentStats as any).totalExpenses ?? 0; // Usar any temporalmente para acceder a la propiedad
   const netProfit = totalIncome - totalExpenses;
   const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
 
   // Métricas de la semana anterior
   const previousTotalIncome = previousStats.paidIncome + previousStats.unpaidIncome;
-  const previousTotalExpenses = previousStats.totalExpenses || 0;
+  const previousTotalExpenses = (previousStats as any).totalExpenses ?? 0; // Usar any temporalmente
   const previousNetProfit = previousTotalIncome - previousTotalExpenses;
 
   // Datos para el gráfico de pie de Nivo
@@ -53,19 +64,19 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
     }
   ];
 
-  // Datos para el gráfico de barras comparativo
+  // Datos para el gráfico de barras comparativo - convertir explícitamente a números
   const barData = [
     {
       metric: 'This Week',
-      income: totalIncome / 1000,
-      expenses: totalExpenses / 1000,
-      profit: netProfit / 1000
+      income: Number((totalIncome / 1000).toFixed(2)),
+      expenses: Number((totalExpenses / 1000).toFixed(2)),
+      profit: Number((netProfit / 1000).toFixed(2))
     },
     {
       metric: 'Last Week',
-      income: previousTotalIncome / 1000,
-      expenses: previousTotalExpenses / 1000,
-      profit: previousNetProfit / 1000
+      income: Number((previousTotalIncome / 1000).toFixed(2)),
+      expenses: Number((previousTotalExpenses / 1000).toFixed(2)),
+      profit: Number((previousNetProfit / 1000).toFixed(2))
     }
   ];
 
@@ -107,9 +118,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
       <div className={`text-xs flex items-center gap-1 mt-1 font-semibold ${
         isPositive ? 'text-green-600' : 'text-red-600'
       }`}>
-        <span className={`text-xs ${isPositive ? '↗' : '↘'}`}>
-          {isPositive ? '↗' : '↘'}
-        </span>
+        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
         {prefix}{Math.abs(change).toFixed(1)}% vs last week
       </div>
     );
@@ -185,7 +194,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-3xl">📊</span>
+            <BarChart3 size={32} style={{ color: '#0B2863' }} />
             <h3 className="text-2xl font-bold" style={{ color: '#0B2863' }}>
               Weekly Financial Summary
             </h3>
@@ -222,7 +231,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
           }}
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="text-2xl">💰</div>
+            <DollarSign size={24} style={{ color: '#0ea5e9' }} />
             <span 
               className="font-semibold text-lg"
               style={{ color: '#0B2863' }}
@@ -254,7 +263,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
           }}
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="text-2xl">💸</div>
+            <CreditCard size={24} style={{ color: '#ef4444' }} />
             <span 
               className="font-semibold text-lg"
               style={{ color: '#0B2863' }}
@@ -283,7 +292,11 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
           }}
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="text-2xl">{netProfit >= 0 ? '📈' : '📉'}</div>
+            {netProfit >= 0 ? (
+              <TrendingUp size={24} style={{ color: '#22c55e' }} />
+            ) : (
+              <TrendingDown size={24} style={{ color: '#ef4444' }} />
+            )}
             <span 
               className="font-semibold text-lg"
               style={{ color: '#0B2863' }}
@@ -310,7 +323,8 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
         {/* Pie Chart - Payment Status */}
         <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <h4 className="text-xl font-bold mb-4 text-center" style={{ color: '#0B2863' }}>
+          <h4 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2" style={{ color: '#0B2863' }}>
+            <Target size={20} />
             Payment Distribution
           </h4>
           <div style={{ height: '300px' }}>
@@ -377,7 +391,8 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
 
         {/* Bar Chart - Financial Comparison */}
         <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <h4 className="text-xl font-bold mb-4 text-center" style={{ color: '#0B2863' }}>
+          <h4 className="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2" style={{ color: '#0B2863' }}>
+            <BarChart3 size={20} />
             Weekly Comparison (in thousands)
           </h4>
           <div style={{ height: '300px' }}>
@@ -416,8 +431,7 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
               labelSkipHeight={12}
               labelTextColor="#ffffff"
               animate={true}
-              motionStiffness={90}
-              motionDamping={15}
+              motionConfig="gentle"
               tooltip={({ id, value, color, data }) => (
                 <div
                   style={{
@@ -476,6 +490,9 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
         style={{ borderTopColor: '#0B2863' }}
       >
         <div className="text-center">
+          <div className="flex items-center justify-center mb-2">
+            <Receipt size={16} style={{ color: '#22c55e' }} />
+          </div>
           <div className="text-2xl font-bold" style={{ color: '#22c55e' }}>
             {currentStats.paidOrders}
           </div>
@@ -485,6 +502,9 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
           </div>
         </div>
         <div className="text-center">
+          <div className="flex items-center justify-center mb-2">
+            <Receipt size={16} style={{ color: '#f59e0b' }} />
+          </div>
           <div className="text-2xl font-bold" style={{ color: '#f59e0b' }}>
             {currentStats.unpaidOrders}
           </div>
@@ -494,6 +514,9 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
           </div>
         </div>
         <div className="text-center">
+          <div className="flex items-center justify-center mb-2">
+            <CreditCard size={16} style={{ color: '#ef4444' }} />
+          </div>
           <div className="text-2xl font-bold" style={{ color: '#ef4444' }}>
             {formatCurrency(totalExpenses)}
           </div>
@@ -501,6 +524,9 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
           <div className="text-xs text-gray-500">This Week</div>
         </div>
         <div className="text-center">
+          <div className="flex items-center justify-center mb-2">
+            <PiggyBank size={16} style={{ color: netProfit >= 0 ? '#22c55e' : '#ef4444' }} />
+          </div>
           <div className={`text-2xl font-bold`} style={{ color: netProfit >= 0 ? '#22c55e' : '#ef4444' }}>
             {formatCurrency(netProfit)}
           </div>
