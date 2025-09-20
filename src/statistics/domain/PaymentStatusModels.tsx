@@ -23,7 +23,7 @@ export interface PaymentStatusStats {
   totalIncome: number;
   paidIncome: number;
   unpaidIncome: number;
-  totalExpenses?: number; // Agregar esta propiedad opcional
+  totalExpenses?: number;
 }
 
 export interface PaymentStatusComparison {

@@ -35,16 +35,35 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
   changes,
   loading = false
 }) => {
-  // Calcular métricas financieras - usar nullish coalescing para evitar errores
-  const totalIncome = currentStats.paidIncome + currentStats.unpaidIncome;
-  const totalExpenses = (currentStats as any).totalExpenses ?? 0; // Usar any temporalmente para acceder a la propiedad
+  // Función helper para asegurar que los valores son números válidos
+  const safeNumber = (value: number | undefined | null): number => {
+    return typeof value === 'number' && !isNaN(value) ? value : 0;
+  };
+
+  // Calcular métricas financieras con validación
+  const paidIncome = safeNumber(currentStats.paidIncome);
+  const unpaidIncome = safeNumber(currentStats.unpaidIncome);
+  const totalIncome = paidIncome + unpaidIncome;
+  const totalExpenses = safeNumber(currentStats.totalExpenses);
   const netProfit = totalIncome - totalExpenses;
   const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
 
-  // Métricas de la semana anterior
-  const previousTotalIncome = previousStats.paidIncome + previousStats.unpaidIncome;
-  const previousTotalExpenses = (previousStats as any).totalExpenses ?? 0; // Usar any temporalmente
+  // Métricas de la semana anterior con validación
+  const previousPaidIncome = safeNumber(previousStats.paidIncome);
+  const previousUnpaidIncome = safeNumber(previousStats.unpaidIncome);
+  const previousTotalIncome = previousPaidIncome + previousUnpaidIncome;
+  const previousTotalExpenses = safeNumber(previousStats.totalExpenses);
   const previousNetProfit = previousTotalIncome - previousTotalExpenses;
+
+  // Debug: Agregar logs para diagnosticar
+  console.log('PaymentStatusChart Debug:', {
+    currentStats,
+    paidIncome,
+    unpaidIncome,
+    totalIncome,
+    totalExpenses,
+    netProfit
+  });
 
   // Datos para el gráfico de pie de Nivo
   const pieData = [
