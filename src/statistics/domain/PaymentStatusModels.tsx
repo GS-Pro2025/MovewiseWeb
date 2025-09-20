@@ -23,6 +23,7 @@ export interface PaymentStatusStats {
   totalIncome: number;
   paidIncome: number;
   unpaidIncome: number;
+  totalExpenses?: number;
 }
 
 export interface PaymentStatusComparison {
@@ -33,5 +34,8 @@ export interface PaymentStatusComparison {
     paidOrdersChange: number;
     unpaidOrdersChange: number;
     paidPercentageChange: number;
+    totalIncomeChange?: number;
+    totalExpenseChange?: number;
+    netProfitChange?: number;
   };
 }
