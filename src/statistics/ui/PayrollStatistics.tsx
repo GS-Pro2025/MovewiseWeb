@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect } from 'react';
-import { useSnackbar } from 'notistack'; // <-- Importa el hook
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSnackbar } from 'notistack';
 import { fetchOperators, fetchInactiveOperators, activateOperator } from '../data/repositoryOperators';
 import { fetchWeeklyOperatorRanking } from '../data/repositoryStatistics';
 import { Operator } from '../domain/OperatorsModels';
@@ -8,7 +8,7 @@ import { OperatorWeeklyRanking } from '../domain/OperatorWeeklyRankingModels';
 import { InactiveOperator } from '../domain/OperatortsInactiveModels';
 
 const PayrollStatistics: React.FC = () => {
-  const { enqueueSnackbar } = useSnackbar(); // <-- Inicializa el hook
+  const { enqueueSnackbar } = useSnackbar();
 
   const [operators, setOperators] = useState<Operator[]>([]);
   const [inactiveOperators, setInactiveOperators] = useState<InactiveOperator[]>([]);
@@ -17,15 +17,19 @@ const PayrollStatistics: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [inactiveError, setInactiveError] = useState<string | null>(null);
 
-  // NUEVO: Estado para tab activo
+  // Estado para tab activo
   const [activeTab, setActiveTab] = useState<'directory' | 'ranking' | 'inactive'>('directory');
 
-  // NUEVO: Estado para ranking
+  // Estados para buscador
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [inactiveSearchTerm, setInactiveSearchTerm] = useState<string>('');
+
+  // Estado para ranking
   const [ranking, setRanking] = useState<OperatorWeeklyRanking[]>([]);
   const [rankingLoading, setRankingLoading] = useState<boolean>(false);
   const [rankingError, setRankingError] = useState<string | null>(null);
 
-  // NUEVO: Semana y año (puedes ajustar para que sea dinámico)
+  // Semana y año
   const now = new Date();
   const [year] = useState<number>(now.getFullYear());
   const [week] = useState<number>(() => {
@@ -37,11 +41,10 @@ const PayrollStatistics: React.FC = () => {
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   });
-  console.log('week and year:', year + week);
-  // NUEVO: Estados para picker de semana y año
+
+  // Estados para picker de semana y año
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [pendingYear, setPendingYear] = useState<number>(now.getFullYear());
-  console.log(pendingYear);
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const dayNum = d.getUTCDay() || 7;
@@ -52,7 +55,35 @@ const PayrollStatistics: React.FC = () => {
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   });
   const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
-  console.log(pendingWeek);
+
+  // Filtros con useMemo para optimizar rendimiento
+  const filteredOperators = useMemo(() => {
+    if (!searchTerm.trim()) return operators;
+    
+    const term = searchTerm.toLowerCase().trim();
+    return operators.filter(operator => {
+      const fullName = `${operator.first_name || ''} ${operator.last_name || ''}`.toLowerCase();
+      const email = (operator.email || '').toLowerCase();
+      const code = (operator.code || '').toLowerCase();
+      
+      return fullName.includes(term) || 
+             email.includes(term) || 
+             code.includes(term);
+    });
+  }, [operators, searchTerm]);
+
+  const filteredInactiveOperators = useMemo(() => {
+    if (!inactiveSearchTerm.trim()) return inactiveOperators;
+    
+    const term = inactiveSearchTerm.toLowerCase().trim();
+    return inactiveOperators.filter(operator => {
+      const fullName = `${operator.first_name || ''} ${operator.last_name || ''}`.toLowerCase();
+      const email = (operator.email || '').toLowerCase();
+      
+      return fullName.includes(term) || email.includes(term);
+    });
+  }, [inactiveOperators, inactiveSearchTerm]);
+
   const getAvailableYears = (): number[] => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -61,7 +92,6 @@ const PayrollStatistics: React.FC = () => {
     }
     return years;
   };
-
 
   useEffect(() => {
     const loadOperators = async () => {
@@ -72,7 +102,7 @@ const PayrollStatistics: React.FC = () => {
         setOperators(response.results);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading operators');
-        enqueueSnackbar(err instanceof Error ? err.message : 'Error loading operators', { variant: 'error' }); // <-- Snackbar error
+        enqueueSnackbar(err instanceof Error ? err.message : 'Error loading operators', { variant: 'error' });
       } finally {
         setLoading(false);
       }
@@ -109,7 +139,7 @@ const PayrollStatistics: React.FC = () => {
           setInactiveOperators(data.results);
         } catch (err) {
           setInactiveError(err instanceof Error ? err.message : 'Error loading inactive operators');
-          enqueueSnackbar(err instanceof Error ? err.message : 'Error loading inactive operators', { variant: 'error' }); // <-- Snackbar error
+          enqueueSnackbar(err instanceof Error ? err.message : 'Error loading inactive operators', { variant: 'error' });
         } finally {
           setInactiveLoading(false);
         }
@@ -122,9 +152,9 @@ const PayrollStatistics: React.FC = () => {
     try {
       await activateOperator(id_operator);
       setInactiveOperators(prev => prev.filter(op => op.id_operator !== id_operator));
-      enqueueSnackbar('Operator activated successfully', { variant: 'success' }); // <-- Snackbar success
+      enqueueSnackbar('Operator activated successfully', { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar('Error activating operator', { variant: 'error' }); // <-- Snackbar error
+      enqueueSnackbar('Error activating operator', { variant: 'error' });
     }
   };
 
@@ -146,7 +176,6 @@ const PayrollStatistics: React.FC = () => {
     return operators.reduce((total, operator) => total + parseFloat(operator.salary), 0);
   };
 
-  // NUEVO: Función para generar el avatar
   const renderAvatar = (operator: Operator) => {
     if (operator.photo) {
       return (
@@ -167,7 +196,6 @@ const PayrollStatistics: React.FC = () => {
     }
   };
 
-  // Utilidad para obtener el rango de fechas de una semana
   function getWeekRange(year: number, week: number): { start: string; end: string } {
     const firstDayOfYear = new Date(year, 0, 1);
     const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
@@ -178,6 +206,15 @@ const PayrollStatistics: React.FC = () => {
       end: endDate.toISOString().split('T')[0],
     };
   }
+
+  // Función para limpiar el buscador
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
+
+  const clearInactiveSearch = () => {
+    setInactiveSearchTerm('');
+  };
 
   if (loading) {
     return (
@@ -298,6 +335,38 @@ const PayrollStatistics: React.FC = () => {
             </div>
           </div>
 
+          {/* Buscador para empleados activos */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i className="fas fa-search text-gray-400"></i>
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Search employees by name, email, or code..."
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            {searchTerm && (
+              <div className="mt-2 text-sm text-gray-600">
+                Showing {filteredOperators.length} of {operators.length} employees
+                {filteredOperators.length === 0 && (
+                  <span className="text-red-500 ml-2">No employees found matching "{searchTerm}"</span>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Lista de operadores */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -323,44 +392,56 @@ const PayrollStatistics: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {operators.map((operator) => (
-                    <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            {/* CAMBIO: Usar la función renderAvatar */}
-                            {renderAvatar(operator)}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {getFullName(operator)}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              Code: {operator.code}
-                            </div>
-                          </div>
+                  {filteredOperators.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center">
+                        <div className="text-gray-400">
+                          <i className="fas fa-search text-3xl mb-2"></i>
+                          <p className="text-sm">
+                            {searchTerm ? `No employees found matching "${searchTerm}"` : 'No employees available'}
+                          </p>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{operator.email}</div>
-                        <div className="text-sm text-gray-500">{operator.phone}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(operator.salary)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          operator.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {operator.status}
-                        </span>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredOperators.map((operator) => (
+                      <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              {renderAvatar(operator)}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {getFullName(operator)}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Code: {operator.code}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{operator.email}</div>
+                          <div className="text-sm text-gray-500">{operator.phone}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatCurrency(operator.salary)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            operator.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {operator.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -376,7 +457,6 @@ const PayrollStatistics: React.FC = () => {
               <p className="text-gray-500 text-sm">
                 Most assigned operators for week {selectedWeek}, {selectedYear}
               </p>
-              {/* Mostrar rango de fechas de la semana seleccionada */}
               <p className="text-xs text-blue-600 mt-1">
                 {(() => {
                   const range = getWeekRange(selectedYear, selectedWeek);
@@ -464,52 +544,99 @@ const PayrollStatistics: React.FC = () => {
       )}
 
       {activeTab === 'inactive' && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">Inactive Operators</h3>
-            <p className="text-gray-500 text-sm">Operators currently inactive</p>
-          </div>
-          {inactiveLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-3">
-                <i className="fas fa-spinner animate-spin text-yellow-600 text-xl"></i>
-                <span className="text-gray-600">Loading inactive operators...</span>
+        <>
+          {/* Buscador para operadores inactivos */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i className="fas fa-search text-gray-400"></i>
               </div>
+              <input
+                type="text"
+                value={inactiveSearchTerm}
+                onChange={(e) => setInactiveSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                placeholder="Search inactive operators by name or email..."
+              />
+              {inactiveSearchTerm && (
+                <button
+                  onClick={clearInactiveSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
             </div>
-          ) : inactiveError ? (
-            <div className="text-center text-red-500 py-8">{inactiveError}</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {inactiveOperators.map((op) => (
-                    <tr key={op.id_operator} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-900">{op.first_name} {op.last_name}</td>
-                      <td className="px-6 py-4 text-gray-700">{op.email}</td>
-                      <td className="px-6 py-4 text-red-700 font-bold">{op.status}</td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleActivate(op.id_operator)}
-                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                        >
-                          Activate
-                        </button>
-                      </td>
+            {inactiveSearchTerm && (
+              <div className="mt-2 text-sm text-gray-600">
+                Showing {filteredInactiveOperators.length} of {inactiveOperators.length} inactive operators
+                {filteredInactiveOperators.length === 0 && (
+                  <span className="text-red-500 ml-2">No operators found matching "{inactiveSearchTerm}"</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Inactive Operators</h3>
+              <p className="text-gray-500 text-sm">Operators currently inactive</p>
+            </div>
+            {inactiveLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3">
+                  <i className="fas fa-spinner animate-spin text-yellow-600 text-xl"></i>
+                  <span className="text-gray-600">Loading inactive operators...</span>
+                </div>
+              </div>
+            ) : inactiveError ? (
+              <div className="text-center text-red-500 py-8">{inactiveError}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredInactiveOperators.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center">
+                          <div className="text-gray-400">
+                            <i className="fas fa-search text-3xl mb-2"></i>
+                            <p className="text-sm">
+                              {inactiveSearchTerm ? `No inactive operators found matching "${inactiveSearchTerm}"` : 'No inactive operators available'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredInactiveOperators.map((op) => (
+                        <tr key={op.id_operator} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 font-medium text-gray-900">{op.first_name} {op.last_name}</td>
+                          <td className="px-6 py-4 text-gray-700">{op.email}</td>
+                          <td className="px-6 py-4 text-red-700 font-bold">{op.status}</td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => handleActivate(op.id_operator)}
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                            >
+                              Activate
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
