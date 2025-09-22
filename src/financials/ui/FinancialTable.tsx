@@ -704,6 +704,114 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                     </React.Fragment>
                   ))}
                 </TableBody>
+                {/* Totals Row */}
+                <TableBody>
+                  <TableRow style={{ backgroundColor: '#f1f5f9', borderTop: '3px solid #0B2863' }}>
+                    {/* 0. Expand Button - Empty */}
+                    <TableCell className="!py-4 !px-2 !border-b-0" style={{ width: '50px' }}>
+                      {/* Empty cell for expand button */}
+                    </TableCell>
+
+                    {/* 1. Reference - TOTALS label */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography 
+                        variant="body1" 
+                        className="!font-bold !text-lg"
+                        style={{ color: '#0B2863' }}
+                      >
+                        TOTALS
+                      </Typography>
+                    </TableCell>
+
+                    {/* 2. Client - Empty */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography 
+                        variant="body2" 
+                        className="!font-semibold !text-center"
+                        style={{ color: '#6b7280' }}
+                      >
+                        {data.length} orders
+                      </Typography>
+                    </TableCell>
+
+                    {/* 3. Expense Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#ef4444' }}>
+                        ${data.reduce((sum, order) => sum + order.expense, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 4. Operator Salaries Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#0B2863' }}>
+                        ${data.reduce((sum, order) => sum + order.otherSalaries, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 5. Work Cost Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#0B2863' }}>
+                        ${data.reduce((sum, order) => sum + order.workCost, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 6. Driver Salaries Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
+                        ${data.reduce((sum, order) => sum + order.driverSalaries, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 7. Total Discount Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#f59e0b' }}>
+                        ${data.reduce((sum, order) => sum + (order.expense + order.driverSalaries + order.otherSalaries + order.fuelCost), 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 8. Total Income Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
+                        ${data.reduce((sum, order) => sum + order.totalIncome, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 9. Profit Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      {(() => {
+                        const totalProfit = data.reduce((sum, order) => sum + order.totalProfit, 0);
+                        return (
+                          <span
+                            className={`inline-flex items-center px-4 py-2 rounded-full text-lg font-bold text-white min-w-[100px] justify-center shadow-md ${
+                              totalProfit >= 0 
+                                ? 'bg-green-600' 
+                                : 'bg-red-600'
+                            }`}
+                          >
+                            ${totalProfit.toLocaleString()}
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
+
+                    {/* 10. Status - Summary */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="caption" className="!font-semibold" style={{ color: '#22c55e' }}>
+                          Paid: {data.filter(order => order.payStatus === 1).length}
+                        </Typography>
+                        <Typography variant="caption" className="!font-semibold" style={{ color: '#f59e0b' }}>
+                          Unpaid: {data.filter(order => order.payStatus === 0).length}
+                        </Typography>
+                      </div>
+                    </TableCell>
+
+                    {/* 11. Actions - Empty */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      {/* Empty cell for actions */}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
               </Table>
             </div>
           )}
