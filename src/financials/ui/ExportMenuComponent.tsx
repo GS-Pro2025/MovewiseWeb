@@ -68,7 +68,8 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
     handleClose();
     
     try {
-      await ExportUtils.exportToPDF(superOrders, isSearchResults, week, year, weekRange);
+      // Cambiar esta línea para usar la nueva función sin await
+      ExportUtils.exportToPDF(superOrders, isSearchResults, week, year, weekRange);
     } finally {
       setIsExporting(false);
     }
