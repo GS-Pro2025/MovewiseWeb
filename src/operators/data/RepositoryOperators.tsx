@@ -46,7 +46,7 @@ export const fetchInactiveOperators = async (): Promise<InactiveOperatorsRespons
   }
 
   try {
-    const response = await fetch(`${BASE_URL_API}/list-operators-inactive/`, {
+    const response = await fetch(`${BASE_URL_API}/list-operators-inactive/?page=1&page_size=1000`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
