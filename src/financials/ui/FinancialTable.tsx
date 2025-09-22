@@ -35,8 +35,9 @@ import {
 import { SuperOrder } from '../domain/ModelsOCR';
 import OrdersByKeyRefTable from './OrdersByKeyRefTable';
 
-// Column Configuration - ACTUALIZADA
+// Column Configuration - ACTUALIZADA con expand al inicio
 const columns = [
+  { key: null, label: '', sortable: false }, // Columna para expand
   { key: 'key_ref' as keyof SuperOrder, label: 'Reference', sortable: true },
   { key: 'client' as keyof SuperOrder, label: 'Client', sortable: true },
   { key: 'expense' as keyof SuperOrder, label: 'Expense', sortable: true },
@@ -182,8 +183,26 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
         }}
       >
         <CardContent sx={{ padding: '16px' }}>
-          {/* Header actualizado */}
-          <div className="flex justify-between items-start mb-3">
+          {/* Header actualizado con expand a la izquierda */}
+          <div className="flex items-start mb-3 gap-3">
+            {/* Expand Button - MOVIDO A LA IZQUIERDA */}
+            <div className="flex flex-col items-center">
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand(superOrder.key_ref);
+                }}
+                size="small"
+                style={{ color: '#0B2863' }}
+              >
+                {expandedRows.has(superOrder.key_ref) ? 
+                  <KeyboardArrowUpIcon /> : 
+                  <KeyboardArrowDownIcon />
+                }
+              </IconButton>
+            </div>
+            
+            {/* Content */}
             <div className="flex-1">
               <Typography 
                 variant="h6" 
@@ -200,21 +219,10 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                 {superOrder.client}
               </Typography>
             </div>
-            <div className="flex flex-col items-end gap-2">
+
+            {/* Status */}
+            <div className="flex flex-col items-end">
               <PayStatusChip paid={superOrder.payStatus === 1} />
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleExpand(superOrder.key_ref);
-                }}
-                size="small"
-                style={{ color: '#0B2863' }}
-              >
-                {expandedRows.has(superOrder.key_ref) ? 
-                  <KeyboardArrowUpIcon /> : 
-                  <KeyboardArrowDownIcon />
-                }
-              </IconButton>
             </div>
           </div>
 
@@ -428,6 +436,24 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
                         }}
                       >
+                        {/* 0. Expand Button - NUEVO */}
+                        <TableCell className="!py-4 !px-2 !border-b !border-gray-200" style={{ width: '50px' }}>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleExpand(superOrder.key_ref);
+                            }}
+                            size="small"
+                            className="!transition-all !duration-200 hover:!scale-110"
+                            style={{ color: '#0B2863' }}
+                          >
+                            {expandedRows.has(superOrder.key_ref) ? 
+                              <KeyboardArrowUpIcon /> : 
+                              <KeyboardArrowDownIcon />
+                            }
+                          </IconButton>
+                        </TableCell>
+
                         {/* 1. Reference */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <Typography 
@@ -510,7 +536,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           <PayStatusChip paid={superOrder.payStatus === 1} />
                         </TableCell>
 
-                        {/* 11. Actions */}
+                        {/* 11. Actions - SIN botón de expand */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <div className="flex items-center gap-2">
                             <ActionButton
@@ -532,21 +558,6 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                               }}
                               size={isTablet ? 'small' : 'medium'}
                             />
-                            
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleExpand(superOrder.key_ref);
-                              }}
-                              size="small"
-                              className="!transition-all !duration-200 hover:!scale-110"
-                              style={{ color: '#0B2863' }}
-                            >
-                              {expandedRows.has(superOrder.key_ref) ? 
-                                <KeyboardArrowUpIcon /> : 
-                                <KeyboardArrowDownIcon />
-                              }
-                            </IconButton>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -554,7 +565,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       {/* Expanded Row Details */}
                       <TableRow>
                         <TableCell 
-                          colSpan={isTablet ? 6 : 8}
+                          colSpan={isTablet ? 7 : 12} // Aumentar colSpan por la nueva columna
                           className="!p-0 !border-none"
                           style={{ backgroundColor: '#f8fafc' }}
                         >
