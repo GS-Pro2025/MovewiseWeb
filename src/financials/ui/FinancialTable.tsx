@@ -29,24 +29,25 @@ import {
   Wrench,
   Users,
   UserCheck,
-  DollarSign,
   User,
-  Eye,
-  CreditCard
+  Eye
 } from 'lucide-react';
 import { SuperOrder } from '../domain/ModelsOCR';
 import OrdersByKeyRefTable from './OrdersByKeyRefTable';
 
-// Column Configuration
+// Column Configuration - ACTUALIZADA
 const columns = [
   { key: 'key_ref' as keyof SuperOrder, label: 'Reference', sortable: true },
-  { key: 'totalProfit' as keyof SuperOrder, label: 'Profit', sortable: true },
-  { key: 'payStatus' as keyof SuperOrder, label: 'Status', sortable: true },
-  { key: null, label: 'Actions', sortable: false },
-  { key: 'totalIncome' as keyof SuperOrder, label: 'Income', sortable: true },
-  { key: 'totalCost' as keyof SuperOrder, label: 'Cost', sortable: true },
   { key: 'client' as keyof SuperOrder, label: 'Client', sortable: true },
-  { key: null, label: 'Details', sortable: false },
+  { key: 'expense' as keyof SuperOrder, label: 'Expense', sortable: true },
+  { key: 'otherSalaries' as keyof SuperOrder, label: 'Operator Salaries', sortable: true },
+  { key: 'workCost' as keyof SuperOrder, label: 'Work Cost', sortable: true },
+  { key: 'driverSalaries' as keyof SuperOrder, label: 'Driver Salaries', sortable: true },
+  { key: null, label: 'Total Discount', sortable: false }, // Campo calculado
+  { key: 'totalIncome' as keyof SuperOrder, label: 'Total Income', sortable: true },
+  { key: 'totalProfit' as keyof SuperOrder, label: 'Profit', sortable: true },
+  { key: null, label: 'Status', sortable: false },
+  { key: null, label: 'Actions', sortable: false },
 ];
 
 interface FinancialTableProps {
@@ -160,157 +161,173 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   );
 
   // Mobile Card Component
-  const MobileOrderCard = ({ superOrder, index }: { superOrder: SuperOrder, index: number }) => (
-    <Card 
-      key={superOrder.key_ref}
-      className="mb-4"
-      sx={{
-        borderRadius: 4,
-        border: '2px solid',
-        borderColor: '#0B2863',
-        backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        '&:hover': {
-          boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
-          transform: 'translateY(-2px)'
-        },
-        transition: 'all 0.2s'
-      }}
-    >
-      <CardContent sx={{ padding: '16px' }}>
-        {/* Header */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex-1">
-            <Typography 
-              variant="h6" 
-              className="!font-bold !text-lg"
-              style={{ color: '#0B2863' }}
-            >
-              {superOrder.key_ref}
-            </Typography>
-            <Typography 
-              variant="body2" 
-              className="!text-gray-600 !mt-1"
-            >
-              <User size={14} className="inline mr-1" />
-              {superOrder.client}
-            </Typography>
+  const MobileOrderCard = ({ superOrder, index }: { superOrder: SuperOrder, index: number }) => {
+    const totalDiscount = superOrder.expense + superOrder.driverSalaries + superOrder.otherSalaries + superOrder.fuelCost;
+    
+    return (
+      <Card 
+        key={superOrder.key_ref}
+        className="mb-4"
+        sx={{
+          borderRadius: 4,
+          border: '2px solid',
+          borderColor: '#0B2863',
+          backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          '&:hover': {
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+            transform: 'translateY(-2px)'
+          },
+          transition: 'all 0.2s'
+        }}
+      >
+        <CardContent sx={{ padding: '16px' }}>
+          {/* Header actualizado */}
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex-1">
+              <Typography 
+                variant="h6" 
+                className="!font-bold !text-lg"
+                style={{ color: '#0B2863' }}
+              >
+                {superOrder.key_ref}
+              </Typography>
+              <Typography 
+                variant="body2" 
+                className="!text-gray-600 !mt-1"
+              >
+                <User size={14} className="inline mr-1" />
+                {superOrder.client}
+              </Typography>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <PayStatusChip paid={superOrder.payStatus === 1} />
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand(superOrder.key_ref);
+                }}
+                size="small"
+                style={{ color: '#0B2863' }}
+              >
+                {expandedRows.has(superOrder.key_ref) ? 
+                  <KeyboardArrowUpIcon /> : 
+                  <KeyboardArrowDownIcon />
+                }
+              </IconButton>
+            </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <PayStatusChip paid={superOrder.payStatus === 1} />
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleExpand(superOrder.key_ref);
-              }}
-              size="small"
-              style={{ color: '#0B2863' }}
-            >
-              {expandedRows.has(superOrder.key_ref) ? 
-                <KeyboardArrowUpIcon /> : 
-                <KeyboardArrowDownIcon />
-              }
-            </IconButton>
-          </div>
-        </div>
 
-        {/* Financial Info */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="text-center p-3 rounded-lg border-2" style={{ backgroundColor: '#f0fdf4', borderColor: '#22c55e' }}>
-            <DollarSign size={20} style={{ color: '#22c55e' }} className="mx-auto mb-1" />
-            <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Income</Typography>
-            <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
-              ${superOrder.totalIncome.toLocaleString()}
-            </Typography>
-          </div>
-          
-          <div className="text-center p-3 rounded-lg border-2" style={{ backgroundColor: '#fef2f2', borderColor: '#ef4444' }}>
-            <CreditCard size={20} style={{ color: '#ef4444' }} className="mx-auto mb-1" />
-            <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Cost</Typography>
-            <Typography variant="body1" className="!font-bold" style={{ color: '#ef4444' }}>
-              ${superOrder.totalCost.toLocaleString()}
-            </Typography>
-          </div>
-        </div>
-
-        {/* Profit */}
-        <div className="text-center mb-4">
-          <Typography variant="caption" className="!block !text-gray-600 !font-semibold !mb-2">Net Profit</Typography>
-          <ProfitChip profit={superOrder.totalProfit} />
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          <ActionButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onPayOrder(superOrder);
-            }}
-            disabled={superOrder.payStatus === 1}
-            size="small"
-          >
-            <PaymentIcon sx={{ fontSize: 14 }} />
-            Pay
-          </ActionButton>
-          
-          <ViewButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails(superOrder);
-            }}
-            size="small"
-          />
-        </div>
-
-        {/* Expanded Content */}
-        <Collapse 
-          in={expandedRows.has(superOrder.key_ref)} 
-          timeout={300}
-          unmountOnExit
-        >
-          <Divider sx={{ my: 2 }} />
-          <div className="space-y-3">
-            {/* Cost Breakdown */}
-            <Typography variant="subtitle2" className="!font-semibold" style={{ color: '#0B2863' }}>
-              Cost Breakdown
-            </Typography>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center p-2 rounded border" style={{ backgroundColor: '#fff7ed' }}>
-                <Fuel size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
-                <Typography variant="caption" className="!block !font-semibold">Fuel</Typography>
-                <Typography variant="caption" className="!block">${superOrder.fuelCost.toLocaleString()}</Typography>
-              </div>
-              <div className="text-center p-2 rounded border" style={{ backgroundColor: '#eff6ff' }}>
-                <Wrench size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
-                <Typography variant="caption" className="!block !font-semibold">Work</Typography>
-                <Typography variant="caption" className="!block">${superOrder.workCost.toLocaleString()}</Typography>
-              </div>
-              <div className="text-center p-2 rounded border" style={{ backgroundColor: '#f0fdf4' }}>
-                <UserCheck size={16} className="mx-auto mb-1" style={{ color: '#22c55e' }} />
-                <Typography variant="caption" className="!block !font-semibold">Drivers</Typography>
-                <Typography variant="caption" className="!block">${superOrder.driverSalaries.toLocaleString()}</Typography>
-              </div>
-              <div className="text-center p-2 rounded border" style={{ backgroundColor: '#fefce8' }}>
-                <Users size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
-                <Typography variant="caption" className="!block !font-semibold">Operators</Typography>
-                <Typography variant="caption" className="!block">${superOrder.otherSalaries.toLocaleString()}</Typography>
-              </div>
+          {/* Grid actualizado con nuevos campos */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fef2f2', borderColor: '#ef4444' }}>
+              <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Expense</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#ef4444' }}>
+                ${superOrder.expense.toLocaleString()}
+              </Typography>
             </div>
             
-            {/* Orders Table */}
-            <div className="max-h-[300px] overflow-auto rounded border" style={{ borderColor: '#0B2863' }}>
-              <OrdersByKeyRefTable
-                orders={superOrder.orders}
-                keyRef={superOrder.key_ref}
-                onOrderPaid={onOrderPaid}
-                onViewOperators={onViewOperators}
-              />
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#f0fdf4', borderColor: '#22c55e' }}>
+              <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Driver Salaries</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#22c55e' }}>
+                ${superOrder.driverSalaries.toLocaleString()}
+              </Typography>
+            </div>
+            
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#eff6ff', borderColor: '#0B2863' }}>
+              <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Work Cost</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#0B2863' }}>
+                ${superOrder.workCost.toLocaleString()}
+              </Typography>
+            </div>
+            
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fefce8', borderColor: '#f59e0b' }}>
+              <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Total Discount</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#f59e0b' }}>
+                ${totalDiscount.toLocaleString()}
+              </Typography>
             </div>
           </div>
-        </Collapse>
-      </CardContent>
-    </Card>
-  );
+
+          {/* Profit */}
+          <div className="text-center mb-4">
+            <Typography variant="caption" className="!block !text-gray-600 !font-semibold !mb-2">Net Profit</Typography>
+            <ProfitChip profit={superOrder.totalProfit} />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <ActionButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onPayOrder(superOrder);
+              }}
+              disabled={superOrder.payStatus === 1}
+              size="small"
+            >
+              <PaymentIcon sx={{ fontSize: 14 }} />
+              Pay
+            </ActionButton>
+            
+            <ViewButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails(superOrder);
+              }}
+              size="small"
+            />
+          </div>
+
+          {/* Expanded Content */}
+          <Collapse 
+            in={expandedRows.has(superOrder.key_ref)} 
+            timeout={300}
+            unmountOnExit
+          >
+            <Divider sx={{ my: 2 }} />
+            <div className="space-y-3">
+              {/* Cost Breakdown */}
+              <Typography variant="subtitle2" className="!font-semibold" style={{ color: '#0B2863' }}>
+                Cost Breakdown
+              </Typography>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-center p-2 rounded border" style={{ backgroundColor: '#fff7ed' }}>
+                  <Fuel size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
+                  <Typography variant="caption" className="!block !font-semibold">Fuel</Typography>
+                  <Typography variant="caption" className="!block">${superOrder.fuelCost.toLocaleString()}</Typography>
+                </div>
+                <div className="text-center p-2 rounded border" style={{ backgroundColor: '#eff6ff' }}>
+                  <Wrench size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
+                  <Typography variant="caption" className="!block !font-semibold">Work</Typography>
+                  <Typography variant="caption" className="!block">${superOrder.workCost.toLocaleString()}</Typography>
+                </div>
+                <div className="text-center p-2 rounded border" style={{ backgroundColor: '#f0fdf4' }}>
+                  <UserCheck size={16} className="mx-auto mb-1" style={{ color: '#22c55e' }} />
+                  <Typography variant="caption" className="!block !font-semibold">Drivers</Typography>
+                  <Typography variant="caption" className="!block">${superOrder.driverSalaries.toLocaleString()}</Typography>
+                </div>
+                <div className="text-center p-2 rounded border" style={{ backgroundColor: '#fefce8' }}>
+                  <Users size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
+                  <Typography variant="caption" className="!block !font-semibold">Operators</Typography>
+                  <Typography variant="caption" className="!block">${superOrder.otherSalaries.toLocaleString()}</Typography>
+                </div>
+              </div>
+              
+              {/* Orders Table */}
+              <div className="max-h-[300px] overflow-auto rounded border" style={{ borderColor: '#0B2863' }}>
+                <OrdersByKeyRefTable
+                  orders={superOrder.orders}
+                  keyRef={superOrder.key_ref}
+                  onOrderPaid={onOrderPaid}
+                  onViewOperators={onViewOperators}
+                />
+              </div>
+            </div>
+          </Collapse>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="w-full overflow-hidden">
@@ -411,7 +428,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
                         }}
                       >
-                        {/* Reference */}
+                        {/* 1. Reference */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <Typography 
                             variant="body2" 
@@ -426,50 +443,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           </Typography>
                         </TableCell>
 
-                        {/* Profit */}
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <ProfitChip profit={superOrder.totalProfit} />
-                        </TableCell>
-
-                        {/* Pay Status */}
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <PayStatusChip paid={superOrder.payStatus === 1} />
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <ActionButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPayOrder(superOrder);
-                            }}
-                            disabled={superOrder.payStatus === 1}
-                            size={isTablet ? 'small' : 'medium'}
-                          >
-                            <PaymentIcon sx={{ fontSize: isTablet ? 14 : 16 }} />
-                            {!isTablet && 'Pay'}
-                          </ActionButton>
-                        </TableCell>
-
-                        {/* Income - Hidden on tablet */}
-                        {!isTablet && (
-                          <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                            <Typography variant="body2" className="font-semibold" style={{ color: '#0B2863' }}>
-                              ${superOrder.totalIncome.toLocaleString()}
-                            </Typography>
-                          </TableCell>
-                        )}
-
-                        {/* Total Cost - Hidden on tablet */}
-                        {!isTablet && (
-                          <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                            <Typography variant="body2" className="font-semibold" style={{ color: '#0B2863' }}>
-                              ${superOrder.totalCost.toLocaleString()}
-                            </Typography>
-                          </TableCell>
-                        )}
-
-                        {/* Client */}
+                        {/* 2. Client */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <Typography 
                             variant="body2" 
@@ -484,9 +458,81 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           </Typography>
                         </TableCell>
 
-                        {/* Details */}
+                        {/* 3. Expense */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#ef4444' }}>
+                            ${superOrder.expense.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 4. Operator Salaries */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#0B2863' }}>
+                            ${superOrder.otherSalaries.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 5. Work Cost */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#0B2863' }}>
+                            ${superOrder.workCost.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 6. Driver Salaries */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>
+                            ${superOrder.driverSalaries.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 7. Total Discount (calculado) */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-bold" style={{ color: '#f59e0b' }}>
+                            ${(superOrder.expense + superOrder.driverSalaries + superOrder.otherSalaries + superOrder.fuelCost).toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 8. Total Income */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>
+                            ${superOrder.totalIncome.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 9. Profit */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <ProfitChip profit={superOrder.totalProfit} />
+                        </TableCell>
+
+                        {/* 10. Status */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <PayStatusChip paid={superOrder.payStatus === 1} />
+                        </TableCell>
+
+                        {/* 11. Actions */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <div className="flex items-center gap-2">
+                            <ActionButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPayOrder(superOrder);
+                              }}
+                              disabled={superOrder.payStatus === 1}
+                              size={isTablet ? 'small' : 'medium'}
+                            >
+                              <PaymentIcon sx={{ fontSize: isTablet ? 14 : 16 }} />
+                              {!isTablet && 'Pay'}
+                            </ActionButton>
+                            
+                            <ViewButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetails(superOrder);
+                              }}
+                              size={isTablet ? 'small' : 'medium'}
+                            />
+                            
                             <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -501,13 +547,6 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                                 <KeyboardArrowDownIcon />
                               }
                             </IconButton>
-                            <ViewButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onViewDetails(superOrder);
-                              }}
-                              size={isTablet ? 'small' : 'medium'}
-                            />
                           </div>
                         </TableCell>
                       </TableRow>
