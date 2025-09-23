@@ -586,7 +586,14 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                     min="1"
                     max="53"
                     value={pendingStartWeek}
-                    onChange={(e) => setPendingStartWeek(Number(e.target.value))}
+                    onChange={(e) => {
+                      const newValue = Number(e.target.value);
+                      setPendingStartWeek(newValue);
+                      // Actualizar automáticamente si el valor es válido
+                      if (newValue >= 1 && newValue <= 53) {
+                        setStartWeek(newValue);
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && pendingStartWeek >= 1 && pendingStartWeek <= 53) {
                         setStartWeek(pendingStartWeek);
@@ -602,7 +609,14 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                     min="1"
                     max="53"
                     value={pendingEndWeek}
-                    onChange={(e) => setPendingEndWeek(Number(e.target.value))}
+                    onChange={(e) => {
+                      const newValue = Number(e.target.value);
+                      setPendingEndWeek(newValue);
+                      // Actualizar automáticamente si el valor es válido
+                      if (newValue >= 1 && newValue <= 53) {
+                        setEndWeek(newValue);
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && pendingEndWeek >= 1 && pendingEndWeek <= 53) {
                         setEndWeek(pendingEndWeek);
