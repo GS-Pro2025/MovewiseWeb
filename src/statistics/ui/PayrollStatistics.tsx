@@ -41,8 +41,8 @@ const PayrollStatistics: React.FC = () => {
   };
 
   const [selectedWeek, setSelectedWeek] = useState<number>(getCurrentWeek());
-  const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
-  console.log('selectedWeek:', selectedWeek, 'pendingWeek:', pendingWeek);
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
+
   // Filtros con useMemo para optimizar rendimiento
   const filteredOperators = useMemo(() => {
     if (!searchTerm.trim()) return operators;
@@ -456,10 +456,7 @@ const PayrollStatistics: React.FC = () => {
                 <label className="text-sm font-medium text-gray-700">Year:</label>
                 <select
                   value={selectedYear}
-                  onChange={e => {
-                    setSelectedYear(Number(e.target.value));
-                    setPendingYear(Number(e.target.value));
-                  }}
+                  onChange={e => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   {getAvailableYears().map(y => (
@@ -474,11 +471,7 @@ const PayrollStatistics: React.FC = () => {
                   min="1"
                   max="53"
                   value={selectedWeek}
-                  onChange={e => {
-                    const val = Number(e.target.value);
-                    setSelectedWeek(val);
-                    setPendingWeek(val);
-                  }}
+                  onChange={e => setSelectedWeek(Number(e.target.value))}
                   className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
