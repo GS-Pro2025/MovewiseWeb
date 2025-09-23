@@ -78,6 +78,10 @@ const FinancialView = () => {
   const [docaiDialogOpen, setDocaiDialogOpen] = useState(false);
   const [docaiDialogResult, setDocaiDialogResult] = useState<any>(null);
 
+  // Estado para controlar si debemos mostrar confirmación
+  const [shouldShowConfirmation, setShouldShowConfirmation] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState("");
+
   // Group orders by key_ref and calculate totals
   function groupByKeyRef(data: OrderSummary[]): SuperOrder[] {
     const map = new Map<string, SuperOrder>();
@@ -244,12 +248,16 @@ const FinancialView = () => {
     }
   };
 
-  // OCR Handlers
+  //  OCR Handlers
   const handleOcrUpload = async () => {
     setOcrLoading(true);
     setOcrStep("Setting data");
-    enqueueSnackbar("Setting data...", { variant: "info" });
+    enqueueSnackbar("Starting document processing...", { variant: "info" });
+    
     const results: OCRResult[] = [];
+    let hasAnySuccess = false;
+    let totalUpdatedOrders = 0;
+    let totalNotFoundOrders = 0;
     
     for (const file of ocrFiles) {
       setOcrStep(`Processing ${file.name}...`);
@@ -258,6 +266,13 @@ const FinancialView = () => {
       try {
         const res = await processDocaiStatement(file);
         const isSuccess = res.success !== false && res.update_result !== undefined;
+        
+        if (isSuccess) {
+          hasAnySuccess = true;
+          totalUpdatedOrders += res.update_result?.total_updated || 0;
+          totalNotFoundOrders += res.update_result?.total_not_found || 0;
+        }
+
         results.push({
           name: file.name,
           success: isSuccess,
@@ -270,31 +285,43 @@ const FinancialView = () => {
             not_found_orders: res.update_result.not_found_orders || [],
             total_updated: res.update_result.total_updated || 0,
             total_not_found: res.update_result.total_not_found || 0,
+            duplicated_orders: res.update_result.duplicated_orders || [],
+            total_duplicated: res.update_result.total_duplicated || 0,
           } : undefined,
           ocr_text: res.ocr_text,
           order_key: res.order_key,
+          parsed_orders: res.parsed_orders,
         });
 
-        if (isSuccess) {
+        // Preparar datos para el dialog de confirmación
+        if (isSuccess && res.update_result) {
           const normalizedUpdateResult = {
             ...res.update_result,
-            updated_orders: (res.update_result?.updated_orders || []).map(order => ({
+            updated_orders: (res.update_result.updated_orders || []).map(order => ({
               key_ref: order.key_ref,
               orders_updated: order.orders_updated,
               income: order.income ?? 0,
               expense: order.expense ?? 0,
+              key: order.key,
+              amount_added: order.amount_added,
+              type: order.type,
+              new_income: order.new_income,
+              new_expense: order.new_expense,
             })),
-            not_found_orders: res.update_result?.not_found_orders || [],
-            total_updated: res.update_result?.total_updated ?? 0,
-            total_not_found: res.update_result?.total_not_found ?? 0,
+            not_found_orders: res.update_result.not_found_orders || [],
+            total_updated: res.update_result.total_updated ?? 0,
+            total_not_found: res.update_result.total_not_found ?? 0,
+            duplicated_orders: res.update_result.duplicated_orders || [],
+            total_duplicated: res.update_result.total_duplicated ?? 0,
           };
 
+          // Configurar datos del dialog para mostrar después
           setDocaiDialogResult({
             message: res.message,
             ocr_text: res.ocr_text,
+            parsed_orders: res.parsed_orders,
             update_result: normalizedUpdateResult,
           });
-          setDocaiDialogOpen(true);
         }
       } catch (err: any) {
         results.push({
@@ -309,16 +336,61 @@ const FinancialView = () => {
     setOcrResults(results);
     setOcrLoading(false);
 
+    // Manejo mejorado de mensajes y confirmación
     const successCount = results.filter(r => r.success).length;
-    if (successCount === results.length) {
+    
+    if (successCount === results.length && hasAnySuccess) {
+      // Todos los archivos se procesaron exitosamente
+      const confirmMsg = `Processing completed successfully! ${totalUpdatedOrders} orders updated, ${totalNotFoundOrders} not found.`;
+      setConfirmationMessage(confirmMsg);
+      setShouldShowConfirmation(true);
       enqueueSnackbar("All files processed successfully!", { variant: "success" });
+      
+      // Mostrar el dialog de resultados después de un breve delay
+      setTimeout(() => {
+        setDocaiDialogOpen(true);
+      }, 500);
+      
     } else if (successCount === 0) {
-      enqueueSnackbar("All files failed to process.", { variant: "error" });
-    } else {
+      enqueueSnackbar("All files failed to process. Please check your files and try again.", { variant: "error" });
+    } else if (hasAnySuccess) {
+      // Algunos archivos exitosos
+      const confirmMsg = `⚠️ Partial success: ${successCount} of ${results.length} files processed. ${totalUpdatedOrders} orders updated.`;
+      setConfirmationMessage(confirmMsg);
+      setShouldShowConfirmation(true);
       enqueueSnackbar(`${successCount} of ${results.length} files processed successfully.`, { variant: "warning" });
+      
+      // Mostrar dialog si hay al menos un resultado exitoso
+      if (docaiDialogResult) {
+        setTimeout(() => {
+          setDocaiDialogOpen(true);
+        }, 500);
+      }
+    } else {
+      enqueueSnackbar("No orders were updated. Please verify your documents.", { variant: "warning" });
     }
 
+    // Recargar datos para mostrar las actualizaciones
     fetchData(page, week);
+  };
+
+  // Manejar cierre del dialog de confirmación
+  const handleDocaiDialogClose = () => {
+    setDocaiDialogOpen(false);
+    
+    // Mostrar mensaje adicional de confirmación si es necesario
+    if (shouldShowConfirmation) {
+      enqueueSnackbar(confirmationMessage, { 
+        variant: "success",
+        autoHideDuration: 6000,
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'center',
+        }
+      });
+      setShouldShowConfirmation(false);
+      setConfirmationMessage("");
+    }
   };
 
   const handleOcrClose = () => {
@@ -326,11 +398,19 @@ const FinancialView = () => {
     setOcrFiles([]);
     setOcrResults([]);
     setOcrLoading(false);
+    
+    // Limpiar estados de confirmación
+    setShouldShowConfirmation(false);
+    setConfirmationMessage("");
+    setDocaiDialogResult(null);
   };
 
   const handleOcrProcessMore = () => {
     setOcrFiles([]);
     setOcrResults([]);
+    // Mantener el dialog de confirmación abierto para más archivos
+    setShouldShowConfirmation(false);
+    setConfirmationMessage("");
   };
 
   return (
@@ -471,10 +551,11 @@ const FinancialView = () => {
         onProcessMore={handleOcrProcessMore}
       />
 
-      {docaiDialogOpen && (
+      {/* Dialog de resultados con manejo mejorado */}
+      {docaiDialogOpen && docaiDialogResult && (
         <DocaiResultDialog
           open={docaiDialogOpen}
-          onClose={() => setDocaiDialogOpen(false)}
+          onClose={handleDocaiDialogClose}
           result={docaiDialogResult}
         />
       )}
