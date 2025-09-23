@@ -29,10 +29,8 @@ const PayrollStatistics: React.FC = () => {
   const [rankingLoading, setRankingLoading] = useState<boolean>(false);
   const [rankingError, setRankingError] = useState<string | null>(null);
 
-  // Semana y año
   const now = new Date();
-  const [year] = useState<number>(now.getFullYear());
-  const [week] = useState<number>(() => {
+  const getCurrentWeek = () => {
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
@@ -40,21 +38,9 @@ const PayrollStatistics: React.FC = () => {
     const yearStartDayNum = yearStart.getUTCDay() || 7;
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  });
+  };
 
-  // Estados para picker de semana y año
-  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
-  const [pendingYear, setPendingYear] = useState<number>(now.getFullYear());
-  console.log('selectedYear:', selectedYear, 'pendingYear:', pendingYear);
-  const [selectedWeek, setSelectedWeek] = useState<number>(() => {
-    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
-    const yearStartDayNum = yearStart.getUTCDay() || 7;
-    yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
-    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  });
+  const [selectedWeek, setSelectedWeek] = useState<number>(getCurrentWeek());
   const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
   console.log('selectedWeek:', selectedWeek, 'pendingWeek:', pendingWeek);
   // Filtros con useMemo para optimizar rendimiento
