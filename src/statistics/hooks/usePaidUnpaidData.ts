@@ -65,7 +65,7 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
       let data: OrdersPaidUnpaidWeekRangeResponse;
       
       if (currentMode.type === 'historic') {
-        data = await fetchOrdersPaidUnpaidHistoric(currentMode.year);
+        data = await fetchOrdersPaidUnpaidHistoric();
       } else {
         data = await fetchOrdersPaidUnpaidWeekRange(
           currentMode.startWeek!, 
@@ -95,7 +95,7 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
   const switchToHistoricMode = () => {
     const newMode: DataMode = {
       type: 'historic',
-      year
+      year // El año se mantiene por compatibilidad con el estado, pero no se usa en la API
     };
     loadPaidUnpaidData(newMode);
   };
@@ -110,9 +110,24 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
     loadPaidUnpaidData(newMode);
   };
 
+  // Effect para cargar datos iniciales
   useEffect(() => {
     loadPaidUnpaidData();
   }, []);
+
+  // Effect para recargar automáticamente cuando cambian los parámetros
+  useEffect(() => {
+    // Solo recargar si no estamos ya cargando y los valores son válidos
+    if (!loading && startWeek >= 1 && endWeek >= 1 && startWeek <= endWeek) {
+      const newMode: DataMode = {
+        type: 'range',
+        startWeek,
+        endWeek,
+        year
+      };
+      loadPaidUnpaidData(newMode);
+    }
+  }, [year, startWeek, endWeek]); // Dependencias para auto-recarga
 
   const handleTryAgain = () => {
     setError(null);

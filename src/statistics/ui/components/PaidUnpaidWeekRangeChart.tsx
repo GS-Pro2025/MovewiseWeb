@@ -21,9 +21,10 @@ import {
   PieChart,
   LineChart,
   Target,
-  Activity
+  Activity,
+  FileDown
 } from 'lucide-react';
-import PaidUnpaidExportMenu from './export/PaidUnpaidExportMenu';
+import PaidUnpaidExportDialog from './export/PaidUnpaidExportDialog';
 
 interface PaidUnpaidWeekRangeChartProps {
   initialYear?: number;
@@ -75,12 +76,137 @@ interface ModernSelectProps {
   className?: string;
 }
 
+// Move components outside to avoid hook order issues
+const ModernButton: React.FC<ModernButtonProps> = ({ 
+  children, 
+  onClick, 
+  disabled = false, 
+  variant = "primary", 
+  className = "", 
+  size = "default" 
+}) => {
+  const sizeClasses: Record<ButtonSize, string> = {
+    small: "px-3 py-2 text-sm",
+    default: "px-4 py-2 sm:px-6 sm:py-3",
+    large: "px-6 py-3 sm:px-8 sm:py-4"
+  };
+
+  const baseClasses = `${sizeClasses[size]} rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 disabled:opacity-50 border-2 text-sm sm:text-base`;
+  
+  if (variant === "primary") {
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`${baseClasses} text-white hover:shadow-lg hover:-translate-y-0.5 ${className}`}
+        style={{ backgroundColor: '#0B2863', borderColor: '#0B2863' }}
+      >
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} hover:shadow-md hover:-translate-y-0.5 ${className}`}
+      style={{ color: '#0B2863', borderColor: '#0B2863', backgroundColor: 'transparent' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#FFE67B';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'transparent';
+      }}
+    >
+      {children}
+    </button>
+  );
+};
+
+const ModernCard: React.FC<ModernCardProps> = ({ children, className = "" }) => (
+  <div className={`bg-white border-2 rounded-xl shadow-lg p-4 sm:p-6 ${className}`} style={{ borderColor: '#0B2863' }}>
+    {children}
+  </div>
+);
+
+const MetricCard: React.FC<MetricCardProps> = ({ value, label, icon: Icon, color = "#0B2863" }) => {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth < 640;
+  const isTablet = windowWidth >= 640 && windowWidth < 1024;
+
+  return (
+    <ModernCard className="hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xl sm:text-2xl font-bold" style={{ color }}>{value}</div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">{label}</div>
+        </div>
+        <div className="text-2xl sm:text-3xl opacity-70">
+          <Icon size={isMobile ? 20 : isTablet ? 24 : 28} color={color} />
+        </div>
+      </div>
+    </ModernCard>
+  );
+};
+
+const ModernInput: React.FC<ModernInputProps> = ({ 
+  value, 
+  onChange, 
+  onKeyDown, 
+  disabled, 
+  className = "", 
+  ...props 
+}) => (
+  <input
+    value={value}
+    onChange={onChange}
+    onKeyDown={onKeyDown}
+    disabled={disabled}
+    className={`border-2 rounded-lg px-3 py-2 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${className}`}
+    style={{ borderColor: '#0B2863', color: '#0B2863' }}
+    {...props}
+  />
+);
+
+const ModernSelect: React.FC<ModernSelectProps> = ({ 
+  value, 
+  onChange, 
+  disabled, 
+  children, 
+  className = "" 
+}) => (
+  <select
+    value={value}
+    onChange={onChange}
+    disabled={disabled}
+    className={`border-2 rounded-lg px-3 py-2 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${className}`}
+    style={{ borderColor: '#0B2863', color: '#0B2863' }}
+  >
+    {children}
+  </select>
+);
+
 const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   initialYear = new Date().getFullYear(),
   initialStartWeek = 1,
   initialEndWeek = 10
 }) => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -101,21 +227,14 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     endWeek,
     pendingStartWeek,
     pendingEndWeek,
-    dataMode,
     setYear,
     setStartWeek,
     setEndWeek,
     setPendingStartWeek,
     setPendingEndWeek,
     loadPaidUnpaidData,
-    switchToHistoricMode,
-    switchToRangeMode,
     handleTryAgain,
   } = usePaidUnpaidData(initialYear, initialStartWeek, initialEndWeek);
-
-  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
   // Responsive breakpoints
   const isMobile = windowWidth < 640;
@@ -212,12 +331,12 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
 
   const paidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
-      ? rawData.orders_by_week[String(selectedWeek)]?.filter(o => o.paid) || []
+      ? rawData.orders_by_week?.[String(selectedWeek)]?.filter(o => o.paid) || []
       : [];
 
   const unpaidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
-      ? rawData.orders_by_week[String(selectedWeek)]?.filter(o => !o.paid) || []
+      ? rawData.orders_by_week?.[String(selectedWeek)]?.filter(o => !o.paid) || []
       : [];
 
   // Responsive Nivo theme
@@ -349,111 +468,6 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     );
   };
 
-  // Responsive components with proper typing
-  const ModernButton: React.FC<ModernButtonProps> = ({ 
-    children, 
-    onClick, 
-    disabled = false, 
-    variant = "primary", 
-    className = "", 
-    size = "default" 
-  }) => {
-    const sizeClasses: Record<ButtonSize, string> = {
-      small: "px-3 py-2 text-sm",
-      default: "px-4 py-2 sm:px-6 sm:py-3",
-      large: "px-6 py-3 sm:px-8 sm:py-4"
-    };
-
-    const baseClasses = `${sizeClasses[size]} rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 disabled:opacity-50 border-2 text-sm sm:text-base`;
-    
-    if (variant === "primary") {
-      return (
-        <button
-          onClick={onClick}
-          disabled={disabled}
-          className={`${baseClasses} text-white hover:shadow-lg hover:-translate-y-0.5 ${className}`}
-          style={{ backgroundColor: '#0B2863', borderColor: '#0B2863' }}
-        >
-          {children}
-        </button>
-      );
-    }
-
-    return (
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`${baseClasses} hover:shadow-md hover:-translate-y-0.5 ${className}`}
-        style={{ color: '#0B2863', borderColor: '#0B2863', backgroundColor: 'transparent' }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#FFE67B';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-      >
-        {children}
-      </button>
-    );
-  };
-
-  const ModernCard: React.FC<ModernCardProps> = ({ children, className = "" }) => (
-    <div className={`bg-white border-2 rounded-xl shadow-lg p-4 sm:p-6 ${className}`} style={{ borderColor: '#0B2863' }}>
-      {children}
-    </div>
-  );
-
-  const MetricCard: React.FC<MetricCardProps> = ({ value, label, icon: Icon, color = "#0B2863" }) => (
-    <ModernCard className="hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xl sm:text-2xl font-bold" style={{ color }}>{value}</div>
-          <div className="text-xs sm:text-sm text-gray-600 font-medium">{label}</div>
-        </div>
-        <div className="text-2xl sm:text-3xl opacity-70">
-          <Icon size={isMobile ? 20 : isTablet ? 24 : 28} color={color} />
-        </div>
-      </div>
-    </ModernCard>
-  );
-
-  const ModernInput: React.FC<ModernInputProps> = ({ 
-    value, 
-    onChange, 
-    onKeyDown, 
-    disabled, 
-    className = "", 
-    ...props 
-  }) => (
-    <input
-      value={value}
-      onChange={onChange}
-      onKeyDown={onKeyDown}
-      disabled={disabled}
-      className={`border-2 rounded-lg px-3 py-2 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${className}`}
-      style={{ borderColor: '#0B2863', color: '#0B2863' }}
-      {...props}
-    />
-  );
-
-  const ModernSelect: React.FC<ModernSelectProps> = ({ 
-    value, 
-    onChange, 
-    disabled, 
-    children, 
-    className = "" 
-  }) => (
-    <select
-      value={value}
-      onChange={onChange}
-      disabled={disabled}
-      className={`border-2 rounded-lg px-3 py-2 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${className}`}
-      style={{ borderColor: '#0B2863', color: '#0B2863' }}
-    >
-      {children}
-    </select>
-  );
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
@@ -530,16 +544,15 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               </ModernButton>
               
               {/* Nuevo botón de export */}
-              <PaidUnpaidExportMenu
-                rawData={rawData}
-                exportMode={{
-                  type: dataMode.type,
-                  startWeek: dataMode.startWeek,
-                  endWeek: dataMode.endWeek,
-                  year: dataMode.year
-                }}
+              <ModernButton 
+                onClick={() => setExportDialogOpen(true)}
+                variant="secondary"
+                size={isMobile ? "small" : "default"}
                 disabled={loading || !rawData}
-              />
+              >
+                <FileDown size={16} />
+                EXPORT
+              </ModernButton>
             </div>
           </div>
         </ModernCard>
@@ -645,29 +658,6 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
             </div>
             
             <div>
-              <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
-                <Target size={18} />
-                Data Mode
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                <ModernButton
-                  variant={dataMode.type === 'range' ? 'primary' : 'secondary'}
-                  onClick={switchToRangeMode}
-                  size="small"
-                  disabled={loading}
-                >
-                  Week Range Mode
-                </ModernButton>
-                <ModernButton
-                  variant={dataMode.type === 'historic' ? 'primary' : 'secondary'}
-                  onClick={switchToHistoricMode}
-                  size="small"
-                  disabled={loading}
-                >
-                  Historic Mode
-                </ModernButton>
-              </div>
-              
               <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Target size={18} />
                 Quick Presets
@@ -1068,6 +1058,13 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
         paidOrders={paidOrders}
         unpaidOrders={unpaidOrders}
         onClose={() => setShowDialog(false)}
+      />
+      <PaidUnpaidExportDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        currentYear={year}
+        currentStartWeek={startWeek}
+        currentEndWeek={endWeek}
       />
     </div>
   );
