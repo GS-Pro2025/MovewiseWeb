@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
-import { fetchOrdersPaidUnpaidWeekRange, processPaidUnpaidChartData } from '../data/repositoryStatistics';
+import { 
+  fetchOrdersPaidUnpaidWeekRange, 
+  fetchOrdersPaidUnpaidHistoric, 
+  processPaidUnpaidChartData 
+} from '../data/repositoryStatistics';
 import { PaidUnpaidChartData, OrdersPaidUnpaidWeekRangeResponse } from '../domain/OrdersPaidUnpaidModels';
+
+export interface DataMode {
+  type: 'range' | 'historic';
+  startWeek?: number;
+  endWeek?: number;
+  year: number;
+}
 
 export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number, initialEndWeek: number) => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -12,31 +23,67 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
   const [year, setYear] = useState<number>(initialYear);
   const [startWeek, setStartWeek] = useState<number>(initialStartWeek);
   const [endWeek, setEndWeek] = useState<number>(initialEndWeek);
-
   const [pendingStartWeek, setPendingStartWeek] = useState<number>(startWeek);
   const [pendingEndWeek, setPendingEndWeek] = useState<number>(endWeek);
+  
+  // Nuevo estado para el modo de datos
+  const [dataMode, setDataMode] = useState<DataMode>({
+    type: 'range',
+    startWeek: initialStartWeek,
+    endWeek: initialEndWeek,
+    year: initialYear
+  });
 
   // Actualiza los valores pendientes cuando cambian los definitivos
   useEffect(() => {
     setPendingStartWeek(startWeek);
     setPendingEndWeek(endWeek);
-  }, [startWeek, endWeek]);
+    
+    // Actualizar dataMode cuando cambian los valores
+    setDataMode({
+      type: 'range',
+      startWeek,
+      endWeek,
+      year
+    });
+  }, [startWeek, endWeek, year]);
 
-  const loadPaidUnpaidData = async () => {
-    if (startWeek > endWeek) {
-      setError('Start week cannot be greater than end week');
-      return;
+  const loadPaidUnpaidData = async (mode?: DataMode) => {
+    const currentMode = mode || dataMode;
+    
+    if (currentMode.type === 'range') {
+      if (!currentMode.startWeek || !currentMode.endWeek || currentMode.startWeek > currentMode.endWeek) {
+        setError('Invalid week range');
+        return;
+      }
     }
 
     try {
       setLoading(true);
       setError(null);
       
-      const data = await fetchOrdersPaidUnpaidWeekRange(startWeek, endWeek, year);
+      let data: OrdersPaidUnpaidWeekRangeResponse;
+      
+      if (currentMode.type === 'historic') {
+        data = await fetchOrdersPaidUnpaidHistoric(currentMode.year);
+      } else {
+        data = await fetchOrdersPaidUnpaidWeekRange(
+          currentMode.startWeek!, 
+          currentMode.endWeek!, 
+          currentMode.year
+        );
+      }
+      
       const processedData = processPaidUnpaidChartData(data);
       
       setRawData(data);
       setChartData(processedData);
+      
+      // Actualizar dataMode si se pasó uno nuevo
+      if (mode) {
+        setDataMode(mode);
+      }
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading paid/unpaid data');
       console.error('Error loading paid/unpaid data:', err);
@@ -45,9 +92,27 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
     }
   };
 
+  const switchToHistoricMode = () => {
+    const newMode: DataMode = {
+      type: 'historic',
+      year
+    };
+    loadPaidUnpaidData(newMode);
+  };
+
+  const switchToRangeMode = () => {
+    const newMode: DataMode = {
+      type: 'range',
+      startWeek,
+      endWeek,
+      year
+    };
+    loadPaidUnpaidData(newMode);
+  };
+
   useEffect(() => {
     loadPaidUnpaidData();
-  }, [year, startWeek, endWeek]);
+  }, []);
 
   const handleTryAgain = () => {
     setError(null);
@@ -64,12 +129,15 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
     endWeek,
     pendingStartWeek,
     pendingEndWeek,
+    dataMode,
     setYear,
     setStartWeek,
     setEndWeek,
     setPendingStartWeek,
     setPendingEndWeek,
     loadPaidUnpaidData,
+    switchToHistoricMode,
+    switchToRangeMode,
     handleTryAgain,
   };
 };

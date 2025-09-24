@@ -558,7 +558,7 @@ export async function fetchOrdersPaidUnpaidWeekRange(
   }
 
   try {
-    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -706,4 +706,45 @@ export function processHistoricalJobWeightData(data: HistoricalJobWeightResponse
   });
 
   return processedData.sort((a, b) => b.totalOrdersInRange - a.totalOrdersInRange);
+}
+
+// Función para obtener órdenes pagadas/no pagadas en modo histórico
+export async function fetchOrdersPaidUnpaidHistoric(year: number): Promise<OrdersPaidUnpaidWeekRangeResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=historic`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching historic paid/unpaid orders: ${response.statusText}`);
+    }
+
+    const data: OrdersPaidUnpaidWeekRangeResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching historic paid/unpaid orders:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener las órdenes pagadas/no pagadas históricas'
+    );
+  }
 }

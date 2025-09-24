@@ -23,6 +23,7 @@ import {
   Target,
   Activity
 } from 'lucide-react';
+import PaidUnpaidExportMenu from './export/PaidUnpaidExportMenu';
 
 interface PaidUnpaidWeekRangeChartProps {
   initialYear?: number;
@@ -100,12 +101,15 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     endWeek,
     pendingStartWeek,
     pendingEndWeek,
+    dataMode,
     setYear,
     setStartWeek,
     setEndWeek,
     setPendingStartWeek,
     setPendingEndWeek,
     loadPaidUnpaidData,
+    switchToHistoricMode,
+    switchToRangeMode,
     handleTryAgain,
   } = usePaidUnpaidData(initialYear, initialStartWeek, initialEndWeek);
 
@@ -524,6 +528,18 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                 {chartType === 'bar' ? <BarChart3 size={16} /> : <LineChart size={16} />}
                 {chartType === 'bar' ? 'BARS' : 'LINES'}
               </ModernButton>
+              
+              {/* Nuevo botón de export */}
+              <PaidUnpaidExportMenu
+                rawData={rawData}
+                exportMode={{
+                  type: dataMode.type,
+                  startWeek: dataMode.startWeek,
+                  endWeek: dataMode.endWeek,
+                  year: dataMode.year
+                }}
+                disabled={loading || !rawData}
+              />
             </div>
           </div>
         </ModernCard>
@@ -629,6 +645,29 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
             </div>
             
             <div>
+              <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
+                <Target size={18} />
+                Data Mode
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                <ModernButton
+                  variant={dataMode.type === 'range' ? 'primary' : 'secondary'}
+                  onClick={switchToRangeMode}
+                  size="small"
+                  disabled={loading}
+                >
+                  Week Range Mode
+                </ModernButton>
+                <ModernButton
+                  variant={dataMode.type === 'historic' ? 'primary' : 'secondary'}
+                  onClick={switchToHistoricMode}
+                  size="small"
+                  disabled={loading}
+                >
+                  Historic Mode
+                </ModernButton>
+              </div>
+              
               <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Target size={18} />
                 Quick Presets
