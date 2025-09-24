@@ -4,6 +4,11 @@ export interface OrderPaidUnpaidWeekRange {
   client_name: string;
   customer_factory: string;
   date: string;
+  expense: number;
+  income: number;
+  weight: number;
+  state_usa: string;
+  company_name: string;
   payStatus: string | null;
   paid: boolean;
 }
@@ -14,11 +19,28 @@ export interface WeeklyCount {
   unpaid: number;
 }
 
+// Interface for historic order format (without 'paid' boolean)
+export interface HistoricOrder {
+  key_ref: string;
+  client_name?: string;
+  customer_factory?: string;
+  date: string;
+  expense: number;
+  income: number;
+  weight: number;
+  state_usa: string;
+  company_name: string;
+  payStatus: number | null;
+}
+
 export interface OrdersPaidUnpaidWeekRangeResponse {
   total_paid: number;
   total_unpaid: number;
-  weekly_counts: WeeklyCount[];
-  orders_by_week: Record<string, OrderPaidUnpaidWeekRange[]>;
+  weekly_counts?: WeeklyCount[]; // Optional for historic mode
+  orders_by_week?: Record<string, OrderPaidUnpaidWeekRange[]>; // Optional for historic mode
+  paid_orders?: HistoricOrder[]; // For historic mode
+  unpaid_orders?: HistoricOrder[]; // For historic mode
+  mode?: string; // Campo opcional para identificar el modo de la respuesta
 }
 
 export interface PaidUnpaidChartData {
