@@ -221,7 +221,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
           {user && (
             <>
               {/* Foto de perfil centrada */}
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white mb-3 transition-all duration-700 ease-in-out shadow-lg">
+              <Link to="/profile" className="w-12 h-12 rounded-full overflow-hidden border-2 border-white mb-3 transition-all duration-700 ease-in-out shadow-lg hover:border-[#FE9844] block">
                 <img
                   src={
                     user.photo && user.photo.trim() !== ''
@@ -233,16 +233,16 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                   alt="User Avatar"
                   className="w-full h-full object-cover transition-all duration-700 ease-in-out"
                 />
-              </div>
+              </Link>
               {/* Información del usuario centrada */}
-              <div className="text-center transition-all duration-700 ease-in-out">
+              <Link to="/profile" className="text-center transition-all duration-700 ease-in-out hover:text-[#FE9844] block">
                 <div className="text-white text-sm font-semibold transition-all duration-700 ease-in-out">
                   {user.person.first_name} {user.person.last_name}
                 </div>
                 <div className="text-white text-xs opacity-80 truncate max-w-[180px] mt-1 transition-all duration-700 ease-in-out">
                   {user.person.email}
                 </div>
-              </div>
+              </Link>
             </>
           )}
         </div>
@@ -320,7 +320,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
             </div>
           </li>
 
-          {/* ✅ Dropdown Settings - CONDICIONADO A is_superUser */}
+          {/* Dropdown Settings - CONDICIONADO A is_superUser */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
             <button
               className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-700 
@@ -346,6 +346,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
               (!isCollapsed || isMobileOpen) && activeDropdown === 0 ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
             }`}>
               <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
+                <DropdownLink icon="fa-user" text="My Profile" to="/profile" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-building" text="Customers" to="/customers" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-briefcase" text="Jobs & Tools" to="/jobs-tools" onClick={closeMobileMenu} />
                 
@@ -429,7 +430,7 @@ const MainContent: FC = () => {
       <div className="absolute inset-0 bg-white/10 pointer-events-none" />
       
       {/* Añadir padding top en móvil para el botón hamburguesa */}
-      <div className="relative z-10 p-10 md:P-4">
+      <div className="relative z-10 p-10 md:p-4">
         <Outlet />
       </div>
     </div>
