@@ -65,8 +65,8 @@ export class PaidUnpaidExportUtils {
           data.paid_orders.forEach(order => {
             exportData.push({
               'Order Ref': order.key_ref || 'N/A',
-              'Client': order.client || order.client_name || 'Unknown Client',
-              'Factory': order.factory || order.customer_factory || 'Unknown Factory',
+              'Client': order.client_name || 'Unknown Client',
+              'Factory': order.customer_factory || 'Unknown Factory',
               'Date': order.date || 'N/A',
               'Payment Status': 'Paid',
               'Income': order.income || 0,
@@ -82,8 +82,8 @@ export class PaidUnpaidExportUtils {
           data.unpaid_orders.forEach(order => {
             exportData.push({
               'Order Ref': order.key_ref || 'N/A',
-              'Client': order.client || order.client_name || 'Unknown Client',
-              'Factory': order.factory || order.customer_factory || 'Unknown Factory',
+              'Client': order.client_name || 'Unknown Client',
+              'Factory': order.customer_factory || 'Unknown Factory',
               'Date': order.date || 'N/A',
               'Payment Status': 'Unpaid',
               'Income': order.income || 0,
@@ -107,8 +107,8 @@ export class PaidUnpaidExportUtils {
           orders.forEach(order => {
             exportData.push({
               'Order Ref': order.key_ref || 'N/A',
-              'Client': order.client_name || order.client ||'Unknown Client',
-              'Factory': order.customer_factory || order.client || 'Unknown Factory',
+              'Client': order.client_name || 'Unknown Client',
+              'Factory': order.customer_factory || 'Unknown Factory',
               'Date': order.date || 'N/A',
               'Payment Status': order.paid ? 'Paid' : 'Unpaid',
               'Income': order.income || 0,
