@@ -743,7 +743,7 @@ export async function fetchOrdersPaidUnpaidHistoric(): Promise<OrdersPaidUnpaidW
   }
 
   try {
-    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=historic`;
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=historic&page_size=1000000&page=1`;
     
     const response = await fetch(url, {
       method: 'GET',
