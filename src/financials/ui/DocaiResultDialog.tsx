@@ -15,6 +15,7 @@ interface DocaiResultDialogProps {
       ShipperName: string;
       CommissionAmount: string;
     }>;
+    // Actualizar para usar tanto update_result como update_summary para compatibilidad
     update_result?: {
       updated_orders?: Array<{
         key_ref: string;
@@ -26,6 +27,32 @@ interface DocaiResultDialogProps {
         type?: string;
         new_income?: string;
         new_expense?: string;
+        factory?: string; // ← Agregar este campo
+        orders_count?: number; // ← Agregar este campo
+      }>;
+      not_found_orders?: string[];
+      total_updated?: number;
+      total_not_found?: number;
+      duplicated_orders?: Array<{
+        key_ref: string;
+        count: number;
+        total_amount: string;
+        amount_per_order: string;
+        type: string;
+      }>;
+      total_duplicated?: number;
+    };
+    // Nueva estructura del backend
+    update_summary?: {
+      updated_orders?: Array<{
+        key_ref: string;
+        key: string;
+        amount_added: string;
+        type: string;
+        new_income: string;
+        new_expense: string;
+        factory: string; // ← Este es el campo del cliente/compañía
+        orders_count: number;
       }>;
       not_found_orders?: string[];
       total_updated?: number;
@@ -45,19 +72,23 @@ interface DocaiResultDialogProps {
 const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, result }) => {
   if (!open) return null;
 
-  const { message, ocr_text, parsed_orders, update_result } = result;
-  const updatedOrders = update_result?.updated_orders ?? [];
-  const notFoundOrders = update_result?.not_found_orders ?? [];
-  const duplicatedOrders = update_result?.duplicated_orders ?? [];
-  const totalUpdated = update_result?.total_updated ?? 0;
-  const totalNotFound = update_result?.total_not_found ?? 0;
-  const totalDuplicated = update_result?.total_duplicated ?? 0;
+  const { message, ocr_text, parsed_orders, update_result, update_summary } = result;
+  
+  // Usar update_summary si está disponible, sino usar update_result para compatibilidad
+  const updateData = update_summary || update_result;
+  
+  const updatedOrders = updateData?.updated_orders ?? [];
+  const notFoundOrders = updateData?.not_found_orders ?? [];
+  const duplicatedOrders = updateData?.duplicated_orders ?? [];
+  const totalUpdated = updateData?.total_updated ?? 0;
+  const totalNotFound = updateData?.total_not_found ?? 0;
+  const totalDuplicated = updateData?.total_duplicated ?? 0;
 
   // Helper function para formatear el monto basado en el tipo
   const formatAmount = (order: any) => {
     const amount = parseFloat(order.amount_added || '0');
     if (order.type === 'expense') {
-      return amount > 0 ? `-$${Math.abs(amount)}` : `$${Math.abs(amount)}`;
+      return amount < 0 ? `$${Math.abs(amount)}` : `-$${Math.abs(amount)}`;
     }
     return `$${Math.abs(amount)}`;
   };
@@ -158,7 +189,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           </Alert>
         </Box>
 
-        {/* Updated Orders con formato mejorado para expenses */}
+        {/* Updated Orders con información completa incluyendo cliente/compañía */}
         {updatedOrders.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -182,7 +213,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {order.key_ref}
+                        Order: {order.key_ref}
                       </Typography>
                       <Box sx={{ 
                         px: 1, 
@@ -196,6 +227,20 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                         {typeText}
                       </Box>
                     </Box>
+                    
+                    {/* Información del cliente/compañía */}
+                    {order.factory && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        <strong>Client/Company:</strong> {order.factory}
+                      </Typography>
+                    )}
+                    
+                    {/* Información de órdenes si está disponible */}
+                    {(order as any).orders_count && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        <strong>Orders Count:</strong> {(order as any).orders_count}
+                      </Typography>
+                    )}
                     
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 1 }}>
                       <Box>
@@ -212,8 +257,8 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                             New Income:
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            ${order.new_income}
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#22c55e' }}>
+                            ${parseFloat(order.new_income).toLocaleString()}
                           </Typography>
                         </Box>
                       )}
@@ -223,8 +268,8 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                             New Expense:
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            ${order.new_expense}
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#ef4444' }}>
+                            ${parseFloat(order.new_expense).toLocaleString()}
                           </Typography>
                         </Box>
                       )}
@@ -277,12 +322,12 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 1 }}>
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          Total: {order.total_amount}
+                          Total: ${parseFloat(order.total_amount).toLocaleString()}
                         </Typography>
                       </Box>
                       <Box>
                         <Typography variant="caption" color="text.secondary">
-                          Per Order: {order.amount_per_order}
+                          Per Order: ${parseFloat(order.amount_per_order).toLocaleString()}
                         </Typography>
                       </Box>
                     </Box>

@@ -23,6 +23,8 @@ export async function processDocaiStatement(pdf_file: File): Promise<{
       type?: string;
       new_income?: string;
       new_expense?: string;
+      factory?: string; // ← Agregar este campo
+      orders_count?: number; // ← Agregar este campo
     }>;
     not_found_orders?: string[];
     total_updated?: number;
@@ -64,21 +66,23 @@ export async function processDocaiStatement(pdf_file: File): Promise<{
       };
     }
     
-    // Mapear update_summary a update_result
+    // Mapear update_summary (nueva estructura) a update_result (estructura esperada)
     let mappedUpdateResult = undefined;
     if (result.update_summary) {
       const summary = result.update_summary;
       mappedUpdateResult = {
         updated_orders: summary.updated_orders?.map((order: any) => ({
           key_ref: order.key_ref,
-          orders_updated: 1, // Cada orden se cuenta como 1 actualización
-          expense: order.type === 'expense' ? parseFloat(order.amount_added) : parseFloat(order.new_expense || '0'),
+          orders_updated: order.orders_count || 1,
+          expense: order.type === 'expense' ? Math.abs(parseFloat(order.amount_added)) : parseFloat(order.new_expense || '0'),
           income: order.type === 'income' ? parseFloat(order.amount_added) : parseFloat(order.new_income || '0'),
           key: order.key,
           amount_added: order.amount_added,
           type: order.type,
           new_income: order.new_income,
-          new_expense: order.new_expense
+          new_expense: order.new_expense,
+          factory: order.factory, // ← Campo del cliente/compañía
+          orders_count: order.orders_count
         })) || [],
         not_found_orders: summary.not_found_orders || [],
         total_updated: summary.total_updated || 0,
