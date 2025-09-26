@@ -655,7 +655,7 @@ export async function fetchHistoricalJobWeight(ranges: WeightRange[]): Promise<H
   }
 
   try {
-    const url = `${BASE_URL_API}/orders-historic-jobweigth/?mode=historic`;
+    const url = `${BASE_URL_API}/orders-historic-jobweigth/?mode=historic&page_size=1000000&page=1`;
     
     const requestBody: HistoricalJobWeightRequest = { ranges };
     
