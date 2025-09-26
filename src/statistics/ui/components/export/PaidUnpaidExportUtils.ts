@@ -14,7 +14,6 @@ export interface ExportData {
   'Expense': number;
   'Weight': number;
   'State': string;
-  'Company': string;
 }
 
 export class PaidUnpaidExportUtils {
@@ -61,8 +60,6 @@ export class PaidUnpaidExportUtils {
     try {
       // Modo histórico: usa paid_orders y unpaid_orders
       if (data.paid_orders || data.unpaid_orders) {
-        console.log('Using historic format (paid_orders/unpaid_orders)');
-        
         // Procesar órdenes pagadas
         if (data.paid_orders && Array.isArray(data.paid_orders)) {
           data.paid_orders.forEach(order => {
@@ -75,8 +72,7 @@ export class PaidUnpaidExportUtils {
               'Income': order.income || 0,
               'Expense': order.expense || 0,
               'Weight': order.weight || 0,
-              'State': order.state_usa || 'N/A',
-              'Company': order.company_name || 'N/A'
+              'State': order.state_usa || 'N/A'
             });
           });
         }
@@ -93,8 +89,7 @@ export class PaidUnpaidExportUtils {
               'Income': order.income || 0,
               'Expense': order.expense || 0,
               'Weight': order.weight || 0,
-              'State': order.state_usa || 'N/A',
-              'Company': order.company_name || 'N/A'
+              'State': order.state_usa || 'N/A'
             });
           });
         }
@@ -119,8 +114,7 @@ export class PaidUnpaidExportUtils {
               'Income': order.income || 0,
               'Expense': order.expense || 0,
               'Weight': order.weight || 0,
-              'State': order.state_usa || 'N/A',
-              'Company': order.company_name || 'N/A'
+              'State': order.state_usa || 'N/A'
             });
           });
         });
@@ -165,22 +159,20 @@ export class PaidUnpaidExportUtils {
     exportMode: ExportDialogMode
   ): Promise<void> {
     try {
-      // Importación dinámica de XLSX
       const XLSX = await import('xlsx');
-      
       const exportData = this.prepareExportData(data);
-      
+
       if (exportData.length === 0) {
         enqueueSnackbar('No data available to export', { variant: 'warning' });
         return;
       }
-      
+
       // Calcular totales de forma segura
       const totalPaid = data?.total_paid || 0;
       const totalUnpaid = data?.total_unpaid || 0;
       const total = totalPaid + totalUnpaid;
       const successRate = total > 0 ? ((totalPaid / total) * 100).toFixed(1) : '0';
-      
+
       // Agregar fila de resumen
       const totalsRow = {
         'Order Ref': `${exportData.length} orders`,
@@ -191,56 +183,52 @@ export class PaidUnpaidExportUtils {
         'Income': exportData.reduce((sum, row) => sum + (row.Income || 0), 0),
         'Expense': exportData.reduce((sum, row) => sum + (row.Expense || 0), 0),
         'Weight': exportData.reduce((sum, row) => sum + (row.Weight || 0), 0),
-        'State': 'TOTAL',
-        'Company': 'SUMMARY'
+        'State': 'TOTAL'
       };
-      
+
       // Combinar datos con totales
       const dataWithTotals = [...exportData, totalsRow];
-      
+
       const ws = XLSX.utils.json_to_sheet(dataWithTotals);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Payment Analytics');
-      
-      // Ajustar ancho de columnas
+
+      // Mejorar el estilo visual del Excel
+      // Ajustar ancho de columnas y aplicar estilos
       const colWidths = [
         { wch: 20 },  // Order Ref
         { wch: 25 },  // Client
         { wch: 20 },  // Factory
-        { wch: 12 },  // Date
+        { wch: 14 },  // Date
         { wch: 15 },  // Payment Status
-        { wch: 12 },  // Income
-        { wch: 12 },  // Expense
-        { wch: 10 },  // Weight
-        { wch: 15 },  // State
-        { wch: 20 }   // Company
+        { wch: 14 },  // Income
+        { wch: 14 },  // Expense
+        { wch: 12 },  // Weight
+        { wch: 18 }   // State
       ];
       ws['!cols'] = colWidths;
-      
+
+      // Aplicar estilos visuales mejorados (solo si la librería soporta)
+      // Nota: El soporte de estilos en XLSX depende del visor, pero se puede mejorar el color de fondo y fuente
       if (ws['!ref']) {
-        // Obtener rango para aplicar estilos
         const range = XLSX.utils.decode_range(ws['!ref']);
-        
-        // Aplicar estilos al header (primera fila)
+        // Header
         for (let col = range.s.c; col <= range.e.c; col++) {
           const headerCell = XLSX.utils.encode_cell({ r: 0, c: col });
           if (!ws[headerCell]) continue;
-          
           ws[headerCell].s = {
-            font: { bold: true, color: { rgb: "FFFFFF" } },
+            font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
             fill: { fgColor: { rgb: "0B2863" } },
             alignment: { horizontal: "center", vertical: "center" }
           };
         }
-        
-        // Aplicar estilos a la fila de totales (última fila)
+        // Totals row
         const totalsRowIndex = range.e.r;
         for (let col = range.s.c; col <= range.e.c; col++) {
           const totalsCell = XLSX.utils.encode_cell({ r: totalsRowIndex, c: col });
           if (!ws[totalsCell]) continue;
-          
           ws[totalsCell].s = {
-            font: { bold: true, color: { rgb: "0B2863" } },
+            font: { bold: true, color: { rgb: "0B2863" }, sz: 12 },
             fill: { fgColor: { rgb: "FFE67B" } },
             alignment: { horizontal: "center", vertical: "center" },
             border: {
@@ -251,41 +239,36 @@ export class PaidUnpaidExportUtils {
             }
           };
         }
-        
-        // Aplicar colores a las filas según el estado de pago
+        // Filas pagadas y no pagadas
         for (let row = 1; row < totalsRowIndex; row++) {
           const paymentStatusCell = XLSX.utils.encode_cell({ r: row, c: 4 }); // Columna 4 es "Payment Status"
           if (!ws[paymentStatusCell]) continue;
-          
           const isPaid = ws[paymentStatusCell].v === 'Paid';
           const rowColor = isPaid ? "ECFDF5" : "FEF3C7";
-          
-          // Colorear toda la fila
           for (let col = range.s.c; col <= range.e.c; col++) {
             const cell = XLSX.utils.encode_cell({ r: row, c: col });
             if (!ws[cell]) continue;
-            
             ws[cell].s = {
               ...ws[cell].s,
               fill: { fgColor: { rgb: rowColor } },
               font: { 
                 color: { rgb: isPaid ? "16A34A" : "D97706" },
-                bold: col === 4
+                bold: col === 4,
+                sz: 11
               }
             };
           }
         }
       }
-      
+
       // Generar nombre de archivo
       const fileName = this.generateFileName('xlsx', exportMode);
-      
+
       // Descargar archivo
       XLSX.writeFile(wb, fileName);
-      
+
       enqueueSnackbar('Excel file downloaded successfully! 📊', { variant: 'success' });
     } catch (error) {
-      console.error('Excel export error:', error);
       enqueueSnackbar('Error exporting to Excel ❌', { variant: 'error' });
       throw error;
     }
@@ -615,7 +598,6 @@ export class PaidUnpaidExportUtils {
             <th>Expense</th>
             <th>Weight</th>
             <th>State</th>
-            <th>Company</th>
           </tr>
         </thead>
         <tbody>
@@ -630,7 +612,6 @@ export class PaidUnpaidExportUtils {
               <td>$${row.Expense.toFixed(2)}</td>
               <td>${row.Weight.toFixed(1)}</td>
               <td>${row.State}</td>
-              <td>${row.Company}</td>
             </tr>
           `).join('')}
         </tbody>
