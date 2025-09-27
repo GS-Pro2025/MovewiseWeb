@@ -34,15 +34,8 @@ const App = () => {
 
     const checkAuth = () => {
       try {
-        // IMPORTANTE: Durante pre-rendering, react-snap no tiene acceso a localStorage/cookies
-        // Solo verificar autenticación si estamos en el navegador
-        if (typeof window !== 'undefined' && window.navigator) {
-          const authStatus = isAuthenticated();
-          setAuthenticated(authStatus);
-        } else {
-          // Durante pre-rendering, asumir no autenticado
-          setAuthenticated(false);
-        }
+        const authStatus = isAuthenticated();
+        setAuthenticated(authStatus);
       } catch (error) {
         console.error('Error checking authentication:', error);
         setAuthenticated(false);
@@ -53,33 +46,19 @@ const App = () => {
 
     checkAuth();
 
-    // Solo agregar event listeners en el navegador
-    if (typeof window !== 'undefined') {
-      const handler = () => {
-        setSessionExpired(true);
-        setTimeout(() => {
-          setSessionExpired(false);
-          window.location.href = '/';
-        }, 2000);
-      };
-      window.addEventListener('sessionExpired', handler);
-      return () => window.removeEventListener('sessionExpired', handler);
-    }
+    // Escuchar evento global de expiración de sesión
+    const handler = () => {
+      setSessionExpired(true);
+      setTimeout(() => {
+        setSessionExpired(false);
+        window.location.href = '/';
+      }, 2000);
+    };
+    window.addEventListener('sessionExpired', handler);
+    return () => window.removeEventListener('sessionExpired', handler);
   }, []);
 
-  // Durante pre-rendering (react-snap), mostrar el contenido sin loading
-  if (!isClient && typeof window === 'undefined') {
-    // Esto es durante el pre-rendering
-    return (
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<Navigate to="/login?mode=register" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
-  }
-
-  // En el navegador, comportamiento normal
+  // Mostrar loading hasta que se complete la hidratación
   if (!isClient || isLoading) {
     return <LoadingSpinner />;
   }
@@ -88,24 +67,28 @@ const App = () => {
     <>
       {sessionExpired && (
         <div className="fixed top-0 left-0 w-full bg-red-500 text-white text-center py-4 z-50 shadow-lg">
-          <strong>¡Session expired!</strong> Redirecting to home...
+          <strong>Session expired!</strong> Redirecting to home...
         </div>
       )}
       <Routes>
+        {/* Login - accesible solo si no está autenticado */}
         <Route 
           path="/login" 
           element={authenticated ? <Navigate to="/app/dashboard" replace /> : <LoginPage />} 
         />
         
+        {/* Register redirect to login - para mantener compatibilidad */}
         <Route 
           path="/register" 
           element={<Navigate to="/app/login?mode=register" replace />} 
         />
 
+        {/* Rutas protegidas del dashboard */}
         <Route 
           path="/app" 
           element={authenticated ? <Layout /> : <Navigate to="/app/login" replace />}
         >
+          {/* Ruta por defecto del dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Home />} />
           <Route path="resume-fuel" element={<ResumeFuel />} />
@@ -122,10 +105,11 @@ const App = () => {
           <Route path="create-admin" element={<CreateAdminView />} />
           <Route path="jobs-tools" element={<JobsAndToolsGUI />} />
           <Route path="statistics" element={<Statistics/>} />
-          <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="order-breakdown" element={<OrderBreakdownPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
+        {/* Ruta por defecto */}
         <Route 
           path="*" 
           element={
