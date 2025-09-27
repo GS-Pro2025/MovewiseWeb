@@ -85,7 +85,7 @@ const Navbar: React.FC = () => {
           {/* Login/Register button - Ahora a la derecha con ml-auto */}
           <div className="hidden md:flex ml-auto">
             <RouterLink
-              to="/app/login"
+              to="/login"
               className="bg-[#FFE67B] text-[#0B2863] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC] transition inline-block"
             >
               Login / Register
@@ -173,7 +173,7 @@ const Navbar: React.FC = () => {
 
             {/* Login/Register en móvil */}
             <RouterLink
-              to="/app/login"
+              to="/login"
               onClick={() => setIsOpen(false)}
               className="bg-blue-950 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-800 transition inline-block"
             >
