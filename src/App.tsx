@@ -83,10 +83,10 @@ const App = () => {
           element={<Navigate to="/app/login?mode=register" replace />} 
         />
 
-        {/* Rutas protegidas del dashboard */}
+        {/* Rutas protegidas del dashboard - VOLVER A /app */}
         <Route 
-          path="/" 
-          element={authenticated ? <Layout /> : <Navigate to="/app/login" replace />}
+          path="/app" 
+          element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
         >
           {/* Ruta por defecto del dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />
@@ -115,7 +115,7 @@ const App = () => {
           element={
             authenticated ? 
               <Navigate to="/app/dashboard" replace /> : 
-              <Navigate to="/app/login" replace />
+              <Navigate to="/login" replace />
           } 
         />
       </Routes>
