@@ -131,7 +131,7 @@ const App = () => {
           element={
             authenticated ? 
               <Navigate to="/app/dashboard" replace /> : 
-              <Navigate to="/login" replace />
+              <Navigate to="/app/login" replace />
           } 
         />
       </Routes>
