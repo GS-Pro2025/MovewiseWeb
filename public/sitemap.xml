@@ -3,16 +3,16 @@
   <!-- Página principal -->
   <url>
     <loc>https://movingwiseapp.com/</loc>
-    <lastmod>2025-09-08</lastmod>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Login -->
+  <!-- Login - cambiar ruta según nueva estructura -->
   <url>
-    <loc>https://movingwiseapp.com/login</loc>
-    <lastmod>2025-09-08</lastmod>
+    <loc>https://movingwiseapp.com/app/login</loc>
+    <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.3</priority>
   </url>
 </urlset>

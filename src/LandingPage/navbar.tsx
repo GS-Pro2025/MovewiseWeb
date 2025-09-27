@@ -26,7 +26,7 @@ const Navbar: React.FC = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-8">
           {/* Logo */}
-          <Link to="homeLp" smooth={true} duration={500} offset={-80}>
+          <Link to="home" smooth={true} duration={500} offset={-80}>
             <img
               src={isScrolled ? textoMWScroll : textoMW}
               alt="MOVING WISE"
@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
           {/* Links desktop - Ahora a la izquierda después del logo */}
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              to="feature"
+              to="features"
               smooth={true}
               duration={500}
               offset={-80}
@@ -72,7 +72,7 @@ const Navbar: React.FC = () => {
               Plans
             </Link>
             <Link
-              to="contactUs"
+              to="contact"
               smooth={true}
               duration={500}
               offset={-80}
@@ -85,7 +85,7 @@ const Navbar: React.FC = () => {
           {/* Login/Register button - Ahora a la derecha con ml-auto */}
           <div className="hidden md:flex ml-auto">
             <RouterLink
-              to="/login"
+              to="/app/login"
               className="bg-[#FFE67B] text-[#0B2863] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC] transition inline-block"
             >
               Login / Register
@@ -131,7 +131,7 @@ const Navbar: React.FC = () => {
         <div className="md:hidden bg-white/90 backdrop-blur-md shadow-lg">
           <div className="flex flex-col items-center space-y-4 py-4">
             <Link
-              to="feature"
+              to="features"
               smooth={true}
               duration={500}
               offset={-80}
@@ -161,7 +161,7 @@ const Navbar: React.FC = () => {
               Plans
             </Link>
             <Link
-              to="contactUs"
+              to="contact"
               smooth={true}
               duration={500}
               offset={-80}
@@ -173,7 +173,7 @@ const Navbar: React.FC = () => {
 
             {/* Login/Register en móvil */}
             <RouterLink
-              to="/login"
+              to="/app/login"
               onClick={() => setIsOpen(false)}
               className="bg-blue-950 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-800 transition inline-block"
             >

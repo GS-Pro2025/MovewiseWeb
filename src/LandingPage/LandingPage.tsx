@@ -2,52 +2,53 @@ import Navbar from "./navbar";
 import "../App.css";
 import Homelp from "./homelp";
 import Feature from "./Feature";
-import { Element } from "react-scroll";
 import Benefits from "./benefit";
 import Plans from "./plans";
 import ContactUs from "./contactus";
 import Footer from "./footer";
 import bg from "../assets/fondo1lp.png";
 
-function App() {
+function LandingPage() {
   return (
-    <div 
-      className="w-full flex flex-col overflow-x-hidden min-h-screen"
-      style={{
-        backgroundImage: `url(${bg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat'
-      }}
-    > 
-      <Navbar />
+    <>
+      <div 
+        className="w-full flex flex-col overflow-x-hidden min-h-screen"
+        style={{
+          backgroundImage: `url(${bg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat'
+        }}
+      > 
+        <Navbar />
 
-      <Element name="homeLp">
-        <Homelp />
-      </Element>
+        <section id="home">
+          <Homelp />
+        </section>
 
-      <Element name="feature" className="py-20">
-        <Feature />
-      </Element>
+        <section id="features" className="py-20">
+          <Feature />
+        </section>
 
-      <Element name="benefits">
-        <Benefits />
-      </Element>
+        <section id="benefits">
+          <Benefits />
+        </section>
 
-      <Element name="plans">
-        <Plans />
-      </Element>
-      
-      <Element name="contactUs">
-        <ContactUs />
-      </Element>
-      
-      <Element name="footer">
-        <Footer />
-      </Element>
-    </div>
+        <section id="plans">
+          <Plans />
+        </section>
+        
+        <section id="contact" className="py-20">
+          <ContactUs />
+        </section>
+        
+        <footer id="footer">
+          <Footer />
+        </footer>
+      </div>
+    </>
   );
 }
 
-export default App;
+export default LandingPage;
