@@ -13,7 +13,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
     const result = await login(email, password);
     setMessage(result.message);
     if (result.success) {
-      window.location.href = '/home';
+      window.location.href = '/dashboard';
     }
   };
 
