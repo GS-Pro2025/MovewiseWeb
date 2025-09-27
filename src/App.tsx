@@ -85,7 +85,7 @@ const App = () => {
 
         {/* Rutas protegidas del dashboard */}
         <Route 
-          path="/app" 
+          path="/" 
           element={authenticated ? <Layout /> : <Navigate to="/app/login" replace />}
         >
           {/* Ruta por defecto del dashboard */}
