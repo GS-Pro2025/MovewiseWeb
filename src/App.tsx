@@ -21,6 +21,7 @@ import JobsAndToolsGUI from './settings/jobAndTools/UI/JobsAndToolsGui';
 import OrderBreakdownPage from './statistics/ui/OrderBreakdownPage';
 import OperatorsPage from './operators/ui/OperatorsPage';
 import AdminsPage from './adminPanel/ui/AdminsPage';
+import ProfilePage from './profile/ui/ProfilePage';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -121,7 +122,8 @@ const App = () => {
           <Route path="create-admin" element={<CreateAdminView />} />
           <Route path="jobs-tools" element={<JobsAndToolsGUI />} />
           <Route path="statistics" element={<Statistics/>} />
-          <Route path="order-breakdown" element={<OrderBreakdownPage />} />
+          <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         <Route 

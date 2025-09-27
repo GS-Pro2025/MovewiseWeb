@@ -4,7 +4,7 @@ import { WeeklyPaymentStatusResponse, PaymentStatusStats, PaymentStatusCompariso
 import { OrdersWithClientResponse, WeeklyClientStats, ClientStats, ClientStatsComparison, FactoryStats } from '../domain/OrdersWithClientModels';
 import Cookies from 'js-cookie';
 import { OrdersBasicDataResponse } from '../domain/BasicOrdersDataModels';
-import { OrdersPaidUnpaidWeekRangeResponse, WeeklyCount } from '../domain/OrdersPaidUnpaidModels';
+import { OrderPaidUnpaidWeekRange, OrdersPaidUnpaidWeekRangeResponse, WeeklyCount } from '../domain/OrdersPaidUnpaidModels';
 import { OperatorWeeklyRanking } from '../domain/OperatorWeeklyRankingModels';
 import { HistoricalJobWeightData, HistoricalJobWeightRequest, HistoricalJobWeightResponse, ProcessedHistoricalData, WeightRange } from '../domain/HistoricalJobWeightModels';
 
@@ -558,7 +558,7 @@ export async function fetchOrdersPaidUnpaidWeekRange(
   }
 
   try {
-    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -590,18 +590,44 @@ export async function fetchOrdersPaidUnpaidWeekRange(
   }
 }
 
-// Función para procesar datos del gráfico paid unpaid orders
+
+// Función mejorada para procesar datos del gráfico paid unpaid orders
 export function processPaidUnpaidChartData(data: OrdersPaidUnpaidWeekRangeResponse) {
+  if (!data.weekly_counts || data.weekly_counts.length === 0) {
+    return [];
+  }
+
   return data.weekly_counts.map((week: WeeklyCount) => ({
     week: week.week,
     paid: week.paid,
     unpaid: week.unpaid,
     total: week.paid + week.unpaid,
-    paidPercentage: week.paid + week.unpaid > 0 ? (week.paid / (week.paid + week.unpaid)) * 100 : 0,
-    unpaidPercentage: week.paid + week.unpaid > 0 ? (week.unpaid / (week.paid + week.unpaid)) * 100 : 0
+    paidPercentage: week.paid + week.unpaid > 0 ? Number(((week.paid / (week.paid + week.unpaid)) * 100).toFixed(1)) : 0,
+    unpaidPercentage: week.paid + week.unpaid > 0 ? Number(((week.unpaid / (week.paid + week.unpaid)) * 100).toFixed(1)) : 0
   }));
 }
 
+// Función para obtener detalles de órdenes por semana
+export function getOrdersByWeek(data: OrdersPaidUnpaidWeekRangeResponse, week: number): OrderPaidUnpaidWeekRange[] {
+  const weekKey = week.toString();
+  return data.orders_by_week?.[weekKey] || [];
+}
+
+// Función para obtener resumen de estadísticas
+export function getPaidUnpaidSummary(data: OrdersPaidUnpaidWeekRangeResponse) {
+  const totalOrders = data.total_paid + data.total_unpaid;
+  const paidPercentage = totalOrders > 0 ? Number(((data.total_paid / totalOrders) * 100).toFixed(1)) : 0;
+  const unpaidPercentage = totalOrders > 0 ? Number(((data.total_unpaid / totalOrders) * 100).toFixed(1)) : 0;
+
+  return {
+    totalOrders,
+    totalPaid: data.total_paid,
+    totalUnpaid: data.total_unpaid,
+    paidPercentage,
+    unpaidPercentage,
+    mode: data.mode || 'unknown'
+  };
+}
 // Función para obtener ranking semanal de operadores
 export async function fetchWeeklyOperatorRanking(year: number, week: number): Promise<OperatorWeeklyRanking[]> {
   const token = Cookies.get('authToken');
@@ -706,4 +732,45 @@ export function processHistoricalJobWeightData(data: HistoricalJobWeightResponse
   });
 
   return processedData.sort((a, b) => b.totalOrdersInRange - a.totalOrdersInRange);
+}
+
+// Función para obtener órdenes pagadas/no pagadas en modo histórico
+export async function fetchOrdersPaidUnpaidHistoric(): Promise<OrdersPaidUnpaidWeekRangeResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=historic&page_size=1000000&page=1`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching historic paid/unpaid orders: ${response.statusText}`);
+    }
+
+    const data: OrdersPaidUnpaidWeekRangeResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching historic paid/unpaid orders:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener las órdenes pagadas/no pagadas históricas'
+    );
+  }
 }

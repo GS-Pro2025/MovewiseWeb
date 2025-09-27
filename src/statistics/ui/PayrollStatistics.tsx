@@ -29,11 +29,8 @@ const PayrollStatistics: React.FC = () => {
   const [rankingLoading, setRankingLoading] = useState<boolean>(false);
   const [rankingError, setRankingError] = useState<string | null>(null);
 
-  // Semana y año
   const now = new Date();
-  const [year] = useState<number>(now.getFullYear());
-  const [week] = useState<number>(() => {
-    console.log('date:', year, week);
+  const getCurrentWeek = () => {
     const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
@@ -41,23 +38,11 @@ const PayrollStatistics: React.FC = () => {
     const yearStartDayNum = yearStart.getUTCDay() || 7;
     yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
     return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  });
+  };
 
-  // Estados para picker de semana y año
+  const [selectedWeek, setSelectedWeek] = useState<number>(getCurrentWeek());
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
-  const [pendingYear, setPendingYear] = useState<number>(now.getFullYear());
-  console.log('selectedYear:', selectedYear, 'pendingYear:', pendingYear);
-  const [selectedWeek, setSelectedWeek] = useState<number>(() => {
-    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
-    const yearStartDayNum = yearStart.getUTCDay() || 7;
-    yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
-    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  });
-  const [pendingWeek, setPendingWeek] = useState<number>(selectedWeek);
-  console.log('selectedWeek:', selectedWeek, 'pendingWeek:', pendingWeek);
+
   // Filtros con useMemo para optimizar rendimiento
   const filteredOperators = useMemo(() => {
     if (!searchTerm.trim()) return operators;
@@ -471,10 +456,7 @@ const PayrollStatistics: React.FC = () => {
                 <label className="text-sm font-medium text-gray-700">Year:</label>
                 <select
                   value={selectedYear}
-                  onChange={e => {
-                    setSelectedYear(Number(e.target.value));
-                    setPendingYear(Number(e.target.value));
-                  }}
+                  onChange={e => setSelectedYear(Number(e.target.value))}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   {getAvailableYears().map(y => (
@@ -489,11 +471,7 @@ const PayrollStatistics: React.FC = () => {
                   min="1"
                   max="53"
                   value={selectedWeek}
-                  onChange={e => {
-                    const val = Number(e.target.value);
-                    setSelectedWeek(val);
-                    setPendingWeek(val);
-                  }}
+                  onChange={e => setSelectedWeek(Number(e.target.value))}
                   className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>

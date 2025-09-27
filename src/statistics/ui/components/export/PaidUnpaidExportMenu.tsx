@@ -1,4 +1,3 @@
-// components/ExportMenuComponent.tsx
 import React, { useState } from 'react';
 import {
   Menu,
@@ -15,25 +14,26 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableViewIcon from '@mui/icons-material/TableView';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { FileDown } from 'lucide-react';
-import { SuperOrder } from '../domain/ModelsOCR';
-import { ExportUtils } from '../util/ExportUtils';
+import { OrdersPaidUnpaidWeekRangeResponse } from '../../../domain/OrdersPaidUnpaidModels';
+import { PaidUnpaidExportUtils } from './PaidUnpaidExportUtils';
 
-interface ExportMenuComponentProps {
-  superOrders: SuperOrder[];
-  isSearchResults?: boolean;
-  week?: number;
-  year?: number;
-  weekRange?: { start: string; end: string };
-  disabled?: boolean;
-  fullWidth?: boolean; // Nueva prop para responsividad
+export interface ExportMode {
+  type: 'range' | 'historic';
+  startWeek?: number;
+  endWeek?: number;
+  year: number;
 }
 
-const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
-  superOrders,
-  isSearchResults = false,
-  week,
-  year,
-  weekRange,
+interface PaidUnpaidExportMenuProps {
+  rawData: OrdersPaidUnpaidWeekRangeResponse | null;
+  exportMode: ExportMode;
+  disabled?: boolean;
+  fullWidth?: boolean;
+}
+
+const PaidUnpaidExportMenu: React.FC<PaidUnpaidExportMenuProps> = ({
+  rawData,
+  exportMode,
   disabled = false,
   fullWidth = false
 }) => {
@@ -57,32 +57,31 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
     handleClose();
     
     try {
-      await ExportUtils.exportToExcel(superOrders, isSearchResults, week, year);
+      await PaidUnpaidExportUtils.exportToExcel(rawData, exportMode);
     } finally {
       setIsExporting(false);
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = () => {
     setIsExporting(true);
     handleClose();
     
     try {
-      // Cambiar esta línea para usar la nueva función sin await
-      ExportUtils.exportToPDF(superOrders, isSearchResults, week, year, weekRange);
+      PaidUnpaidExportUtils.exportToPDF(rawData, exportMode);
     } finally {
       setIsExporting(false);
     }
   };
 
   const getDataSummary = () => {
-    const totals = superOrders.reduce((acc, order) => ({
-      totalOrders: acc.totalOrders + 1,
-      totalProfit: acc.totalProfit + order.totalProfit,
-      paidOrders: acc.paidOrders + (order.payStatus === 1 ? 1 : 0)
-    }), { totalOrders: 0, totalProfit: 0, paidOrders: 0 });
-
-    return totals;
+    if (!rawData) return { totalOrders: 0, totalPaid: 0, totalUnpaid: 0 };
+    
+    return {
+      totalOrders: rawData.total_paid + rawData.total_unpaid,
+      totalPaid: rawData.total_paid,
+      totalUnpaid: rawData.total_unpaid
+    };
   };
 
   const summary = getDataSummary();
@@ -90,28 +89,28 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
   const ExportButton = () => (
     <button
       onClick={handleClick}
-      disabled={disabled || isExporting || superOrders.length === 0}
+      disabled={disabled || isExporting || !rawData}
       className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 justify-center ${
         fullWidth ? 'w-full' : isMobile ? 'min-w-[120px]' : 'min-w-[140px]'
       } ${
-        disabled || isExporting || superOrders.length === 0
+        disabled || isExporting || !rawData
           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
           : 'text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
       }`}
       style={{
-        background: disabled || isExporting || superOrders.length === 0 
+        background: disabled || isExporting || !rawData 
           ? '#d1d5db' 
           : 'linear-gradient(135deg, #FFE67B 0%, #fbbf24 100%)',
-        color: disabled || isExporting || superOrders.length === 0 ? '#6b7280' : '#0B2863',
+        color: disabled || isExporting || !rawData ? '#6b7280' : '#0B2863',
         minHeight: '48px'
       }}
       onMouseEnter={(e) => {
-        if (!disabled && !isExporting && superOrders.length > 0) {
+        if (!disabled && !isExporting && rawData) {
           e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
         }
       }}
       onMouseLeave={(e) => {
-        if (!disabled && !isExporting && superOrders.length > 0) {
+        if (!disabled && !isExporting && rawData) {
           e.currentTarget.style.background = 'linear-gradient(135deg, #FFE67B 0%, #fbbf24 100%)';
         }
       }}
@@ -172,7 +171,7 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
               gap: 1
             }}
           >
-            📊 Export Financial Data
+            📊 Export Payment Analytics
           </Typography>
           <Typography 
             variant="body2" 
@@ -183,7 +182,10 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
               opacity: 0.9
             }}
           >
-            {summary.totalOrders} orders • ${summary.totalProfit.toLocaleString()} profit
+            {exportMode.type === 'range' 
+              ? `Weeks ${exportMode.startWeek}-${exportMode.endWeek}, ${exportMode.year}`
+              : `Historic Data ${exportMode.year}`
+            } • {summary.totalOrders} orders
           </Typography>
         </Box>
 
@@ -291,10 +293,10 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
             }}
           >
             💡 <span>
-              {isSearchResults 
-                ? 'Search results' 
-                : `Week ${week}, ${year}`
-              } data will be exported
+              {exportMode.type === 'range' 
+                ? `Week range ${exportMode.startWeek}-${exportMode.endWeek} data will be exported`
+                : `Historic data from ${exportMode.year} will be exported`
+              }
             </span>
           </Typography>
         </Box>
@@ -303,4 +305,4 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
   );
 };
 
-export default ExportMenuComponent;
+export default PaidUnpaidExportMenu;

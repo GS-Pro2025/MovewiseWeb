@@ -13,23 +13,19 @@ import {
   DollarSign,
   RefreshCw,
   Settings,
-  Plus,
-  Undo,
-  Save,
-  X,
-  Trash2,
-  Trophy,
-  Gem,
-  Target,
-  Brain,
   AlertTriangle,
   Menu,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Trophy,
+  Gem,
+  Target,
+  Brain
 } from 'lucide-react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { fetchHistoricalJobWeight, processHistoricalJobWeightData } from '../data/repositoryStatistics';
 import { WeightRange, HistoricalJobWeightResponse, ProcessedHistoricalData } from '../domain/HistoricalJobWeightModels';
+import WeightRangeEditorDialog from './components/WeightRangeEditorDialog';
 
 const HistoricalAnalysis: React.FC = () => {
   const theme = useTheme();
@@ -101,6 +97,50 @@ const HistoricalAnalysis: React.FC = () => {
   useEffect(() => {
     loadHistoricalData(weightRanges);
   }, [loadHistoricalData, weightRanges]);
+
+  // Handler functions
+  const handleEditRanges = () => {
+    setTempRanges([...weightRanges]);
+    setShowRangeEditor(true);
+  };
+
+  const handleSaveRanges = () => {
+    setWeightRanges([...tempRanges]);
+    setShowRangeEditor(false);
+  };
+
+  const handleCancelEdit = () => {
+    setTempRanges([]);
+    setShowRangeEditor(false);
+  };
+
+  const handleAddRange = () => {
+    setTempRanges([...tempRanges, { min: 0, max: 1000 }]);
+  };
+
+  const handleRemoveRange = (index: number) => {
+    const newRanges = tempRanges.filter((_, i) => i !== index);
+    setTempRanges(newRanges);
+  };
+
+  const handleRangeChange = (index: number, field: 'min' | 'max', value: number) => {
+    const newRanges = [...tempRanges];
+    newRanges[index][field] = value;
+    setTempRanges(newRanges);
+  };
+
+  const resetToDefaults = () => {
+    const defaultRanges = [
+      { min: 0, max: 500 },
+      { min: 501, max: 1500 },
+      { min: 1501, max: 3000 },
+      { min: 3001, max: 5000 },
+      { min: 5001, max: 8000 },
+      { min: 8001, max: 15000 }
+    ];
+    setWeightRanges(defaultRanges);
+    setShowRangeEditor(false);
+  };
 
   // Mobile-optimized chart configurations
   const getMobileChartMargins = () => ({
@@ -221,50 +261,6 @@ const HistoricalAnalysis: React.FC = () => {
         jobTypes: range.jobs.length
       };
     });
-  };
-
-  // Handler functions
-  const handleEditRanges = () => {
-    setTempRanges([...weightRanges]);
-    setShowRangeEditor(true);
-  };
-
-  const handleSaveRanges = () => {
-    setWeightRanges([...tempRanges]);
-    setShowRangeEditor(false);
-  };
-
-  const handleCancelEdit = () => {
-    setTempRanges([]);
-    setShowRangeEditor(false);
-  };
-
-  const handleAddRange = () => {
-    setTempRanges([...tempRanges, { min: 0, max: 1000 }]);
-  };
-
-  const handleRemoveRange = (index: number) => {
-    const newRanges = tempRanges.filter((_, i) => i !== index);
-    setTempRanges(newRanges);
-  };
-
-  const handleRangeChange = (index: number, field: 'min' | 'max', value: number) => {
-    const newRanges = [...tempRanges];
-    newRanges[index][field] = value;
-    setTempRanges(newRanges);
-  };
-
-  const resetToDefaults = () => {
-    const defaultRanges = [
-      { min: 0, max: 500 },
-      { min: 501, max: 1500 },
-      { min: 1501, max: 3000 },
-      { min: 3001, max: 5000 },
-      { min: 5001, max: 8000 },
-      { min: 8001, max: 15000 }
-    ];
-    setWeightRanges(defaultRanges);
-    setShowRangeEditor(false);
   };
 
   // Reusable Components
@@ -540,7 +536,7 @@ const HistoricalAnalysis: React.FC = () => {
             </div>
           </Card>
 
-          {/* Main Content */}
+          {/* Main Content with Charts */}
           {processedData.length > 0 && (
             <Card className={`${isMobile ? 'p-4' : 'p-8'} mb-6`}>
               {activeView === 'overview' && (
@@ -953,117 +949,6 @@ const HistoricalAnalysis: React.FC = () => {
             </Card>
           )}
 
-          {/* Range Editor Modal */}
-          {showRangeEditor && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4"
-              onClick={handleCancelEdit}
-            >
-              <Card
-                className={`w-full ${isMobile ? 'max-w-md' : 'max-w-3xl'} ${isMobile ? 'p-4' : 'p-8'}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <Scale className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} text-blue-600`} />
-                    <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-slate-800`}>
-                      Edit Weight Ranges
-                    </h3>
-                  </div>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="p-2 rounded-lg border-2 border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4 mb-6 max-h-60 overflow-y-auto">
-                  {tempRanges.map((range, index) => (
-                    <div 
-                      key={index} 
-                      className={`flex ${isMobile ? 'flex-col' : 'items-center'} gap-4 p-4 rounded-lg border-2 border-slate-200 bg-slate-50`}
-                    >
-                      <span className="px-3 py-2 rounded-lg font-bold text-sm bg-blue-600 text-white">
-                        #{index + 1}
-                      </span>
-                      <div className={`flex ${isMobile ? 'flex-col' : 'items-center'} gap-3 flex-1`}>
-                        <div className={`flex ${isMobile ? 'justify-between' : ''} items-center gap-3`}>
-                          <label className="font-semibold text-slate-700">Min:</label>
-                          <input
-                            type="number"
-                            value={range.min}
-                            onChange={(e) => handleRangeChange(index, 'min', Number(e.target.value))}
-                            className={`${isMobile ? 'w-20' : 'w-32'} px-3 py-2 border-2 border-slate-300 rounded-lg font-medium focus:border-blue-500 focus:outline-none`}
-                          />
-                        </div>
-                        <div className={`flex ${isMobile ? 'justify-between' : ''} items-center gap-3`}>
-                          <label className="font-semibold text-slate-700">Max:</label>
-                          <input
-                            type="number"
-                            value={range.max}
-                            onChange={(e) => handleRangeChange(index, 'max', Number(e.target.value))}
-                            className={`${isMobile ? 'w-20' : 'w-32'} px-3 py-2 border-2 border-slate-300 rounded-lg font-medium focus:border-blue-500 focus:outline-none`}
-                          />
-                        </div>
-                        <span className="font-medium text-slate-600">lbs</span>
-                      </div>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleRemoveRange(index)}
-                        fullWidth={isMobile}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'} gap-3`}>
-                  <div className={`flex ${isMobile ? 'flex-col' : ''} gap-3`}>
-                    <Button onClick={handleAddRange} fullWidth={isMobile}>
-                      <Plus className="h-4 w-4" />
-                      Add Range
-                    </Button>
-                    <Button onClick={resetToDefaults} fullWidth={isMobile}>
-                      <Undo className="h-4 w-4" />
-                      Reset to Defaults
-                    </Button>
-                  </div>
-                  <div className={`flex ${isMobile ? 'flex-col' : ''} gap-3`}>
-                    <Button onClick={handleCancelEdit} fullWidth={isMobile}>Cancel</Button>
-                    <Button variant="primary" onClick={handleSaveRanges} fullWidth={isMobile}>
-                      <Save className="h-4 w-4" />
-                      Apply Changes
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {processedData.length === 0 && (
-            <Card className={`text-center ${isMobile ? 'p-8' : 'p-12'}`}>
-              <BarChart3 className={`mx-auto mb-6 ${isMobile ? 'h-16 w-16' : 'h-20 w-20'} text-slate-400`} />
-              <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-4 text-slate-800`}>
-                No Historical Data Available
-              </h3>
-              <p className={`${isMobile ? 'text-base' : 'text-lg'} text-slate-600 mb-6`}>
-                {isMobile 
-                  ? 'No data found for the current weight ranges.'
-                  : 'No data found for the current weight ranges. Try adjusting the ranges or check back later.'
-                }
-              </p>
-              <Button variant="primary" onClick={handleEditRanges} fullWidth={isMobile}>
-                <Settings className="h-4 w-4" />
-                Configure Weight Ranges
-              </Button>
-            </Card>
-          )}
-
           {/* Insights Footer */}
           {processedData.length > 0 && (
             <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
@@ -1120,8 +1005,41 @@ const HistoricalAnalysis: React.FC = () => {
               </div>
             </Card>
           )}
+
+          {/* Empty State */}
+          {processedData.length === 0 && (
+            <Card className={`text-center ${isMobile ? 'p-8' : 'p-12'}`}>
+              <BarChart3 className={`mx-auto mb-6 ${isMobile ? 'h-16 w-16' : 'h-20 w-20'} text-slate-400`} />
+              <h3 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-4 text-slate-800`}>
+                No Historical Data Available
+              </h3>
+              <p className={`${isMobile ? 'text-base' : 'text-lg'} text-slate-600 mb-6`}>
+                {isMobile 
+                  ? 'No data found for the current weight ranges.'
+                  : 'No data found for the current weight ranges. Try adjusting the ranges or check back later.'
+                }
+              </p>
+              <Button variant="primary" onClick={handleEditRanges} fullWidth={isMobile}>
+                <Settings className="h-4 w-4" />
+                Configure Weight Ranges
+              </Button>
+            </Card>
+          )}
         </>
       )}
+
+      {/* Weight Range Editor Dialog */}
+      <WeightRangeEditorDialog
+        isOpen={showRangeEditor}
+        tempRanges={tempRanges}
+        onClose={handleCancelEdit}
+        onSave={handleSaveRanges}
+        onAddRange={handleAddRange}
+        onRemoveRange={handleRemoveRange}
+        onRangeChange={handleRangeChange}
+        onResetToDefaults={resetToDefaults}
+        isMobile={isMobile}
+      />
     </div>
   );
 };

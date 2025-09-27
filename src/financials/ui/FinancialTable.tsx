@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import PaymentIcon from '@mui/icons-material/AttachMoney';
+import EditIcon from '@mui/icons-material/Edit'; // Cambio de PaymentIcon a EditIcon
 import { 
   Inbox, 
   Lightbulb, 
@@ -30,7 +30,8 @@ import {
   Users,
   UserCheck,
   User,
-  Eye
+  Eye,
+  Edit // Importar Edit de lucide-react para mobile
 } from 'lucide-react';
 import { SuperOrder } from '../domain/ModelsOCR';
 import OrdersByKeyRefTable from './OrdersByKeyRefTable';
@@ -58,7 +59,7 @@ interface FinancialTableProps {
   expandedRows: Set<string>;
   onSort: (column: keyof SuperOrder) => void;
   onToggleExpand: (keyRef: string) => void;
-  onPayOrder: (superOrder: SuperOrder) => void;
+  onPayOrder: (superOrder: SuperOrder) => void; // Mantener el nombre de la prop pero cambiar funcionalidad
   onViewDetails: (superOrder: SuperOrder) => void;
   onOrderPaid: () => void;
   onViewOperators: (orderId: string) => void;
@@ -71,7 +72,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   expandedRows,
   onSort,
   onToggleExpand,
-  onPayOrder,
+  onPayOrder, // Ahora será onEditOrder
   onViewDetails,
   onOrderPaid,
   onViewOperators
@@ -108,25 +109,19 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
     />
   );
 
-  const ActionButton = ({ 
+  // Cambiar ActionButton a EditButton con nuevo color y sin restricciones
+  const EditButton = ({ 
     onClick, 
-    disabled, 
     children,
     size = 'medium'
   }: { 
     onClick: (e: React.MouseEvent) => void, 
-    disabled: boolean, 
     children: React.ReactNode,
     size?: 'small' | 'medium'
   }) => (
     <button
       onClick={onClick}
-      disabled={disabled}
-      className={`flex items-center gap-2 ${size === 'small' ? 'px-3 py-2 text-xs' : 'px-4 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center ${
-        disabled
-          ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-          : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
-      }`}
+      className={`flex items-center gap-2 ${size === 'small' ? 'px-3 py-2 text-xs' : 'px-4 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
       style={{ minWidth: size === 'small' ? '60px' : '80px' }}
     >
       {children}
@@ -263,19 +258,18 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
             <ProfitChip profit={superOrder.totalProfit} />
           </div>
 
-          {/* Actions */}
+          {/* Actions - Cambiar Pay por Edit */}
           <div className="flex gap-2">
-            <ActionButton
+            <EditButton
               onClick={(e) => {
                 e.stopPropagation();
-                onPayOrder(superOrder);
+                onPayOrder(superOrder); // Mantener el mismo handler pero ahora es edit
               }}
-              disabled={superOrder.payStatus === 1}
               size="small"
             >
-              <PaymentIcon sx={{ fontSize: 14 }} />
-              Pay
-            </ActionButton>
+              <Edit size={14} />
+              Edit
+            </EditButton>
             
             <ViewButton
               onClick={(e) => {
@@ -536,20 +530,19 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           <PayStatusChip paid={superOrder.payStatus === 1} />
                         </TableCell>
 
-                        {/* 11. Actions - SIN botón de expand */}
+                        {/* 11. Actions - Cambiar Pay por Edit y sin restricciones */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <div className="flex items-center gap-2">
-                            <ActionButton
+                            <EditButton
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onPayOrder(superOrder);
+                                onPayOrder(superOrder); // Mantener el mismo handler
                               }}
-                              disabled={superOrder.payStatus === 1}
                               size={isTablet ? 'small' : 'medium'}
                             >
-                              <PaymentIcon sx={{ fontSize: isTablet ? 14 : 16 }} />
-                              {!isTablet && 'Pay'}
-                            </ActionButton>
+                              <EditIcon sx={{ fontSize: isTablet ? 14 : 16 }} />
+                              {!isTablet && 'Edit'}
+                            </EditButton>
                             
                             <ViewButton
                               onClick={(e) => {
@@ -703,6 +696,114 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       </TableRow>
                     </React.Fragment>
                   ))}
+                </TableBody>
+                {/* Totals Row */}
+                <TableBody>
+                  <TableRow style={{ backgroundColor: '#f1f5f9', borderTop: '3px solid #0B2863' }}>
+                    {/* 0. Expand Button - Empty */}
+                    <TableCell className="!py-4 !px-2 !border-b-0" style={{ width: '50px' }}>
+                      {/* Empty cell for expand button */}
+                    </TableCell>
+
+                    {/* 1. Reference - TOTALS label */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography 
+                        variant="body1" 
+                        className="!font-bold !text-lg"
+                        style={{ color: '#0B2863' }}
+                      >
+                        TOTALS
+                      </Typography>
+                    </TableCell>
+
+                    {/* 2. Client - Empty */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography 
+                        variant="body2" 
+                        className="!font-semibold !text-center"
+                        style={{ color: '#6b7280' }}
+                      >
+                        {data.length} orders
+                      </Typography>
+                    </TableCell>
+
+                    {/* 3. Expense Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#ef4444' }}>
+                        ${data.reduce((sum, order) => sum + order.expense, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 4. Operator Salaries Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#0B2863' }}>
+                        ${data.reduce((sum, order) => sum + order.otherSalaries, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 5. Work Cost Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#0B2863' }}>
+                        ${data.reduce((sum, order) => sum + order.workCost, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 6. Driver Salaries Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
+                        ${data.reduce((sum, order) => sum + order.driverSalaries, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 7. Total Discount Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#f59e0b' }}>
+                        ${data.reduce((sum, order) => sum + (order.expense + order.driverSalaries + order.otherSalaries + order.fuelCost), 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 8. Total Income Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
+                        ${data.reduce((sum, order) => sum + order.totalIncome, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 9. Profit Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      {(() => {
+                        const totalProfit = data.reduce((sum, order) => sum + order.totalProfit, 0);
+                        return (
+                          <span
+                            className={`inline-flex items-center px-4 py-2 rounded-full text-lg font-bold text-white min-w-[100px] justify-center shadow-md ${
+                              totalProfit >= 0 
+                                ? 'bg-green-600' 
+                                : 'bg-red-600'
+                            }`}
+                          >
+                            ${totalProfit.toLocaleString()}
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
+
+                    {/* 10. Status - Summary */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="caption" className="!font-semibold" style={{ color: '#22c55e' }}>
+                          Paid: {data.filter(order => order.payStatus === 1).length}
+                        </Typography>
+                        <Typography variant="caption" className="!font-semibold" style={{ color: '#f59e0b' }}>
+                          Unpaid: {data.filter(order => order.payStatus === 0).length}
+                        </Typography>
+                      </div>
+                    </TableCell>
+
+                    {/* 11. Actions - Empty */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      {/* Empty cell for actions */}
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
