@@ -1,7 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Box } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
 
 // Components
 import { TableFilters } from './TableFilters';
@@ -161,7 +165,9 @@ const OrdersTable: React.FC = () => {
   const [orderToInactivate, setOrderToInactivate] = useState<NormalizedTableData | null>(null);
   const [deleteAbsoluteDialogOpen, setDeleteAbsoluteDialogOpen] = useState(false);
   const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<NormalizedTableData | null>(null);
-  
+  const [dispatchTicketDialogOpen, setDispatchTicketDialogOpen] = useState(false);
+  const [dispatchTicketUrl, setDispatchTicketUrl] = useState<string | null>(null);
+
   // Context menu
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -437,6 +443,16 @@ const OrdersTable: React.FC = () => {
     setDeleteAbsoluteDialogOpen(true);
   };
 
+  const handleViewDispatchTicket = (order: TableData) => {
+    const url = (order as any).dispatch_ticket as string | undefined;
+    if (url) {
+      setDispatchTicketUrl(url);
+      setDispatchTicketDialogOpen(true);
+    } else {
+      enqueueSnackbar('No dispatch ticket available for this order.', { variant: 'info' });
+    }
+  };
+
   // Export handlers
   const handleExportExcel = (data: NormalizedTableData[], filename: string) => {
     // Convert to original TableData format for export
@@ -509,6 +525,7 @@ const OrdersTable: React.FC = () => {
         onEditOrder={handleEditOrder}
         onInactivateOrder={handleInactivateOrder}
         onDeleteOrder={handleDeleteOrder}
+        onViewDispatchTicket={handleViewDispatchTicket} // pass handler
       />
 
       {/* Modals */}
@@ -619,6 +636,27 @@ const OrdersTable: React.FC = () => {
           icon={<DeleteIcon color="error" />}
         />
       )}
+
+      {/* Dispatch Ticket Modal */}
+      <Dialog
+        open={dispatchTicketDialogOpen}
+        onClose={() => setDispatchTicketDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Dispatch Ticket</DialogTitle>
+        <DialogContent>
+          {dispatchTicketUrl ? (
+            <img
+              src={dispatchTicketUrl}
+              alt="Dispatch Ticket"
+              style={{ width: '100%', borderRadius: 12, marginTop: 8 }}
+            />
+          ) : (
+            <div style={{ padding: 12 }}>No dispatch ticket available.</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
