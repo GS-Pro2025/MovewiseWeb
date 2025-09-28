@@ -66,7 +66,7 @@ export function exportBreakdownToPDF(
 ) {
   const dateRange = `${year}, Weeks ${startWeek}-${endWeek}`;
   const totalExpenses = Object.values(expenses).reduce((sum, val) => sum + val, 0);
-  const profitMargin = income > 0 ? ((profit / income) * 100).toFixed(1) : 0;
+  const profitMargin: string = income > 0 ? ((profit / income) * 100).toFixed(1) : '0';
   
   // Ordenar gastos por valor descendente
   const sortedExpenses = Object.entries(expenses).sort(([,a], [,b]) => b - a);
