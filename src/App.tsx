@@ -31,7 +31,6 @@ const App = () => {
   const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
-    // Marca que estamos en el cliente
     setIsClient(true);
 
     const checkAuth = () => {
@@ -53,7 +52,7 @@ const App = () => {
       setSessionExpired(true);
       setTimeout(() => {
         setSessionExpired(false);
-        window.location.href = '/login';
+        window.location.href = '/';
       }, 2000);
     };
     window.addEventListener('sessionExpired', handler);
@@ -69,42 +68,43 @@ const App = () => {
     <>
       {sessionExpired && (
         <div className="fixed top-0 left-0 w-full bg-red-500 text-white text-center py-4 z-50 shadow-lg">
-          <strong>¡Session expired!</strong>Please login again.
+          <strong>Session expired!</strong> Redirecting to home...
         </div>
       )}
       <Routes>
         {/* Login - accesible solo si no está autenticado */}
         <Route 
           path="/login" 
-          element={authenticated ? <Navigate to="/home" replace /> : <LoginPage />} 
+          element={authenticated ? <Navigate to="/app/dashboard" replace /> : <LoginPage />} 
         />
         
         {/* Register redirect to login - para mantener compatibilidad */}
         <Route 
           path="/register" 
-          element={<Navigate to="/login?mode=register" replace />} 
+          element={<Navigate to="/app/login?mode=register" replace />} 
         />
 
-        {/* Rutas protegidas */}
+        {/* Rutas protegidas del dashboard */}
         <Route 
-          path="/" 
-          element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
+          path="/app" 
+          element={authenticated ? <Layout /> : <Navigate to="/app/login" replace />}
         >
-          <Route index element={<Navigate to="home" replace />} />
-          <Route path="home" element={<Home />} />
+          {/* Ruta por defecto del dashboard */}
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Home />} />
           <Route path="resume-fuel" element={<ResumeFuel />} />
           <Route path="summary-cost" element={<SummaryCost />} />
-          <Route path="/operators" element={<OperatorsPage />} />
+          <Route path="operators" element={<OperatorsPage />} />
           <Route path="payroll" element={<PayrollPage />} />
           <Route path="extra-cost" element={<ExtraCost />} />
-          <Route path="/add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
+          <Route path="add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
           <Route path="create-daily" element={<CreateOrder/>} />
-          <Route path="/warehouse" element={<WarehouseView/>}/>
-          <Route path="/create-warehouse" element={<CreateWarehouseView/>}/>
-          <Route path="/customers" element={<CustomersView />} />
-          <Route path="/admins" element={<AdminsPage />} />
-          <Route path="/create-admin" element={<CreateAdminView />} />
-          <Route path="/jobs-tools" element={<JobsAndToolsGUI />} />
+          <Route path="warehouse" element={<WarehouseView/>}/>
+          <Route path="create-warehouse" element={<CreateWarehouseView/>}/>
+          <Route path="customers" element={<CustomersView />} />
+          <Route path="admins" element={<AdminsPage />} />
+          <Route path="create-admin" element={<CreateAdminView />} />
+          <Route path="jobs-tools" element={<JobsAndToolsGUI />} />
           <Route path="statistics" element={<Statistics/>} />
           <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
           <Route path="/profile" element={<ProfilePage />} />
@@ -116,8 +116,8 @@ const App = () => {
           path="*" 
           element={
             authenticated ? 
-              <Navigate to="/home" replace /> : 
-              <Navigate to="/login" replace />
+              <Navigate to="/app/dashboard" replace /> : 
+              <Navigate to="/app/login" replace />
           } 
         />
       </Routes>
