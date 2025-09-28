@@ -5,7 +5,8 @@ import {
   Edit, 
   Ban, 
   Trash2, 
-  Copy 
+  Copy,
+  Image
 } from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
@@ -18,6 +19,7 @@ interface ContextMenuProps {
   onEditOrder: (order: TableData) => void;
   onInactivateOrder: (order: TableData) => void;
   onDeleteOrder: (order: TableData) => void;
+  onViewDispatchTicket?: (order: TableData) => void; // new optional callback
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -29,6 +31,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onEditOrder,
   onInactivateOrder,
   onDeleteOrder,
+  onViewDispatchTicket,
 }) => {
   const handleAction = (action: string) => {
     if (!row) return;
@@ -50,6 +53,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         break;
       case 'delete':
         onDeleteOrder(row);
+        break;
+      case 'view-dispatch':
+        if (onViewDispatchTicket) onViewDispatchTicket(row);
         break;
     }
     
@@ -119,6 +125,16 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <Trash2 size={20} color="#ef4444" />
         </ListItemIcon>
         <ListItemText>Delete Order (Absolute)</ListItemText>
+      </MenuItem>
+
+      <MenuItem
+        onClick={() => handleAction('view-dispatch')}
+        disabled={!row?.dispatch_ticket}
+      >
+        <ListItemIcon>
+          <Image size={20} color={row?.dispatch_ticket ? "#f59e0b" : "#9ca3af"} />
+        </ListItemIcon>
+        <ListItemText>View Dispatch Ticket</ListItemText>
       </MenuItem>
     </Menu>
   );
