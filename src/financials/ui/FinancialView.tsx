@@ -481,6 +481,7 @@ const FinancialView = () => {
           isSearchResults={!!searchResults}
           year={year}
           loading={loading}
+          onViewExpenseBreakdown={() => navigate("/app/financial-expense-breakdown")}
         />
       </Box>
 
@@ -559,15 +560,6 @@ const FinancialView = () => {
           result={docaiDialogResult}
         />
       )}
-      <Box sx={{ mb: 2 }}>
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={() => navigate("/app/financial-expense-breakdown")}
-        >
-          View Expense Breakdown
-        </Button>
-      </Box>
     </Box>
   );
 };
