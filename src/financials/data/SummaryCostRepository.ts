@@ -11,16 +11,27 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
     private baseUrl: string =
         import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-    async getSummaryCost(pageNumber: number, week: number, year: number): Promise<PaginatedOrderSummaryResult> {
+    // Agrega el parámetro opcional onlyPaid
+    async getSummaryCost(
+        pageNumber: number,
+        week: number,
+        year: number,
+        onlyPaid?: boolean // <-- nuevo parámetro opcional
+    ): Promise<PaginatedOrderSummaryResult> {
         const token = Cookies.get('authToken');
         
         if (!token) {
             window.location.href = '/login';
             throw new Error('No hay token de autenticación');
         }
-        console.log(`Fetching summary cost for week ${week}, year ${year}, page ${pageNumber + 1}`);
+        // Construye la URL con el parámetro solo si se pasa como true
+        let url = `${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100000`;
+        if (onlyPaid === true) {
+            url += '&only_paid=true';
+        }
+        console.log(`Fetching summary cost for week ${week}, year ${year}, page ${pageNumber + 1}, onlyPaid=${onlyPaid}`);
         try {
-            const response = await fetch(`${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100`, {
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
