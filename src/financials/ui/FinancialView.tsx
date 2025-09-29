@@ -563,7 +563,7 @@ const FinancialView = () => {
         <Button
           variant="outlined"
           color="primary"
-          onClick={() => navigate("/financial-expense-breakdown")}
+          onClick={() => navigate("/app/financial-expense-breakdown")}
         >
           View Expense Breakdown
         </Button>

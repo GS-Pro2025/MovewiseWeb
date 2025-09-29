@@ -222,7 +222,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
           {user && (
             <>
               {/* Foto de perfil centrada */}
-              <Link to="/profile" className="w-12 h-12 rounded-full overflow-hidden border-2 border-white mb-3 transition-all duration-700 ease-in-out shadow-lg hover:border-[#FE9844] block">
+              <Link to="/app/profile" className="w-12 h-12 rounded-full overflow-hidden border-2 border-white mb-3 transition-all duration-700 ease-in-out shadow-lg hover:border-[#FE9844] block">
                 <img
                   src={
                     user.photo && user.photo.trim() !== ''
@@ -236,7 +236,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                 />
               </Link>
               {/* Información del usuario centrada */}
-              <Link to="/profile" className="text-center transition-all duration-700 ease-in-out hover:text-[#FE9844] block">
+              <Link to="/app/profile" className="text-center transition-all duration-700 ease-in-out hover:text-[#FE9844] block">
                 <div className="text-white text-sm font-semibold transition-all duration-700 ease-in-out">
                   {user.person.first_name} {user.person.last_name}
                 </div>
