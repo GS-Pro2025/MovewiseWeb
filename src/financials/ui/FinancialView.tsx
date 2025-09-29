@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Box, Typography, CircularProgress, Alert, Button } from "@mui/material";
+import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { processDocaiStatement } from "../data/repositoryDOCAI";
@@ -481,6 +481,7 @@ const FinancialView = () => {
           isSearchResults={!!searchResults}
           year={year}
           loading={loading}
+          onViewExpenseBreakdown={() => navigate("/app/financial-expense-breakdown")}
         />
       </Box>
 
@@ -559,15 +560,6 @@ const FinancialView = () => {
           result={docaiDialogResult}
         />
       )}
-      <Box sx={{ mb: 2 }}>
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={() => navigate("/app/financial-expense-breakdown")}
-        >
-          View Expense Breakdown
-        </Button>
-      </Box>
     </Box>
   );
 };

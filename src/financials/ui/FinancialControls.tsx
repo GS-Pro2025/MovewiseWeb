@@ -1,6 +1,6 @@
 // components/FinancialControls.tsx
 import React from 'react';
-import {TextField, Typography, useMediaQuery, useTheme} from '@mui/material';
+import {TextField, Typography, useMediaQuery, useTheme, Button} from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { SuperOrder } from '../domain/ModelsOCR';
 import ExportMenuComponent from './ExportMenuComponent';
@@ -29,6 +29,8 @@ interface FinancialControlsProps {
   isSearchResults: boolean;
   year: number;
   loading: boolean;
+
+  onViewExpenseBreakdown?: () => void;
 }
 
 const FinancialControls: React.FC<FinancialControlsProps> = ({
@@ -46,7 +48,8 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
   exportData,
   isSearchResults,
   year,
-  loading
+  loading,
+  onViewExpenseBreakdown,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -424,6 +427,14 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
               weekRange={weekRange}
               disabled={loading}
             />
+            <Button
+              variant="outlined"
+              color="primary"
+              sx={{ minHeight: '48px', fontWeight: 600 }}
+              onClick={onViewExpenseBreakdown}
+            >
+              View Expense Breakdown
+            </Button>
           </div>
         </div>
       )}
