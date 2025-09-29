@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, Table, TableBody, TableCell, TableRow, CircularProgress, Alert, Paper } from "@mui/material";
+import { Box, Typography, Button, Table, TableBody, TableCell, TableRow, CircularProgress, Alert, Paper, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import { Summary } from "../domain/SummaryModel";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ const EXPENSE_TYPES = [
   { key: "fuelCost", label: "Fuel Cost" },
   { key: "workCost", label: "Work Cost" },
   { key: "driverSalaries", label: "Driver Salaries" },
-  { key: "otherSalaries", label: "Other Salaries" },
+  { key: "otherSalaries", label: "Operators Salaries" },
   { key: "totalCost", label: "Total Cost" },
 ];
 
@@ -23,6 +23,16 @@ const TIMELAPSES = [
   { label: "12 months", weeks: 52 },
 ];
 
+const getAvailableYears = () => {
+  const currentYear = new Date().getFullYear();
+  const startYear = 2015;
+  const years = [];
+  for (let y = currentYear + 1; y >= startYear; y--) {
+    years.push(y);
+  }
+  return years;
+};
+
 const FinancialExpenseBreakdownView = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,21 +42,37 @@ const FinancialExpenseBreakdownView = () => {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const repository = new SummaryCostRepository();
   const navigate = useNavigate();
-  const year = new Date().getFullYear();
-  const currentWeek = Math.ceil((Date.now() - new Date(year, 0, 1).getTime()) / 604800000);
-  const [startWeek, setStartWeek] = useState<number>(currentWeek);
+
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState<number>(currentYear);
+  const [currentWeek, setCurrentWeek] = useState<number>(() => {
+    const now = new Date();
+    const start = new Date(year, 0, 1);
+    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
+  });
+  const [startWeek, setStartWeek] = useState<number>(1); // Por defecto desde la semana 1
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch breakdown for a range of weeks
-  const fetchBreakdown = async (fromWeek: number, toWeek: number) => {
+  // Actualizar currentWeek cuando cambie el año
+  useEffect(() => {
+    const now = new Date();
+    const start = new Date(year, 0, 1);
+    setCurrentWeek(Math.ceil((now.getTime() - start.getTime()) / 604800000));
+    setStartWeek(1); // Resetear a semana 1 al cambiar año
+  }, [year]);
+
+  // Fetch breakdown para el rango seleccionado
+  const fetchBreakdown = async (fromWeek: number, toWeek: number, selectedYear: number) => {
     setLoading(true);
     setError(null);
     try {
       const expenses: Record<string, number> = {};
       let totalIncome = 0;
       let totalCost = 0;
-      for (let w = toWeek; w >= fromWeek && w > 0; w--) {
-        const result = await repository.getSummaryCost(0, w, year);
+      for (let w = fromWeek; w <= toWeek && w > 0; w++) {
+        // Aquí se pasa onlyPaid: true SOLO en este view
+        const result = await repository.getSummaryCost(0, w, selectedYear, true);
         result.results.forEach(order => {
           EXPENSE_TYPES.forEach(type => {
             expenses[type.key] = (expenses[type.key] || 0) + (order.summary[type.key as keyof Summary] || 0);
@@ -63,13 +89,13 @@ const FinancialExpenseBreakdownView = () => {
     }
   };
 
-  // Initial fetch
+  // Fetch inicial y cuando cambian los pickers
   useEffect(() => {
-    fetchBreakdown(startWeek, currentWeek);
+    fetchBreakdown(startWeek, currentWeek, year);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startWeek]);
+  }, [startWeek, currentWeek, year]);
 
-  // Close dropdown when clicking outside
+  // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -83,11 +109,6 @@ const FinancialExpenseBreakdownView = () => {
   const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
   const handleWeekSelect = (selectedWeek: number) => {
-    if (selectedWeek > currentWeek) {
-      enqueueSnackbar(`Week ${selectedWeek} is not available. Current week is ${currentWeek}.`, { variant: "error" });
-      setShowWeekDropdown(false);
-      return;
-    }
     setStartWeek(selectedWeek);
     setShowWeekDropdown(false);
   };
@@ -105,8 +126,8 @@ const FinancialExpenseBreakdownView = () => {
 
   const handleWeekInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    if (value > currentWeek) {
-      enqueueSnackbar(`Week ${value} is not available. Current week is ${currentWeek}.`, { variant: "error" });
+    if (value < 1 || value > currentWeek) {
+      enqueueSnackbar(`Week must be between 1 and ${currentWeek}.`, { variant: "error" });
       return;
     }
     setStartWeek(value);
@@ -132,9 +153,24 @@ const FinancialExpenseBreakdownView = () => {
           Expense Breakdown
         </Typography>
         <Typography variant="body1" sx={{ mb: 2, color: "#374151" }}>
-          Select a starting week below. The breakdown will show data from the selected week up to the current week
-          ({currentWeek}). Quick buttons let you select common periods.
+          Select a starting week and year below. The breakdown will show data <strong>from the selected week up to the last week of the selected year</strong> ({currentWeek}). Quick buttons let you select common periods.
         </Typography>
+        {/* Year Picker */}
+        <Box sx={{ mb: 2, maxWidth: 200 }}>
+          <FormControl fullWidth>
+            <InputLabel id="year-picker-label">Year</InputLabel>
+            <Select
+              labelId="year-picker-label"
+              value={year}
+              label="Year"
+              onChange={e => setYear(Number(e.target.value))}
+            >
+              {getAvailableYears().map(y => (
+                <MenuItem key={y} value={y}>{y}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
         {/* Quick timelapses */}
         <Box sx={{ mb: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
           {TIMELAPSES.map(t => (
@@ -153,7 +189,7 @@ const FinancialExpenseBreakdownView = () => {
             </Button>
           ))}
         </Box>
-        {/* Week Picker - Styled like Statistics */}
+        {/* Week Picker - Visual range */}
         <Box sx={{ mt: 2 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Select Start Week</Typography>
           <div
@@ -162,7 +198,7 @@ const FinancialExpenseBreakdownView = () => {
           >
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs sm:text-sm font-bold text-gray-700">
-                Week Number
+                Week Range
               </label>
               <button
                 onClick={() => setViewMode(viewMode === "select" ? "input" : "select")}
@@ -171,6 +207,29 @@ const FinancialExpenseBreakdownView = () => {
               >
                 {viewMode === "select" ? "Input" : "Dropdown"}
               </button>
+            </div>
+            {/* Visual range bar */}
+            <div className="w-full flex items-center gap-2 mb-2">
+              <div className="flex-1 h-3 rounded-full bg-gray-200 relative overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-3 bg-green-400 rounded-full"
+                  style={{
+                    width: `${((currentWeek - startWeek + 1) / currentWeek) * 100}%`,
+                    left: `${((startWeek - 1) / currentWeek) * 100}%`,
+                  }}
+                />
+                <div
+                  className="absolute top-0 left-0 h-3 rounded-full"
+                  style={{
+                    width: "100%",
+                    border: "1px solid #059669",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <span className="text-xs font-bold text-green-700">
+                {`W${startWeek} → W${currentWeek}`}
+              </span>
             </div>
             {viewMode === "select" ? (
               <div className="relative">
@@ -202,7 +261,7 @@ const FinancialExpenseBreakdownView = () => {
                     <div className="p-3">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xs font-semibold text-gray-600">
-                          Select week (1-{currentWeek}):
+                          Select start week (1-{currentWeek}):
                         </span>
                         <button
                           onClick={() => setShowWeekDropdown(false)}
@@ -223,7 +282,7 @@ const FinancialExpenseBreakdownView = () => {
                                 ? "bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-300"
                                 : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-100 hover:border-green-300 hover:text-green-700"
                             }`}
-                            title={`Select week ${weekNum}`}
+                            title={`Select start week ${weekNum}`}
                           >
                             {weekNum}
                           </button>
