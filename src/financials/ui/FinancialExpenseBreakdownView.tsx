@@ -10,7 +10,7 @@ import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownEx
 const EXPENSE_TYPES = [
   { key: "expense", label: "Expense" },
   { key: "fuelCost", label: "Fuel Cost" },
-  { key: "workCost", label: "Work Cost" },
+  { key: "workCost", label: "Extra Cost" },
   { key: "driverSalaries", label: "Driver Salaries" },
   { key: "otherSalaries", label: "Operators Salaries" },
   { key: "totalCost", label: "Total Cost" },

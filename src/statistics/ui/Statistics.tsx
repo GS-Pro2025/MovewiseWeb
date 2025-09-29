@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import HistoricalAnalysis from "./HistoricalAnalysis";
 import FinancialView from "../../financials/ui/FinancialView"; 
 import IncomeCalculator from './components/IncomeCalculator';
+import FinancialExpenseBreakdownView from "../../financials/ui/FinancialExpenseBreakdownView";
 
 interface StatItem {
   label: string;
@@ -50,7 +51,7 @@ const Statistics = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const [activeSection, setActiveSection] = useState<
-    "overview" | "trucks" | "payroll" | "historical" | "financials"
+    "overview" | "trucks" | "payroll" | "historical" | "financials" | "expenseBreakdown"
   >("overview");
 
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
@@ -586,6 +587,7 @@ const Statistics = () => {
                   {activeSection === "payroll" && "Payroll Analytics"}
                   {activeSection === "historical" && "Historical Analysis"}
                   {activeSection === "financials" && "Financials"}
+                  {activeSection === "expenseBreakdown" && "Expense Breakdown"}
                 </span>
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -636,6 +638,13 @@ const Statistics = () => {
                 >
                   Financials
                 </TabButton>
+                <TabButton
+                  active={activeSection === "expenseBreakdown"}
+                  onClick={() => handleTabClick("expenseBreakdown")}
+                  icon="fa-file-invoice-dollar"
+                >
+                  Expense Breakdown
+                </TabButton>
               </div>
 
               {/* Mobile navigation menu */}
@@ -678,6 +687,13 @@ const Statistics = () => {
                     icon="fa-coins"
                   >
                     Financials
+                  </TabButton>
+                  <TabButton
+                    active={activeSection === "expenseBreakdown"}
+                    onClick={() => handleTabClick("expenseBreakdown")}
+                    icon="fa-file-invoice-dollar"
+                  >
+                    Expense Breakdown
                   </TabButton>
                 </div>
               )}
@@ -1019,6 +1035,12 @@ const Statistics = () => {
         {activeSection === "financials" && (
           <div className="w-full rounded-2xl shadow-lg p-4 sm:p-6 border-2 overflow-x-auto" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
             <FinancialView />
+          </div>
+        )}
+
+        {activeSection === "expenseBreakdown" && (
+          <div className="w-full rounded-2xl shadow-lg p-4 sm:p-6 border-2" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
+            <FinancialExpenseBreakdownView />
           </div>
         )}
       </div>
