@@ -106,9 +106,9 @@ const App = () => {
           <Route path="create-admin" element={<CreateAdminView />} />
           <Route path="jobs-tools" element={<JobsAndToolsGUI />} />
           <Route path="statistics" element={<Statistics/>} />
-          <Route path="/order-breakdown" element={<OrderBreakdownPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/financial-expense-breakdown" element={<FinancialExpenseBreakdownView />} />
+          <Route path="order-breakdown" element={<OrderBreakdownPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="financial-expense-breakdown" element={<FinancialExpenseBreakdownView />} />
         </Route>
 
         {/* Ruta por defecto */}
