@@ -16,7 +16,6 @@ import {
   Globe
 } from 'lucide-react';
 
-// Import the centralized TableData type
 import type { TableData } from '../domain/TableData';
 
 interface TableFiltersProps {
@@ -29,10 +28,8 @@ interface TableFiltersProps {
   onWeekdayChange: (weekday: string) => void;
   onLocationChange: (location: string) => void;
   onCalendarOpen: () => void;
-  // Props para datos reales
   data: TableData[];
   filteredData: TableData[];
-  // Props para búsqueda global
   globalSearch: string;
   onGlobalSearchChange: (search: string) => void;
   onGlobalSearchSubmit: () => void;
@@ -45,6 +42,16 @@ const weekDays = [
   'Sunday', 'Monday', 'Tuesday', 'Wednesday', 
   'Thursday', 'Friday', 'Saturday'
 ];
+
+const COLORS = {
+  primary: '#0B2863',      // Azul principal
+  secondary: '#F09F52',    // Naranja
+  success: '#22c55e',      // Verde (validaciones)
+  error: '#ef4444',        // Rojo (validaciones)
+  gray: '#6b7280',
+  lightGray: '#9CA3AF',
+  grayBg: '#f3f4f6'
+};
 
 export const TableFilters: React.FC<TableFiltersProps> = ({
   week,
@@ -68,9 +75,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Calcular estadísticas basadas en los datos filtrados de la semana actual
   const weeklyStats = React.useMemo(() => {
-    // Si hay búsqueda global activa, mostrar estadísticas de resultados de búsqueda
     if (isGlobalSearchActive) {
       const totalOrders = data.length;
       const finishedOrders = data.filter(item => item.status === 'finished').length;
@@ -85,7 +90,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
       };
     }
 
-    // Filtrar datos solo por la semana seleccionada (sin otros filtros aplicados)
     const weekData = data.filter(item => item.week === week);
     
     const totalOrders = weekData.length;
@@ -101,7 +105,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     };
   }, [data, week, isGlobalSearchActive]);
 
-  // Estilos para el scrollbar personalizado
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -140,7 +143,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     };
   }, []);
 
-  // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -152,16 +154,13 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Generar array de semanas (1-53)
   const weeks = Array.from({ length: 53 }, (_, i) => i + 1);
 
-  // Función para seleccionar semana desde el dropdown
   const handleWeekSelect = (selectedWeek: number) => {
     onWeekChange(selectedWeek);
     setShowWeekDropdown(false);
   };
 
-  // Función para manejar cambio de input numérico
   const handleWeekInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newWeek = parseInt(event.target.value, 10);
     if (newWeek >= 1 && newWeek <= 53) {
@@ -169,7 +168,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     }
   };
 
-  // Función para navegar con teclado en el dropdown
   const handleWeekKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -181,7 +179,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     }
   };
 
-  // Manejar Enter en el campo de búsqueda global
   const handleGlobalSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !globalSearchLoading && globalSearch.trim()) {
       onGlobalSearchSubmit();
@@ -190,11 +187,11 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 
   return (
     <div>
-      {/* Statistics Panel - NOW AT THE TOP */}
-      <div className="rounded-2xl shadow-lg border-2 p-6 mb-6" style={{ borderColor: '#0B2863' }}>
+      {/* Statistics Panel */}
+      <div className="rounded-2xl shadow-lg border-2 p-6 mb-6" style={{ borderColor: COLORS.primary }}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+            <h4 className="text-lg font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
               <BarChart3 size={20} />
               {isGlobalSearchActive ? 'Global Search Results' : `Week ${week} Statistics`}
             </h4>
@@ -207,7 +204,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           </div>
           <div 
             className="px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1"
-            style={{ backgroundColor: isGlobalSearchActive ? '#8b5cf6' : '#F09F52' }}
+            style={{ backgroundColor: isGlobalSearchActive ? COLORS.primary : COLORS.secondary }}
           >
             <Activity size={12} />
             {isGlobalSearchActive ? 'Global Search' : 'Week Filter'}
@@ -218,15 +215,15 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           {/* Total Orders */}
           <div 
             className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-            style={{ borderColor: '#0B2863' }}
+            style={{ borderColor: COLORS.primary }}
           >
             <div 
               className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#0B2863' }}
+              style={{ backgroundColor: COLORS.primary }}
             >
               <ClipboardList size={20} className="text-white" />
             </div>
-            <div className="text-2xl font-bold mb-1" style={{ color: '#0B2863' }}>
+            <div className="text-2xl font-bold mb-1" style={{ color: COLORS.primary }}>
               {weeklyStats.totalOrders.toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-gray-600">
@@ -237,15 +234,15 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           {/* Finished Orders */}
           <div 
             className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-            style={{ borderColor: '#22c55e' }}
+            style={{ borderColor: COLORS.success }}
           >
             <div 
               className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#22c55e' }}
+              style={{ backgroundColor: COLORS.success }}
             >
               <CheckCircle size={20} className="text-white" />
             </div>
-            <div className="text-2xl font-bold mb-1" style={{ color: '#22c55e' }}>
+            <div className="text-2xl font-bold mb-1" style={{ color: COLORS.success }}>
               {weeklyStats.finishedOrders.toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-gray-600">
@@ -261,15 +258,15 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           {/* Pending Orders */}
           <div 
             className="bg-gradient-to-br from-orange-50 to-amber-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-            style={{ borderColor: '#F09F52' }}
+            style={{ borderColor: COLORS.secondary }}
           >
             <div 
               className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#F09F52' }}
+              style={{ backgroundColor: COLORS.secondary }}
             >
               <Clock size={20} className="text-white" />
             </div>
-            <div className="text-2xl font-bold mb-1" style={{ color: '#F09F52' }}>
+            <div className="text-2xl font-bold mb-1" style={{ color: COLORS.secondary }}>
               {weeklyStats.pendingOrders.toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-gray-600">
@@ -285,15 +282,15 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           {/* Inactive Orders */}
           <div 
             className="bg-gradient-to-br from-red-50 to-pink-100 rounded-xl p-4 border-2 shadow-md text-center transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-            style={{ borderColor: '#ef4444' }}
+            style={{ borderColor: COLORS.error }}
           >
             <div 
               className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#ef4444' }}
+              style={{ backgroundColor: COLORS.error }}
             >
               <XCircle size={20} className="text-white" />
             </div>
-            <div className="text-2xl font-bold mb-1" style={{ color: '#ef4444' }}>
+            <div className="text-2xl font-bold mb-1" style={{ color: COLORS.error }}>
               {weeklyStats.inactiveOrders.toLocaleString()}
             </div>
             <div className="text-sm font-semibold text-gray-600">
@@ -309,13 +306,13 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 
         {/* Progress Bar */}
         {weeklyStats.totalOrders > 0 && (
-          <div className="mt-4 p-4 bg-white rounded-xl border-2 shadow-md" style={{ borderColor: '#0B2863' }}>
+          <div className="mt-4 p-4 bg-white rounded-xl border-2 shadow-md" style={{ borderColor: COLORS.primary }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+              <span className="text-sm font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
                 <Target size={16} />
                 {isGlobalSearchActive ? 'Search Results Progress' : `Week ${week} Progress`}
               </span>
-              <span className="text-sm font-semibold" style={{ color: '#22c55e' }}>
+              <span className="text-sm font-semibold" style={{ color: COLORS.success }}>
                 {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
               </span>
             </div>
@@ -325,21 +322,21 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   className="transition-all duration-500"
                   style={{ 
                     width: `${(weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100}%`,
-                    backgroundColor: '#22c55e'
+                    backgroundColor: COLORS.success
                   }}
                 ></div>
                 <div 
                   className="transition-all duration-500"
                   style={{ 
                     width: `${(weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100}%`,
-                    backgroundColor: '#F09F52'
+                    backgroundColor: COLORS.secondary
                   }}
                 ></div>
                 <div 
                   className="transition-all duration-500"
                   style={{ 
                     width: `${(weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100}%`,
-                    backgroundColor: '#ef4444'
+                    backgroundColor: COLORS.error
                   }}
                 ></div>
               </div>
@@ -362,19 +359,19 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         )}
       </div>
 
-      {/* Main Filter Card - NOW BELOW STATISTICS */}
-      <div className="rounded-2xl shadow-lg border-2 p-6 mb-6 week-dropdown-container" style={{ borderColor: '#0B2863' }}>
-        {/* Header with Gradient Background */}
+      {/* Main Filter Card */}
+      <div className="rounded-2xl shadow-lg border-2 p-6 mb-6 week-dropdown-container" style={{ borderColor: COLORS.primary }}>
+        {/* Header */}
         <div className="rounded-xl p-4 mb-6 -mx-2 -mt-2">
           <div className="flex items-center space-x-3">
             <div 
               className="p-2 rounded-lg"
-              style={{ backgroundColor: '#F09F52' }}
+              style={{ backgroundColor: COLORS.secondary }}
             >
-              <ClipboardList size={20} className="text-[#0B2863]" />
+              <ClipboardList size={20} style={{ color: COLORS.primary }} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#0B2863]">
+              <h2 className="text-xl font-bold" style={{ color: COLORS.primary }}>
                 FILTERS & SEARCH
               </h2>
             </div>
@@ -384,11 +381,11 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         {/* Global Search Section */}
         <div className="mb-6">
           <div 
-            className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
-            style={{ borderColor: '#8b5cf6' }}
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
+            style={{ borderColor: COLORS.primary }}
           >
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+              <label className="block text-sm font-bold" style={{ color: COLORS.primary }}>
                 <div className="flex items-center gap-2">
                   <Globe size={16} />
                   Global Search
@@ -398,7 +395,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 <button
                   onClick={onGlobalSearchClear}
                   className="p-1 rounded transition-colors"
-                  style={{ backgroundColor: '#ef4444', color: 'white' }}
+                  style={{ backgroundColor: COLORS.error, color: 'white' }}
                   title="Clear global search"
                 >
                   <X size={12} />
@@ -411,7 +408,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 <Search 
                   size={16} 
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
-                  style={{ color: '#8b5cf6' }}
+                  style={{ color: COLORS.primary }}
                 />
                 <input
                   type="text"
@@ -421,17 +418,15 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   placeholder="Search by order ref, person name, job, or location..."
                   className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   style={{ 
-                    borderColor: '#0B2863',
+                    borderColor: COLORS.primary,
                     backgroundColor: 'white',
-                    color: '#0B2863'
+                    color: COLORS.primary
                   }}
                   onFocus={(e) => {
-                    e.target.style.boxShadow = `0 0 0 3px rgba(139, 92, 246, 0.3)`;
-                    e.target.style.transform = 'scale(1.02)';
+                    e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
                   }}
                   onBlur={(e) => {
                     e.target.style.boxShadow = 'none';
-                    e.target.style.transform = 'scale(1)';
                   }}
                   disabled={globalSearchLoading}
                 />
@@ -442,11 +437,12 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 disabled={globalSearchLoading || !globalSearch.trim()}
                 className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
                   globalSearchLoading || !globalSearch.trim()
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'cursor-not-allowed'
                     : 'text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
                 }`}
                 style={{
-                  backgroundColor: globalSearchLoading || !globalSearch.trim() ? '#d1d5db' : '#8b5cf6'
+                  backgroundColor: globalSearchLoading || !globalSearch.trim() ? '#d1d5db' : COLORS.primary,
+                  color: globalSearchLoading || !globalSearch.trim() ? COLORS.gray : 'white'
                 }}
               >
                 {globalSearchLoading ? (
@@ -469,17 +465,17 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           </div>
         </div>
 
-        {/* Conditional rendering: Show regular filters only when NOT in global search mode */}
+        {/* Regular Filters - Only when NOT in global search mode */}
         {!isGlobalSearchActive && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Week Input Card */}
             <div 
               className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
-              style={{ borderColor: '#0B2863' }}
+              style={{ borderColor: COLORS.primary }}
               ref={dropdownRef}
             >
               <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+                <label className="block text-sm font-bold" style={{ color: COLORS.primary }}>
                   <div className="flex items-center gap-2">
                     <Calendar size={16} />
                     Week Number
@@ -489,8 +485,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   onClick={() => setViewMode(viewMode === 'select' ? 'input' : 'select')}
                   className="text-xs px-2 py-1 rounded-md border transition-colors duration-200"
                   style={{ 
-                    backgroundColor: '#F09F52',
-                    borderColor: '#0B2863',
+                    backgroundColor: COLORS.secondary,
+                    borderColor: COLORS.primary,
                     color: 'white'
                   }}
                   title={`Switch to ${viewMode === 'select' ? 'input' : 'dropdown'} view`}
@@ -500,11 +496,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               </div>
               
               {viewMode === 'select' ? (
-                // Modo dropdown mejorado
                 <div className="relative">
                   <div
                     className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm"
-                    style={{ borderColor: '#F09F52' }}
+                    style={{ borderColor: COLORS.secondary }}
                     onClick={() => setShowWeekDropdown(!showWeekDropdown)}
                     onKeyDown={handleWeekKeyDown}
                     tabIndex={0}
@@ -515,29 +510,28 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                       e.currentTarget.style.transform = 'scale(1)';
                     }}
                   >
-                    <span style={{ color: '#0B2863' }}>Week {week}</span>
+                    <span style={{ color: COLORS.primary }}>Week {week}</span>
                     <ChevronDown 
                       size={16}
                       className={`transition-transform duration-200 ${showWeekDropdown ? 'rotate-180' : ''}`}
-                      style={{ color: '#F09F52' }}
+                      style={{ color: COLORS.secondary }}
                     />
                   </div>
 
                   {showWeekDropdown && (
-                    <div className="week-dropdown mt-2 bg-white border-2 rounded-lg shadow-xl w-[350px]" style={{ borderColor: '#0B2863' }}>
+                    <div className="week-dropdown mt-2 bg-white border-2 rounded-lg shadow-xl w-[350px]" style={{ borderColor: COLORS.primary }}>
                       <div className="p-4">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs font-semibold" style={{ color: '#0B2863' }}>Select week (1-53):</span>
+                          <span className="text-xs font-semibold" style={{ color: COLORS.primary }}>Select week (1-53):</span>
                           <button
                             onClick={() => setShowWeekDropdown(false)}
                             className="p-1 rounded transition-colors"
-                            style={{ backgroundColor: '#ef4444', color: 'white' }}
+                            style={{ backgroundColor: COLORS.error, color: 'white' }}
                           >
                             <X size={12} />
                           </button>
                         </div>
                         
-                        {/* Quick actions */}
                         <div className="flex gap-1 mb-3">
                           {[
                             { label: 'First', week: 1 },
@@ -551,7 +545,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                               onClick={() => handleWeekSelect(item.week)}
                               className="text-xs px-2 py-1 rounded transition-colors"
                               style={{ 
-                                backgroundColor: '#F09F52',
+                                backgroundColor: COLORS.secondary,
                                 color: 'white'
                               }}
                             >
@@ -567,20 +561,20 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                               onClick={() => handleWeekSelect(weekNum)}
                               className={`p-2 text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105`}
                               style={{
-                                backgroundColor: week === weekNum ? '#22c55e' : '#f9fafb',
-                                color: week === weekNum ? 'white' : '#0B2863',
-                                borderColor: week === weekNum ? '#22c55e' : '#e5e7eb'
+                                backgroundColor: week === weekNum ? COLORS.success : '#f9fafb',
+                                color: week === weekNum ? 'white' : COLORS.primary,
+                                borderColor: week === weekNum ? COLORS.success : '#e5e7eb'
                               }}
                               onMouseEnter={(e) => {
                                 if (week !== weekNum) {
-                                  e.currentTarget.style.backgroundColor = '#F09F52';
+                                  e.currentTarget.style.backgroundColor = COLORS.secondary;
                                   e.currentTarget.style.color = 'white';
                                 }
                               }}
                               onMouseLeave={(e) => {
                                 if (week !== weekNum) {
                                   e.currentTarget.style.backgroundColor = '#f9fafb';
-                                  e.currentTarget.style.color = '#0B2863';
+                                  e.currentTarget.style.color = COLORS.primary;
                                 }
                               }}
                               title={`Select week ${weekNum}`}
@@ -594,7 +588,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   )}
                 </div>
               ) : (
-                // Modo input numérico
                 <div className="relative">
                   <input
                     type="number"
@@ -604,8 +597,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                     onChange={handleWeekInputChange}
                     className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white shadow-sm"
                     style={{ 
-                      borderColor: '#0B2863',
-                      color: '#0B2863'
+                      borderColor: COLORS.primary,
+                      color: COLORS.primary
                     }}
                     placeholder="1-53"
                     onFocus={(e) => {
@@ -621,17 +614,17 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               )}
               <div 
                 className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-                style={{ backgroundColor: week ? '#22c55e' : '#ef4444' }}
+                style={{ backgroundColor: week ? COLORS.success : COLORS.error }}
               ></div>
             </div>
 
             {/* Weekday Select Card */}
             <div 
               className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-2 shadow-md"
-              style={{ borderColor: '#F09F52' }}
+              style={{ borderColor: COLORS.secondary }}
             >
               <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+                <label className="block text-sm font-bold" style={{ color: COLORS.primary }}>
                   <div className="flex items-center gap-2">
                     <Calendar size={16} />
                     Weekday Filter
@@ -641,7 +634,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   <button
                     onClick={() => onWeekdayChange('')}
                     className="p-1 rounded transition-colors"
-                    style={{ backgroundColor: '#ef4444', color: 'white' }}
+                    style={{ backgroundColor: COLORS.error, color: 'white' }}
                     title="Clear weekday filter"
                   >
                     <X size={12} />
@@ -654,8 +647,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   onChange={(e) => onWeekdayChange(e.target.value)}
                   className="w-full px-4 py-3 pr-10 border-2 rounded-lg text-sm font-semibold appearance-none bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   style={{ 
-                    borderColor: '#0B2863',
-                    color: weekdayFilter ? '#0B2863' : '#6b7280'
+                    borderColor: COLORS.primary,
+                    color: weekdayFilter ? COLORS.primary : COLORS.gray
                   }}
                   onFocus={(e) => {
                     e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
@@ -676,22 +669,22 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 <ChevronDown 
                   size={16} 
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  style={{ color: '#F09F52' }}
+                  style={{ color: COLORS.secondary }}
                 />
                 <div 
                   className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-                  style={{ backgroundColor: weekdayFilter ? '#22c55e' : '#ef4444' }}
+                  style={{ backgroundColor: weekdayFilter ? COLORS.success : COLORS.error }}
                 ></div>
               </div>
             </div>
 
             {/* Location Input Card */}
             <div 
-              className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 shadow-md"
-              style={{ borderColor: '#22c55e' }}
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
+              style={{ borderColor: COLORS.primary }}
             >
               <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-bold" style={{ color: '#0B2863' }}>
+                <label className="block text-sm font-bold" style={{ color: COLORS.primary }}>
                   <div className="flex items-center gap-2">
                     <MapPin size={16} />
                     Location Filter
@@ -701,7 +694,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   <button
                     onClick={() => onLocationChange('')}
                     className="p-1 rounded transition-colors"
-                    style={{ backgroundColor: '#ef4444', color: 'white' }}
+                    style={{ backgroundColor: COLORS.error, color: 'white' }}
                     title="Clear location filter"
                   >
                     <X size={12} />
@@ -712,7 +705,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 <MapPin 
                   size={16} 
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
-                  style={{ color: '#22c55e' }}
+                  style={{ color: COLORS.secondary }}
                 />
                 <input
                   type="text"
@@ -722,12 +715,12 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   placeholder="Search location..."
                   className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   style={{ 
-                    borderColor: '#0B2863',
+                    borderColor: COLORS.primary,
                     backgroundColor: 'white',
-                    color: '#0B2863'
+                    color: COLORS.primary
                   }}
                   onFocus={(e) => {
-                    e.target.style.boxShadow = `0 0 0 3px rgba(34, 197, 94, 0.3)`;
+                    e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
                     e.target.style.transform = 'scale(1.02)';
                   }}
                   onBlur={(e) => {
@@ -742,17 +735,17 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 </datalist>
                 <div 
                   className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-                  style={{ backgroundColor: locationFilter ? '#22c55e' : '#ef4444' }}
+                  style={{ backgroundColor: locationFilter ? COLORS.success : COLORS.error }}
                 ></div>
               </div>
             </div>
 
             {/* Calendar Button Card */}
             <div 
-              className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 shadow-md flex flex-col justify-between"
-              style={{ borderColor: '#8b5cf6' }}
+              className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border-2 shadow-md flex flex-col justify-between"
+              style={{ borderColor: COLORS.secondary }}
             >
-              <label className="block text-sm font-bold mb-3" style={{ color: '#0B2863' }}>
+              <label className="block text-sm font-bold mb-3" style={{ color: COLORS.primary }}>
                 <div className="flex items-center gap-2">
                   <BarChart3 size={16} />
                   Quick Actions
@@ -762,13 +755,13 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 onClick={onCalendarOpen}
                 className="w-full px-4 py-3 border-2 rounded-lg text-sm font-bold transition-all duration-200 hover:shadow-lg flex items-center justify-center space-x-2"
                 style={{ 
-                  borderColor: '#8b5cf6',
-                  backgroundColor: '#8b5cf6',
+                  borderColor: COLORS.secondary,
+                  backgroundColor: COLORS.secondary,
                   color: 'white'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(240, 159, 82, 0.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0) scale(1)';
@@ -782,12 +775,12 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           </div>
         )}
 
-        {/* Period Display Section - Solo mostrar si NO hay búsqueda global activa */}
+        {/* Period Display Section */}
         {!isGlobalSearchActive && (
           <div 
             className="mt-6 rounded-xl p-4 border-2"
             style={{ 
-              borderColor: '#F09F52',
+              borderColor: COLORS.secondary,
               background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'
             }}
           >
@@ -795,12 +788,12 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               <div className="flex items-center space-x-3">
                 <div 
                   className="p-2 rounded-lg"
-                  style={{ backgroundColor: '#0B2863' }}
+                  style={{ backgroundColor: COLORS.primary }}
                 >
                   <Calendar size={16} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg" style={{ color: '#0B2863' }}>
+                  <h3 className="font-bold text-lg" style={{ color: COLORS.primary }}>
                     Current Period
                   </h3>
                   <p className="text-sm text-gray-600">Active date range for your data</p>
@@ -811,8 +804,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 <div 
                   className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
                   style={{ 
-                    borderColor: '#22c55e',
-                    backgroundColor: '#22c55e',
+                    borderColor: COLORS.success,
+                    backgroundColor: COLORS.success,
                     color: 'white'
                   }}
                 >
@@ -820,15 +813,15 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 </div>
                 <div 
                   className="p-2 rounded-full"
-                  style={{ backgroundColor: '#F09F52' }}
+                  style={{ backgroundColor: COLORS.secondary }}
                 >
                   <span className="text-white font-bold">→</span>
                 </div>
                 <div 
                   className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
                   style={{ 
-                    borderColor: '#22c55e',
-                    backgroundColor: '#22c55e',
+                    borderColor: COLORS.success,
+                    backgroundColor: COLORS.success,
                     color: 'white'
                   }}
                 >
@@ -844,20 +837,20 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           <div 
             className="mt-6 rounded-xl p-4 border-2"
             style={{ 
-              borderColor: '#8b5cf6',
-              background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)'
+              borderColor: COLORS.primary,
+              background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
             }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div 
                   className="p-2 rounded-lg"
-                  style={{ backgroundColor: '#8b5cf6' }}
+                  style={{ backgroundColor: COLORS.primary }}
                 >
                   <Globe size={16} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg" style={{ color: '#0B2863' }}>
+                  <h3 className="font-bold text-lg" style={{ color: COLORS.primary }}>
                     Global Search Results
                   </h3>
                   <p className="text-sm text-gray-600">Search results for "{globalSearch}"</p>
@@ -867,8 +860,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               <div 
                 className="px-4 py-2 rounded-xl border-2 font-bold text-sm shadow-md"
                 style={{ 
-                  borderColor: '#8b5cf6',
-                  backgroundColor: '#8b5cf6',
+                  borderColor: COLORS.primary,
+                  backgroundColor: COLORS.primary,
                   color: 'white'
                 }}
               >
@@ -881,7 +874,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         {/* Active Filters Summary */}
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2863' }}>
+            <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
               <Filter size={16} />
               Active Filters
             </h4>
@@ -899,7 +892,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             {isGlobalSearchActive && (
               <div 
                 className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
-                style={{ backgroundColor: '#8b5cf6', borderColor: '#0B2863' }}
+                style={{ backgroundColor: COLORS.primary, borderColor: COLORS.primary }}
               >
                 <Globe size={12} />
                 Global: "{globalSearch.length > 20 ? globalSearch.substring(0, 20) + '...' : globalSearch}"
@@ -908,7 +901,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             {!isGlobalSearchActive && week && (
               <div 
                 className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
-                style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
+                style={{ backgroundColor: COLORS.secondary, borderColor: COLORS.primary }}
               >
                 <Calendar size={12} />
                 Week {week}
@@ -917,7 +910,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             {weekdayFilter && (
               <div 
                 className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
-                style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
+                style={{ backgroundColor: COLORS.secondary, borderColor: COLORS.primary }}
               >
                 <Calendar size={12} />
                 {weekdayFilter}
@@ -926,19 +919,19 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             {locationFilter && (
               <div 
                 className="px-3 py-1 rounded-full text-xs font-bold text-white border-2 shadow-sm flex items-center gap-1"
-                style={{ backgroundColor: '#F09F52', borderColor: '#0B2863' }}
+                style={{ backgroundColor: COLORS.secondary, borderColor: COLORS.primary }}
               >
                 <MapPin size={12} />
                 {locationFilter}
               </div>
             )}
-            {(!week && !weekdayFilter && !locationFilter) && (
+            {!isGlobalSearchActive && (!week && !weekdayFilter && !locationFilter) && (
               <div 
                 className="px-3 py-1 rounded-full text-xs font-semibold border-2 flex items-center gap-1"
                 style={{ 
-                  backgroundColor: '#f3f4f6',
+                  backgroundColor: COLORS.grayBg,
                   borderColor: '#d1d5db',
-                  color: '#6b7280'
+                  color: COLORS.gray
                 }}
               >
                 <Activity size={12} />
