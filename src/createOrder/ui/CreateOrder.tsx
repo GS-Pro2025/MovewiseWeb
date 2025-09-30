@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Button,
   TextField,
@@ -22,6 +22,16 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import ScaleIcon from '@mui/icons-material/Scale';
+import HomeIcon from '@mui/icons-material/Home';
+
+const COLORS = {
+  primary: '#0B2863',
+  secondary: '#F09F52',
+  success: '#22c55e',
+  error: '#ef4444',
+};
 
 const initialPerson: Person = {
   first_name: '',
@@ -46,7 +56,6 @@ const initialOrder: CreateOrderModel = {
 
 const CreateOrder: React.FC = () => {
   const location = useLocation();
-  // Si viene una orden para continuar, úsala como initialOrder
   const continuedOrder = location.state?.orderToContinue;
 
   const [order, setOrder] = useState<CreateOrderModel>(
@@ -65,9 +74,6 @@ const CreateOrder: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [states, setStates] = useState<OrderState[]>([]);
-  const [loadingStates, setLoadingStates] = useState(false);
-  console.log("States:", states);
-  console.log("loadingStates:", loadingStates);
   const [jobs, setJobs] = useState<JobModel[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
@@ -95,10 +101,9 @@ const CreateOrder: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    setLoadingStates(true);
     fetchOrderStates()
       .then(setStates)
-      .finally(() => setLoadingStates(false));
+      .catch(err => console.error('Error loading states:', err));
     setLoadingJobs(true);
     fetchJobs()
       .then(setJobs)
@@ -116,7 +121,6 @@ const CreateOrder: React.FC = () => {
       .finally(() => setLoadingCountries(false));
   }, []);
 
-  // Solo cargar estados si no estamos inicializando desde continuedOrder
   useEffect(() => {
     if (country && !initializingLocation) {
       setLoadingStatesList(true);
@@ -129,7 +133,6 @@ const CreateOrder: React.FC = () => {
     }
   }, [country, initializingLocation]);
 
-  // Cargar ciudades cuando cambia el estado
   useEffect(() => {
     if (country && state && !initializingLocation) {
       setLoadingCitiesList(true);
@@ -140,7 +143,6 @@ const CreateOrder: React.FC = () => {
     }
   }, [country, state, initializingLocation]);
 
-  // Este useEffect inicializa los valores desde continuedOrder SOLO UNA VEZ
   useEffect(() => {
     if (
       continuedOrder &&
@@ -153,19 +155,15 @@ const CreateOrder: React.FC = () => {
     ) {
       const [countryName, stateName, cityName] = continuedOrder.state_usa.split(',').map((s: string) => s.trim());
 
-      // Country
       const foundCountry = countries.find(c => c.name === countryName);
       if (foundCountry) setCountry(foundCountry);
 
-      // State
       const foundState = statesList.find(s => s.name === stateName);
       if (foundState) setState(foundState);
 
-      // City
       const foundCity = citiesList.find(c => c === cityName);
       if (foundCity) setCity(foundCity);
 
-      // Job
       if (
         continuedOrder.job &&
         !jobs.some((j) => j.id === continuedOrder.job)
@@ -187,10 +185,8 @@ const CreateOrder: React.FC = () => {
     initializingLocation,
   ]);
 
-  // Este useEffect va después de cargar jobs y states
   useEffect(() => {
     if (continuedOrder) {
-      // JOB
       if (
         continuedOrder.job &&
         !jobs.some((j) => j.id === continuedOrder.job)
@@ -200,7 +196,6 @@ const CreateOrder: React.FC = () => {
           { id: continuedOrder.job, name: String(continuedOrder.job) },
         ]);
       }
-      // LOCATION (state_usa)
       if (
         continuedOrder.state_usa &&
         !states.some((s) => s.name === continuedOrder.state_usa)
@@ -213,14 +208,14 @@ const CreateOrder: React.FC = () => {
     }
   }, [continuedOrder, jobs, states]);
 
-  const handleChange = (field: keyof CreateOrderModel, value: any) => {
+  const handleChange = useCallback((field: keyof CreateOrderModel, value: any) => {
     setOrder((prev) => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
-  const handlePersonChange = (field: keyof Person, value: any) => {
+  const handlePersonChange = useCallback((field: keyof Person, value: any) => {
     setOrder((prev) => ({
       ...prev,
       person: {
@@ -228,9 +223,9 @@ const CreateOrder: React.FC = () => {
         [field]: value,
       },
     }));
-  };
+  }, []);
   
-  const handleDispatchTicketChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDispatchTicketChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setDispatchTicketFile(file);
     if (file) {
@@ -240,7 +235,7 @@ const CreateOrder: React.FC = () => {
     } else {
       setDispatchTicketPreview(null);
     }
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,7 +244,6 @@ const CreateOrder: React.FC = () => {
     setErrorMsg('');
     order.person.address = order.address;
 
-    // Validación de tamaño
     if (dispatchTicketFile && dispatchTicketFile.size > 5 * 1024 * 1024) {
       setLoading(false);
       enqueueSnackbar('Sorry, the image cannot be larger than 5mb.', { variant: 'error' });
@@ -290,7 +284,6 @@ const CreateOrder: React.FC = () => {
 
   useEffect(() => {
     if (continuedOrder && jobs.length > 0) {
-      // Busca el job por nombre exacto (ignora mayúsculas/minúsculas y espacios)
       const jobName = String(continuedOrder.job).trim().toLowerCase();
       const foundJob = jobs.find(j => j.name.trim().toLowerCase() === jobName);
       if (foundJob) {
@@ -303,7 +296,6 @@ const CreateOrder: React.FC = () => {
   }, [continuedOrder, jobs]);
 
   useEffect(() => {
-    // Solo actualiza si no es continuedOrder y si los tres campos existen
     if (!continuedOrder && country && state && city) {
       setOrder(prev => ({
         ...prev,
@@ -314,32 +306,54 @@ const CreateOrder: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8 px-4 flex items-start justify-center">
-      <div className="w-full max-w-5xl">
-        <div className="bg-white/0 backdrop-blur-lg border border-white/30 rounded-3xl shadow-2xl p-8 md:p-12 relative overflow-hidden animate-in fade-in duration-700">
-          {/* Animated top border */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-[length:200%_100%] animate-pulse"></div>
-          
-          {/* Header */}
+      <div className="w-full max-w-6xl">
+        <div 
+          className="bg-white/50 rounded-3xl shadow-2xl p-8 md:p-12 relative overflow-hidden"
+          style={{ borderTop: `4px solid ${COLORS.primary}` }}
+        >
           <div className="text-center mb-10">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-xl">
-              <AddBusinessIcon className="text-white text-4xl" />
+            <div 
+              className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: COLORS.primary }}
+            >
+              <AddBusinessIcon className="text-white" style={{ fontSize: '2.5rem' }} />
             </div>
             
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            <h1 
+              className="text-5xl font-bold mb-4"
+              style={{ color: COLORS.primary }}
+            >
               Create New Order
             </h1>
             
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-50/80 rounded-full border border-blue-200">
-              <BusinessCenterIcon className="text-blue-600 text-lg" />
-              <span className="text-blue-700 font-medium">Order Management System</span>
+            <div 
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2"
+              style={{ 
+                backgroundColor: 'rgba(11, 40, 99, 0.05)',
+                borderColor: COLORS.primary 
+              }}
+            >
+              <BusinessCenterIcon style={{ color: COLORS.primary, fontSize: '1.25rem' }} />
+              <span className="font-medium" style={{ color: COLORS.primary }}>
+                Order Management System
+              </span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-10">
-            {/* Order Information Section */}
-            <div>
-              <h2 className="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-3">
-                📋 Order Information
+            <div 
+              className="p-6 rounded-2xl border-2"
+              style={{ 
+                borderColor: COLORS.primary,
+                backgroundColor: 'rgba(11, 40, 99, 0.02)'
+              }}
+            >
+              <h2 
+                className="text-2xl font-bold mb-6 flex items-center gap-3"
+                style={{ color: COLORS.primary }}
+              >
+                <BusinessCenterIcon style={{ color: COLORS.secondary }} />
+                Order Information
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TextField
@@ -348,7 +362,16 @@ const CreateOrder: React.FC = () => {
                   value={order.key_ref}
                   onChange={(e) => handleChange('key_ref', e.target.value)}
                   required
-                  className="bg-white/90 rounded-lg"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
                 />
                 <TextField
                   label="Date"
@@ -360,18 +383,40 @@ const CreateOrder: React.FC = () => {
                   InputLabelProps={{
                     shrink: true,
                   }}
-                  className="bg-white/90 rounded-lg"
+                  InputProps={{
+                    startAdornment: <CalendarTodayIcon style={{ color: COLORS.secondary, marginRight: 8 }} />,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
                 />
-                <div className="md:col-span-1">
-                  <TextField
-                    label="Address"
-                    fullWidth
-                    value={order.address}
-                    onChange={(e) => handleChange('address', e.target.value)}
-                    required
-                    className="bg-white/90 rounded-lg"
-                  />
-                </div>
+                <TextField
+                  label="Address"
+                  fullWidth
+                  value={order.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: <HomeIcon style={{ color: COLORS.secondary, marginRight: 8 }} />,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
+                />
                 <TextField
                   label="Weight (lb)"
                   type="number"
@@ -380,15 +425,36 @@ const CreateOrder: React.FC = () => {
                   onChange={(e) => handleChange('weight', Number(e.target.value))}
                   required
                   inputProps={{ step: "any" }}
-                  className="bg-white/90 rounded-lg"
+                  InputProps={{
+                    startAdornment: <ScaleIcon style={{ color: COLORS.secondary, marginRight: 8 }} />,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
                 />
               </div>
             </div>
 
-            {/* Location Section */}
-            <div>
-              <h2 className="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-3">
-                <LocationOnIcon className="text-blue-600" /> Location Details
+            <div 
+              className="p-6 rounded-2xl border-2"
+              style={{ 
+                borderColor: COLORS.secondary,
+                backgroundColor: 'rgba(240, 159, 82, 0.02)'
+              }}
+            >
+              <h2 
+                className="text-2xl font-bold mb-6 flex items-center gap-3"
+                style={{ color: COLORS.primary }}
+              >
+                <LocationOnIcon style={{ color: COLORS.secondary }} />
+                Location Details
               </h2>
               <div className="space-y-6">
                 {!editingLocation && continuedOrder ? (
@@ -400,13 +466,28 @@ const CreateOrder: React.FC = () => {
                       InputProps={{
                         readOnly: true,
                       }}
-                      className="bg-white/90 rounded-lg"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'rgba(240, 159, 82, 0.05)',
+                        },
+                      }}
                     />
                     <Button
                       variant="outlined"
                       onClick={() => setEditingLocation(true)}
                       startIcon={<EditIcon />}
-                      className="!py-3 !px-4 !text-base !border-2 !rounded-xl"
+                      sx={{
+                        borderColor: COLORS.secondary,
+                        color: COLORS.secondary,
+                        '&:hover': {
+                          borderColor: COLORS.secondary,
+                          backgroundColor: 'rgba(240, 159, 82, 0.1)',
+                        },
+                        py: 1.5,
+                        px: 3,
+                        borderWidth: 2,
+                        borderRadius: 2,
+                      }}
                     >
                       Edit
                     </Button>
@@ -420,7 +501,7 @@ const CreateOrder: React.FC = () => {
                       value={country}
                       onChange={(_, value) => {
                         setCountry(value);
-                        setInitializingLocation(false); // <-- fuerza la carga de estados
+                        setInitializingLocation(false);
                       }}
                       renderInput={params => (
                         <TextField
@@ -428,15 +509,24 @@ const CreateOrder: React.FC = () => {
                           label="Country"
                           fullWidth
                           required
-                          className="bg-white/90 rounded-lg"
                           InputProps={{
                             ...params.InputProps,
                             endAdornment: (
                               <>
-                                {loadingCountries ? <CircularProgress color="inherit" size={20} /> : null}
+                                {loadingCountries ? <CircularProgress sx={{ color: COLORS.primary }} size={20} /> : null}
                                 {params.InputProps.endAdornment}
                               </>
                             ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '&.Mui-focused fieldset': {
+                                borderColor: COLORS.primary,
+                              },
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                              color: COLORS.primary,
+                            },
                           }}
                         />
                       )}
@@ -454,15 +544,24 @@ const CreateOrder: React.FC = () => {
                             label="State/Province"
                             fullWidth
                             required
-                            className="bg-white/90 rounded-lg"
                             InputProps={{
                               ...params.InputProps,
                               endAdornment: (
                                 <>
-                                  {loadingStatesList ? <CircularProgress color="inherit" size={20} /> : null}
+                                  {loadingStatesList ? <CircularProgress sx={{ color: COLORS.primary }} size={20} /> : null}
                                   {params.InputProps.endAdornment}
                                 </>
                               ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                '&.Mui-focused fieldset': {
+                                  borderColor: COLORS.primary,
+                                },
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: COLORS.primary,
+                              },
                             }}
                           />
                         )}
@@ -481,15 +580,24 @@ const CreateOrder: React.FC = () => {
                             label="City"
                             fullWidth
                             required
-                            className="bg-white/90 rounded-lg"
                             InputProps={{
                               ...params.InputProps,
                               endAdornment: (
                                 <>
-                                  {loadingCitiesList ? <CircularProgress color="inherit" size={20} /> : null}
+                                  {loadingCitiesList ? <CircularProgress sx={{ color: COLORS.primary }} size={20} /> : null}
                                   {params.InputProps.endAdornment}
                                 </>
                               ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                '&.Mui-focused fieldset': {
+                                  borderColor: COLORS.primary,
+                                },
+                              },
+                              '& .MuiInputLabel-root.Mui-focused': {
+                                color: COLORS.primary,
+                              },
                             }}
                           />
                         )}
@@ -500,10 +608,19 @@ const CreateOrder: React.FC = () => {
               </div>
             </div>
 
-            {/* Business Details Section */}
-            <div>
-              <h2 className="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-3">
-                🏢 Business Details
+            <div 
+              className="p-6 rounded-2xl border-2"
+              style={{ 
+                borderColor: COLORS.primary,
+                backgroundColor: 'rgba(11, 40, 99, 0.02)'
+              }}
+            >
+              <h2 
+                className="text-2xl font-bold mb-6 flex items-center gap-3"
+                style={{ color: COLORS.primary }}
+              >
+                <BusinessCenterIcon style={{ color: COLORS.secondary }} />
+                Business Details
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Autocomplete
@@ -518,15 +635,24 @@ const CreateOrder: React.FC = () => {
                       label="Job"
                       fullWidth
                       required
-                      className="bg-white/90 rounded-lg"
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {loadingJobs ? <CircularProgress color="inherit" size={20} /> : null}
+                            {loadingJobs ? <CircularProgress sx={{ color: COLORS.primary }} size={20} /> : null}
                             {params.InputProps.endAdornment}
                           </>
                         ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: COLORS.primary,
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: COLORS.primary,
+                        },
                       }}
                     />
                   )}
@@ -543,15 +669,24 @@ const CreateOrder: React.FC = () => {
                       label="Company"
                       fullWidth
                       required
-                      className="bg-white/90 rounded-lg"
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
                           <>
-                            {loadingCf ? <CircularProgress color="inherit" size={20} /> : null}
+                            {loadingCf ? <CircularProgress sx={{ color: COLORS.primary }} size={20} /> : null}
                             {params.InputProps.endAdornment}
                           </>
                         ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-focused fieldset': {
+                            borderColor: COLORS.primary,
+                          },
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                          color: COLORS.primary,
+                        },
                       }}
                     />
                   )}
@@ -559,10 +694,19 @@ const CreateOrder: React.FC = () => {
               </div>
             </div>
 
-            {/* Customer Information Section */}
-            <div>
-              <h2 className="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-3">
-                <PersonIcon className="text-blue-600" /> Customer Information
+            <div 
+              className="p-6 rounded-2xl border-2"
+              style={{ 
+                borderColor: COLORS.secondary,
+                backgroundColor: 'rgba(240, 159, 82, 0.02)'
+              }}
+            >
+              <h2 
+                className="text-2xl font-bold mb-6 flex items-center gap-3"
+                style={{ color: COLORS.primary }}
+              >
+                <PersonIcon style={{ color: COLORS.secondary }} />
+                Customer Information
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TextField
@@ -571,7 +715,16 @@ const CreateOrder: React.FC = () => {
                   value={order.person.first_name}
                   onChange={(e) => handlePersonChange('first_name', e.target.value)}
                   required
-                  className="bg-white/90 rounded-lg"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
                 />
                 <TextField
                   label="Last Name"
@@ -579,7 +732,16 @@ const CreateOrder: React.FC = () => {
                   value={order.person.last_name}
                   onChange={(e) => handlePersonChange('last_name', e.target.value)}
                   required
-                  className="bg-white/90 rounded-lg"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
                 />
                 <TextField
                   label="Email"
@@ -587,7 +749,16 @@ const CreateOrder: React.FC = () => {
                   fullWidth
                   value={order.person.email}
                   onChange={(e) => handlePersonChange('email', e.target.value)}
-                  className="bg-white/90 rounded-lg"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-focused fieldset': {
+                        borderColor: COLORS.primary,
+                      },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: COLORS.primary,
+                    },
+                  }}
                 />
                 <div className="phone-input-container">
                   <PhoneInput
@@ -603,13 +774,13 @@ const CreateOrder: React.FC = () => {
                       width: '100%',
                       height: '56px',
                       fontSize: '16px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      backgroundColor: 'white',
                       border: '1px solid rgba(0, 0, 0, 0.23)',
                       borderRadius: '8px',
                       paddingLeft: '48px'
                     }}
                     buttonStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      backgroundColor: 'white',
                       border: '1px solid rgba(0, 0, 0, 0.23)',
                       borderRight: 'none',
                       borderRadius: '8px 0 0 8px',
@@ -620,10 +791,19 @@ const CreateOrder: React.FC = () => {
               </div>
             </div>
 
-            {/* File Upload Section */}
-            <div>
-              <h2 className="text-2xl font-bold text-blue-700 mb-6 flex items-center gap-3">
-                <UploadFileIcon className="text-blue-600" /> Dispatch Ticket
+            <div 
+              className="p-6 rounded-2xl border-2"
+              style={{ 
+                borderColor: COLORS.primary,
+                backgroundColor: 'rgba(11, 40, 99, 0.02)'
+              }}
+            >
+              <h2 
+                className="text-2xl font-bold mb-6 flex items-center gap-3"
+                style={{ color: COLORS.primary }}
+              >
+                <UploadFileIcon style={{ color: COLORS.secondary }} />
+                Dispatch Ticket
               </h2>
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4 items-start">
@@ -632,7 +812,18 @@ const CreateOrder: React.FC = () => {
                     component="label"
                     onClick={() => fileInputRef.current?.click()}
                     startIcon={<UploadFileIcon />}
-                    className="!py-3 !px-6 !text-base !border-2 !border-blue-300 !text-blue-600 !hover:bg-blue-50 !rounded-xl !transition-all !duration-300"
+                    sx={{
+                      borderColor: COLORS.secondary,
+                      color: COLORS.secondary,
+                      '&:hover': {
+                        borderColor: COLORS.secondary,
+                        backgroundColor: 'rgba(240, 159, 82, 0.1)',
+                      },
+                      py: 1.5,
+                      px: 3,
+                      borderWidth: 2,
+                      borderRadius: 2,
+                    }}
                   >
                     {dispatchTicketFile ? 'Change ticket image' : 'Upload ticket image (optional)'}
                     <input
@@ -647,13 +838,23 @@ const CreateOrder: React.FC = () => {
                   {dispatchTicketFile && (
                     <Button
                       variant="outlined"
-                      color="error"
                       onClick={() => {
                         setDispatchTicketFile(null);
                         setDispatchTicketPreview(null);
                       }}
                       startIcon={<DeleteOutlineIcon />}
-                      className="!py-3 !px-6 !text-base !border-2 !rounded-xl !transition-all !duration-300"
+                      sx={{
+                        borderColor: COLORS.error,
+                        color: COLORS.error,
+                        '&:hover': {
+                          borderColor: COLORS.error,
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        },
+                        py: 1.5,
+                        px: 3,
+                        borderWidth: 2,
+                        borderRadius: 2,
+                      }}
                     >
                       Remove ticket
                     </Button>
@@ -662,7 +863,13 @@ const CreateOrder: React.FC = () => {
                 
                 {dispatchTicketPreview && (
                   <div className="mt-4">
-                    <div className="inline-block p-2 bg-gray-100 rounded-xl">
+                    <div 
+                      className="inline-block p-3 rounded-xl border-2"
+                      style={{ 
+                        backgroundColor: 'rgba(240, 159, 82, 0.05)',
+                        borderColor: COLORS.secondary 
+                      }}
+                    >
                       <img
                         src={dispatchTicketPreview}
                         alt="Dispatch Ticket Preview"
@@ -674,34 +881,72 @@ const CreateOrder: React.FC = () => {
               </div>
             </div>
 
-            {/* Messages */}
             {successMsg && (
-              <div className="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600">✅</span>
-                  {successMsg}
+              <div 
+                className="px-6 py-4 rounded-xl border-2 flex items-center gap-3"
+                style={{ 
+                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                  borderColor: COLORS.success 
+                }}
+              >
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: COLORS.success }}
+                >
+                  <span className="text-white font-bold">✓</span>
                 </div>
+                <span className="font-semibold" style={{ color: COLORS.success }}>
+                  {successMsg}
+                </span>
               </div>
             )}
             
             {errorMsg && (
-              <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-red-600">❌</span>
-                  {errorMsg}
+              <div 
+                className="px-6 py-4 rounded-xl border-2 flex items-center gap-3"
+                style={{ 
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  borderColor: COLORS.error 
+                }}
+              >
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: COLORS.error }}
+                >
+                  <span className="text-white font-bold">✕</span>
                 </div>
+                <span className="font-semibold" style={{ color: COLORS.error }}>
+                  {errorMsg}
+                </span>
               </div>
             )}
 
-            {/* Submit Button */}
             <div className="flex justify-end pt-6">
               <Button
                 type="submit"
                 variant="contained"
-                color="primary"
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AddBusinessIcon />}
-                className="!py-4 !px-8 !text-lg !font-semibold !bg-gradient-to-r !from-blue-600 !to-purple-600 !hover:from-blue-700 !hover:to-purple-700 !transform !transition-all !duration-300 !hover:-translate-y-1 !hover:shadow-xl !rounded-xl !min-w-[200px]"
+                sx={{
+                  backgroundColor: COLORS.primary,
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: '#091d47',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 20px rgba(11, 40, 99, 0.3)',
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#d1d5db',
+                    color: '#6b7280',
+                  },
+                  py: 2,
+                  px: 6,
+                  fontSize: '1.125rem',
+                  fontWeight: 'bold',
+                  borderRadius: 3,
+                  minWidth: '200px',
+                  transition: 'all 0.3s ease',
+                }}
               >
                 {loading ? 'Creating Order...' : 'Create Order'}
               </Button>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import type { TableData } from '../domain/TableData';
 
@@ -8,11 +8,11 @@ interface Column {
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
-  sortable?: boolean; // Nueva propiedad para indicar si la columna es ordenable
+  sortable?: boolean;
+  copyable?: boolean;
   format?: (value: string | number | null | undefined | unknown) => string | React.ReactNode;
 }
 
-// Tipo para el estado de ordenamiento
 interface SortConfig {
   key: keyof TableData | null;
   direction: 'asc' | 'desc' | null;
@@ -28,19 +28,13 @@ const columns: Column[] = [
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const status = String(value || '');
-      const getStatusStyle = (status: string) => {
-        switch (status) {
-          case 'finished':
-            return { backgroundColor: '#22c55e', color: 'white' };
-          case 'pending':
-            return { backgroundColor: '#F09F52', color: 'white' };
-          case 'inactive':
-            return { backgroundColor: '#ef4444', color: 'white' };
-          default:
-            return { backgroundColor: '#6b7280', color: 'white' };
-        }
+      const styles = {
+        finished: { backgroundColor: '#22c55e', color: 'white' },
+        pending: { backgroundColor: '#F09F52', color: 'white' },
+        inactive: { backgroundColor: '#ef4444', color: 'white' },
+        default: { backgroundColor: '#6b7280', color: 'white' }
       };
-      const style = getStatusStyle(status);
+      const style = styles[status as keyof typeof styles] || styles.default;
       return (
         <span className="px-3 py-1 rounded-full text-xs font-bold" style={style}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -48,7 +42,7 @@ const columns: Column[] = [
       );
     }
   },
-  { id: 'key_ref', label: 'Reference', minWidth: 100, sortable: true },
+  { id: 'key_ref', label: 'Reference', minWidth: 100, sortable: true, copyable: true },
   { id: 'firstName', label: 'First Name', minWidth: 100, sortable: true },
   { id: 'lastName', label: 'Last Name', minWidth: 100, sortable: true },
   { id: 'email', label: 'Email', minWidth: 120, sortable: true },
@@ -171,25 +165,16 @@ const LoadingSpinner = () => (
   <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#0B2863' }}></div>
 );
 
-// Función para ordenar los datos
 const sortData = (data: TableData[], sortConfig: SortConfig): TableData[] => {
-  if (!sortConfig.key || !sortConfig.direction) {
-    return data;
-  }
+  if (!sortConfig.key || !sortConfig.direction) return data;
 
   return [...data].sort((a, b) => {
     const aValue = a[sortConfig.key!];
     const bValue = b[sortConfig.key!];
 
-    // Manejar valores nulos o undefined
     if (aValue === null || aValue === undefined) return sortConfig.direction === 'asc' ? 1 : -1;
     if (bValue === null || bValue === undefined) return sortConfig.direction === 'asc' ? -1 : 1;
 
-    // Convertir a string para comparación
-    const aStr = String(aValue).toLowerCase();
-    const bStr = String(bValue).toLowerCase();
-
-    // Intentar comparación numérica primero
     const aNum = Number(aValue);
     const bNum = Number(bValue);
     
@@ -197,18 +182,15 @@ const sortData = (data: TableData[], sortConfig: SortConfig): TableData[] => {
       return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
     }
 
-    // Comparación de strings
-    if (aStr < bStr) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
-    }
-    if (aStr > bStr) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
-    }
+    const aStr = String(aValue).toLowerCase();
+    const bStr = String(bValue).toLowerCase();
+    
+    if (aStr < bStr) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aStr > bStr) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
   });
 };
 
-// Componente para el icono de ordenamiento
 const SortIcon: React.FC<{ column: Column; sortConfig: SortConfig }> = ({ column, sortConfig }) => {
   if (!column.sortable) return null;
 
@@ -240,53 +222,64 @@ export const DataTable: React.FC<DataTableProps> = ({
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
+  const [copiedRef, setCopiedRef] = useState<string | null>(null);
 
-  // Ordenar los datos basándose en la configuración actual
-  const sortedData = sortData(data, sortConfig);
+  const sortedData = useMemo(() => sortData(data, sortConfig), [data, sortConfig]);
 
-  const handleExpandClick = (rowId: string) => {
-    const newExpandedRows = new Set(expandedRows);
-    if (newExpandedRows.has(rowId)) {
-      newExpandedRows.delete(rowId);
-    } else {
-      newExpandedRows.add(rowId);
-    }
-    setExpandedRows(newExpandedRows);
-  };
+  const handleExpandClick = useCallback((rowId: string) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
+  }, []);
 
-  // Función para manejar el click en las cabeceras de columna
-  const handleSort = (columnId: keyof TableData) => {
+  const handleSort = useCallback((columnId: keyof TableData) => {
     const column = columns.find(col => col.id === columnId);
     if (!column?.sortable) return;
 
     setSortConfig(prevConfig => {
       if (prevConfig.key === columnId) {
-        // Si ya estamos ordenando por esta columna, cambiar dirección
         if (prevConfig.direction === 'asc') {
           return { key: columnId, direction: 'desc' };
         } else if (prevConfig.direction === 'desc') {
-          return { key: null, direction: null }; // Quitar ordenamiento
+          return { key: null, direction: null };
         }
       }
-      // Nueva columna de ordenamiento
       return { key: columnId, direction: 'asc' };
     });
-  };
+  }, []);
 
-  const isSelected = (row: TableData) => selectedRows.some(selected => selected.id === row.id);
+  const handleCopyToClipboard = useCallback(async (e: React.MouseEvent, value: string, rowId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedRef(rowId);
+      setTimeout(() => setCopiedRef(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  }, []);
+
+  const isSelected = useCallback((row: TableData) => 
+    selectedRows.some(selected => selected.id === row.id), 
+    [selectedRows]
+  );
+
   const isAllSelected = sortedData.length > 0 && selectedRows.length === sortedData.length;
 
-  // Helper function to safely get value from TableData
-  const getColumnValue = (row: TableData, columnId: keyof TableData): unknown => {
-    return row[columnId];
-  };
+  const getColumnValue = (row: TableData, columnId: keyof TableData): unknown => row[columnId];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border-2 overflow-hidden" style={{ borderColor: '#0B2863' }}>
-      {/* Table Container */}
       <div className="overflow-x-auto" style={{ maxHeight: '600px' }}>
         <table className="w-full">
-          {/* Table Header */}
           <thead className="sticky top-0 z-10 text-white" style={{ backgroundColor: '#0B2863' }}>
             <tr>
               <th className="px-4 py-3 text-left">
@@ -316,7 +309,6 @@ export const DataTable: React.FC<DataTableProps> = ({
             </tr>
           </thead>
 
-          {/* Table Body */}
           <tbody>
             {loading ? (
               <tr>
@@ -373,7 +365,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                         }}
                         onContextMenu={(e) => onContextMenu(e, row)}
                       >
-                        {/* Checkbox */}
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
@@ -384,7 +375,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                           />
                         </td>
                         
-                        {/* Expand/Collapse */}
                         <td className="px-4 py-3 text-center">
                           <button
                             className="p-1 rounded-lg transition-all duration-200 hover:shadow-md"
@@ -399,7 +389,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                           </button>
                         </td>
                         
-                        {/* Actions */}
                         <td className="px-4 py-3 text-center">
                           <button
                             className={`p-2 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
@@ -424,7 +413,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                           </button>
                         </td>
                         
-                        {/* Data columns */}
                         {columns.slice(2).map((column, columnIndex) => {
                           const value = getColumnValue(row, column.id as keyof TableData);
                           let displayValue: React.ReactNode;
@@ -432,7 +420,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                           if (column.format) {
                             displayValue = column.format(value);
                           } else {
-                            // Handle different types safely
                             if (Array.isArray(value)) {
                               displayValue = `${value.length} items`;
                             } else if (value === null || value === undefined) {
@@ -443,16 +430,41 @@ export const DataTable: React.FC<DataTableProps> = ({
                               displayValue = String(value);
                             }
                           }
+
+                          const isCopyableColumn = column.copyable && column.id === 'key_ref';
+                          const cellValue = String(value || '');
+                          const isCopied = copiedRef === `${row.id}-${column.id}`;
                           
                           return (
-                            <td key={`${row.id}-${String(column.id)}-${columnIndex}`} className={`px-4 py-3 text-${column.align || 'left'} whitespace-nowrap`}>
-                              {displayValue}
+                            <td 
+                              key={`${row.id}-${String(column.id)}-${columnIndex}`} 
+                              className={`px-4 py-3 text-${column.align || 'left'} whitespace-nowrap ${
+                                isCopyableColumn ? 'group relative' : ''
+                              }`}
+                              onContextMenu={isCopyableColumn ? (e) => handleCopyToClipboard(e, cellValue, `${row.id}-${column.id}`) : undefined}
+                            >
+                              <div className="flex items-center gap-2">
+                                {displayValue}
+                                {isCopyableColumn && (
+                                  <button
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded hover:bg-gray-200"
+                                    onClick={(e) => handleCopyToClipboard(e, cellValue, `${row.id}-${column.id}`)}
+                                    title="Copy to clipboard"
+                                  >
+                                    <Copy size={14} style={{ color: isCopied ? '#22c55e' : '#0B2863' }} />
+                                  </button>
+                                )}
+                              </div>
+                              {isCopied && (
+                                <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                  Copied!
+                                </span>
+                              )}
                             </td>
                           );
                         })}
                       </tr>
                       
-                      {/* Expanded row for operators */}
                       {isExpanded && (
                         <tr>
                           <td colSpan={columns.length + 1} className="px-0 py-0">
@@ -474,7 +486,6 @@ export const DataTable: React.FC<DataTableProps> = ({
         </table>
       </div>
       
-      {/* Pagination */}
       <div className="bg-white border-t-2 px-6 py-4 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-700">Rows per page:</span>
@@ -523,4 +534,4 @@ export const DataTable: React.FC<DataTableProps> = ({
       </div>
     </div>
   );
-};
+}

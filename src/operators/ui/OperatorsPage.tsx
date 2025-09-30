@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import { useSnackbar } from 'notistack';
 import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator } from '../data/RepositoryOperators';
 import { Operator } from '../domain/OperatorsModels';
@@ -11,6 +11,13 @@ import EditOperatorModal from './components/EditOperatorModal';
 import ManageChildrenModal from './components/ManageChildrenModal';
 import OperatorDetailsModal from './components/OperatorDetailsModal';
 import ConfirmDeleteDialog from './components/ConfirmDeleteDialog';
+
+const COLORS = {
+  primary: '#0B2863',
+  secondary: '#F09F52',
+  success: '#22c55e',
+  error: '#ef4444',
+};
 
 const OperatorsPage: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -67,7 +74,7 @@ const OperatorsPage: React.FC = () => {
   }, []);
 
   // Helper function para crear FormData según la estructura del backend
-  const createOperatorFormData = (operatorData: any): FormData => {
+  const createOperatorFormData = useCallback((operatorData: any): FormData => {
     const formData = new FormData();
 
     // Campos del operador
@@ -115,27 +122,27 @@ const OperatorsPage: React.FC = () => {
     }
 
     return formData;
-  };
+  }, []);
 
   // Event Handlers
-  const handleActivateOperator = async (id_operator: number) => {
+  const handleActivateOperator = useCallback(async (id_operator: number) => {
     try {
       await activateOperator(id_operator);
       setInactiveOperators(prev => prev.filter(op => op.id_operator !== id_operator));
       const response = await fetchOperators();
       setOperators(response.results);
       enqueueSnackbar('Operator activated successfully', { variant: 'success' });
-    } catch (err) {
+    } catch {
       enqueueSnackbar('Error activating operator', { variant: 'error' });
     }
-  };
+  }, [enqueueSnackbar]);
 
-  const handleEditOperator = (operator: Operator) => {
+  const handleEditOperator = useCallback((operator: Operator) => {
     setOperatorToEdit(operator);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaveEdit = async (operatorData: Partial<Operator> | FormData) => {
+  const handleSaveEdit = useCallback(async (operatorData: Partial<Operator> | FormData) => {
     if (!operatorToEdit) return;
     
     try {
@@ -154,17 +161,17 @@ const OperatorsPage: React.FC = () => {
       setIsEditDialogOpen(false);
       setOperatorToEdit(null);
       enqueueSnackbar('Operator updated successfully', { variant: 'success' });
-    } catch (err) {
+    } catch {
       enqueueSnackbar('Error updating operator', { variant: 'error' });
     }
-  };
+  }, [operatorToEdit, createOperatorFormData, enqueueSnackbar]);
 
-  const handleDeleteOperator = (operator: Operator) => {
+  const handleDeleteOperator = useCallback((operator: Operator) => {
     setOperatorToDelete(operator); 
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!operatorToDelete) return;
     
     try {
@@ -178,22 +185,22 @@ const OperatorsPage: React.FC = () => {
       setIsDeleteDialogOpen(false);
       setOperatorToDelete(null);
       enqueueSnackbar('Operator deactivated successfully', { variant: 'success' });
-    } catch (err) {
+    } catch {
       enqueueSnackbar('Error deactivating operator', { variant: 'error' });
     }
-  };
+  }, [operatorToDelete, enqueueSnackbar]);
 
-  const handleViewDetails = (operator: Operator) => {
+  const handleViewDetails = useCallback((operator: Operator) => {
     setSelectedOperator(operator);
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const handleManageChildren = (operator: Operator) => {
+  const handleManageChildren = useCallback((operator: Operator) => {
     setOperatorForChildren(operator);
     setIsChildrenModalOpen(true);
-  };
+  }, []);
 
-  const handleAddChild = async (childData: { name: string; birth_date: string; gender: string }) => {
+  const handleAddChild = useCallback(async (childData: { name: string; birth_date: string; gender: string }) => {
     if (!operatorForChildren) return;
     
     try {
@@ -223,10 +230,10 @@ const OperatorsPage: React.FC = () => {
       }
       
       enqueueSnackbar('Child added successfully', { variant: 'success' });
-    } catch (err) {
+    } catch {
       enqueueSnackbar('Error adding child', { variant: 'error' });
     }
-  };
+  }, [operatorForChildren, selectedOperator, enqueueSnackbar]);
 
   // Filtrar operadores basado en el término de búsqueda
   const filteredOperators = useMemo(() => {
@@ -236,7 +243,6 @@ const OperatorsPage: React.FC = () => {
 
     const term = searchTerm.toLowerCase();
     return operators.filter(operator => {
-      // Función auxiliar para manejar valores nulos/undefined
       const safeString = (value: string | null | undefined): string => {
         return value ? value.toLowerCase() : '';
       };
@@ -259,7 +265,6 @@ const OperatorsPage: React.FC = () => {
 
     const term = searchTerm.toLowerCase();
     return inactiveOperators.filter(operator => {
-      // Función auxiliar para manejar valores nulos/undefined
       const safeString = (value: string | null | undefined): string => {
         return value ? value.toLowerCase() : '';
       };
@@ -273,25 +278,29 @@ const OperatorsPage: React.FC = () => {
   }, [inactiveOperators, searchTerm]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3">
-          <i className="fas fa-spinner animate-spin text-blue-600 text-xl"></i>
-          <span className="text-gray-600">Loading operators...</span>
-        </div>
-      </div>
-    );
+    return <LoaderSpinner />;
   }
 
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="text-red-500 mb-4">
-            <i className="fas fa-exclamation-triangle text-4xl"></i>
+        <div 
+          className="text-center p-8 rounded-2xl border-2 shadow-lg max-w-md"
+          style={{ 
+            borderColor: COLORS.error,
+            backgroundColor: 'rgba(239, 68, 68, 0.05)'
+          }}
+        >
+          <div 
+            className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: COLORS.error }}
+          >
+            <span className="text-white text-3xl font-bold">!</span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Operators</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.error }}>
+            Error Loading Operators
+          </h3>
+          <p className="text-gray-600">{error}</p>
         </div>
       </div>
     );
