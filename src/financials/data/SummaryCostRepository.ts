@@ -11,12 +11,11 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
     private baseUrl: string =
         import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-    // Agrega el parámetro opcional onlyPaid
     async getSummaryCost(
         pageNumber: number,
         week: number,
         year: number,
-        onlyPaid?: boolean // <-- nuevo parámetro opcional
+        onlyPaid?: boolean
     ): Promise<PaginatedOrderSummaryResult> {
         const token = Cookies.get('authToken');
         
@@ -24,7 +23,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
             window.location.href = '/login';
             throw new Error('No hay token de autenticación');
         }
-        // Construye la URL con el parámetro solo si se pasa como true
+        
         let url = `${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100000`;
         if (onlyPaid === true) {
             url += '&only_paid=true';
@@ -57,7 +56,53 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
             throw new Error('Error en la solicitud');
         }
     }
-    
+
+    // Nueva función para rango de semanas
+    async getSummaryCostRange(
+        startWeek: number,
+        endWeek: number,
+        year: number,
+        onlyPaid?: boolean
+    ): Promise<PaginatedOrderSummaryResult> {
+        const token = Cookies.get('authToken');
+        
+        if (!token) {
+            window.location.href = '/login';
+            throw new Error('No hay token de autenticación');
+        }
+        
+        let url = `${this.baseUrl}/summary-list-financial/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}&page=1&page_size=100000`;
+        if (onlyPaid === true) {
+            url += '&only_paid=true';
+        }
+        console.log(`Fetching summary cost for range ${startWeek}-${endWeek}, year ${year}, onlyPaid=${onlyPaid}`);
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 403) {
+                Cookies.remove('authToken');
+                window.location.href = '/login';
+                throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            }
+
+            if (!response.ok) {
+                throw new Error('Error al obtener los datos');
+            }
+
+            return await response.json();
+        } catch (error) {
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error('Error en la solicitud');
+        }
+    }
 }
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
