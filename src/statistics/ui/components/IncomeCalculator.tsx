@@ -19,6 +19,7 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
   const [weight, setWeight] = useState<number>(2500);
   const [jobs, setJobs] = useState<JobModel[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [inputLabel, setInputLabel] = useState<'weight' | 'operators'>('weight');
 
   // Load jobs on component mount
   useEffect(() => {
@@ -36,6 +37,16 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
 
     loadJobs();
   }, []);
+
+  // Detect job type and change input label
+  useEffect(() => {
+    const jobLower = selectedJob.toLowerCase();
+    if (jobLower === 'workhouse' || jobLower === 'warehouse') {
+      setInputLabel('operators');
+    } else {
+      setInputLabel('weight');
+    }
+  }, [selectedJob]);
 
   const handleCalculate = async () => {
     if (!selectedJob || weight <= 0) {
@@ -135,18 +146,27 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                 </select>
               </div>
 
-              {/* Weight */}
+              {/* Dynamic Input */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
-                  <Weight size={14} className="inline mr-1" />
-                  Weight (lbs)
+                  {inputLabel === 'weight' ? (
+                    <>
+                      <Weight size={14} className="inline mr-1" />
+                      Weight (lbs)
+                    </>
+                  ) : (
+                    <>
+                      <Briefcase size={14} className="inline mr-1" />
+                      Number of operators
+                    </>
+                  )}
                 </label>
                 <input
                   type="number"
                   value={weight}
                   onChange={(e) => setWeight(Number(e.target.value))}
                   className="w-full px-3 py-2 border-2 border-emerald-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-200"
-                  placeholder="2500"
+                  placeholder={inputLabel === 'weight' ? "2500" : "Number of operators"}
                   min="1"
                   disabled={loading}
                 />
@@ -204,25 +224,37 @@ const IncomeCalculator: React.FC<IncomeCalculatorProps> = ({ className = '' }) =
                       Predicted Income
                     </h4>
                     <div className="mt-2 space-y-1 text-sm">
-                      <p><span className="font-semibold">Weight:</span> {result.data.weight.toLocaleString()} lbs</p>
+                      {inputLabel === 'weight' ? (
+                        <p>
+                          <span className="font-semibold">Weight:</span>{" "}
+                          {result.data.value
+                            ? Number(result.data.value).toLocaleString()
+                            : "-"} lbs
+                        </p>
+                      ) : (
+                        <p>
+                          <span className="font-semibold">Operators:</span>{" "}
+                          {result.data.value
+                            ? Number(result.data.value).toLocaleString()
+                            : "-"}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  
                   <div className="text-right">
                     <div 
                       className="text-3xl font-bold"
                       style={{ color: '#059669' }}
                     >
-                      ${result.data.predicted_income.toFixed(2)}
+                      ${result.data.predicted_income?.toFixed(2)}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
                       predicted by regression
                     </div>
                   </div>
                 </div>
-                
                 <div className="mt-3 text-xs text-gray-600 bg-white/50 rounded-lg p-2">
-                  💡 <strong>Tip:</strong> This is a prediction based on historical data for this job and weight.
+                  💡 <strong>Tip:</strong> This is a prediction based on historical data for this job and {inputLabel === 'weight' ? 'weight' : 'operators'}.
                 </div>
               </div>
             )}

@@ -7,7 +7,7 @@ export interface IncomeRegressionResponse {
   messDev: string;
   messUser: string;
   data: {
-    weight: number;
+    value: number;
     job_id: number;
     predicted_income: number;
   };
@@ -15,7 +15,7 @@ export interface IncomeRegressionResponse {
 
 export async function fetchPredictedIncome(
   jobName: string,
-  weight: number
+  value: number
 ): Promise<IncomeRegressionResponse> {
   const token = Cookies.get('authToken');
   if (!token) {
@@ -25,7 +25,7 @@ export async function fetchPredictedIncome(
 
   const params = new URLSearchParams({
     job_name: jobName,
-    weight: weight.toString(),
+    value: value.toString(),
   });
 
   const url = `${BASE_URL_API}/orders-linearRegresion-income/?${params.toString()}`;

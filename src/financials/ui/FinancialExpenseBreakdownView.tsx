@@ -1,26 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, Table, TableBody, TableCell, TableRow, CircularProgress, Alert, Paper, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
+import { Box, Typography, Button, Table, TableBody, TableCell, TableRow, CircularProgress, Alert, Paper, MenuItem, Select, FormControl, InputLabel, Chip } from "@mui/material";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import { Summary } from "../domain/SummaryModel";
 import { useNavigate } from "react-router-dom";
 import { enqueueSnackbar } from "notistack";
 import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownExportDialog";
 
+// Costos fijos y variables con etiquetas
 const EXPENSE_TYPES = [
-  { key: "expense", label: "Expense" },
-  { key: "fuelCost", label: "Fuel Cost" },
-  { key: "workCost", label: "Extra Cost" },
-  { key: "driverSalaries", label: "Driver Salaries" },
-  { key: "otherSalaries", label: "Operators Salaries" },
-  { key: "totalCost", label: "Total Cost" },
+  { key: "expense", label: "General Expenses", type: "variable", color: "#3b82f6" },
+  { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#3b82f6" },
+  { key: "workCost", label: "Extra Costs", type: "variable", color: "#3b82f6" },
+  { key: "driverSalaries", label: "Driver Salaries", type: "fixed", color: "#059669" },
+  { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#059669" },
+  { key: "totalCost", label: "Total Cost", type: "total", color: "#6366f1" },
 ];
 
+// Trimestres y semestres exactos
 const TIMELAPSES = [
-  { label: "3 months", weeks: 13 },
-  { label: "6 months", weeks: 26 },
-  { label: "9 months", weeks: 39 },
-  { label: "12 months", weeks: 52 },
+  { label: "Q1 (Jan-Mar)", startWeek: 1, endWeek: 13 },
+  { label: "Q2 (Apr-Jun)", startWeek: 14, endWeek: 26 },
+  { label: "Q3 (Jul-Sep)", startWeek: 27, endWeek: 39 },
+  { label: "Q4 (Oct-Dec)", startWeek: 40, endWeek: 52 },
+  { label: "H1 (Jan-Jun)", startWeek: 1, endWeek: 26 },
+  { label: "H2 (Jul-Dec)", startWeek: 27, endWeek: 52 },
 ];
 
 const getAvailableYears = () => {
@@ -50,7 +54,8 @@ const FinancialExpenseBreakdownView = () => {
     const start = new Date(year, 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
-  const [startWeek, setStartWeek] = useState<number>(1); // Por defecto desde la semana 1
+  const [startWeek, setStartWeek] = useState<number>(1);
+  const [selectedTimelapse, setSelectedTimelapse] = useState<string | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -59,28 +64,33 @@ const FinancialExpenseBreakdownView = () => {
     const now = new Date();
     const start = new Date(year, 0, 1);
     setCurrentWeek(Math.ceil((now.getTime() - start.getTime()) / 604800000));
-    setStartWeek(1); // Resetear a semana 1 al cambiar año
+    setStartWeek(1);
+    setSelectedTimelapse(null);
   }, [year]);
 
-  // Fetch breakdown para el rango seleccionado
+  // Fetch breakdown usando la nueva función de rango
   const fetchBreakdown = async (fromWeek: number, toWeek: number, selectedYear: number) => {
     setLoading(true);
     setError(null);
     try {
+      const result = await repository.getSummaryCostRange(fromWeek, toWeek, selectedYear, true);
+      
       const expenses: Record<string, number> = {};
       let totalIncome = 0;
-      let totalCost = 0;
-      for (let w = fromWeek; w <= toWeek && w > 0; w++) {
-        // Aquí se pasa onlyPaid: true SOLO en este view
-        const result = await repository.getSummaryCost(0, w, selectedYear, true);
-        result.results.forEach(order => {
-          EXPENSE_TYPES.forEach(type => {
-            expenses[type.key] = (expenses[type.key] || 0) + (order.summary[type.key as keyof Summary] || 0);
-          });
-          totalIncome += order.income || 0;
-          totalCost += order.summary?.totalCost || 0;
+      
+      // Inicializar expenses
+      EXPENSE_TYPES.forEach(type => {
+        expenses[type.key] = 0;
+      });
+
+      result.results.forEach(order => {
+        EXPENSE_TYPES.forEach(type => {
+          expenses[type.key] += order.summary[type.key as keyof Summary] || 0;
         });
-      }
+        totalIncome += order.income || 0;
+      });
+
+      const totalCost = expenses.totalCost;
       setSummaryData({ expenses, income: totalIncome, profit: totalIncome - totalCost });
     } catch (err: any) {
       setError(err.message || "Error loading breakdown");
@@ -111,6 +121,7 @@ const FinancialExpenseBreakdownView = () => {
   const handleWeekSelect = (selectedWeek: number) => {
     setStartWeek(selectedWeek);
     setShowWeekDropdown(false);
+    setSelectedTimelapse(null);
   };
 
   const handleWeekKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -126,21 +137,29 @@ const FinancialExpenseBreakdownView = () => {
 
   const handleWeekInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
+    // Esta validación SÍ debe mantenerse para el input manual
     if (value < 1 || value > currentWeek) {
       enqueueSnackbar(`Week must be between 1 and ${currentWeek}.`, { variant: "error" });
       return;
     }
     setStartWeek(value);
+    setSelectedTimelapse(null);
   };
 
-  // Quick timelapse handler
-  const handleTimelapse = (weeks: number) => {
-    const calculatedStart = currentWeek - weeks + 1;
-    if (calculatedStart < 1) {
-      enqueueSnackbar("Selected period exceeds available weeks.", { variant: "error" });
+  // Quick timelapse handler para periodos exactos
+  const handleTimelapse = (timelapse: any) => {
+    const { startWeek: start, endWeek: end, label } = timelapse;
+    
+    // Validar solo si el período está completamente fuera del rango disponible
+    if (start > currentWeek) {
+      enqueueSnackbar(`Selected period starts after current week ${currentWeek}. No data available yet.`, { variant: "error" });
       return;
     }
-    setStartWeek(calculatedStart);
+    
+    setStartWeek(start);
+    setSelectedTimelapse(label);
+    // Usar el endWeek completo del timelapse, el backend manejará las semanas disponibles
+    fetchBreakdown(start, end, year);
   };
 
   return (
@@ -153,8 +172,9 @@ const FinancialExpenseBreakdownView = () => {
           Expense Breakdown
         </Typography>
         <Typography variant="body1" sx={{ mb: 2, color: "#374151" }}>
-          Select a starting week and year below. The breakdown will show data <strong>from the selected week up to the last week of the selected year</strong> ({currentWeek}). Quick buttons let you select common periods.
+          Select a period below. The breakdown will show data for the selected range. Use quick buttons for standard periods or customize your own range.
         </Typography>
+        
         {/* Year Picker */}
         <Box sx={{ mb: 2, maxWidth: 200 }}>
           <FormControl fullWidth>
@@ -171,27 +191,29 @@ const FinancialExpenseBreakdownView = () => {
             </Select>
           </FormControl>
         </Box>
-        {/* Quick timelapses */}
+
+        {/* Quick timelapses - Trimestres y Semestres */}
         <Box sx={{ mb: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
           {TIMELAPSES.map(t => (
             <Button
               key={t.label}
-              variant={startWeek === currentWeek - t.weeks + 1 ? "contained" : "outlined"}
-              onClick={() => handleTimelapse(t.weeks)}
+              variant={selectedTimelapse === t.label ? "contained" : "outlined"}
+              onClick={() => handleTimelapse(t)}
               sx={{
                 minWidth: 120,
                 fontWeight: 600,
-                background: startWeek === currentWeek - t.weeks + 1 ? "#667eea" : undefined,
-                color: startWeek === currentWeek - t.weeks + 1 ? "#fff" : undefined
+                background: selectedTimelapse === t.label ? "#667eea" : undefined,
+                color: selectedTimelapse === t.label ? "#fff" : undefined
               }}
             >
               {t.label}
             </Button>
           ))}
         </Box>
+
         {/* Week Picker - Visual range */}
         <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Select Start Week</Typography>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>Select Start Week (Custom Range)</Typography>
           <div
             className="bg-gradient-to-br from-white/90 to-green-50/50 backdrop-blur-sm rounded-xl p-3 border-2 border-green-100 shadow-sm hover:shadow-md transition-all duration-300"
             ref={dropdownRef}
@@ -208,6 +230,7 @@ const FinancialExpenseBreakdownView = () => {
                 {viewMode === "select" ? "Input" : "Dropdown"}
               </button>
             </div>
+            
             {/* Visual range bar */}
             <div className="w-full flex items-center gap-2 mb-2">
               <div className="flex-1 h-3 rounded-full bg-gray-200 relative overflow-hidden">
@@ -313,6 +336,7 @@ const FinancialExpenseBreakdownView = () => {
           </div>
         </Box>
       </Paper>
+
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
           <CircularProgress />
@@ -320,25 +344,68 @@ const FinancialExpenseBreakdownView = () => {
       ) : error ? (
         <Alert severity="error">{error}</Alert>
       ) : summaryData ? (
-        <Table sx={{ maxWidth: 500, mx: "auto", backgroundColor: "#fff", borderRadius: 2, boxShadow: 2 }}>
-          <TableBody>
-            {EXPENSE_TYPES.map(type => (
-              <TableRow key={type.key}>
-                <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
-                <TableCell sx={{ fontWeight: 500, color: "#4f46e5" }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#059669" }}>Income</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#059669" }}>${summaryData.income.toLocaleString("en-US")}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#7c3aed" }}>Profit</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#7c3aed" }}>${summaryData.profit.toLocaleString("en-US")}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <Box>
+          {/* Fixed Costs Section */}
+          <Paper sx={{ mb: 2, p: 2, borderRadius: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Chip label="Fixed Costs" sx={{ backgroundColor: "#059669", color: "white", fontWeight: 600 }} />
+            </Box>
+            <Table sx={{ backgroundColor: "#fff" }}>
+              <TableBody>
+                {EXPENSE_TYPES.filter(type => type.type === "fixed").map(type => (
+                  <TableRow key={type.key}>
+                    <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
+                    <TableCell sx={{ fontWeight: 500, color: type.color }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Paper>
+
+          {/* Variable Costs Section */}
+          <Paper sx={{ mb: 2, p: 2, borderRadius: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Chip label="Variable Costs" sx={{ backgroundColor: "#3b82f6", color: "white", fontWeight: 600 }} />
+            </Box>
+            <Table sx={{ backgroundColor: "#fff" }}>
+              <TableBody>
+                {EXPENSE_TYPES.filter(type => type.type === "variable").map(type => (
+                  <TableRow key={type.key}>
+                    <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
+                    <TableCell sx={{ fontWeight: 500, color: type.color }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Paper>
+
+          {/* Summary Section */}
+          <Paper sx={{ p: 2, borderRadius: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <Chip label="Financial Summary" sx={{ backgroundColor: "#6366f1", color: "white", fontWeight: 600 }} />
+            </Box>
+            <Table sx={{ backgroundColor: "#fff" }}>
+              <TableBody>
+                {EXPENSE_TYPES.filter(type => type.type === "total").map(type => (
+                  <TableRow key={type.key}>
+                    <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
+                    <TableCell sx={{ fontWeight: 500, color: type.color }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700, color: "#059669" }}>Income</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#059669" }}>${summaryData.income.toLocaleString("en-US")}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700, color: "#7c3aed" }}>Profit</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: "#7c3aed" }}>${summaryData.profit.toLocaleString("en-US")}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </Paper>
+        </Box>
       ) : null}
+
       <Button
         variant="contained"
         color="primary"
@@ -348,6 +415,7 @@ const FinancialExpenseBreakdownView = () => {
       >
         Export / Print
       </Button>
+      
       <FinancialExpenseBreakdownExportDialog
         open={exportDialogOpen}
         onClose={() => setExportDialogOpen(false)}
@@ -358,6 +426,7 @@ const FinancialExpenseBreakdownView = () => {
         endWeek={currentWeek}
         year={year}
       />
+      
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
