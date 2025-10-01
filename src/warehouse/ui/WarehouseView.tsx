@@ -246,10 +246,10 @@ const WarehouseView = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Workhouse Orders
+        Warehouse Orders
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        Here you can find all the workhouse orders registered in the system.
+        Here you can find all the warehouse orders registered in the system.
       </Typography>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
