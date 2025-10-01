@@ -371,7 +371,7 @@ const OrdersTable: React.FC = () => {
 
   const handleContinueOrder = (order: NormalizedTableData) => {
     const orderData = mapTableDataToCreateOrderModel(order);
-    navigate('/create-daily', { state: { orderToContinue: orderData } });
+    navigate('/app/create-daily', { state: { orderToContinue: orderData } });
   };
 
   const handleFinishOrder = async (orderId: string) => {
