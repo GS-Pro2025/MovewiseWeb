@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
-import { Box, Typography, Button, Table, TableBody, TableCell, TableRow, CircularProgress, Alert, Paper, MenuItem, Select, FormControl, InputLabel, Chip } from "@mui/material";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import { Summary } from "../domain/SummaryModel";
 import { useNavigate } from "react-router-dom";
@@ -9,12 +8,12 @@ import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownEx
 
 // Costos fijos y variables con etiquetas
 const EXPENSE_TYPES = [
-  { key: "expense", label: "General Expenses", type: "variable", color: "#3b82f6" },
-  { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#3b82f6" },
-  { key: "workCost", label: "Extra Costs", type: "variable", color: "#3b82f6" },
-  { key: "driverSalaries", label: "Driver Salaries", type: "fixed", color: "#059669" },
-  { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#059669" },
-  { key: "totalCost", label: "Total Cost", type: "total", color: "#6366f1" },
+  { key: "expense", label: "General Expenses", type: "variable", color: "#F09F52" },
+  { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#F09F52" },
+  { key: "workCost", label: "Extra Costs", type: "variable", color: "#F09F52" },
+  { key: "driverSalaries", label: "Driver Salaries", type: "fixed", color: "#0B2863" },
+  { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#0B2863" },
+  { key: "totalCost", label: "Total Cost", type: "total", color: "#0B2863" },
 ];
 
 // Trimestres y semestres exactos
@@ -137,7 +136,6 @@ const FinancialExpenseBreakdownView = () => {
 
   const handleWeekInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    // Esta validación SÍ debe mantenerse para el input manual
     if (value < 1 || value > currentWeek) {
       enqueueSnackbar(`Week must be between 1 and ${currentWeek}.`, { variant: "error" });
       return;
@@ -150,7 +148,6 @@ const FinancialExpenseBreakdownView = () => {
   const handleTimelapse = (timelapse: any) => {
     const { startWeek: start, endWeek: end, label } = timelapse;
     
-    // Validar solo si el período está completamente fuera del rango disponible
     if (start > currentWeek) {
       enqueueSnackbar(`Selected period starts after current week ${currentWeek}. No data available yet.`, { variant: "error" });
       return;
@@ -158,73 +155,87 @@ const FinancialExpenseBreakdownView = () => {
     
     setStartWeek(start);
     setSelectedTimelapse(label);
-    // Usar el endWeek completo del timelapse, el backend manejará las semanas disponibles
     fetchBreakdown(start, end, year);
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, backgroundColor: "#f8fafc", minHeight: "100vh" }}>
-      <Button variant="outlined" sx={{ mb: 2 }} onClick={() => navigate(-1)}>
+    <div className="p-4 md:p-8 bg-gray-100 min-h-screen">
+      <button 
+        className="mb-6 px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 hover:bg-opacity-5"
+        style={{ 
+          borderColor: '#0B2863', 
+          color: '#0B2863',
+          backgroundColor: 'transparent'
+        }}
+        onClick={() => navigate(-1)}
+      >
         ← Back to Financial Summary
-      </Button>
-      <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3, background: "linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%)" }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, color: "#0B2863", letterSpacing: 1 }}>
+      </button>
+      
+      <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg p-6 mb-6">
+        <h1 className="text-4xl font-bold mb-2 tracking-wide" style={{ color: '#0B2863' }}>
           Expense Breakdown
-        </Typography>
-        <Typography variant="body1" sx={{ mb: 2, color: "#374151" }}>
+        </h1>
+        <p className="text-gray-600 mb-6">
           Select a period below. The breakdown will show data for the selected range. Use quick buttons for standard periods or customize your own range.
-        </Typography>
+        </p>
         
         {/* Year Picker */}
-        <Box sx={{ mb: 2, maxWidth: 200 }}>
-          <FormControl fullWidth>
-            <InputLabel id="year-picker-label">Year</InputLabel>
-            <Select
-              labelId="year-picker-label"
-              value={year}
-              label="Year"
-              onChange={e => setYear(Number(e.target.value))}
-            >
-              {getAvailableYears().map(y => (
-                <MenuItem key={y} value={y}>{y}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <div className="mb-6 max-w-xs">
+          <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
+            Year
+          </label>
+          <select
+            value={year}
+            onChange={e => setYear(Number(e.target.value))}
+            className="w-full px-4 py-2 border-2 rounded-lg font-medium focus:outline-none focus:ring-2 transition-all"
+            style={{ 
+              borderColor: '#0B2863',
+              color: '#0B2863'
+            }}
+          >
+            {getAvailableYears().map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
 
-        {/* Quick timelapses - Trimestres y Semestres */}
-        <Box sx={{ mb: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
+        {/* Quick timelapses */}
+        <div className="mb-6 flex gap-3 flex-wrap">
           {TIMELAPSES.map(t => (
-            <Button
+            <button
               key={t.label}
-              variant={selectedTimelapse === t.label ? "contained" : "outlined"}
               onClick={() => handleTimelapse(t)}
-              sx={{
-                minWidth: 120,
-                fontWeight: 600,
-                background: selectedTimelapse === t.label ? "#667eea" : undefined,
-                color: selectedTimelapse === t.label ? "#fff" : undefined
+              className="min-w-[120px] px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-md"
+              style={{
+                backgroundColor: selectedTimelapse === t.label ? '#0B2863' : 'white',
+                borderColor: '#0B2863',
+                color: selectedTimelapse === t.label ? 'white' : '#0B2863'
               }}
             >
               {t.label}
-            </Button>
+            </button>
           ))}
-        </Box>
+        </div>
 
-        {/* Week Picker - Visual range */}
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Select Start Week (Custom Range)</Typography>
+        {/* Week Picker */}
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
+            Select Start Week (Custom Range)
+          </h3>
           <div
-            className="bg-gradient-to-br from-white/90 to-green-50/50 backdrop-blur-sm rounded-xl p-3 border-2 border-green-100 shadow-sm hover:shadow-md transition-all duration-300"
+            className="bg-gradient-to-br from-white/90 to-orange-50/50 backdrop-blur-sm rounded-xl p-4 border-2 shadow-sm hover:shadow-md transition-all duration-300"
+            style={{ borderColor: '#F09F52' }}
             ref={dropdownRef}
           >
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs sm:text-sm font-bold text-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-bold text-gray-700">
                 Week Range
               </label>
               <button
                 onClick={() => setViewMode(viewMode === "select" ? "input" : "select")}
-                className="text-xs bg-green-100 text-green-700 hover:bg-green-200 transition-colors duration-200 px-2 py-1 rounded-md border border-green-200"
+                className="text-xs text-white px-3 py-1 rounded-md font-medium transition-all duration-200 hover:opacity-90"
+                style={{ backgroundColor: '#F09F52' }}
                 title={`Switch to ${viewMode === "select" ? "input" : "dropdown"} view`}
               >
                 {viewMode === "select" ? "Input" : "Dropdown"}
@@ -232,41 +243,45 @@ const FinancialExpenseBreakdownView = () => {
             </div>
             
             {/* Visual range bar */}
-            <div className="w-full flex items-center gap-2 mb-2">
-              <div className="flex-1 h-3 rounded-full bg-gray-200 relative overflow-hidden">
+            <div className="w-full flex items-center gap-3 m-3">
+              <div className="flex-1 h-4 rounded-full relative overflow-hidden">
                 <div
-                  className="absolute top-0 left-0 h-3 bg-green-400 rounded-full"
+                  className="absolute top-0 left-0 h-4 rounded-full transition-all duration-300"
                   style={{
+                    backgroundColor: '#F09F52',
                     width: `${((currentWeek - startWeek + 1) / currentWeek) * 100}%`,
                     left: `${((startWeek - 1) / currentWeek) * 100}%`,
                   }}
                 />
                 <div
-                  className="absolute top-0 left-0 h-3 rounded-full"
+                  className="absolute top-0 left-0 h-5 rounded-full"
                   style={{
                     width: "100%",
-                    border: "1px solid #059669",
+                    border: "1px solid #0B2863",
                     boxSizing: "border-box",
                   }}
                 />
               </div>
-              <span className="text-xs font-bold text-green-700">
-                {`W${startWeek} → W${currentWeek}`}
+              <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#0B2863' }}>
+                W{startWeek} → W{currentWeek}
               </span>
             </div>
+            
             {viewMode === "select" ? (
               <div className="relative">
                 <div
-                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:border-green-300 hover:shadow-sm"
+                  className="w-full px-4 py-2 border-2 rounded-lg font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:shadow-md transition-all"
+                  style={{ borderColor: '#F09F52' }}
                   onClick={() => setShowWeekDropdown(!showWeekDropdown)}
                   onKeyDown={handleWeekKeyDown}
                   tabIndex={0}
                 >
-                  <span className="text-green-700">
+                  <span style={{ color: '#0B2863' }}>
                     Week {startWeek}
                   </span>
                   <svg
-                    className={`w-4 h-4 text-green-500 transition-transform duration-200 ${showWeekDropdown ? "rotate-180" : ""}`}
+                    className={`w-5 h-5 transition-transform duration-200 ${showWeekDropdown ? "rotate-180" : ""}`}
+                    style={{ color: '#F09F52' }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -280,8 +295,11 @@ const FinancialExpenseBreakdownView = () => {
                   </svg>
                 </div>
                 {showWeekDropdown && (
-                  <div className="week-dropdown mt-2 bg-white border-2 border-green-200 rounded-lg shadow-xl w-full" style={{ zIndex: 10000 }}>
-                    <div className="p-3">
+                  <div 
+                    className="absolute mt-2 bg-white border-2 rounded-lg shadow-2xl w-full z-50"
+                    style={{ borderColor: '#F09F52' }}
+                  >
+                    <div className="p-4">
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-xs font-semibold text-gray-600">
                           Select start week (1-{currentWeek}):
@@ -290,21 +308,22 @@ const FinancialExpenseBreakdownView = () => {
                           onClick={() => setShowWeekDropdown(false)}
                           className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded transition-colors"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
-                      <div className="grid grid-cols-6 sm:grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
+                      <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
                         {weeks.map((weekNum) => (
                           <button
                             key={weekNum}
                             onClick={() => handleWeekSelect(weekNum)}
-                            className={`p-1 sm:p-2 text-xs sm:text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105 ${
-                              startWeek === weekNum
-                                ? "bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-300"
-                                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-100 hover:border-green-300 hover:text-green-700"
-                            }`}
+                            className="p-2 text-sm rounded-lg border-2 transition-all duration-200 font-semibold hover:scale-105"
+                            style={{
+                              backgroundColor: startWeek === weekNum ? '#F09F52' : '#f9f9f9',
+                              color: startWeek === weekNum ? '#fff' : '#333',
+                              borderColor: startWeek === weekNum ? '#F09F52' : '#e0e0e0',
+                            }}
                             title={`Select start week ${weekNum}`}
                           >
                             {weekNum}
@@ -316,7 +335,6 @@ const FinancialExpenseBreakdownView = () => {
                 )}
               </div>
             ) : (
-              // Week input mode
               <div className="relative">
                 <input
                   type="number"
@@ -324,97 +342,115 @@ const FinancialExpenseBreakdownView = () => {
                   max={currentWeek}
                   value={startWeek}
                   onChange={handleWeekInputChange}
-                  className="w-full px-3 py-2 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 font-bold text-center bg-white shadow-sm text-sm"
+                  className="w-full px-4 py-2 border-2 rounded-lg font-bold text-center bg-white shadow-sm focus:outline-none focus:ring-2 transition-all"
+                  style={{ borderColor: '#F09F52' }}
                   placeholder={`1-${currentWeek}`}
                   disabled={loading}
                 />
-                <div className="absolute -bottom-5 left-0 right-0 text-xs text-gray-500 text-center">
+                <div className="absolute -bottom-6 left-0 right-0 text-xs text-gray-500 text-center">
                   Press Enter to confirm
                 </div>
               </div>
             )}
           </div>
-        </Box>
-      </Paper>
+        </div>
+      </div>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: '#0B2863', borderTopColor: 'transparent' }}></div>
+        </div>
       ) : error ? (
-        <Alert severity="error">{error}</Alert>
+        <div className="bg-red-50 border-2 border-red-200 text-red-800 px-6 py-4 rounded-lg">
+          {error}
+        </div>
       ) : summaryData ? (
-        <Box>
-          {/* Fixed Costs Section */}
-          <Paper sx={{ mb: 2, p: 2, borderRadius: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Chip label="Fixed Costs" sx={{ backgroundColor: "#059669", color: "white", fontWeight: 600 }} />
-            </Box>
-            <Table sx={{ backgroundColor: "#fff" }}>
-              <TableBody>
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4" style={{ color: '#0B2863' }}>
+            Financial Breakdown - Week {startWeek} to {currentWeek}, {year}
+          </h2>
+          
+          <div className="overflow-x-auto rounded-xl">
+            <table className="w-full">
+              <thead>
+                <tr style={{ backgroundColor: '#0B2863' }}>
+                  <th className="text-left px-6 py-4 text-white font-semibold text-base">Category</th>
+                  <th className="text-right px-6 py-4 text-white font-semibold text-base">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Fixed Costs Section */}
+                <tr className="bg-blue-50">
+                  <td colSpan={2} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
+                    FIXED COSTS
+                  </td>
+                </tr>
                 {EXPENSE_TYPES.filter(type => type.type === "fixed").map(type => (
-                  <TableRow key={type.key}>
-                    <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, color: type.color }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
-                  </TableRow>
+                  <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-3 pl-12 text-gray-700">{type.label}</td>
+                    <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
+                      ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          </Paper>
 
-          {/* Variable Costs Section */}
-          <Paper sx={{ mb: 2, p: 2, borderRadius: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Chip label="Variable Costs" sx={{ backgroundColor: "#3b82f6", color: "white", fontWeight: 600 }} />
-            </Box>
-            <Table sx={{ backgroundColor: "#fff" }}>
-              <TableBody>
+                {/* Variable Costs Section */}
+                <tr className="bg-orange-50">
+                  <td colSpan={2} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#F09F52' }}>
+                    VARIABLE COSTS
+                  </td>
+                </tr>
                 {EXPENSE_TYPES.filter(type => type.type === "variable").map(type => (
-                  <TableRow key={type.key}>
-                    <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, color: type.color }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
-                  </TableRow>
+                  <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-3 pl-12 text-gray-700">{type.label}</td>
+                    <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
+                      ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          </Paper>
 
-          {/* Summary Section */}
-          <Paper sx={{ p: 2, borderRadius: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Chip label="Financial Summary" sx={{ backgroundColor: "#6366f1", color: "white", fontWeight: 600 }} />
-            </Box>
-            <Table sx={{ backgroundColor: "#fff" }}>
-              <TableBody>
+                {/* Summary Section */}
+                <tr className="bg-gray-50">
+                  <td colSpan={2} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
+                    FINANCIAL SUMMARY
+                  </td>
+                </tr>
                 {EXPENSE_TYPES.filter(type => type.type === "total").map(type => (
-                  <TableRow key={type.key}>
-                    <TableCell sx={{ fontWeight: 500, color: "#374151" }}>{type.label}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, color: type.color }}>${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}</TableCell>
-                  </TableRow>
+                  <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-3 pl-12 font-semibold text-gray-700">{type.label}</td>
+                    <td className="px-6 py-3 text-right font-semibold" style={{ color: type.color }}>
+                      ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                  </tr>
                 ))}
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, color: "#059669" }}>Income</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#059669" }}>${summaryData.income.toLocaleString("en-US")}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, color: "#7c3aed" }}>Profit</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: "#7c3aed" }}>${summaryData.profit.toLocaleString("en-US")}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Paper>
-        </Box>
+                <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#0B2863' }}>Income</td>
+                  <td className="px-6 py-3 text-right font-bold" style={{ color: '#0B2863' }}>
+                    ${summaryData.income.toLocaleString("en-US")}
+                  </td>
+                </tr>
+                <tr style={{ backgroundColor: summaryData.profit >= 0 ? '#e8f5e9' : '#ffebee' }}>
+                  <td className="px-6 py-4 pl-12 font-bold text-lg" style={{ color: '#0B2863' }}>
+                    Profit
+                  </td>
+                  <td className="px-6 py-4 text-right font-bold text-lg" style={{ color: summaryData.profit >= 0 ? '#2e7d32' : '#c62828' }}>
+                    ${summaryData.profit.toLocaleString("en-US")}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : null}
 
-      <Button
-        variant="contained"
-        color="primary"
-        sx={{ mt: 3 }}
+      <button
+        className="mt-6 px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ backgroundColor: '#0B2863' }}
         onClick={() => setExportDialogOpen(true)}
         disabled={!summaryData}
       >
         Export / Print
-      </Button>
+      </button>
       
       <FinancialExpenseBreakdownExportDialog
         open={exportDialogOpen}
@@ -429,50 +465,22 @@ const FinancialExpenseBreakdownView = () => {
       
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
+          width: 8px;
+          height: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f1f1;
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e0;
+          background: #F09F52;
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #a0aec0;
-        }
-        .week-dropdown-container {
-          z-index: 9999 !important;
-          position: relative;
-        }
-        .week-dropdown {
-          z-index: 10000 !important;
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 0;
-        }
-        @media (max-width: 640px) {
-          .week-dropdown {
-            position: fixed !important;
-            left: 1rem !important;
-            right: 1rem !important;
-            width: auto !important;
-            z-index: 50 !important;
-          }
-          .week-dropdown .grid {
-            grid-template-columns: repeat(6, 1fr) !important;
-          }
-        }
-        @media (min-width: 641px) and (max-width: 1024px) {
-          .week-dropdown .grid {
-            grid-template-columns: repeat(8, 1fr) !important;
-          }
+          background: #e68a3d;
         }
       `}</style>
-    </Box>
+    </div>
   );
 };
 
