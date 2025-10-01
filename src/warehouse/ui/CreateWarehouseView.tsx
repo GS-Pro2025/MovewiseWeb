@@ -167,7 +167,7 @@ const CreateWarehouseView = () => {
 
       const orderKey = response?.key || response?.id || response?.orderKey;
       if (orderKey) {
-        navigate(`/add-operators-to-order/${orderKey}`);
+        navigate(`/app/add-operators-to-order/${orderKey}`);
       }
     } catch (err: any) {
       enqueueSnackbar(err.message || "Error creating warehouse order", { variant: "error" });

@@ -18,7 +18,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
   const navigate = useNavigate();
 
   const handleAddOperator = () => {
-    navigate(`/add-operators-to-order/${orderKey}`);
+    navigate(`/app/add-operators-to-order/${orderKey}`);
   };
   
   const columns = [
