@@ -271,7 +271,7 @@ const CreateOrder: React.FC = () => {
       setOrder(initialOrder);
       setDispatchTicketFile(null);
       setDispatchTicketPreview(null);
-      navigate(`/add-operators-to-order/${result.key}`);
+      navigate(`/app/add-operators-to-order/${result.key}`);
     } else {
       enqueueSnackbar('Sorry there was an error creating the order', { variant: 'error' });
       setErrorMsg(

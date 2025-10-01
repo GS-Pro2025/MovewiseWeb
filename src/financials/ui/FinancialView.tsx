@@ -518,7 +518,7 @@ const FinancialView = () => {
           onPayOrder={handleOpenPayDialog}
           onViewDetails={handleViewDetails}
           onOrderPaid={handleOrderPaid}
-          onViewOperators={(orderId: string) => navigate(`/add-operators-to-order/${orderId}`)}
+          onViewOperators={(orderId: string) => navigate(`/app/add-operators-to-order/${orderId}`)}
         />
       )}
 
