@@ -45,7 +45,7 @@ const WarehouseView = () => {
         }
       })
       .catch((err) => {
-        console.error("Error loading warehouse orders:", err);
+        console.error("Error loading Workhouse orders:", err);
         enqueueSnackbar("Error loading orders", { variant: "error" });
         setOrders([]);
         setRowCount(0);
@@ -208,7 +208,7 @@ const WarehouseView = () => {
             setRowCount(data.count);
           })
           .catch((err) => {
-            console.error("Error reloading warehouse orders:", err);
+            console.error("Error reloading Workhouse orders:", err);
             enqueueSnackbar("Error reloading orders", { variant: "error" });
           })
           .finally(() => setLoading(false));
@@ -246,10 +246,10 @@ const WarehouseView = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Warehouse Orders
+        Workhouse Orders
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        Here you can find all the warehouse orders registered in the system.
+        Here you can find all the Workhouse orders registered in the system.
       </Typography>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
