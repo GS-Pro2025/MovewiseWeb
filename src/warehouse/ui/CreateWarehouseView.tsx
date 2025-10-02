@@ -23,8 +23,6 @@ const COLORS = {
 };
 
 const DEFAULT_STATUS = "Pending";
-const DEFAULT_PERSON_ID = 7;
-const DEFAULT_JOB = 5;
 
 type LocationStep = 'country' | 'state' | 'city';
 
@@ -155,13 +153,11 @@ const CreateWarehouseView = () => {
       const response = await createWorkhouseOrder({
         date,
         status: DEFAULT_STATUS,
-        person_id: DEFAULT_PERSON_ID,
-        job: DEFAULT_JOB,
         customer_factory: selectedFactory.id_factory,
         dispatch_ticket: dispatchTicketString || null,
         state_usa: locationString,
       });
-      enqueueSnackbar("Warehouse order created successfully!", { variant: "success" });
+      enqueueSnackbar("Workhouse order created successfully!", { variant: "success" });
       setDispatchTicket(null);
       setDispatchTicketPreview(null);
 
@@ -170,7 +166,7 @@ const CreateWarehouseView = () => {
         navigate(`/app/add-operators-to-order/${orderKey}`);
       }
     } catch (err: any) {
-      enqueueSnackbar(err.message || "Error creating warehouse order", { variant: "error" });
+      enqueueSnackbar(err.message || "Error creating Workhouse order", { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -218,7 +214,7 @@ const CreateWarehouseView = () => {
               className="text-5xl font-bold mb-4"
               style={{ color: COLORS.primary }}
             >
-              Create Warehouse Order
+              Create Workhouse Order
             </h1>
             
             <div 
@@ -230,7 +226,7 @@ const CreateWarehouseView = () => {
             >
               <BusinessIcon style={{ color: COLORS.primary, fontSize: '1.25rem' }} />
               <span className="font-medium" style={{ color: COLORS.primary }}>
-                Warehouse Management System
+                Workhouse Management System
               </span>
             </div>
           </div>
@@ -531,12 +527,12 @@ const CreateWarehouseView = () => {
                 {loading ? (
                   <>
                     <CircularProgress size={24} style={{ color: 'white' }} />
-                    Creating Warehouse Order...
+                    Creating Workhouse Order...
                   </>
                 ) : (
                   <>
                     <WarehouseIcon />
-                    Create Warehouse Order
+                    Create Workhouse Order
                   </>
                 )}
               </button>
