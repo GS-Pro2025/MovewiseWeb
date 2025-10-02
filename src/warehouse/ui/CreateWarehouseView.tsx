@@ -157,7 +157,7 @@ const CreateWarehouseView = () => {
         dispatch_ticket: dispatchTicketString || null,
         state_usa: locationString,
       });
-      enqueueSnackbar("Workhouse order created successfully!", { variant: "success" });
+      enqueueSnackbar("Warehouse order created successfully!", { variant: "success" });
       setDispatchTicket(null);
       setDispatchTicketPreview(null);
 
@@ -166,7 +166,7 @@ const CreateWarehouseView = () => {
         navigate(`/app/add-operators-to-order/${orderKey}`);
       }
     } catch (err: any) {
-      enqueueSnackbar(err.message || "Error creating Workhouse order", { variant: "error" });
+      enqueueSnackbar(err.message || "Error creating warehouse order", { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -214,7 +214,7 @@ const CreateWarehouseView = () => {
               className="text-5xl font-bold mb-4"
               style={{ color: COLORS.primary }}
             >
-              Create Workhouse Order
+              Create Warehouse Order
             </h1>
             
             <div 
@@ -226,7 +226,7 @@ const CreateWarehouseView = () => {
             >
               <BusinessIcon style={{ color: COLORS.primary, fontSize: '1.25rem' }} />
               <span className="font-medium" style={{ color: COLORS.primary }}>
-                Workhouse Management System
+                Warehouse Management System
               </span>
             </div>
           </div>
@@ -527,12 +527,12 @@ const CreateWarehouseView = () => {
                 {loading ? (
                   <>
                     <CircularProgress size={24} style={{ color: 'white' }} />
-                    Creating Workhouse Order...
+                    Creating Warehouse Order...
                   </>
                 ) : (
                   <>
                     <WarehouseIcon />
-                    Create Workhouse Order
+                    Create Warehouse Order
                   </>
                 )}
               </button>
