@@ -3,7 +3,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "com.tuempresa.movewiseweb",
+        "package_name": "com.movewise.movewise",
         "sha256_cert_fingerprints": [
         "2C:59:AC:E7:64:93:27:02:5F:B4:42:B8:87:FD:5B:10:87:25:50:9A:BD:BD:4C:83:C2:B6:FA:5A:B9:C5:1A:70F:CF:44:E5"
         ]
