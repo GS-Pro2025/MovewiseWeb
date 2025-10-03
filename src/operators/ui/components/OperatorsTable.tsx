@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Operator, InactiveOperator } from '../../domain/OperatorsModels';
 import OperatorAvatar from './OperatorAvatar';
+import IconButton from '@mui/material/IconButton';
+import EmailIcon from '@mui/icons-material/Email';
+import SendEmailDialog from './SendEmailDialog';
 
 interface OperatorsTableProps {
   activeTab: 'active' | 'inactive';
@@ -27,6 +30,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
   onManageChildren,
   onActivateOperator
 }) => {
+  const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+
   const getFullName = (operator: Operator): string => {
     return `${operator.first_name} ${operator.last_name}`;
   };
@@ -39,6 +45,16 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
         </span>
       </div>
     );
+  };
+
+  const handleOpenEmailDialog = (operator: Operator) => {
+    setSelectedOperator(operator);
+    setIsEmailDialogOpen(true);
+  };
+
+  const handleCloseEmailDialog = () => {
+    setIsEmailDialogOpen(false);
+    setSelectedOperator(null);
   };
 
   return (
@@ -115,7 +131,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 items-center">
                         <button
                           onClick={() => onViewDetails(operator)}
                           className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
@@ -144,6 +160,17 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                         >
                           <i className="fas fa-trash"></i>
                         </button>
+
+                        {/* Send email button */}
+                        <IconButton
+                          onClick={() => handleOpenEmailDialog(operator)}
+                          title={operator.email ? `Send email to ${operator.email}` : 'No email available'}
+                          size="small"
+                          disabled={!operator.email}
+                          className="bg-gray-100 hover:bg-gray-200"
+                        >
+                          <EmailIcon fontSize="small" />
+                        </IconButton>
                       </div>
                     </td>
                   </tr>
@@ -235,6 +262,16 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Send Email Dialog */}
+      {selectedOperator && (
+        <SendEmailDialog
+          open={isEmailDialogOpen}
+          onClose={handleCloseEmailDialog}
+          operatorEmail={selectedOperator.email}
+          operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
+        />
       )}
     </>
   );
