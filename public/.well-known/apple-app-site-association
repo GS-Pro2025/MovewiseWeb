@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "FD6U9328PW.com.movewise.movewise",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
