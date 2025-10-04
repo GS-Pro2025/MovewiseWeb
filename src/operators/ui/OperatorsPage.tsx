@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import { useSnackbar } from 'notistack';
-import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator } from '../data/RepositoryOperators';
+import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator, createOperator } from '../data/RepositoryOperators';
 import { Operator } from '../domain/OperatorsModels';
 import { InactiveOperator } from '../domain/OperatorsModels';
 import OperatorsHeader from './components/OperatorsHeader';
@@ -11,6 +11,7 @@ import EditOperatorModal from './components/EditOperatorModal';
 import ManageChildrenModal from './components/ManageChildrenModal';
 import OperatorDetailsModal from './components/OperatorDetailsModal';
 import ConfirmDeleteDialog from './components/ConfirmDeleteDialog';
+import RegisterOperatorModal from './components/RegisterOperatorModal';
 
 const COLORS = {
   primary: '#0B2863',
@@ -38,7 +39,7 @@ const OperatorsPage: React.FC = () => {
   const [operatorForChildren, setOperatorForChildren] = useState<Operator | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [searchTerm, setSearchTerm] = useState<string>('');
-
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
   // Load operators
   useEffect(() => {
     const loadOperators = async () => {
@@ -137,6 +138,19 @@ const OperatorsPage: React.FC = () => {
     }
   }, [enqueueSnackbar]);
 
+  const handleRegisterOperator = useCallback(() => {
+    setIsRegisterModalOpen(true);
+  }, []);
+  const handleSaveNewOperator = useCallback(async (formData: FormData) => {
+    try {
+      await createOperator(formData); 
+      const response = await fetchOperators();
+      setOperators(response.results);
+      enqueueSnackbar('Operator registered successfully', { variant: 'success' });
+    } catch {
+      enqueueSnackbar('Error registering operator', { variant: 'error' });
+    }
+  }, [enqueueSnackbar]);
   const handleEditOperator = useCallback((operator: Operator) => {
     setOperatorToEdit(operator);
     setIsEditDialogOpen(true);
@@ -318,6 +332,7 @@ const OperatorsPage: React.FC = () => {
         filteredInactiveOperators={filteredInactiveOperators}
         onTabChange={setActiveTab}
         onSearchChange={setSearchTerm}
+        onRegisterOperator={handleRegisterOperator}
       />
 
       {/* Table Component */}
@@ -379,6 +394,14 @@ const OperatorsPage: React.FC = () => {
             setIsDialogOpen(false);
             setSelectedOperator(null);
           }}
+        />
+      )}
+
+      {isRegisterModalOpen && (
+        <RegisterOperatorModal
+          isOpen={isRegisterModalOpen}
+          onClose={() => setIsRegisterModalOpen(false)}
+          onSave={handleSaveNewOperator}
         />
       )}
     </div>
