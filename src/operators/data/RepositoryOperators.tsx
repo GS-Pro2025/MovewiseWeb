@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Operator, OperatorsResponse } from '../domain/OperatorsModels';
 import { InactiveOperatorsResponse } from '../domain/OperatorsModels';
 import Cookies from 'js-cookie';
@@ -209,6 +210,65 @@ export const addChildToOperator = async (childData: {
     }
   } catch (error) {
     console.error('Error adding child to operator:', error);
+    throw error;
+  }
+};
+
+export const createOperator = async (formData: FormData): Promise<Operator> => {
+  console.log('createOperator: preparing to send FormData');
+
+  // Loguear contenido FormData (archivos con nombre/tamaño/tipo)
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      console.log(`FormData entry -> ${key}: File(name=${value.name}, size=${value.size}, type=${value.type})`);
+    } else {
+      console.log(`FormData entry -> ${key}:`, value);
+    }
+  }
+
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/operators/create/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // NO Content-Type: dejar que el navegador añada boundary
+      },
+      body: formData,
+    });
+
+    console.log('createOperator: received response', response.status);
+
+    // Leer texto crudo (para poder ver body aunque no sea JSON)
+    const rawText = await response.text().catch(() => '');
+    let payload: any = null;
+    try {
+      payload = rawText ? JSON.parse(rawText) : null;
+    } catch (e) {
+      console.warn('createOperator: response is not valid JSON, raw text:', rawText, e);
+    }
+
+    console.log('createOperator: parsed payload:', payload ?? rawText);
+
+    if (response.status === 201 || response.ok) {
+      return payload as Operator;
+    }
+
+    if (response.status === 400) {
+      // lanzar el payload (validation errors) para que el llamador lo muestre
+      const err = payload ?? { message: 'Validation error', status: 400 };
+      console.error('createOperator: validation/business error', err);
+      throw err;
+    }
+
+    throw new Error(`HTTP error! status: ${response.status} - ${rawText}`);
+  } catch (error) {
+    console.error('createOperator: unexpected error', error);
     throw error;
   }
 };
