@@ -13,7 +13,7 @@ import {
   Typography,
   Paper,
 } from '@mui/material';
-import { sendPdfEmail } from '../../data/EmailRepository';
+import { sendPdfEmail } from '../../../service/EmailRepository';
 import { useSnackbar } from 'notistack';
 
 interface SendEmailDialogProps {

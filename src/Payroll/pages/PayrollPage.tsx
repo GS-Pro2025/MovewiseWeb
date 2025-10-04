@@ -27,6 +27,7 @@ import { PayrollStats } from '../components/PayrollStats';
 import { PayrollTable } from '../components/PayrollTable';
 import { PayrollError } from '../components/PayrollError';
 import { PayrollLoading } from '../components/PayrollLoading';
+import { PayrollEmailDialog } from '../components/PayrollEmailDialog';
 
 export default function PayrollPage() {
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,10 @@ export default function PayrollPage() {
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [locationStep, setLocationStep] = useState<LocationStep>("country");
+
+  // Estado para el diálogo de envío de correo
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedOperatorForEmail, setSelectedOperatorForEmail] = useState<OperatorRowExtended | null>(null);
 
   // Cargar países al montar
   useEffect(() => {
@@ -109,13 +114,10 @@ export default function PayrollPage() {
       const response = await payrollService(week, currentYear, locationString);
 
       // Generar mapeo de fechas para los encabezados
-      const dates = generateWeekDates(
-        response.week_info.start_date
-      );
+      const dates = generateWeekDates(response.week_info.start_date);
       setWeekDates(dates);
 
       const map = new Map<string, OperatorRow>();
-      // Map para cachear payments y evitar llamadas duplicadas
       const paymentCache = new Map<string, number>();
 
       // PASO 1: Crear la estructura básica de cada operador y obtener bonus único
@@ -131,6 +133,7 @@ export default function PayrollPage() {
             lastName: d.last_name,
             role: d.role,
             cost: d.salary,
+            email: d.email, // NUEVO: Agregar email del API
             pay: payId ? payId.toString() : null,
             total: 0,
             additionalBonuses: 0,
@@ -360,6 +363,16 @@ export default function PayrollPage() {
     }
   };
 
+  const handleSendEmail = (operator: OperatorRowExtended) => {
+    setSelectedOperatorForEmail(operator);
+    setEmailDialogOpen(true);
+  };
+
+  const handleCloseEmailDialog = () => {
+    setEmailDialogOpen(false);
+    setSelectedOperatorForEmail(null);
+  };
+
   return (
     <div className="min-h-screen">
       <div className="container mx-auto py-8">
@@ -423,6 +436,7 @@ export default function PayrollPage() {
               weekDates={weekDates}
               searchTerm={searchTerm}
               onOperatorClick={setSelectedOperator}
+              onSendEmail={handleSendEmail} // <-- NUEVO
             />
           </>
         )}
@@ -441,6 +455,15 @@ export default function PayrollPage() {
             assignmentsByDay={selectedOperator.assignmentsByDay}
           />
         )}
+
+        {/* Email Dialog */}
+        <PayrollEmailDialog
+          open={emailDialogOpen}
+          onClose={handleCloseEmailDialog}
+          operator={selectedOperatorForEmail}
+          weekInfo={weekInfo}
+          weekDates={weekDates}
+        />
       </div>
     </div>
   );
