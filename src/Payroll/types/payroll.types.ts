@@ -3,6 +3,7 @@ import { OperatorRow } from '../../models/payrroll';
 // Extender OperatorRow con campos adicionales necesarios
 export interface OperatorRowExtended extends OperatorRow {
   netTotal: number;
+  email: string;
   _bonusDaysAdded?: Set<string>;
 }
 
