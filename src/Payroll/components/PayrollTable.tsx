@@ -2,12 +2,16 @@ import React from 'react';
 import { weekdayKeys } from '../../models/payrroll';
 import { formatCurrency, formatDateForHeader } from '../util/PayrollUtil';
 import { OperatorRowExtended } from '../types/payroll.types';
+import IconButton from '@mui/material/IconButton';
+import EmailIcon from '@mui/icons-material/Email';
+import Tooltip from '@mui/material/Tooltip';
 
 interface PayrollTableProps {
   filteredOperators: OperatorRowExtended[];
   weekDates: { [key: string]: string };
   searchTerm: string;
   onOperatorClick: (operator: OperatorRowExtended) => void;
+  onSendEmail: (operator: OperatorRowExtended) => void; // <-- NUEVO
 }
 
 export const PayrollTable: React.FC<PayrollTableProps> = ({
@@ -15,6 +19,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
   weekDates,
   searchTerm,
   onOperatorClick,
+  onSendEmail, // <-- NUEVO
 }) => {
   return (
     <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-lg border border-white/40 overflow-hidden">
@@ -22,6 +27,9 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
         <table className="min-w-full">
           <thead>
             <tr className="bg-gradient-to-r from-gray-50 via-blue-50 to-indigo-50 border-b-2 border-blue-200">
+              <th className="py-3 px-4 text-center font-bold text-gray-700 uppercase tracking-wide text-xs">
+                Actions
+              </th>
               <th className="py-3 px-4 text-left font-bold text-gray-700 uppercase tracking-wide text-xs">
                 Pay
               </th>
@@ -69,19 +77,40 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
               filteredOperators.map((r, index) => (
                 <tr
                   key={r.code}
-                  className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 cursor-pointer transition-all duration-300 hover:shadow-md ${
+                  className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-300 hover:shadow-md ${
                     index % 2 === 0 ? "bg-white" : "bg-gray-50"
                   }`}
-                  onClick={() => onOperatorClick(r)}
                 >
                   <td className="py-2 px-4 text-center">
+                    <Tooltip title={`Send payment summary to ${r.name} ${r.lastName}`}>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSendEmail(r);
+                        }}
+                        size="small"
+                        sx={{ color: '#3b82f6' }}
+                      >
+                        <EmailIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </td>
+                  <td 
+                    className="py-2 px-4 text-center cursor-pointer"
+                    onClick={() => onOperatorClick(r)}
+                  >
                     {r.pay != null ? (
                       <span className="text-xl">✅</span>
                     ) : (
                       <span className="text-xl">⚠️</span>
                     )}
                   </td>
-                  <td className="py-2 px-4 font-bold text-gray-800">{r.code}</td>
+                  <td 
+                    className="py-2 px-4 font-bold text-gray-800 cursor-pointer"
+                    onClick={() => onOperatorClick(r)}
+                  >
+                    {r.code}
+                  </td>
                   <td className="py-2 px-4 font-semibold text-gray-700">{formatCurrency(r.cost)}</td>
                   <td className="py-2 px-4 font-semibold text-gray-700">{r.name}</td>
                   <td className="py-2 px-4 font-semibold text-gray-700">{r.lastName}</td>
@@ -122,7 +151,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
             ) : (
               <tr>
                 <td
-                  colSpan={weekdayKeys.length + 10}
+                  colSpan={weekdayKeys.length + 11} // +1 for new Actions column
                   className="py-16 text-center"
                 >
                   <div className="flex flex-col items-center">

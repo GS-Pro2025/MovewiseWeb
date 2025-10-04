@@ -23,6 +23,7 @@ export interface WeekInfo {
     pay?: string | null;
     total?: number;
     additionalBonuses: number;
+    email: string;
     expense?: number;
     grandTotal?: number;
     assignmentIds: (number | string)[];

@@ -7,6 +7,7 @@ export interface AssignmentData {
   salary: number;
   first_name: string;
   last_name: string;
+  email: string; 
   bonus: number | null;
   role: string;
   id_payment: string | null;
