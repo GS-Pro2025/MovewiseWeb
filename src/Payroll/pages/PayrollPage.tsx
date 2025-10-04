@@ -28,6 +28,7 @@ import { PayrollTable } from '../components/PayrollTable';
 import { PayrollError } from '../components/PayrollError';
 import { PayrollLoading } from '../components/PayrollLoading';
 import { PayrollEmailDialog } from '../components/PayrollEmailDialog';
+import { OperatorRowExtended } from '../types/payroll.types';
 
 export default function PayrollPage() {
   const [loading, setLoading] = useState(true);

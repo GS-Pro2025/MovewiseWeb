@@ -86,10 +86,8 @@ Payroll Department`;
     const netPayment = `$${(operator.netTotal || 0).toLocaleString()}`;
 
     const weekdayKeys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-    type DayKey = typeof weekdayKeys[number];
     const daysWorked = weekdayKeys.filter((day) => {
-      const key = day as keyof OperatorRowExtended as DayKey;
-      const val = operator[key] as unknown as number | undefined;
+      const val = (operator as any)[day] as number | undefined;
       return typeof val === 'number' && val > 0;
     }).length;
     
@@ -141,10 +139,8 @@ Payroll Department`;
     
     // Calcular días trabajados
     const weekdayKeys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-    type DayKey = typeof weekdayKeys[number];
     const daysWorked = weekdayKeys.filter((day) => {
-      const key = day as keyof OperatorRowExtended as DayKey;
-      const val = operator[key] as unknown as number | undefined;
+      const val = (operator as any)[day] as number | undefined;
       return typeof val === 'number' && val > 0;
     }).length;
 
