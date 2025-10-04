@@ -10,6 +10,7 @@ interface OperatorsHeaderProps {
   filteredInactiveOperators: InactiveOperator[];
   onTabChange: (tab: 'active' | 'inactive') => void;
   onSearchChange: (term: string) => void;
+  onRegisterOperator: () => void; // Nueva prop
 }
 
 const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
@@ -20,7 +21,8 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
   filteredOperators,
   filteredInactiveOperators,
   onTabChange,
-  onSearchChange
+  onSearchChange,
+  onRegisterOperator
 }) => {
   return (
     <>
@@ -31,9 +33,21 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
             <h2 className="text-2xl font-bold text-gray-800">Operators Directory</h2>
             <p className="text-gray-600">Manage and view operator information</p>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500">Total Operators</div>
-            <div className="text-2xl font-bold text-blue-600">{operators.length + inactiveOperators.length}</div>
+          <div className="flex items-center gap-4">
+            {/* Botón de Registro - Solo visible en pestaña activa */}
+            {activeTab === 'active' && (
+              <button
+                onClick={onRegisterOperator}
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <i className="fas fa-user-plus"></i>
+                <span>Register Operator</span>
+              </button>
+            )}
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Total Operators</div>
+              <div className="text-2xl font-bold text-blue-600">{operators.length + inactiveOperators.length}</div>
+            </div>
           </div>
         </div>
 
