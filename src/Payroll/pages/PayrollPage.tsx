@@ -364,11 +364,6 @@ export default function PayrollPage() {
     }
   };
 
-  const handleSendEmail = (operator: OperatorRowExtended) => {
-    setSelectedOperatorForEmail(operator);
-    setEmailDialogOpen(true);
-  };
-
   const handleCloseEmailDialog = () => {
     setEmailDialogOpen(false);
     setSelectedOperatorForEmail(null);
@@ -437,25 +432,29 @@ export default function PayrollPage() {
               weekDates={weekDates}
               searchTerm={searchTerm}
               onOperatorClick={setSelectedOperator}
-              onSendEmail={handleSendEmail} // <-- NUEVO
             />
           </>
         )}
 
         {/* Modal */}
         {selectedOperator && weekInfo && (
-          <PayrollModal
-            isOpen={!!selectedOperator}
-            onClose={handleModalClose}
-            operatorData={{
-              ...selectedOperator,
-              expense: selectedOperator.expense || 0,
-            }}
-            periodStart={weekInfo.start_date}
-            periodEnd={weekInfo.end_date}
-            assignmentsByDay={selectedOperator.assignmentsByDay}
-          />
-        )}
+        <PayrollModal
+          isOpen={!!selectedOperator}
+          onClose={handleModalClose}
+          operatorData={{
+            ...selectedOperator,
+            cost: selectedOperator.cost,
+            additionalBonuses: selectedOperator.additionalBonuses || 0, 
+            assignmentIds: selectedOperator.assignmentIds || [], 
+            paymentIds: selectedOperator.paymentIds || [],
+            expense: selectedOperator.expense || 0,
+          }}
+          periodStart={weekInfo.start_date}
+          periodEnd={weekInfo.end_date}
+          weekDates={weekDates}
+          assignmentsByDay={selectedOperator.assignmentsByDay}
+        />
+      )}
 
         {/* Email Dialog */}
         <PayrollEmailDialog

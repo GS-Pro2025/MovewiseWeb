@@ -19,11 +19,11 @@ export interface WeekInfo {
     name: string;
     lastName: string;
     role: string;
-    cost: number;
+    cost: number; // ASEGURAR que cost esté definido
+    email: string;
     pay?: string | null;
     total?: number;
     additionalBonuses: number;
-    email: string;
     expense?: number;
     grandTotal?: number;
     assignmentIds: (number | string)[];
