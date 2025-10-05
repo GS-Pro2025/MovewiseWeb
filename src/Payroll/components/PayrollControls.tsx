@@ -95,13 +95,13 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
       
       /* Asegurar que el dropdown tenga el z-index más alto */
       .week-dropdown-container {
-        z-index: 9999 !important;
+        z-index: 1 !important;
         position: relative;
       }
       
       .week-dropdown {
-        z-index: 10000 !important;
-        position: absolute;
+        z-index: 1 !important;
+        position: relative;
         top: 100%;
         left: 0;
         right: 0;
@@ -190,7 +190,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
   return (
     <div className="bg-white/0 backdrop-blur-lg rounded-2xl shadow-lg border border-white/40 p-6 mb-6 week-dropdown-container">
       {/* Animated border */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 animate-pulse" style={{ backgroundSize: '200% 100%' }}></div>
+      <div className="top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 animate-pulse" style={{ backgroundSize: '200% 100%' }}></div>
       
       {/* Main Controls */}
       <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
@@ -311,7 +311,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 font-bold text-center bg-white shadow-sm"
                   placeholder="1-53"
                 />
-                <div className="absolute -bottom-5 left-0 right-0 text-xs text-gray-500 text-center">
+                <div className="relative -bottom-5 left-0 right-0 text-xs text-gray-500 text-center">
                   Press Enter to confirm
                 </div>
               </div>
@@ -337,7 +337,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 hover:bg-gray-100 rounded-md"
+                  className="relative right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 hover:bg-gray-100 rounded-md"
                   title="Clear search"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
