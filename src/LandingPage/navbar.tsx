@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-scroll";
 import { Link as RouterLink } from "react-router-dom";
 import textoMW from "../assets/textoMWb.png";
 import textoMWScroll from "../assets/textoMW.png";
-
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -14,6 +12,19 @@ const Navbar: React.FC = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Habilita scroll suave con CSS nativo
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = "smooth";
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+      setIsOpen(false);
+    }
+  };
 
   return (
     <nav
@@ -26,63 +37,53 @@ const Navbar: React.FC = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-8">
           {/* Logo */}
-          <Link to="home" smooth={true} duration={500} offset={-80}>
+          <a href="#home" onClick={() => scrollToSection("home")}>
             <img
               src={isScrolled ? textoMWScroll : textoMW}
               alt="MOVING WISE"
-              className={`h-12 sm:h-16 w-auto py-2 transition-all duration-300 hover:scale-110 cursor-pointer ${
-                isScrolled ? "opacity-100" : "opacity-100"
-              }`}
+              className="h-12 sm:h-16 w-auto py-2 transition-all duration-300 hover:scale-110 cursor-pointer"
             />
-          </Link>
+          </a>
 
-          {/* Links desktop - Ahora a la izquierda después del logo */}
+          {/* Links desktop */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link
-              to="features"
-              smooth={true}
-              duration={500}
-              offset={-80}
-              className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
+            <a
+              href="#features"
+              onClick={() => scrollToSection("features")}
+              className={`cursor-pointer transition-all duration-300 hover:text-[#FFE67B] ${
                 isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
               Features
-            </Link>
-            <Link
-              to="benefits"
-              smooth={true}
-              duration={500}
-              offset={-80}
-              className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
+            </a>
+            <a
+              href="#benefits"
+              onClick={() => scrollToSection("benefits")}
+              className={`cursor-pointer transition-all duration-300 hover:text-[#FFE67B] ${
                 isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
               Benefits
-            </Link>
-            <Link
-              to="plans"
-              smooth={true}
-              duration={500}
-              offset={-80}
-              className={`cursor-pointer transition-all duration-300  hover:text-[#FFE67B] ${
+            </a>
+            <a
+              href="#plans"
+              onClick={() => scrollToSection("plans")}
+              className={`cursor-pointer transition-all duration-300 hover:text-[#FFE67B] ${
                 isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
               Plans
-            </Link>
-            <Link
-              to="contact"
-              smooth={true}
-              duration={500}
-              offset={-80}
+            </a>
+            <a
+              href="#contact"
+              onClick={() => scrollToSection("contact")}
               className="cursor-pointer text-[#0B2863] bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
             >
               Contact Us
-            </Link>
+            </a>
           </div>
 
-          {/* Login/Register button - Ahora a la derecha con ml-auto */}
+          {/* Login/Register */}
           <div className="hidden md:flex ml-auto">
             <RouterLink
               to="/login"
@@ -130,46 +131,34 @@ const Navbar: React.FC = () => {
       {isOpen && (
         <div className="md:hidden bg-white/90 backdrop-blur-md shadow-lg">
           <div className="flex flex-col items-center space-y-4 py-4">
-            <Link
-              to="features"
-              smooth={true}
-              duration={500}
-              offset={-80}
+            <a
+              href="#features"
+              onClick={() => scrollToSection("features")}
               className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
-              onClick={() => setIsOpen(false)}
             >
               Features
-            </Link>
-            <Link
-              to="benefits"
-              smooth={true}
-              duration={500}
-              offset={-80}
+            </a>
+            <a
+              href="#benefits"
+              onClick={() => scrollToSection("benefits")}
               className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
-              onClick={() => setIsOpen(false)}
             >
               Benefits
-            </Link>
-            <Link
-              to="plans"
-              smooth={true}
-              duration={500}
-              offset={-80}
+            </a>
+            <a
+              href="#plans"
+              onClick={() => scrollToSection("plans")}
               className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
-              onClick={() => setIsOpen(false)}
             >
               Plans
-            </Link>
-            <Link
-              to="contact"
-              smooth={true}
-              duration={500}
-              offset={-80}
+            </a>
+            <a
+              href="#contact"
+              onClick={() => scrollToSection("contact")}
               className="cursor-pointer bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
-              onClick={() => setIsOpen(false)}
             >
               Contact Us
-            </Link>
+            </a>
 
             {/* Login/Register en móvil */}
             <RouterLink

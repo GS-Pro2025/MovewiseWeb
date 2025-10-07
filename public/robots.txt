@@ -1,36 +1,43 @@
 User-agent: *
 
-# Permitir acceso completo a páginas públicas
+# --- Páginas públicas permitidas ---
 Allow: /
-Allow: /login
+Allow: /app/login
 
-# Bloquear rutas protegidas de la aplicación (después del login)
-Disallow: /home
-Disallow: /payroll
-Disallow: /resume-fuel
-Disallow: /summary-cost
-Disallow: /operators
-Disallow: /extra-cost
-Disallow: /add-operators-to-order/
-Disallow: /create-daily
-Disallow: /financialsView
-Disallow: /warehouse
-Disallow: /create-warehouse
-Disallow: /customers
-Disallow: /admins
-Disallow: /create-admin
-Disallow: /jobs-tools
-Disallow: /statistics
-Disallow: /order-breakdown
+# --- Bloquear rutas internas o protegidas (solo accesibles tras login) ---
+Disallow: /app/home
+Disallow: /app/payroll
+Disallow: /app/resume-fuel
+Disallow: /app/summary-cost
+Disallow: /app/operators
+Disallow: /app/extra-cost
+Disallow: /app/add-operators-to-order
+Disallow: /app/create-daily
+Disallow: /app/financialsView
+Disallow: /app/warehouse
+Disallow: /app/create-warehouse
+Disallow: /app/customers
+Disallow: /app/admins
+Disallow: /app/create-admin
+Disallow: /app/jobs-tools
+Disallow: /app/statistics
+Disallow: /app/order-breakdown
 
-# Bloquear archivos técnicos innecesarios para SEO
+# --- Bloquear recursos técnicos innecesarios para SEO ---
 Disallow: /static/
 Disallow: /*.map$
 
-# PERMITIR recursos CSS y JS (IMPORTANTE para SEO moderno)
+# --- Permitir recursos críticos (CSS, JS, imágenes, fuentes, etc.) ---
 Allow: /assets/
 Allow: /*.js$
 Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.svg$
+Allow: /*.webp$
+Allow: /*.woff$
+Allow: /*.woff2$
 
-# Ubicación del sitemap
+# --- Sitemap ---
 Sitemap: https://movingwiseapp.com/sitemap.xml

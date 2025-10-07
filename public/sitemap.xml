@@ -1,18 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Página principal -->
+<urlset 
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
+  <!-- Home -->
   <url>
     <loc>https://movingwiseapp.com/</loc>
-    <lastmod>2025-01-15</lastmod>
+    <lastmod>2025-10-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Login - cambiar ruta según nueva estructura -->
+  <!-- Login -->
   <url>
     <loc>https://movingwiseapp.com/app/login</loc>
-    <lastmod>2025-01-15</lastmod>
+    <lastmod>2025-10-07</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Secciones de la landing (anclas) -->
+  <url>
+    <loc>https://movingwiseapp.com/#features</loc>
+    <lastmod>2025-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://movingwiseapp.com/#benefits</loc>
+    <lastmod>2025-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://movingwiseapp.com/#plans</loc>
+    <lastmod>2025-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://movingwiseapp.com/#contact</loc>
+    <lastmod>2025-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>
