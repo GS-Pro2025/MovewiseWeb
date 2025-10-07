@@ -20,6 +20,7 @@ import HistoricalAnalysis from "./HistoricalAnalysis";
 import FinancialView from "../../financials/ui/FinancialView"; 
 import IncomeCalculator from './components/IncomeCalculator';
 import FinancialExpenseBreakdownView from "../../financials/ui/FinancialExpenseBreakdownView";
+import { useTranslation } from "react-i18next";
 
 interface StatItem {
   label: string;
@@ -44,6 +45,7 @@ const getAvailableYearsFromService = (): number[] => {
 };
 
 const Statistics = () => {
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -546,7 +548,7 @@ const Statistics = () => {
   }
 
   return (
-    <div className="min-h-screen p-3 sm:p-6">
+    <div key={i18n.language} className="notranslate min-h-screen p-3 sm:p-6">
       <div className="max-w-full mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
