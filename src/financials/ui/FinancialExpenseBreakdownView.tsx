@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
@@ -168,7 +169,7 @@ const FinancialExpenseBreakdownView = () => {
         fetchBreakdown(startWeek, currentWeek, year)
       ]);
       enqueueSnackbar("Data refreshed successfully", { variant: "success" });
-    } catch (any) {
+    } catch (err: any) {
       enqueueSnackbar("Error refreshing data", { variant: "error" });
     } finally {
       setRefreshLoading(false);
