@@ -5,15 +5,18 @@ import { Summary } from "../domain/SummaryModel";
 import { useNavigate } from "react-router-dom";
 import { enqueueSnackbar } from "notistack";
 import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownExportDialog";
+import { listCostsApi, updateCostAmountApi, deleteCostApi } from "../data/CostRepository";
+import { Cost } from "../domain/ModelsCost";
+import CreateCostDialog from "./components/CreateCostDialog";
 
 // Costos fijos y variables con etiquetas
 const EXPENSE_TYPES = [
-  { key: "expense", label: "General Expenses", type: "variable", color: "#F09F52" },
-  { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#F09F52" },
-  { key: "workCost", label: "Extra Costs", type: "variable", color: "#F09F52" },
-  { key: "driverSalaries", label: "Driver Salaries", type: "fixed", color: "#0B2863" },
-  { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#0B2863" },
-  { key: "totalCost", label: "Total Cost", type: "total", color: "#0B2863" },
+  { key: "expense", label: "General Expenses", type: "variable", color: "#F09F52", calculated: true },
+  { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#F09F52", calculated: true },
+  { key: "workCost", label: "Extra Costs", type: "variable", color: "#F09F52", calculated: true },
+  { key: "driverSalaries", label: "Driver Salaries", type: "fixed", color: "#0B2863", calculated: true },
+  { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#0B2863", calculated: true },
+  { key: "totalCost", label: "Total Cost", type: "total", color: "#0B2863", calculated: true },
 ];
 
 // Trimestres y semestres exactos
@@ -40,9 +43,13 @@ const FinancialExpenseBreakdownView = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<{ expenses: Record<string, number>, income: number, profit: number } | null>(null);
+  const [dbCosts, setDbCosts] = useState<Cost[]>([]);
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<"select" | "input">("select");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  console.log("showCreateDialog", showCreateDialog);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const repository = new SummaryCostRepository();
   const navigate = useNavigate();
 
@@ -66,6 +73,17 @@ const FinancialExpenseBreakdownView = () => {
     setStartWeek(1);
     setSelectedTimelapse(null);
   }, [year]);
+
+  // Fetch database costs
+  const fetchDbCosts = async () => {
+    try {
+      const costs = await listCostsApi();
+      setDbCosts(costs);
+    } catch (err: any) {
+      console.error("Error fetching database costs:", err);
+      enqueueSnackbar("Error loading database costs", { variant: "error" });
+    }
+  };
 
   // Fetch breakdown usando la nueva función de rango
   const fetchBreakdown = async (fromWeek: number, toWeek: number, selectedYear: number) => {
@@ -101,6 +119,7 @@ const FinancialExpenseBreakdownView = () => {
   // Fetch inicial y cuando cambian los pickers
   useEffect(() => {
     fetchBreakdown(startWeek, currentWeek, year);
+    fetchDbCosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startWeek, currentWeek, year]);
 
@@ -114,6 +133,25 @@ const FinancialExpenseBreakdownView = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Handle cost actions
+  const handleCostAction = async (costId: string, action: 'add' | 'subtract' | 'delete', amount?: number) => {
+    setActionLoading(costId);
+    try {
+      if (action === 'delete') {
+        await deleteCostApi(costId);
+        enqueueSnackbar("Cost deleted successfully", { variant: "success" });
+      } else if (amount && amount > 0) {
+        await updateCostAmountApi(costId, action, amount);
+        enqueueSnackbar(`Cost ${action === 'add' ? 'increased' : 'decreased'} successfully`, { variant: "success" });
+      }
+      await fetchDbCosts(); // Refresh costs
+    } catch (err: any) {
+      enqueueSnackbar(err.message || "Error performing action", { variant: "error" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
@@ -158,6 +196,108 @@ const FinancialExpenseBreakdownView = () => {
     fetchBreakdown(start, end, year);
   };
 
+  // Separar costos de BD por tipo
+  const fixedDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'FIXED');
+  const variableDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'VARIABLE');
+
+  // Action Menu Component
+  const ActionMenu = ({ cost }: { cost: Cost }) => {
+    const [showMenu, setShowMenu] = useState(false);
+    const [amount, setAmount] = useState<number>(0);
+    const [showAmountInput, setShowAmountInput] = useState<'add' | 'subtract' | null>(null);
+
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          disabled={actionLoading === cost.id_cost}
+          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+        >
+          {actionLoading === cost.id_cost ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-600 border-t-transparent"></div>
+          ) : (
+            <i className="fas fa-ellipsis-v text-gray-600"></i>
+          )}
+        </button>
+
+        {showMenu && (
+          <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[150px]">
+            <button
+              onClick={() => {
+                setShowAmountInput('add');
+                setShowMenu(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-green-50 text-green-600 transition-colors"
+            >
+              <i className="fas fa-plus mr-2"></i>Add Amount
+            </button>
+            <button
+              onClick={() => {
+                setShowAmountInput('subtract');
+                setShowMenu(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-orange-50 text-orange-600 transition-colors"
+            >
+              <i className="fas fa-minus mr-2"></i>Subtract Amount
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to delete this cost?')) {
+                  handleCostAction(cost.id_cost, 'delete');
+                }
+                setShowMenu(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 transition-colors border-t border-gray-100"
+            >
+              <i className="fas fa-trash mr-2"></i>Delete
+            </button>
+          </div>
+        )}
+
+        {showAmountInput && (
+          <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 min-w-[200px]">
+            <h4 className="font-semibold mb-2">
+              {showAmountInput === 'add' ? 'Add Amount' : 'Subtract Amount'}
+            </h4>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3"
+              placeholder="Enter amount"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (amount > 0) {
+                    handleCostAction(cost.id_cost, showAmountInput, amount);
+                  }
+                  setShowAmountInput(null);
+                  setAmount(0);
+                }}
+                className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => {
+                  setShowAmountInput(null);
+                  setAmount(0);
+                }}
+                className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 md:p-8 bg-gray-100 min-h-screen">
       <button 
@@ -173,13 +313,24 @@ const FinancialExpenseBreakdownView = () => {
       </button>
       
       <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl shadow-lg p-6 mb-6">
-        <h1 className="text-4xl font-bold mb-2 tracking-wide" style={{ color: '#0B2863' }}>
-          Expense Breakdown
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Select a period below. The breakdown will show data for the selected range. Use quick buttons for standard periods or customize your own range.
-        </p>
-        
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 tracking-wide" style={{ color: '#0B2863' }}>
+              Expense Breakdown
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Select a period below. The breakdown will show data for the selected range. Use quick buttons for standard periods or customize your own range.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateDialog(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
+          >
+            <i className="fas fa-plus"></i>
+            Create Cost
+          </button>
+        </div>
+
         {/* Year Picker */}
         <div className="mb-6 max-w-xs">
           <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
@@ -218,7 +369,7 @@ const FinancialExpenseBreakdownView = () => {
           ))}
         </div>
 
-        {/* Week Picker */}
+        {/* Week Picker - mantener código existente */}
         <div className="mt-6">
           <h3 className="text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
             Select Start Week (Custom Range)
@@ -376,65 +527,138 @@ const FinancialExpenseBreakdownView = () => {
                 <tr style={{ backgroundColor: '#0B2863' }}>
                   <th className="text-left px-6 py-4 text-white font-semibold text-base">Category</th>
                   <th className="text-right px-6 py-4 text-white font-semibold text-base">Amount</th>
+                  <th className="text-center px-6 py-4 text-white font-semibold text-base">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Fixed Costs Section */}
                 <tr className="bg-blue-50">
-                  <td colSpan={2} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
+                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
                     FIXED COSTS
                   </td>
                 </tr>
+                
+                {/* Database Fixed Costs */}
+                {fixedDbCosts.map(cost => (
+                  <tr key={cost.id_cost} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-3 pl-12 text-gray-700">
+                      {cost.description}
+                    </td>
+                    <td className="px-6 py-3 text-right font-medium" style={{ color: '#0B2863' }}>
+                      ${cost.cost.toLocaleString("en-US")}
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <ActionMenu cost={cost} />
+                    </td>
+                  </tr>
+                ))}
+                
+                {/* Calculated Fixed Costs */}
                 {EXPENSE_TYPES.filter(type => type.type === "fixed").map(type => (
                   <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 text-gray-700">{type.label}</td>
+                    <td className="px-6 py-3 pl-12 text-gray-700">
+                      {type.label}
+                      <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                        CALCULATED
+                      </span>
+                    </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
                       ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                    <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                      No actions
                     </td>
                   </tr>
                 ))}
 
                 {/* Variable Costs Section */}
                 <tr className="bg-orange-50">
-                  <td colSpan={2} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#F09F52' }}>
+                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#F09F52' }}>
                     VARIABLE COSTS
                   </td>
                 </tr>
+                
+                {/* Database Variable Costs */}
+                {variableDbCosts.map(cost => (
+                  <tr key={cost.id_cost} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-3 pl-12 text-gray-700">
+                      {cost.description}
+                    </td>
+                    <td className="px-6 py-3 text-right font-medium" style={{ color: '#F09F52' }}>
+                      ${cost.cost.toLocaleString("en-US")}
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <ActionMenu cost={cost} />
+                    </td>
+                  </tr>
+                ))}
+                
+                {/* Calculated Variable Costs */}
                 {EXPENSE_TYPES.filter(type => type.type === "variable").map(type => (
                   <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 text-gray-700">{type.label}</td>
+                    <td className="px-6 py-3 pl-12 text-gray-700">
+                      {type.label}
+                      <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
+                        CALCULATED
+                      </span>
+                    </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
                       ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                    <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                      No actions
                     </td>
                   </tr>
                 ))}
 
                 {/* Summary Section */}
                 <tr className="bg-gray-50">
-                  <td colSpan={2} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
+                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
                     FINANCIAL SUMMARY
                   </td>
                 </tr>
                 {EXPENSE_TYPES.filter(type => type.type === "total").map(type => (
                   <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 font-semibold text-gray-700">{type.label}</td>
+                    <td className="px-6 py-3 pl-12 font-semibold text-gray-700">
+                      {type.label}
+                      <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
+                        CALCULATED
+                      </span>
+                    </td>
                     <td className="px-6 py-3 text-right font-semibold" style={{ color: type.color }}>
                       ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                    <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                      No actions
                     </td>
                   </tr>
                 ))}
                 <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#0B2863' }}>Income</td>
+                  <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#0B2863' }}>
+                    Income
+                    <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
+                      CALCULATED
+                    </span>
+                  </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#0B2863' }}>
                     ${summaryData.income.toLocaleString("en-US")}
+                  </td>
+                  <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                    No actions
                   </td>
                 </tr>
                 <tr style={{ backgroundColor: summaryData.profit >= 0 ? '#e8f5e9' : '#ffebee' }}>
                   <td className="px-6 py-4 pl-12 font-bold text-lg" style={{ color: '#0B2863' }}>
                     Profit
+                    <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
+                      CALCULATED
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-lg" style={{ color: summaryData.profit >= 0 ? '#2e7d32' : '#c62828' }}>
                     ${summaryData.profit.toLocaleString("en-US")}
+                  </td>
+                  <td className="px-6 py-4 text-center text-gray-400 text-sm">
+                    No actions
                   </td>
                 </tr>
               </tbody>
@@ -462,7 +686,16 @@ const FinancialExpenseBreakdownView = () => {
         endWeek={currentWeek}
         year={year}
       />
-      
+
+      <CreateCostDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSuccess={async () => {
+          await fetchDbCosts();
+          await fetchBreakdown(startWeek, currentWeek, year);
+        }}
+      />
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
