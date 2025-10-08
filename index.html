@@ -2,11 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicon y íconos -->
     <link rel="icon" type="image/svg+xml" href="/Logo.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- Preconnect y preload para mejorar rendimiento -->
+    <!-- Preconnect y Preload (mejora LCP y FCP) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="preload"
@@ -27,20 +31,21 @@
       referrerpolicy="no-referrer" 
     />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- SEO Meta Tags -->
+    <!-- Title y descripción -->
     <title>
       MovingWise - Moving Company Management Software | Moving Wise System
     </title>
     <meta
       name="description"
-      content="MovingWise is the complete software solution to manage your moving company. Control operators, inventory, costs, payroll and finances. Moving wise business management made simple."
+      content="MovingWise is the complete software solution to manage your moving company. Control operators, inventory, costs, payroll, and finances in one platform."
     />
     <meta
       name="keywords"
-      content="MovingWise, Moving Wise, movingwise, moving wise, moving company software, moving business management, moving company system, operator control, logistics software, moving inventory, operator payroll, moving costs, relocation software, moving management platform"
+      content="MovingWise, Moving Wise, movingwise, moving wise, moving company software, moving business management, relocation software, operator control, inventory tracking, payroll system, logistics management"
     />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://movingwiseapp.com" />
 
     <!-- Open Graph -->
     <meta
@@ -49,7 +54,7 @@
     />
     <meta
       property="og:description"
-      content="MovingWise provides complete system to manage your moving company. Total control of operators, inventory and costs with our moving wise solution."
+      content="MovingWise provides a complete system to manage your moving company. Gain control over operators, inventory, and finances with our business management solution."
     />
     <meta property="og:image" content="https://movingwiseapp.com/logo.png" />
     <meta property="og:url" content="https://movingwiseapp.com" />
@@ -64,12 +69,9 @@
     />
     <meta
       name="twitter:description"
-      content="MovingWise complete system to manage your moving company. Total control of operators, inventory and costs."
+      content="MovingWise is the all-in-one platform for moving business management."
     />
     <meta name="twitter:image" content="https://movingwiseapp.com/logo.png" />
-
-    <!-- Canonical -->
-    <link rel="canonical" href="https://movingwiseapp.com" />
 
     <!-- Robots -->
     <meta
@@ -90,49 +92,50 @@
         "@type": "SoftwareApplication",
         "name": "MovingWise",
         "alternateName": ["Moving Wise", "movingwise", "moving wise"],
-        "description": "MovingWise is the complete software solution for moving companies. Manage operators, inventory, costs, and payroll with our moving wise business management platform.",
+        "description": "MovingWise is a complete web-based software solution to manage moving companies — control operators, inventory, costs, and payroll with ease.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web Browser",
+        "url": "https://movingwiseapp.com",
+        "publisher": {
+          "@type": "Organization",
+          "name": "MovingWise",
+          "url": "https://movingwiseapp.com"
+        },
         "offers": {
           "@type": "Offer",
           "price": "0",
           "priceCurrency": "USD"
         },
-        "publisher": {
-          "@type": "Organization",
-          "name": "MovingWise",
-          "alternateName": "Moving Wise"
-        },
-        "url": "https://movingwiseapp.com",
-        "sameAs": [],
         "keywords": [
           "MovingWise",
           "Moving Wise",
-          "movingwise",
-          "moving wise",
-          "moving company software",
+          "movingwise software",
           "moving business management",
-          "wise Moving",
-          "Move"
+          "logistics software",
+          "relocation system",
+          "operator payroll system"
         ]
       }
     </script>
 
-    <!-- Progressive Web App (opcional) -->
+    <!-- Progressive Web App -->
     <meta name="application-name" content="MovingWise" />
     <meta name="apple-mobile-web-app-title" content="MovingWise" />
     <meta name="msapplication-TileColor" content="#ffffff" />
     <meta name="theme-color" content="#ffffff" />
 
-    <!-- Variaciones -->
-    <meta name="subject" content="MovingWise moving wise software management" />
+    <!-- Extra SEO Meta -->
+    <meta
+      name="subject"
+      content="MovingWise - Moving company management software"
+    />
     <meta
       name="topic"
-      content="MovingWise moving company management software"
+      content="Software for managing moving businesses and logistics operations"
     />
     <meta
       name="summary"
-      content="MovingWise (Moving Wise) - Complete moving company management software solution"
+      content="MovingWise (Moving Wise) - Complete management software solution for moving companies."
     />
   </head>
   <body>
@@ -140,7 +143,9 @@
       MovingWise requires JavaScript to run. Please enable JavaScript in your
       browser.
     </noscript>
+
     <div id="root"></div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

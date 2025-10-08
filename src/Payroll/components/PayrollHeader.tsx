@@ -3,7 +3,7 @@ import React from 'react';
 export const PayrollHeader: React.FC = () => {
   return (
     <div className="mb-6 text-center">
-      <div className="inline-flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full shadow-lg">
+      <div className="inline-flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-[#092961] rounded-full shadow-lg">
         <svg
           className="w-12 h-12 text-white"
           fill="none"
@@ -18,7 +18,7 @@ export const PayrollHeader: React.FC = () => {
           />
         </svg>
       </div>
-      <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+      <h1 className="text-4xl font-bold bg-[#092961] bg-clip-text text-transparent mb-3">
         Operators Payroll
       </h1>
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50/80 rounded-full border border-blue-200">
