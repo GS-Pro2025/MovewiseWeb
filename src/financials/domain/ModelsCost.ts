@@ -13,3 +13,26 @@ export interface Cost{
     update: string,
     is_active: boolean
 }
+
+export interface LightOrderSummary {
+  key: string;
+  income: number;
+  summary: {
+    expense: number;
+    rentingCost: number;
+    fuelCost: number;
+    workCost: number;
+    driverSalaries: number;
+    otherSalaries: number;
+    customer_factory: number;
+    totalCost: number;
+  };
+}
+
+export interface LightOrderSummaryResult {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: LightOrderSummary[];
+  filter_applied?: Record<string, any>;
+}

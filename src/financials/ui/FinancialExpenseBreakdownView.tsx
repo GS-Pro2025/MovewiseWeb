@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
-import { Summary } from "../domain/SummaryModel";
 import { useNavigate } from "react-router-dom";
 import { enqueueSnackbar } from "notistack";
 import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownExportDialog";
@@ -97,25 +96,43 @@ const FinancialExpenseBreakdownView = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await repository.getSummaryCostRange(fromWeek, toWeek, selectedYear, true);
-      
+      const result = await repository.getSummaryCostRangeLight(fromWeek, toWeek, selectedYear, true);
+
       const expenses: Record<string, number> = {};
       let totalIncome = 0;
-      
-      // Inicializar expenses
+
+      // Inicializar expenses con 0
       EXPENSE_TYPES.forEach(type => {
         expenses[type.key] = 0;
       });
 
       result.results.forEach(order => {
         EXPENSE_TYPES.forEach(type => {
-          expenses[type.key] += order.summary[type.key as keyof Summary] || 0;
+          // Asegurar que siempre sea un número válido
+          const value = Number(order.summary[type.key as keyof typeof order.summary]) || 0;
+          expenses[type.key] = Number(expenses[type.key]) + value;
         });
-        totalIncome += order.income || 0;
+        totalIncome += Number(order.income) || 0;
       });
 
-      const totalCost = expenses.totalCost;
-      setSummaryData({ expenses, income: totalIncome, profit: totalIncome - totalCost });
+      // --- Sumar los costos de la API ---
+      const totalDbCosts = dbCosts.reduce((sum, cost) => sum + (Number(cost.cost) || 0), 0);
+      expenses.totalCost = Number(expenses.totalCost) + totalDbCosts;
+
+      // Limitar a 2 decimales todos los valores de expenses
+      Object.keys(expenses).forEach(key => {
+        const value = Number(expenses[key]) || 0;
+        expenses[key] = Number(value.toFixed(2));
+      });
+
+      // --- El profit debe restar los costos de la API ---
+      const profit = Number((totalIncome - expenses.totalCost).toFixed(2));
+
+      setSummaryData({ 
+        expenses, 
+        income: Number(totalIncome.toFixed(2)), 
+        profit 
+      });
     } catch (err: any) {
       setError(err.message || "Error loading breakdown");
     } finally {
@@ -148,11 +165,43 @@ const FinancialExpenseBreakdownView = () => {
       if (action === 'delete') {
         await deleteCostApi(costId);
         enqueueSnackbar("Cost deleted successfully", { variant: "success" });
+        await fetchDbCosts();
+        await fetchBreakdown(startWeek, currentWeek, year);
       } else if (amount && amount > 0) {
         await updateCostAmountApi(costId, action, amount);
         enqueueSnackbar(`Cost ${action === 'add' ? 'increased' : 'decreased'} successfully`, { variant: "success" });
+
+        // Actualiza el estado localmente sin llamar a la API
+        setDbCosts(prevCosts =>
+          prevCosts.map(cost =>
+            cost.id_cost === costId
+              ? {
+                  ...cost,
+                  cost:
+                    action === "add"
+                      ? Number((Number(cost.cost) + amount).toFixed(2))
+                      : Number((Number(cost.cost) - amount).toFixed(2)),
+                }
+              : cost
+          )
+        );
+
+        setSummaryData(prev => {
+          if (!prev) return prev;
+          // Sumar/restar al totalCost y recalcular profit
+          const dbCostChange = action === "add" ? amount : -amount;
+          const newTotalCost = Number((prev.expenses.totalCost + dbCostChange).toFixed(2));
+          const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+          return {
+            ...prev,
+            expenses: {
+              ...prev.expenses,
+              totalCost: newTotalCost,
+            },
+            profit: newProfit,
+          };
+        });
       }
-      await fetchDbCosts(); // Refresh costs
     } catch (err: any) {
       enqueueSnackbar(err.message || "Error performing action", { variant: "error" });
     } finally {

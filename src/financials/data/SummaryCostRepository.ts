@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { UpdatePaymentData } from "../domain/ModelOrderUpdate";
+import { LightOrderSummaryResult } from "../domain/ModelsCost";
 import { PaginatedOrderSummaryResult } from "../domain/OrderSummaryModel";
 import Cookies from 'js-cookie';
 
@@ -57,7 +58,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
         }
     }
 
-    // Nueva función para rango de semanas
+    // función para rango de semanas
     async getSummaryCostRange(
         startWeek: number,
         endWeek: number,
@@ -103,6 +104,52 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
             throw new Error('Error en la solicitud');
         }
     }
+
+    
+  async getSummaryCostRangeLight(
+    startWeek: number,
+    endWeek: number,
+    year: number,
+    onlyPaid?: boolean
+  ): Promise<LightOrderSummaryResult> {
+    const token = Cookies.get('authToken');
+    if (!token) {
+      window.location.href = '/login';
+      throw new Error('No hay token de autenticación');
+    }
+
+    let url = `${this.baseUrl}/orders-summary-light/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
+    if (onlyPaid === true) {
+      url += '&only_paid=true';
+    }
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 403) {
+        Cookies.remove('authToken');
+        window.location.href = '/login';
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
+
+      if (!response.ok) {
+        throw new Error('Error al obtener los datos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error en la solicitud');
+    }
+  }
+
 }
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
