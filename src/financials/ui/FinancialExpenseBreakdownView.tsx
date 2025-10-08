@@ -8,6 +8,7 @@ import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownEx
 import { listCostsApi, updateCostAmountApi, deleteCostApi } from "../data/CostRepository";
 import { Cost } from "../domain/ModelsCost";
 import CreateCostDialog from "./components/CreateCostDialog";
+import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 
 // Costos fijos y variables con etiquetas
 const EXPENSE_TYPES = [
@@ -48,8 +49,13 @@ const FinancialExpenseBreakdownView = () => {
   const [viewMode, setViewMode] = useState<"select" | "input">("select");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  console.log("showCreateDialog", showCreateDialog);
+  console.log(showCreateDialog);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; cost: Cost | null }>({
+    open: false,
+    cost: null
+  });
+  const [refreshLoading, setRefreshLoading] = useState(false);
   const repository = new SummaryCostRepository();
   const navigate = useNavigate();
 
@@ -153,6 +159,39 @@ const FinancialExpenseBreakdownView = () => {
     }
   };
 
+  // Handle refresh button
+  const handleRefresh = async () => {
+    setRefreshLoading(true);
+    try {
+      await Promise.all([
+        fetchDbCosts(),
+        fetchBreakdown(startWeek, currentWeek, year)
+      ]);
+      enqueueSnackbar("Data refreshed successfully", { variant: "success" });
+    } catch (any) {
+      enqueueSnackbar("Error refreshing data", { variant: "error" });
+    } finally {
+      setRefreshLoading(false);
+    }
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.cost) return;
+    
+    setActionLoading(deleteModal.cost.id_cost);
+    try {
+      await deleteCostApi(deleteModal.cost.id_cost);
+      enqueueSnackbar("Cost deleted successfully", { variant: "success" });
+      await fetchDbCosts();
+      setDeleteModal({ open: false, cost: null });
+    } catch (err: any) {
+      enqueueSnackbar(err.message || "Error deleting cost", { variant: "error" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
   const handleWeekSelect = (selectedWeek: number) => {
@@ -200,7 +239,7 @@ const FinancialExpenseBreakdownView = () => {
   const fixedDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'FIXED');
   const variableDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'VARIABLE');
 
-  // Action Menu Component
+  // Action Menu Component (actualizado)
   const ActionMenu = ({ cost }: { cost: Cost }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [amount, setAmount] = useState<number>(0);
@@ -242,9 +281,7 @@ const FinancialExpenseBreakdownView = () => {
             </button>
             <button
               onClick={() => {
-                if (window.confirm('Are you sure you want to delete this cost?')) {
-                  handleCostAction(cost.id_cost, 'delete');
-                }
+                setDeleteModal({ open: true, cost });
                 setShowMenu(false);
               }}
               className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 transition-colors border-t border-gray-100"
@@ -322,13 +359,27 @@ const FinancialExpenseBreakdownView = () => {
               Select a period below. The breakdown will show data for the selected range. Use quick buttons for standard periods or customize your own range.
             </p>
           </div>
-          <button
-            onClick={() => setShowCreateDialog(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
-          >
-            <i className="fas fa-plus"></i>
-            Create Cost
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2 disabled:opacity-50"
+            >
+              {refreshLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              ) : (
+                <i className="fas fa-sync-alt"></i>
+              )}
+              Refresh
+            </button>
+            <button
+              onClick={() => setShowCreateDialog(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center gap-2"
+            >
+              <i className="fas fa-plus"></i>
+              Create Cost
+            </button>
+          </div>
         </div>
 
         {/* Year Picker */}
@@ -694,6 +745,14 @@ const FinancialExpenseBreakdownView = () => {
           await fetchDbCosts();
           await fetchBreakdown(startWeek, currentWeek, year);
         }}
+      />
+
+      <ConfirmDeleteModal
+        open={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, cost: null })}
+        onConfirm={handleDeleteConfirm}
+        costDescription={deleteModal.cost?.description || ""}
+        loading={actionLoading === deleteModal.cost?.id_cost}
       />
 
       <style>{`
