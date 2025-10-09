@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { createCostApi } from '../../data/CostRepository';
-import { createCost } from '../../domain/ModelsCost';
+import { createCost, Cost } from '../../domain/ModelsCost';
 import { enqueueSnackbar } from 'notistack';
 
 interface CreateCostDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (newCost: Cost) => void;
 }
 
 const CreateCostDialog: React.FC<CreateCostDialogProps> = ({ open, onClose, onSuccess }) => {
@@ -59,9 +59,9 @@ const CreateCostDialog: React.FC<CreateCostDialogProps> = ({ open, onClose, onSu
 
     setLoading(true);
     try {
-      await createCostApi(formData);
+      const newCost = await createCostApi(formData);
       enqueueSnackbar('Cost created successfully', { variant: 'success' });
-      onSuccess();
+      onSuccess(newCost);
       onClose();
     } catch (error: any) {
       enqueueSnackbar(error.message || 'Error creating cost', { variant: 'error' });
