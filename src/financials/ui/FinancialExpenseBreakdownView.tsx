@@ -232,8 +232,31 @@ const FinancialExpenseBreakdownView = () => {
     setActionLoading(deleteModal.cost.id_cost);
     try {
       await deleteCostApi(deleteModal.cost.id_cost);
+      
+      // Actualizar dbCosts localmente removiendo el costo
+      setDbCosts(prevCosts => 
+        prevCosts.filter(cost => cost.id_cost !== deleteModal.cost!.id_cost)
+      );
+      
+      // Actualizar summaryData localmente
+      setSummaryData(prev => {
+        if (!prev) return prev;
+        
+        const deletedCostAmount = Number(deleteModal.cost!.cost);
+        const newTotalCost = Number((prev.expenses.totalCost - deletedCostAmount).toFixed(2));
+        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+        
+        return {
+          ...prev,
+          expenses: {
+            ...prev.expenses,
+            totalCost: newTotalCost,
+          },
+          profit: newProfit,
+        };
+      });
+      
       enqueueSnackbar("Cost deleted successfully", { variant: "success" });
-      await fetchDbCosts();
       setDeleteModal({ open: false, cost: null });
     } catch (err: any) {
       enqueueSnackbar(err.message || "Error deleting cost", { variant: "error" });
@@ -241,7 +264,6 @@ const FinancialExpenseBreakdownView = () => {
       setActionLoading(null);
     }
   };
-
   const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
   const handleWeekSelect = (selectedWeek: number) => {
@@ -791,9 +813,28 @@ const FinancialExpenseBreakdownView = () => {
       <CreateCostDialog
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
-        onSuccess={async () => {
-          await fetchDbCosts();
-          await fetchBreakdown(startWeek, currentWeek, year);
+        onSuccess={async (newCost: Cost) => {
+          // Actualizar dbCosts localmente
+          setDbCosts(prevCosts => [...prevCosts, newCost]);
+          
+          // Actualizar summaryData localmente
+          setSummaryData(prev => {
+            if (!prev) return prev;
+            
+            const newTotalCost = Number((prev.expenses.totalCost + Number(newCost.cost)).toFixed(2));
+            const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+            
+            return {
+              ...prev,
+              expenses: {
+                ...prev.expenses,
+                totalCost: newTotalCost,
+              },
+              profit: newProfit,
+            };
+          });
+          
+          enqueueSnackbar("Cost created successfully", { variant: "success" });
         }}
       />
 
