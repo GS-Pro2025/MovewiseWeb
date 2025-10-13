@@ -17,6 +17,7 @@ import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
 import DeleteOrderDialog from './deleteOrderDialog';
 import CalendarDialog from './calendarDialog';
+import AddFuelCostDialog from '../../addFuelCostToOrder/ui/AddFuelCostDialog';
 
 // Services
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
@@ -167,6 +168,8 @@ const OrdersTable: React.FC = () => {
   const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<NormalizedTableData | null>(null);
   const [dispatchTicketDialogOpen, setDispatchTicketDialogOpen] = useState(false);
   const [dispatchTicketUrl, setDispatchTicketUrl] = useState<string | null>(null);
+  const [addFuelCostDialogOpen, setAddFuelCostDialogOpen] = useState(false);
+  const [selectedOrderForFuel, setSelectedOrderForFuel] = useState<NormalizedTableData | null>(null);
 
   // Context menu
   const [contextMenu, setContextMenu] = useState<{
@@ -453,6 +456,11 @@ const OrdersTable: React.FC = () => {
     }
   };
 
+  const handleAddFuelCost = (order: NormalizedTableData) => {
+    setSelectedOrderForFuel(order);
+    setAddFuelCostDialogOpen(true);
+  };
+
   // Export handlers
   const handleExportExcel = (data: NormalizedTableData[], filename: string) => {
     // Convert to original TableData format for export
@@ -525,7 +533,8 @@ const OrdersTable: React.FC = () => {
         onEditOrder={handleEditOrder}
         onInactivateOrder={handleInactivateOrder}
         onDeleteOrder={handleDeleteOrder}
-        onViewDispatchTicket={handleViewDispatchTicket} // pass handler
+        onViewDispatchTicket={handleViewDispatchTicket}
+        onAddFuelCost={handleAddFuelCost}
       />
 
       {/* Modals */}
@@ -657,6 +666,21 @@ const OrdersTable: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Add Fuel Cost Dialog */}
+      <AddFuelCostDialog
+        open={addFuelCostDialogOpen}
+        onClose={() => {
+          setAddFuelCostDialogOpen(false);
+          setSelectedOrderForFuel(null);
+        }}
+        orderKey={selectedOrderForFuel?.id || ''}
+        orderRef={selectedOrderForFuel?.key_ref || ''}
+        onSuccess={() => {
+          // Opcionalmente recargar datos
+          loadData();
+        }}
+      />
     </Box>
   );
 };
