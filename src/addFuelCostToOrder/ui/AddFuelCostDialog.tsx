@@ -284,7 +284,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                   Odometer Reading
                 </Typography>
                 <Box container spacing={3}>
-                  <Box xs={12} md={6}>
+                  <Box xs={12} md={6} mb={4}>
                     <TextField
                       fullWidth
                       required
@@ -309,7 +309,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                     />
                   </Box>
 
-                  <Box xs={12} md={6}>
+                  <Box xs={12} md={6} mb={4}>
                     <TextField
                       fullWidth
                       required
@@ -374,7 +374,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                   Fuel Information
                 </Typography>
                 <Box container spacing={3}>
-                  <Box xs={12} md={4}>
+                  <Box xs={12} md={4} mb={4}>
                     <TextField
                       fullWidth
                       required
@@ -400,7 +400,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                     />
                   </Box>
 
-                  <Box xs={12} md={4}>
+                  <Box xs={12} md={4} mb={4}>
                     <TextField
                       fullWidth
                       required
@@ -425,7 +425,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                     />
                   </Box>
 
-                  <Box xs={12} md={4}>
+                  <Box xs={12} md={4} mb={4}>
                     <TextField
                       fullWidth
                       label="Total Cost"
