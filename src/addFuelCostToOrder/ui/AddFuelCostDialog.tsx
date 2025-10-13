@@ -14,7 +14,6 @@ import {
   Typography,
   Box,
   CircularProgress,
-  Grid2 as Grid,
   InputAdornment,
   Divider,
   Paper,
@@ -284,8 +283,8 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                   <Speed sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Odometer Reading
                 </Typography>
-                <Grid container spacing={3}>
-                  <Grid xs={12} md={6}>
+                <Box container spacing={3}>
+                  <Box xs={12} md={6}>
                     <TextField
                       fullWidth
                       required
@@ -308,9 +307,9 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                         }
                       }}
                     />
-                  </Grid>
+                  </Box>
 
-                  <Grid xs={12} md={6}>
+                  <Box xs={12} md={6}>
                     <TextField
                       fullWidth
                       required
@@ -339,8 +338,8 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                         }
                       }}
                     />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
 
                 {/* Calculated Distance */}
                 {distance > 0 && (
@@ -374,8 +373,8 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                   <LocalGasStation sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Fuel Information
                 </Typography>
-                <Grid container spacing={3}>
-                  <Grid xs={12} md={4}>
+                <Box container spacing={3}>
+                  <Box xs={12} md={4}>
                     <TextField
                       fullWidth
                       required
@@ -399,9 +398,9 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                         }
                       }}
                     />
-                  </Grid>
+                  </Box>
 
-                  <Grid xs={12} md={4}>
+                  <Box xs={12} md={4}>
                     <TextField
                       fullWidth
                       required
@@ -424,9 +423,9 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                         }
                       }}
                     />
-                  </Grid>
+                  </Box>
 
-                  <Grid xs={12} md={4}>
+                  <Box xs={12} md={4}>
                     <TextField
                       fullWidth
                       label="Total Cost"
@@ -452,8 +451,8 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                         }
                       }}
                     />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
             </Box>
           )}
