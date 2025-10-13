@@ -16,8 +16,10 @@ import {
   CircularProgress,
   Grid,
   InputAdornment,
+  Divider,
+  Paper,
 } from '@mui/material';
-import { LocalGasStation, Speed, AttachMoney } from '@mui/icons-material';
+import { LocalGasStation, Speed, AttachMoney, Close } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { fetchTrucksByOrder, TruckByOrder } from '../repository/RepositoryTruck';
 import { createFuelCost } from '../repository/FuelCostRepository';
@@ -38,7 +40,6 @@ interface FuelCostData {
   fuel_qty: number;
   cost_gl: number;
   cost_fuel: number;
-  identifier_1: string;
 }
 
 const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
@@ -60,7 +61,6 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
     fuel_qty: 0,
     cost_gl: 0,
     cost_fuel: 0,
-    identifier_1: '',
   });
 
   // Calculate distance when odometers change
@@ -131,7 +131,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
         cost_fuel: formData.cost_fuel,
         cost_gl: formData.cost_gl,
         fuel_qty: formData.fuel_qty,
-        identifier_1: formData.identifier_1 || `${orderRef}-${Date.now()}`,
+        identifier_1: `${orderRef}-${Date.now()}`,
         distance: distance,
       };
 
@@ -146,7 +146,6 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
         fuel_qty: 0,
         cost_gl: 0,
         cost_fuel: 0,
-        identifier_1: '',
       });
 
       onSuccess?.();
@@ -169,229 +168,324 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
         fuel_qty: 0,
         cost_gl: 0,
         cost_fuel: 0,
-        identifier_1: '',
       });
       onClose();
     }
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Box display="flex" alignItems="center" gap={1}>
-          <LocalGasStation style={{ color: '#0B2863' }} />
-          <Typography variant="h6" style={{ color: '#0B2863', fontWeight: 'bold' }}>
-            Add Fuel Cost to Order {orderRef}
-          </Typography>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          borderRadius: '16px',
+          boxShadow: '0 24px 48px rgba(0, 0, 0, 0.15)',
+        }
+      }}
+    >
+      {/* Custom Header */}
+      <DialogTitle sx={{ p: 0 }}>
+        <Box 
+          sx={{
+            background: 'linear-gradient(135deg, #0B2863 0%, #1e3a8a 100%)',
+            p: 3,
+            borderRadius: '16px 16px 0 0',
+            color: 'white',
+            position: 'relative'
+          }}
+        >
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center" gap={2}>
+              <LocalGasStation fontSize="large" />
+              <Box>
+                <Typography variant="h5" fontWeight="bold">
+                  Add Fuel Cost
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Order: {orderRef}
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              onClick={handleClose}
+              disabled={loading}
+              sx={{ 
+                color: 'white',
+                minWidth: 'auto',
+                p: 1,
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+              }}
+            >
+              <Close />
+            </Button>
+          </Box>
         </Box>
       </DialogTitle>
       
-      <DialogContent>
-        <Box sx={{ mt: 2 }}>
+      <DialogContent sx={{ p: 0 }}>
+        <Box sx={{ p: 3 }}>
           {loadingTrucks ? (
-            <Box display="flex" justifyContent="center" alignItems="center" py={4}>
-              <CircularProgress />
+            <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+              <CircularProgress sx={{ color: '#0B2863' }} />
               <Typography sx={{ ml: 2 }}>Loading trucks...</Typography>
             </Box>
           ) : trucks.length === 0 ? (
-            <Box textAlign="center" py={4}>
+            <Box textAlign="center" py={8}>
+              <LocalGasStation sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No trucks assigned
+              </Typography>
               <Typography color="text.secondary">
-                No trucks assigned to this order
+                This order has no trucks assigned to it
               </Typography>
             </Box>
           ) : (
-            <Grid container spacing={3}>
-              {/* Truck Selection */}
-              <Grid item xs={12}>
+            <Box>
+              {/* Truck Selection Section */}
+              <Paper elevation={0} sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 2, mb: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 2 }}>
+                  Select Truck
+                </Typography>
                 <FormControl fullWidth required>
-                  <InputLabel>Select Truck</InputLabel>
+                  <InputLabel>Choose a truck</InputLabel>
                   <Select
                     value={formData.truck}
                     onChange={(e) => handleInputChange('truck', e.target.value as number)}
-                    label="Select Truck"
+                    label="Choose a truck"
+                    sx={{ bgcolor: 'white' }}
                   >
                     <MenuItem value={0}>
                       <em>Select a truck</em>
                     </MenuItem>
                     {trucks.map((truck) => (
                       <MenuItem key={truck.id_truck} value={truck.id_truck}>
-                        <Box>
+                        <Box sx={{ py: 1 }}>
                           <Typography variant="body1" fontWeight="bold">
                             {truck.name} - {truck.number_truck}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {truck.type} | {truck.category}
+                            {truck.type.toUpperCase()} | {truck.category}
                           </Typography>
                         </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
+              </Paper>
+
+              <Divider sx={{ my: 3 }} />
 
               {/* Odometer Section */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 3 }}>
+                  <Speed sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Odometer Reading
                 </Typography>
-              </Grid>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Initial Odometer"
+                      type="number"
+                      value={formData.initial_odometer || ''}
+                      onChange={(e) => handleInputChange('initial_odometer', Number(e.target.value) || 0)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Speed sx={{ color: '#0B2863' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: <InputAdornment position="end">miles</InputAdornment>,
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': { borderColor: '#0B2863' },
+                          '&.Mui-focused fieldset': { borderColor: '#0B2863' }
+                        }
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Initial Odometer"
-                  type="number"
-                  value={formData.initial_odometer}
-                  onChange={(e) => handleInputChange('initial_odometer', Number(e.target.value))}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Speed />
-                      </InputAdornment>
-                    ),
-                    endAdornment: <InputAdornment position="end">mi</InputAdornment>,
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Final Odometer"
-                  type="number"
-                  value={formData.final_odometer}
-                  onChange={(e) => handleInputChange('final_odometer', Number(e.target.value))}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Speed />
-                      </InputAdornment>
-                    ),
-                    endAdornment: <InputAdornment position="end">mi</InputAdornment>,
-                  }}
-                  error={formData.final_odometer > 0 && formData.final_odometer <= formData.initial_odometer}
-                  helperText={
-                    formData.final_odometer > 0 && formData.final_odometer <= formData.initial_odometer
-                      ? 'Final odometer must be greater than initial'
-                      : ''
-                  }
-                />
-              </Grid>
-
-              {/* Calculated Distance */}
-              {distance > 0 && (
-                <Grid item xs={12}>
-                  <Box 
-                    sx={{ 
-                      p: 2, 
-                      bgcolor: '#e3f2fd', 
-                      borderRadius: 1,
-                      textAlign: 'center'
-                    }}
-                  >
-                    <Typography variant="h6" style={{ color: '#0B2863', fontWeight: 'bold' }}>
-                      Calculated Distance: {distance.toLocaleString()} miles
-                    </Typography>
-                  </Box>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Final Odometer"
+                      type="number"
+                      value={formData.final_odometer || ''}
+                      onChange={(e) => handleInputChange('final_odometer', Number(e.target.value) || 0)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Speed sx={{ color: '#0B2863' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: <InputAdornment position="end">miles</InputAdornment>,
+                      }}
+                      error={formData.final_odometer > 0 && formData.final_odometer <= formData.initial_odometer}
+                      helperText={
+                        formData.final_odometer > 0 && formData.final_odometer <= formData.initial_odometer
+                          ? 'Final odometer must be greater than initial'
+                          : ''
+                      }
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': { borderColor: '#0B2863' },
+                          '&.Mui-focused fieldset': { borderColor: '#0B2863' }
+                        }
+                      }}
+                    />
+                  </Grid>
                 </Grid>
-              )}
+
+                {/* Calculated Distance */}
+                {distance > 0 && (
+                  <Box sx={{ mt: 3 }}>
+                    <Paper 
+                      elevation={0}
+                      sx={{ 
+                        p: 3, 
+                        background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                        borderRadius: 2,
+                        textAlign: 'center',
+                        border: '1px solid #0B2863'
+                      }}
+                    >
+                      <Typography variant="h5" sx={{ color: '#0B2863', fontWeight: 'bold' }}>
+                        Distance: {distance.toLocaleString()} miles
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#0B2863', opacity: 0.8 }}>
+                        Automatically calculated from odometer readings
+                      </Typography>
+                    </Paper>
+                  </Box>
+                )}
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
 
               {/* Fuel Section */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 3 }}>
+                  <LocalGasStation sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Fuel Information
                 </Typography>
-              </Grid>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Fuel Quantity"
+                      type="number"
+                      inputProps={{ step: 0.01, min: 0 }}
+                      value={formData.fuel_qty || ''}
+                      onChange={(e) => handleInputChange('fuel_qty', Number(e.target.value) || 0)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocalGasStation sx={{ color: '#0B2863' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: <InputAdornment position="end">gal</InputAdornment>,
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': { borderColor: '#0B2863' },
+                          '&.Mui-focused fieldset': { borderColor: '#0B2863' }
+                        }
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={4}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Fuel Quantity"
-                  type="number"
-                  inputProps={{ step: 0.01, min: 0 }}
-                  value={formData.fuel_qty}
-                  onChange={(e) => handleInputChange('fuel_qty', Number(e.target.value))}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocalGasStation />
-                      </InputAdornment>
-                    ),
-                    endAdornment: <InputAdornment position="end">gal</InputAdornment>,
-                  }}
-                />
-              </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      required
+                      label="Price per Gallon"
+                      type="number"
+                      inputProps={{ step: 0.01, min: 0 }}
+                      value={formData.cost_gl || ''}
+                      onChange={(e) => handleInputChange('cost_gl', Number(e.target.value) || 0)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoney sx={{ color: '#0B2863' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': { borderColor: '#0B2863' },
+                          '&.Mui-focused fieldset': { borderColor: '#0B2863' }
+                        }
+                      }}
+                    />
+                  </Grid>
 
-              <Grid item xs={4}>
-                <TextField
-                  fullWidth
-                  required
-                  label="Cost per Gallon"
-                  type="number"
-                  inputProps={{ step: 0.01, min: 0 }}
-                  value={formData.cost_gl}
-                  onChange={(e) => handleInputChange('cost_gl', Number(e.target.value))}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AttachMoney />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={4}>
-                <TextField
-                  fullWidth
-                  label="Total Cost"
-                  type="number"
-                  value={formData.cost_fuel.toFixed(2)}
-                  InputProps={{
-                    readOnly: true,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AttachMoney />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiInputBase-input': {
-                      backgroundColor: '#f5f5f5',
-                      fontWeight: 'bold',
-                    }
-                  }}
-                />
-              </Grid>
-
-              {/* Identifier */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Identifier (optional)"
-                  value={formData.identifier_1}
-                  onChange={(e) => handleInputChange('identifier_1', e.target.value)}
-                  placeholder="Optional reference number"
-                />
-              </Grid>
-            </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Total Cost"
+                      type="number"
+                      value={formData.cost_fuel.toFixed(2)}
+                      InputProps={{
+                        readOnly: true,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AttachMoney sx={{ color: '#0B2863' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          backgroundColor: '#f0f9ff',
+                          fontWeight: 'bold',
+                          fontSize: '1.1rem',
+                          color: '#0B2863'
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': { borderColor: '#0B2863', borderWidth: 2 }
+                        }
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Box>
           )}
         </Box>
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
+      <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
+        <Button 
+          onClick={handleClose} 
+          disabled={loading}
+          variant="outlined"
+          sx={{ 
+            mr: 2, 
+            borderColor: '#d1d5db', 
+            color: '#6b7280',
+            '&:hover': { borderColor: '#9ca3af', bgcolor: '#f9fafb' }
+          }}
+        >
           Cancel
         </Button>
         <Button 
           onClick={handleSubmit} 
           variant="contained"
           disabled={loading || trucks.length === 0 || formData.truck === 0}
-          style={{ backgroundColor: '#0B2863' }}
-          startIcon={loading ? <CircularProgress size={20} /> : <LocalGasStation />}
+          sx={{
+            backgroundColor: '#0B2863',
+            px: 4,
+            py: 1,
+            '&:hover': { backgroundColor: '#1e3a8a' },
+            '&:disabled': { backgroundColor: '#cbd5e1' }
+          }}
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LocalGasStation />}
         >
           {loading ? 'Adding...' : 'Add Fuel Cost'}
         </Button>
