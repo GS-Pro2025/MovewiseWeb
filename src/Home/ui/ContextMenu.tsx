@@ -6,7 +6,8 @@ import {
   Ban, 
   Trash2, 
   Copy,
-  Image
+  Image,
+  Fuel
 } from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
@@ -19,7 +20,8 @@ interface ContextMenuProps {
   onEditOrder: (order: TableData) => void;
   onInactivateOrder: (order: TableData) => void;
   onDeleteOrder: (order: TableData) => void;
-  onViewDispatchTicket?: (order: TableData) => void; // new optional callback
+  onViewDispatchTicket?: (order: TableData) => void;
+  onAddFuelCost?: (order: TableData) => void; 
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -32,6 +34,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onInactivateOrder,
   onDeleteOrder,
   onViewDispatchTicket,
+  onAddFuelCost,
 }) => {
   const handleAction = (action: string) => {
     if (!row) return;
@@ -56,6 +59,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         break;
       case 'view-dispatch':
         if (onViewDispatchTicket) onViewDispatchTicket(row);
+        break;
+      case 'addFuelCost':
+        if (onAddFuelCost) {
+          onAddFuelCost(row);
+        }
         break;
     }
     
@@ -135,6 +143,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <Image size={20} color={row?.dispatch_ticket ? "#f59e0b" : "#9ca3af"} />
         </ListItemIcon>
         <ListItemText>View Dispatch Ticket</ListItemText>
+      </MenuItem>
+
+      <MenuItem onClick={() => handleAction('addFuelCost')}>
+        <ListItemIcon>
+          <Fuel size={16} />
+        </ListItemIcon>
+        <ListItemText primary="Add Fuel Cost" />
       </MenuItem>
     </Menu>
   );
