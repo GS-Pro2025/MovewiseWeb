@@ -283,8 +283,15 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                   <Speed sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Odometer Reading
                 </Typography>
-                <Box container spacing={3}>
-                  <Box xs={12} md={6} mb={4}>
+                
+                {/* Responsive flex container for odometer fields */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 3, 
+                  flexDirection: { xs: 'column', md: 'row' },
+                  mb: 3
+                }}>
+                  <Box sx={{ flex: 1 }}>
                     <TextField
                       fullWidth
                       required
@@ -309,7 +316,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                     />
                   </Box>
 
-                  <Box xs={12} md={6} mb={4}>
+                  <Box sx={{ flex: 1 }}>
                     <TextField
                       fullWidth
                       required
@@ -373,85 +380,86 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                   <LocalGasStation sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Fuel Information
                 </Typography>
-                <Box container spacing={3}>
-                  <Box xs={12} md={4} mb={4}>
-                    <TextField
-                      fullWidth
-                      required
-                      label="Fuel Quantity"
-                      type="number"
-                      inputProps={{ step: 0.01, min: 0 }}
-                      value={formData.fuel_qty || ''}
-                      onChange={(e) => handleInputChange('fuel_qty', Number(e.target.value) || 0)}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocalGasStation sx={{ color: '#0B2863' }} />
-                          </InputAdornment>
-                        ),
-                        endAdornment: <InputAdornment position="end">gal</InputAdornment>,
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#0B2863' },
-                          '&.Mui-focused fieldset': { borderColor: '#0B2863' }
-                        }
-                      }}
-                    />
-                  </Box>
+                
+                {/* Responsive flex container for fuel fields */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 3, 
+                  flexDirection: { xs: 'column', md: 'row' },
+                  '& > *': { flex: 1 }
+                }}>
+                  <TextField
+                    fullWidth
+                    required
+                    label="Fuel Quantity"
+                    type="number"
+                    inputProps={{ step: 0.01, min: 0 }}
+                    value={formData.fuel_qty || ''}
+                    onChange={(e) => handleInputChange('fuel_qty', Number(e.target.value) || 0)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocalGasStation sx={{ color: '#0B2863' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: <InputAdornment position="end">gal</InputAdornment>,
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '&:hover fieldset': { borderColor: '#0B2863' },
+                        '&.Mui-focused fieldset': { borderColor: '#0B2863' }
+                      }
+                    }}
+                  />
 
-                  <Box xs={12} md={4} mb={4}>
-                    <TextField
-                      fullWidth
-                      required
-                      label="Price per Gallon"
-                      type="number"
-                      inputProps={{ step: 0.01, min: 0 }}
-                      value={formData.cost_gl || ''}
-                      onChange={(e) => handleInputChange('cost_gl', Number(e.target.value) || 0)}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <AttachMoney sx={{ color: '#0B2863' }} />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#0B2863' },
-                          '&.Mui-focused fieldset': { borderColor: '#0B2863' }
-                        }
-                      }}
-                    />
-                  </Box>
+                  <TextField
+                    fullWidth
+                    required
+                    label="Price per Gallon"
+                    type="number"
+                    inputProps={{ step: 0.01, min: 0 }}
+                    value={formData.cost_gl || ''}
+                    onChange={(e) => handleInputChange('cost_gl', Number(e.target.value) || 0)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <AttachMoney sx={{ color: '#0B2863' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '&:hover fieldset': { borderColor: '#0B2863' },
+                        '&.Mui-focused fieldset': { borderColor: '#0B2863' }
+                      }
+                    }}
+                  />
 
-                  <Box xs={12} md={4} mb={4}>
-                    <TextField
-                      fullWidth
-                      label="Total Cost"
-                      type="number"
-                      value={formData.cost_fuel.toFixed(2)}
-                      InputProps={{
-                        readOnly: true,
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <AttachMoney sx={{ color: '#0B2863' }} />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        '& .MuiInputBase-input': {
-                          backgroundColor: '#f0f9ff',
-                          fontWeight: 'bold',
-                          fontSize: '1.1rem',
-                          color: '#0B2863'
-                        },
-                        '& .MuiOutlinedInput-root': {
-                          '& fieldset': { borderColor: '#0B2863', borderWidth: 2 }
-                        }
-                      }}
-                    />
-                  </Box>
+                  <TextField
+                    fullWidth
+                    label="Total Cost"
+                    type="number"
+                    value={formData.cost_fuel.toFixed(2)}
+                    InputProps={{
+                      readOnly: true,
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <AttachMoney sx={{ color: '#0B2863' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        backgroundColor: '#f0f9ff',
+                        fontWeight: 'bold',
+                        fontSize: '1.1rem',
+                        color: '#0B2863'
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: '#0B2863', borderWidth: 2 }
+                      }
+                    }}
+                  />
                 </Box>
               </Box>
             </Box>
