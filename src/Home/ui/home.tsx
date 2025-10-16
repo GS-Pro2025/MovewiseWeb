@@ -171,7 +171,7 @@ const OrdersTable: React.FC = () => {
   const [addFuelCostDialogOpen, setAddFuelCostDialogOpen] = useState(false);
   const [selectedOrderForFuel, setSelectedOrderForFuel] = useState<NormalizedTableData | null>(null);
 
-  // Context menu
+  // Context menu - agregar estado para diferenciar el origen
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
@@ -368,6 +368,20 @@ const OrdersTable: React.FC = () => {
     });
   };
 
+  // Nueva función para manejar el botón de tres puntos
+  const handleActionsMenuClick = (event: React.MouseEvent, row: NormalizedTableData) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Usar las coordenadas del botón para posicionar el menú
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    setContextMenu({
+      mouseX: rect.right,
+      mouseY: rect.top,
+      row,
+    });
+  };
+
   const handleCloseContextMenu = () => {
     setContextMenu(null);
   };
@@ -521,6 +535,7 @@ const OrdersTable: React.FC = () => {
         onSelectAll={handleSelectAll}
         onFinishOrder={handleFinishOrder}
         onContextMenu={handleContextMenu}
+        onActionsMenuClick={handleActionsMenuClick} // Nueva prop
       />
 
       {/* Context Menu */}
