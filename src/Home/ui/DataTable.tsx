@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy } from 'lucide-react';
+import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy, MoreVertical } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import type { TableData } from '../domain/TableData';
 
@@ -20,7 +20,7 @@ interface SortConfig {
 
 const columns: Column[] = [
   { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
-  { id: 'actions', label: 'Actions', minWidth: 80, align: 'center', sortable: false },
+  { id: 'actions', label: 'Actions', minWidth: 120, align: 'center', sortable: false },
   { 
     id: 'status', 
     label: 'Status', 
@@ -159,6 +159,7 @@ interface DataTableProps {
   onSelectAll: (selectAll: boolean) => void;
   onFinishOrder: (orderId: string) => void;
   onContextMenu: (event: React.MouseEvent, row: TableData) => void;
+  onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void; // Nueva prop
 }
 
 const LoadingSpinner = () => (
@@ -219,6 +220,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   onSelectAll,
   onFinishOrder,
   onContextMenu,
+  onActionsMenuClick
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
@@ -390,27 +392,44 @@ export const DataTable: React.FC<DataTableProps> = ({
                         </td>
                         
                         <td className="px-4 py-3 text-center">
-                          <button
-                            className={`p-2 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
-                              row.status === 'finished' ? 'cursor-not-allowed' : 'cursor-pointer'
-                            }`}
-                            style={{
-                              backgroundColor: row.status === 'finished' ? '#22c55e' : '#0B2863',
-                              color: 'white'
-                            }}
-                            disabled={row.status === 'finished'}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (row.status !== 'finished') onFinishOrder(row.id);
-                            }}
-                            title={row.status === 'finished' ? "Order finished" : "Finish Order"}
-                          >
-                            {row.status === 'finished' ? (
-                              <CheckCircle size={16} />
-                            ) : (
-                              <Check size={16} />
-                            )}
-                          </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              className={`p-2 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+                                row.status === 'finished' ? 'cursor-not-allowed' : 'cursor-pointer'
+                              }`}
+                              style={{
+                                backgroundColor: row.status === 'finished' ? '#22c55e' : '#0B2863',
+                                color: 'white'
+                              }}
+                              disabled={row.status === 'finished'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (row.status !== 'finished') onFinishOrder(row.id);
+                              }}
+                              title={row.status === 'finished' ? "Order finished" : "Finish Order"}
+                            >
+                              {row.status === 'finished' ? (
+                                <CheckCircle size={16} />
+                              ) : (
+                                <Check size={16} />
+                              )}
+                            </button>
+                            
+                            {/* Botón de tres puntos */}
+                            <button
+                              className="p-2 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:bg-gray-100"
+                              style={{ color: '#0B2863' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onActionsMenuClick) {
+                                  onActionsMenuClick(e, row);
+                                }
+                              }}
+                              title="More actions"
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                          </div>
                         </td>
                         
                         {columns.slice(2).map((column, columnIndex) => {
