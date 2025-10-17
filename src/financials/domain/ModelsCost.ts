@@ -26,6 +26,8 @@ export interface LightOrderSummary {
     driverSalaries: number;
     otherSalaries: number;
     customer_factory: number;
+    operators_discount: number; 
+    bonus: number;
     totalCost: number;
   };
 }

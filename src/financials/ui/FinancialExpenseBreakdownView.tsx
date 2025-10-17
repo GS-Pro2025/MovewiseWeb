@@ -15,6 +15,7 @@ const EXPENSE_TYPES = [
   { key: "expense", label: "General Expenses", type: "variable", color: "#F09F52", calculated: true },
   { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#F09F52", calculated: true },
   { key: "workCost", label: "Extra Costs", type: "variable", color: "#F09F52", calculated: true },
+  { key: "bonus", label: "Bonus", type: "variable", color: "#F09F52", calculated: true },
   { key: "driverSalaries", label: "Driver Salaries", type: "fixed", color: "#0B2863", calculated: true },
   { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#0B2863", calculated: true },
   { key: "totalCost", label: "Total Cost", type: "total", color: "#0B2863", calculated: true },
@@ -112,7 +113,11 @@ const FinancialExpenseBreakdownView = () => {
           const value = Number(order.summary[type.key as keyof typeof order.summary]) || 0;
           expenses[type.key] = Number(expenses[type.key]) + value;
         });
-        totalIncome += Number(order.income) || 0;
+        
+        // Sumar el income base más el operators_discount (que actúa como income adicional)
+        const baseIncome = Number(order.income) || 0;
+        const operatorsDiscount = Number(order.summary.operators_discount) || 0;
+        totalIncome += baseIncome + operatorsDiscount;
       });
 
       // --- Sumar los costos de la API ---
