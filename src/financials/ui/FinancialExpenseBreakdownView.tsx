@@ -9,10 +9,11 @@ import { listCostsApi, updateCostAmountApi, deleteCostApi } from "../data/CostRe
 import { Cost } from "../domain/ModelsCost";
 import CreateCostDialog from "./components/CreateCostDialog";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
+import { OrderSummaryTotalsResponse } from "../domain/ModelsCost"; // Agregar import
 
-// Costos fijos y variables con etiquetas
+// Costos fijos y variables con etiquetas - ACTUALIZADO
 const EXPENSE_TYPES = [
-  { key: "expense", label: "General Expenses", type: "variable", color: "#F09F52", calculated: true },
+  { key: "expense", label: "Expense", type: "variable", color: "#F09F52", calculated: true },
   { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#F09F52", calculated: true },
   { key: "workCost", label: "Extra Costs", type: "variable", color: "#F09F52", calculated: true },
   { key: "bonus", label: "Bonus", type: "variable", color: "#F09F52", calculated: true },
@@ -20,7 +21,6 @@ const EXPENSE_TYPES = [
   { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#0B2863", calculated: true },
   { key: "totalCost", label: "Total Cost", type: "total", color: "#0B2863", calculated: true },
 ];
-
 // Trimestres y semestres exactos
 const TIMELAPSES = [
   { label: "Q1 (Jan-Mar)", startWeek: 1, endWeek: 13 },
@@ -29,6 +29,11 @@ const TIMELAPSES = [
   { label: "Q4 (Oct-Dec)", startWeek: 40, endWeek: 52 },
   { label: "H1 (Jan-Jun)", startWeek: 1, endWeek: 26 },
   { label: "H2 (Jul-Dec)", startWeek: 27, endWeek: 52 },
+];
+
+// Cambiar INCOME_TYPES por DISCOUNT_TYPES
+const DISCOUNT_TYPES = [
+  { key: "operators_discount", label: "Operators Discount", color: "#22c55e" },
 ];
 
 const getAvailableYears = () => {
@@ -44,7 +49,13 @@ const getAvailableYears = () => {
 const FinancialExpenseBreakdownView = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [summaryData, setSummaryData] = useState<{ expenses: Record<string, number>, income: number, profit: number } | null>(null);
+  const [summaryData, setSummaryData] = useState<{ 
+    expenses: Record<string, number>, 
+    discounts: Record<string, number>,
+    income: number, // Cambiar rentingCost por income
+    totalCost: number, // Total cost después de aplicar descuentos
+    profit: number 
+  } | null>(null);
   const [dbCosts, setDbCosts] = useState<Cost[]>([]);
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<"select" | "input">("select");
@@ -92,52 +103,88 @@ const FinancialExpenseBreakdownView = () => {
     }
   };
 
-  // Fetch breakdown usando la nueva función de rango
+  // Fetch breakdown usando el nuevo endpoint de totals
   const fetchBreakdown = async (fromWeek: number, toWeek: number, selectedYear: number) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await repository.getSummaryCostRangeLight(fromWeek, toWeek, selectedYear, true);
+      const result: OrderSummaryTotalsResponse = await repository.getSummaryCostRangeTotals(fromWeek, toWeek, selectedYear, true);
 
       const expenses: Record<string, number> = {};
-      let totalIncome = 0;
+      const discounts: Record<string, number> = {};
 
       // Inicializar expenses con 0
       EXPENSE_TYPES.forEach(type => {
         expenses[type.key] = 0;
       });
 
-      result.results.forEach(order => {
-        EXPENSE_TYPES.forEach(type => {
-          // Asegurar que siempre sea un número válido
-          const value = Number(order.summary[type.key as keyof typeof order.summary]) || 0;
-          expenses[type.key] = Number(expenses[type.key]) + value;
-        });
-        
-        // Sumar el income base más el operators_discount (que actúa como income adicional)
-        const baseIncome = Number(order.income) || 0;
-        const operatorsDiscount = Number(order.summary.operators_discount) || 0;
-        totalIncome += baseIncome + operatorsDiscount;
+      // Inicializar discounts con 0
+      DISCOUNT_TYPES.forEach(type => {
+        discounts[type.key] = 0;
       });
 
-      // --- Sumar los costos de la API ---
+      // Asignar valores directamente desde la respuesta del backend
+      const data = result.data;
+      
+      // Expenses
+      expenses.expense = Number(data.expense) || 0;
+      expenses.fuelCost = Number(data.fuelCost) || 0;
+      expenses.workCost = Number(data.workCost) || 0;
+      expenses.bonus = Number(data.bonus) || 0;
+      expenses.driverSalaries = Number(data.driverSalaries) || 0;
+      expenses.otherSalaries = Number(data.otherSalaries) || 0;
+
+      // CALCULAR totalCost manualmente sumando todas las categorías en lugar de usar data.totalCost
+      const calculatedTotalFromCategories = 
+        expenses.expense + 
+        expenses.fuelCost + 
+        expenses.workCost + 
+        expenses.bonus + 
+        expenses.driverSalaries + 
+        expenses.otherSalaries;
+
+      // Sumar los costos de la BD
       const totalDbCosts = dbCosts.reduce((sum, cost) => sum + (Number(cost.cost) || 0), 0);
-      expenses.totalCost = Number(expenses.totalCost) + totalDbCosts;
+      
+      // El totalCost será la suma manual + costos de BD
+      expenses.totalCost = Number((calculatedTotalFromCategories + totalDbCosts).toFixed(2));
 
-      // Limitar a 2 decimales todos los valores de expenses
+      // Discounts breakdown (estos reducen los costos)
+      discounts.operators_discount = Number(data.operators_discount) || 0;
+
+      // Income es solo rentingCost
+      const income = Number(data.rentingCost) || 0;
+
+      // Aplicar descuentos a los costos totales
+      const totalDiscounts = Object.values(discounts).reduce((sum, value) => sum + value, 0);
+      const totalCostAfterDiscounts = expenses.totalCost - totalDiscounts;
+
+      // Limitar a 2 decimales
       Object.keys(expenses).forEach(key => {
-        const value = Number(expenses[key]) || 0;
-        expenses[key] = Number(value.toFixed(2));
+        expenses[key] = Number(expenses[key].toFixed(2));
       });
 
-      // --- El profit debe restar los costos de la API ---
-      const profit = Number((totalIncome - expenses.totalCost).toFixed(2));
+      Object.keys(discounts).forEach(key => {
+        discounts[key] = Number(discounts[key].toFixed(2));
+      });
+
+      // El profit es income - costos después de descuentos
+      const profit = Number((income - totalCostAfterDiscounts).toFixed(2));
 
       setSummaryData({ 
         expenses, 
-        income: Number(totalIncome.toFixed(2)), 
+        discounts,
+        income: Number(income.toFixed(2)),
+        totalCost: Number(totalCostAfterDiscounts.toFixed(2)),
         profit 
       });
+
+      // Debug: mostrar los cálculos en consola
+      console.log('Backend totalCost:', Number(data.totalCost));
+      console.log('Manual calculation:', calculatedTotalFromCategories);
+      console.log('With DB costs:', expenses.totalCost);
+      console.log('After discounts:', totalCostAfterDiscounts);
+      
     } catch (err: any) {
       setError(err.message || "Error loading breakdown");
     } finally {
@@ -193,16 +240,20 @@ const FinancialExpenseBreakdownView = () => {
 
         setSummaryData(prev => {
           if (!prev) return prev;
-          // Sumar/restar al totalCost y recalcular profit
+          // Sumar/restar al totalCost original y recalcular con descuentos
           const dbCostChange = action === "add" ? amount : -amount;
-          const newTotalCost = Number((prev.expenses.totalCost + dbCostChange).toFixed(2));
+          const newExpensesTotalCost = Number((prev.expenses.totalCost + dbCostChange).toFixed(2));
+          const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
+          const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
           const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+          
           return {
             ...prev,
             expenses: {
               ...prev.expenses,
-              totalCost: newTotalCost,
+              totalCost: newExpensesTotalCost,
             },
+            totalCost: newTotalCost,
             profit: newProfit,
           };
         });
@@ -248,15 +299,18 @@ const FinancialExpenseBreakdownView = () => {
         if (!prev) return prev;
         
         const deletedCostAmount = Number(deleteModal.cost!.cost);
-        const newTotalCost = Number((prev.expenses.totalCost - deletedCostAmount).toFixed(2));
+        const newExpensesTotalCost = Number((prev.expenses.totalCost - deletedCostAmount).toFixed(2));
+        const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
+        const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
         const newProfit = Number((prev.income - newTotalCost).toFixed(2));
         
         return {
           ...prev,
           expenses: {
             ...prev.expenses,
-            totalCost: newTotalCost,
+            totalCost: newExpensesTotalCost,
           },
+          totalCost: newTotalCost,
           profit: newProfit,
         };
       });
@@ -315,7 +369,32 @@ const FinancialExpenseBreakdownView = () => {
   // Separar costos de BD por tipo
   const fixedDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'FIXED');
   const variableDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'VARIABLE');
-
+  // Función para calcular subtotales por categoría
+  const calculateCategorySubtotal = (categoryType: string) => {
+    if (!summaryData) return 0;
+    
+    if (categoryType === 'fixed') {
+      const dbFixedTotal = fixedDbCosts.reduce((sum, cost) => sum + Number(cost.cost), 0);
+      const calculatedFixedTotal = EXPENSE_TYPES
+        .filter(type => type.type === 'fixed')
+        .reduce((sum, type) => sum + (summaryData.expenses[type.key] || 0), 0);
+      return Number((dbFixedTotal + calculatedFixedTotal).toFixed(2));
+    }
+    
+    if (categoryType === 'variable') {
+      const dbVariableTotal = variableDbCosts.reduce((sum, cost) => sum + Number(cost.cost), 0);
+      const calculatedVariableTotal = EXPENSE_TYPES
+        .filter(type => type.type === 'variable')
+        .reduce((sum, type) => sum + (summaryData.expenses[type.key] || 0), 0);
+      return Number((dbVariableTotal + calculatedVariableTotal).toFixed(2));
+    }
+    
+    if (categoryType === 'discounts') {
+      return Object.values(summaryData.discounts).reduce((sum, value) => sum + value, 0);
+    }
+    
+    return 0;
+  };
   // Action Menu Component (actualizado)
   const ActionMenu = ({ cost }: { cost: Cost }) => {
     const [showMenu, setShowMenu] = useState(false);
@@ -660,7 +739,7 @@ const FinancialExpenseBreakdownView = () => {
               </thead>
               <tbody>
                 {/* Fixed Costs Section */}
-                <tr className="bg-blue-50">
+                <tr className="bg-blue-100">
                   <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#0B2863' }}>
                     FIXED COSTS
                   </td>
@@ -684,7 +763,7 @@ const FinancialExpenseBreakdownView = () => {
                 {/* Calculated Fixed Costs */}
                 {EXPENSE_TYPES.filter(type => type.type === "fixed").map(type => (
                   <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 text-gray-700">
+                    <td className="px-6 py-3 pl-12 text-gray-800">
                       {type.label}
                       <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
                         CALCULATED
@@ -699,9 +778,22 @@ const FinancialExpenseBreakdownView = () => {
                   </tr>
                 ))}
 
+                {/* Fixed Costs Subtotal */}
+                <tr className="bg-blue-50 border-b-2 border-blue-200">
+                  <td className="px-6 py-3 pl-8 font-bold text-gray-700">
+                    Fixed Costs Subtotal
+                  </td>
+                  <td className="px-6 py-3 text-right font-bold" style={{ color: '#0B2863' }}>
+                    ${calculateCategorySubtotal('fixed').toLocaleString("en-US")}
+                  </td>
+                  <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                    -
+                  </td>
+                </tr>
+
                 {/* Variable Costs Section */}
-                <tr className="bg-orange-50">
-                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#F09F52' }}>
+                <tr className="bg-orange-100"> 
+                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#1E2939' }}>
                     VARIABLE COSTS
                   </td>
                 </tr>
@@ -738,6 +830,56 @@ const FinancialExpenseBreakdownView = () => {
                     </td>
                   </tr>
                 ))}
+                
+                {/* Variable Costs Subtotal */}
+                <tr className="bg-orange-50 border-b-2 border-orange-200">
+                  <td className="px-6 py-3 pl-8 font-bold text-gray-600">
+                    Variable Costs Subtotal
+                  </td>
+                  <td className="px-6 py-3 text-right font-bold" style={{ color: '#F09F52' }}>
+                    ${calculateCategorySubtotal('variable').toLocaleString("en-US")}
+                  </td>
+                  <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                    -
+                  </td>
+                </tr>
+
+                {/* Discounts Section */}
+                <tr className="bg-green-100">
+                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#000000ff' }}>
+                    DISCOUNTS
+                  </td>
+                </tr>
+                
+                {DISCOUNT_TYPES.map(type => (
+                  <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-3 pl-12 text-gray-700">
+                      {type.label}
+                      <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                        CALCULATED
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
+                      -${summaryData.discounts[type.key]?.toLocaleString("en-US") || 0}
+                    </td>
+                    <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                      No actions
+                    </td>
+                  </tr>
+                ))}
+                
+                {/* Discounts Subtotal*/}
+                <tr className="bg-green-50 border-b-2 border-green-200">
+                  <td className="px-6 py-3 pl-8 font-bold text-gray-800">
+                    Discounts subtotal
+                  </td>
+                  <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
+                    -${calculateCategorySubtotal('discounts').toLocaleString("en-US")}
+                  </td>
+                  <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                    -
+                  </td>
+                </tr>
 
                 {/* Summary Section */}
                 <tr className="bg-gray-50">
@@ -745,39 +887,40 @@ const FinancialExpenseBreakdownView = () => {
                     FINANCIAL SUMMARY
                   </td>
                 </tr>
-                {EXPENSE_TYPES.filter(type => type.type === "total").map(type => (
-                  <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 font-semibold text-gray-700">
-                      {type.label}
-                      <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
-                        CALCULATED
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-right font-semibold" style={{ color: type.color }}>
-                      ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
-                    </td>
-                    <td className="px-6 py-3 text-center text-gray-400 text-sm">
-                      No actions
-                    </td>
-                  </tr>
-                ))}
+                
                 <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#0B2863' }}>
+                  <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#22c55e' }}>
                     Income
                     <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                       CALCULATED
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-right font-bold" style={{ color: '#0B2863' }}>
+                  <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
                     ${summaryData.income.toLocaleString("en-US")}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     No actions
                   </td>
                 </tr>
+                
+                <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-3 pl-12 font-semibold text-gray-700">
+                    Total Cost (After Discounts)
+                    <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
+                      CALCULATED
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 text-right font-semibold" style={{ color: '#0B2863' }}>
+                    ${summaryData.totalCost.toLocaleString("en-US")}
+                  </td>
+                  <td className="px-6 py-3 text-center text-gray-400 text-sm">
+                    No actions
+                  </td>
+                </tr>
+                
                 <tr style={{ backgroundColor: summaryData.profit >= 0 ? '#e8f5e9' : '#ffebee' }}>
                   <td className="px-6 py-4 pl-12 font-bold text-lg" style={{ color: '#0B2863' }}>
-                    Profit
+                    Net Profit
                     <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                       CALCULATED
                     </span>
@@ -808,8 +951,8 @@ const FinancialExpenseBreakdownView = () => {
         open={exportDialogOpen}
         onClose={() => setExportDialogOpen(false)}
         expenses={summaryData?.expenses || {}}
-        income={summaryData?.income || 0}
-        profit={summaryData?.profit || 0}
+        income={Number(summaryData?.income || 0)}
+        profit={Number(summaryData?.profit || 0)}
         startWeek={startWeek}
         endWeek={currentWeek}
         year={year}
@@ -826,15 +969,18 @@ const FinancialExpenseBreakdownView = () => {
           setSummaryData(prev => {
             if (!prev) return prev;
             
-            const newTotalCost = Number((prev.expenses.totalCost + Number(newCost.cost)).toFixed(2));
+            const newExpensesTotalCost = Number((prev.expenses.totalCost + Number(newCost.cost)).toFixed(2));
+            const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
+            const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
             const newProfit = Number((prev.income - newTotalCost).toFixed(2));
             
             return {
               ...prev,
               expenses: {
                 ...prev.expenses,
-                totalCost: newTotalCost,
+                totalCost: newExpensesTotalCost,
               },
+              totalCost: newTotalCost,
               profit: newProfit,
             };
           });
