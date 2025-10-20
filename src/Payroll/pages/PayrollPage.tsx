@@ -143,6 +143,7 @@ export default function PayrollPage() {
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
             assignmentsByDay: {},
+            phone: d.phone,
             // Set temporal para controlar los días sumados
             _bonusDaysAdded: new Set<string>(),
           } as any);
