@@ -8,7 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { pdf } from '@react-pdf/renderer';
 import { PayrollEmailPDF } from './PayrollEmailPDF';
 import { sendPdfEmail } from '../../service/EmailRepository';
-import { sendPdfToWhatsapp } from '../../service/MetaApiService'; // NUEVO IMPORT
+import { sendPdfToWhatsapp } from '../../service/MetaApiService'; 
 
 // Definir la interfaz WeekAmounts
 interface WeekAmounts {
@@ -47,6 +47,7 @@ interface PayrollModalProps {
     paymentIds: (number | string)[]; // CAMBIAR: requerir como array, no opcional
     expense?: number;
     assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] };
+    operator_phone?: string | null;
   };
   periodStart: string;
   periodEnd: string;
@@ -306,7 +307,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   periodStart,
   periodEnd,
   weekDates,
-  assignmentsByDay,
+  assignmentsByDay
 }) => {
   const [grandTotal, setGrandTotal] = useState(operatorData.grandTotal || 0);
   const [loading, setLoading] = useState(false);
@@ -317,9 +318,10 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const [expense, setExpense] = useState<number>(operatorData.expense || 0);
 
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [sendingWhatsapp, setSendingWhatsapp] = useState(false); // STATE
-  const [whatsappNumber, setWhatsappNumber] = useState('+573126157025'); // STATE para número
-  operatorData.phone = whatsappNumber;
+  const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
+  // NUEVO: Estado para controlar el dropdown de envío
+  const [showSendOptions, setShowSendOptions] = useState(false);
+
   // Función para cancelar el pago
   const handleCancelPayment = async () => {
     if (!operatorData.assignmentIds || operatorData.assignmentIds.length === 0) return;
@@ -393,36 +395,45 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   };
 
   const handleDailyBonusChange = (day: keyof WeekAmounts, value: number) => {
-      setDailyBonuses(prev => ({
-        ...prev,
-        [day]: value
-      }));
-    };
-    const handleSendEmail = async () => {
+    setDailyBonuses(prev => ({
+      ...prev,
+      [day]: value
+    }));
+  };
+  const handleSendEmail = async () => {
     setSendingEmail(true);
+    setShowSendOptions(false);
     try {
-      // Genera el PDF como Blob usando PayrollEmailPDF
+      // CORREGIR: Asegurar que todos los campos requeridos estén presentes
       const pdfDoc = (
         <PayrollEmailPDF
           operator={{
             ...operatorData,
-            netTotal: grandTotal,
-            cost: operatorData.cost || 0, // CORREGIR: usar cost en lugar de salary
-            // Asegurar que todos los campos requeridos estén presentes
-            additionalBonuses: operatorData.additionalBonuses || 0, 
+            // Campos requeridos por PayrollEmailPDF
+            cost: operatorData.cost || 0,
+            total: operatorData.total || 0,
+            additionalBonuses: operatorData.additionalBonuses || 0,
+            grandTotal: grandTotal || 0,
+            netTotal: grandTotal || 0, // Agregar netTotal que requiere PayrollEmailPDF
             assignmentIds: operatorData.assignmentIds || [],
             paymentIds: operatorData.paymentIds || [],
-            expense: operatorData.expense || 0,
+            expense: expense || 0,
           }}
-          weekInfo={{ start_date: periodStart, end_date: periodEnd }}
-          weekDates={weekDates} // CORREGIR: pasar weekDates real
+          weekInfo={{ 
+            start_date: periodStart, 
+            end_date: periodEnd 
+          }}
+          weekDates={weekDates}
         />
       );
+      
       const pdfBlob = await pdf(pdfDoc).toBlob();
       const pdfFile = new File([pdfBlob], `payment-summary-${operatorData.code}.pdf`, { type: 'application/pdf' });
+      
       const subject = `Payment Receipt for ${operatorData.name} ${operatorData.lastName}`;
       const body = `Dear ${operatorData.name},\n\nPlease find attached your payment receipt.`;
       const to = operatorData.email;
+      
       const result = await sendPdfEmail(pdfFile, body, subject, to);
       if (result.success) {
         toast.success('Email sent successfully!');
@@ -430,11 +441,13 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
         toast.error(result.errorMessage || 'Error sending email');
       }
     } catch (err: any) {
+      console.error('Error sending email:', err); // Agregar log para debug
       toast.error(err?.message || 'Error sending email');
     } finally {
       setSendingEmail(false);
     }
   };
+
   // Cambia la función para obtener los ids de las asignaciones del día:
   const handleSaveDailyBonus = async (day: keyof WeekAmounts) => {
     const assigns = assignmentsByDay?.[day];
@@ -485,28 +498,34 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     }
   };
 
-  // FUNCIÓN para enviar por WhatsApp
+  // MODIFICAR: función para enviar por WhatsApp usando operator_phone automáticamente
   const handleSendWhatsapp = async () => {
-    if (!whatsappNumber.trim()) {
-      toast.error('Please enter a WhatsApp number');
+    if (!operatorData.operator_phone) {
+      toast.error('No WhatsApp number available for this operator');
       return;
     }
 
     setSendingWhatsapp(true);
+    setShowSendOptions(false);
     try {
-      // Genera el PDF como Blob usando PayrollEmailPDF
+      // CORREGIR: Usar la misma estructura corregida
       const pdfDoc = (
         <PayrollEmailPDF
           operator={{
             ...operatorData,
-            netTotal: grandTotal,
             cost: operatorData.cost || 0,
-            additionalBonuses: operatorData.additionalBonuses || 0, 
+            total: operatorData.total || 0,
+            additionalBonuses: operatorData.additionalBonuses || 0,
+            grandTotal: grandTotal || 0,
+            netTotal: grandTotal || 0, // Agregar netTotal
             assignmentIds: operatorData.assignmentIds || [],
             paymentIds: operatorData.paymentIds || [],
-            expense: operatorData.expense || 0,
+            expense: expense || 0,
           }}
-          weekInfo={{ start_date: periodStart, end_date: periodEnd }}
+          weekInfo={{ 
+            start_date: periodStart, 
+            end_date: periodEnd 
+          }}
           weekDates={weekDates}
         />
       );
@@ -516,17 +535,17 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       
       const result = await sendPdfToWhatsapp({
         pdfFile: pdfBlob,
-        to_number: whatsappNumber,
+        to_number: operatorData.operator_phone,
         caption: caption
       });
       
       if (result.status === 'success') {
         toast.success('WhatsApp message sent successfully!');
-        setWhatsappNumber(''); // Limpiar el campo después del éxito
       } else {
         toast.error(result.messUser || 'Error sending WhatsApp message');
       }
     } catch (err: any) {
+      console.error('Error sending WhatsApp:', err); // Agregar log para debug
       toast.error(err?.message || 'Error sending WhatsApp message');
     } finally {
       setSendingWhatsapp(false);
@@ -789,33 +808,89 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                   )}
                 </PDFDownloadLink>
 
-                {/* Enviar email solo cuando ya está pagado */}
-                <button
-                  onClick={handleSendEmail}
-                  disabled={sendingEmail}
-                  className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
-                    sendingEmail
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg'
-                  }`}
-                >
-                  {sendingEmail ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12H8m0 0l4 4m-4-4l4-4" />
-                      </svg>
-                      Enviar Email
-                    </>
+                {/* Botón principal con dropdown para enviar PDF */}
+                <div className="relative flex-1">
+                  <button
+                    onClick={() => setShowSendOptions(!showSendOptions)}
+                    disabled={sendingEmail || sendingWhatsapp}
+                    className={`w-full px-4 py-3 font-semibold rounded-lg transition-all 
+                      duration-200 flex items-center justify-center  ${
+                      sendingEmail || sendingWhatsapp
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg'
+                    }`}
+                  >
+                    {sendingEmail || sendingWhatsapp ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {sendingEmail ? 'Sending Email...' : 'Sending WhatsApp...'}
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Send to Operator
+                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showSendOptions && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      {/* Email Option */}
+                      <button
+                        onClick={handleSendEmail}
+                        disabled={sendingEmail || sendingWhatsapp}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center transition-colors duration-200 rounded-t-lg border-b border-gray-100"
+                      >
+                        <svg className="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-900">Send via Email</div>
+                          <div className="text-sm text-gray-500 truncate max-w-[220px]">{operatorData.email}</div>
+                        </div>
+                      </button>
+
+                      {/* WhatsApp Option */}
+                      {operatorData.operator_phone ? (
+                        <button
+                          onClick={handleSendWhatsapp}
+                          disabled={sendingEmail || sendingWhatsapp}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center transition-colors duration-200 rounded-b-lg"
+                        >
+                          <svg className="w-5 h-5 mr-3 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.515z"/>
+                          </svg>
+                          <div>
+                            <div className="font-medium text-gray-900">Send via WhatsApp</div>
+                            <div className="text-sm text-gray-500">{operatorData.operator_phone}</div>
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="px-4 py-3 text-left text-gray-400 rounded-b-lg border-t border-gray-100">
+                          <div className="flex items-center">
+                            <svg className="w-5 h-5 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.515z"/>
+                            </svg>
+                            <div>
+                              <div className="font-medium text-gray-400">WhatsApp not available</div>
+                              <div className="text-sm text-gray-400">No phone number</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </button>
+                </div>
 
                 <button
                   onClick={handleCancelPayment}
@@ -887,6 +962,14 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Click outside para cerrar dropdown */}
+      {showSendOptions && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowSendOptions(false)}
+        />
+      )}
     </>
   );
 }
