@@ -19,12 +19,12 @@ import {
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import EditIcon from '@mui/icons-material/Edit'; // Cambio de PaymentIcon a EditIcon
 import { 
   Inbox, 
   Lightbulb, 
   ClipboardList,
   TrendingUp,
+  TrendingDown,
   Fuel,
   Wrench,
   Users,
@@ -59,7 +59,8 @@ interface FinancialTableProps {
   expandedRows: Set<string>;
   onSort: (column: keyof SuperOrder) => void;
   onToggleExpand: (keyRef: string) => void;
-  onPayOrder: (superOrder: SuperOrder) => void; // Mantener el nombre de la prop pero cambiar funcionalidad
+  onAddIncome: (superOrder: SuperOrder) => void; // NUEVO
+  onAddExpense: (superOrder: SuperOrder) => void; // NUEVO
   onViewDetails: (superOrder: SuperOrder) => void;
   onOrderPaid: () => void;
   onViewOperators: (orderId: string) => void;
@@ -72,7 +73,8 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   expandedRows,
   onSort,
   onToggleExpand,
-  onPayOrder, // Ahora será onEditOrder
+  onAddIncome, // NUEVO
+  onAddExpense, // NUEVO
   onViewDetails,
   onOrderPaid,
   onViewOperators
@@ -153,6 +155,41 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
       }}
     >
       {size === 'small' ? <Eye size={14} /> : 'View'}
+    </button>
+  );
+
+  // Crear botones para income y expense
+  const IncomeButton = ({ 
+    onClick, 
+    size = 'medium'
+  }: { 
+    onClick: (e: React.MouseEvent) => void, 
+    size?: 'small' | 'medium'
+  }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 ${size === 'small' ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
+      style={{ minWidth: size === 'small' ? '50px' : '70px' }}
+    >
+      <TrendingUp size={size === 'small' ? 12 : 14} />
+      {size !== 'small' && 'Income'}
+    </button>
+  );
+
+  const ExpenseButton = ({ 
+    onClick, 
+    size = 'medium'
+  }: { 
+    onClick: (e: React.MouseEvent) => void, 
+    size?: 'small' | 'medium'
+  }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 ${size === 'small' ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center bg-red-500 text-white hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
+      style={{ minWidth: size === 'small' ? '50px' : '70px' }}
+    >
+      <TrendingDown size={size === 'small' ? 12 : 14} />
+      {size !== 'small' && 'Expense'}
     </button>
   );
 
@@ -263,7 +300,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
             <EditButton
               onClick={(e) => {
                 e.stopPropagation();
-                onPayOrder(superOrder); // Mantener el mismo handler pero ahora es edit
+                onAddExpense(superOrder); // Mantener el mismo handler pero ahora es edit
               }}
               size="small"
             >
@@ -530,19 +567,24 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                           <PayStatusChip paid={superOrder.payStatus === 1} />
                         </TableCell>
 
-                        {/* 11. Actions - Cambiar Pay por Edit y sin restricciones */}
+                        {/* 11. Actions - Cambiar a dos botones */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <EditButton
+                          <div className="flex items-center gap-1">
+                            <IncomeButton
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onPayOrder(superOrder); // Mantener el mismo handler
+                                onAddIncome(superOrder);
                               }}
                               size={isTablet ? 'small' : 'medium'}
-                            >
-                              <EditIcon sx={{ fontSize: isTablet ? 14 : 16 }} />
-                              {!isTablet && 'Edit'}
-                            </EditButton>
+                            />
+                            
+                            <ExpenseButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAddExpense(superOrder);
+                              }}
+                              size={isTablet ? 'small' : 'medium'}
+                            />
                             
                             <ViewButton
                               onClick={(e) => {
