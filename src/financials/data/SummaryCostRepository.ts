@@ -150,7 +150,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
     }
   }
 
-    // NUEVO MÉTODO PARA TOTALS MODE
+    // MÉTODO PARA TOTALS MODE
     async getSummaryCostRangeTotals(
       startWeek: number,
       endWeek: number,

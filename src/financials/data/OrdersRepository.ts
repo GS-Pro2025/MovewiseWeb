@@ -1,5 +1,6 @@
 import { OrderSummary } from "../domain/OrderSummaryModel";
 import Cookies from "js-cookie";
+import { AddAmountRequest, AddAmountResponse, UpdatedItem } from "../domain/AddIncomeOrExpenseModels";
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || "http://127.0.0.1:8000";
 
@@ -30,4 +31,67 @@ export async function searchOrdersByKeyRefLike(keyref: string): Promise<OrderSum
   if (!response.ok) throw new Error("Error fetching orders by keyref");
   const data = await response.json();
   return data.results || [];
+}
+
+// Nuevas funciones para consumir endpoints de income/expense
+export async function addIncomeToOrder(payload: AddAmountRequest): Promise<UpdatedItem[]> {
+  const token = Cookies.get("authToken");
+  if (!token) {
+    window.location.href = "/login";
+    throw new Error("No hay token de autenticación");
+  }
+
+  const res = await fetch(`${BASE_URL_API}/orders-add-income/`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 403) {
+    Cookies.remove("authToken");
+    window.location.href = "/login";
+    throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Error adding income: ${res.status} ${text}`);
+  }
+
+  const data: AddAmountResponse = await res.json();
+  return data.updated || [];
+}
+
+export async function addExpenseToOrder(payload: AddAmountRequest): Promise<UpdatedItem[]> {
+  const token = Cookies.get("authToken");
+  if (!token) {
+    window.location.href = "/login";
+    throw new Error("No hay token de autenticación");
+  }
+
+  const res = await fetch(`${BASE_URL_API}/orders-add-expense/`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 403) {
+    Cookies.remove("authToken");
+    window.location.href = "/login";
+    throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Error adding expense: ${res.status} ${text}`);
+  }
+
+  const data: AddAmountResponse = await res.json();
+  return data.updated || [];
 }

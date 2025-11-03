@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 import { 
   Calendar, 
   MapPin, 
@@ -36,6 +38,21 @@ interface TableFiltersProps {
   onGlobalSearchClear: () => void;
   globalSearchLoading: boolean;
   isGlobalSearchActive: boolean;
+  // AGREGAR: nuevas props para la lógica de ubicación del payroll
+  locationString: string;
+  country: string;
+  setCountry: (country: string) => void;
+  state: string;
+  setState: (state: string) => void;
+  city: string;
+  setCity: (city: string) => void;
+  locationStep: "country" | "state" | "city";
+  setLocationStep: (step: "country" | "state" | "city") => void;
+  countries: { country: string }[];
+  states: { name: string }[];
+  cities: string[];
+  setCities: (cities: string[]) => void;
+  setStates: (states: { name: string }[]) => void;
 }
 
 const weekDays = [
@@ -53,15 +70,16 @@ const COLORS = {
   grayBg: '#f3f4f6'
 };
 
+// AGREGAR: Tipos para las opciones de location
+type LocationOption = { country: string } | { name: string } | string;
+
 export const TableFilters: React.FC<TableFiltersProps> = ({
   week,
   weekdayFilter,
   locationFilter,
-  locations,
   weekRange,
   onWeekChange,
   onWeekdayChange,
-  onLocationChange,
   onCalendarOpen,
   data = [],
   globalSearch,
@@ -70,10 +88,63 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   onGlobalSearchClear,
   globalSearchLoading,
   isGlobalSearchActive,
+  // AGREGAR: nuevos props para ubicación
+  locationString,
+  country,
+  setCountry,
+  state,
+  setState,
+  city,
+  setCity,
+  locationStep,
+  setLocationStep,
+  countries,
+  states,
+  cities,
+  setCities,
+  setStates,
 }) => {
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // AGREGAR: Lógica para opciones y labels dinámicos según el paso
+  let options: LocationOption[] = [];
+  let getOptionLabel: (option: LocationOption) => string = () => "";
+  let label = "";
+  let value: LocationOption | null = null;
+
+  if (locationStep === "country") {
+    options = countries;
+    getOptionLabel = (o: LocationOption) => {
+      if (typeof o === 'object' && 'country' in o) {
+        return o.country;
+      }
+      return '';
+    };
+    label = "Country";
+    value = countries.find((c) => c.country === country) || null;
+  } else if (locationStep === "state") {
+    options = states;
+    getOptionLabel = (o: LocationOption) => {
+      if (typeof o === 'object' && 'name' in o) {
+        return o.name;
+      }
+      return '';
+    };
+    label = "State";
+    value = states.find((s) => s.name === state) || null;
+  } else if (locationStep === "city") {
+    options = cities;
+    getOptionLabel = (o: LocationOption) => {
+      if (typeof o === 'string') {
+        return o;
+      }
+      return '';
+    };
+    label = "City";
+    value = city || null;
+  }
 
   const weeklyStats = React.useMemo(() => {
     if (isGlobalSearchActive) {
@@ -678,7 +749,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               </div>
             </div>
 
-            {/* Location Input Card */}
+            {/* CAMBIAR: Location Input Card - usar lógica de PayrollControls */}
             <div 
               className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
               style={{ borderColor: COLORS.primary }}
@@ -687,57 +758,84 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 <label className="block text-sm font-bold" style={{ color: COLORS.primary }}>
                   <div className="flex items-center gap-2">
                     <MapPin size={16} />
-                    Location Filter
+                    Location
                   </div>
                 </label>
-                {locationFilter && (
+                {locationString && (
                   <button
-                    onClick={() => onLocationChange('')}
-                    className="p-1 rounded transition-colors"
-                    style={{ backgroundColor: COLORS.error, color: 'white' }}
-                    title="Clear location filter"
+                    onClick={() => {
+                      setCountry("");
+                      setState("");
+                      setCity("");
+                      setStates([]);
+                      setCities([]);
+                      setLocationStep("country");
+                    }}
+                    className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200 flex items-center gap-1 px-2 py-1 hover:bg-red-50 rounded-md border border-red-200"
+                    title="Clear location"
                   >
                     <X size={12} />
+                    Clear
                   </button>
                 )}
               </div>
-              <div className="relative">
-                <MapPin 
-                  size={16} 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10"
-                  style={{ color: COLORS.secondary }}
-                />
-                <input
-                  type="text"
-                  value={locationFilter}
-                  onChange={(e) => onLocationChange(e.target.value)}
-                  list="locations-list"
-                  placeholder="Search location..."
-                  className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                  style={{ 
-                    borderColor: COLORS.primary,
-                    backgroundColor: 'white',
-                    color: COLORS.primary
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-                    e.target.style.transform = 'scale(1.02)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = 'none';
-                    e.target.style.transform = 'scale(1)';
-                  }}
-                />
-                <datalist id="locations-list">
-                  {locations.map((location) => (
-                    <option key={location} value={location} />
-                  ))}
-                </datalist>
-                <div 
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
-                  style={{ backgroundColor: locationFilter ? COLORS.success : COLORS.error }}
-                ></div>
-              </div>
+              <Autocomplete
+                options={options}
+                getOptionLabel={getOptionLabel}
+                value={value}
+                onChange={(_, newValue) => {
+                  if (newValue === null) {
+                    if (locationStep === "city") {
+                      setCity("");
+                      setLocationStep("state");
+                    } else if (locationStep === "state") {
+                      setState("");
+                      setLocationStep("country");
+                    } else if (locationStep === "country") {
+                      setCountry("");
+                    }
+                  } else {
+                    if (locationStep === "country" && typeof newValue === 'object' && 'country' in newValue) {
+                      setCountry(newValue.country);
+                    } else if (locationStep === "state" && typeof newValue === 'object' && 'name' in newValue) {
+                      setState(newValue.name);
+                    } else if (locationStep === "city" && typeof newValue === 'string') {
+                      setCity(newValue);
+                    }
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={label}
+                    placeholder={`Select ${label.toLowerCase()}`}
+                    size="small"
+                    className="bg-white rounded-lg"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '0.5rem',
+                        backgroundColor: 'white',
+                      }
+                    }}
+                  />
+                )}
+                isOptionEqualToValue={(option, value) =>
+                  getOptionLabel(option) === getOptionLabel(value)
+                }
+                disableClearable={false}
+                disabled={locationStep === "state" && !country}
+              />
+              {locationString && (
+                <div className="mt-3 p-2 bg-purple-50 rounded-lg border border-purple-200">
+                  <p className="text-purple-700 font-medium text-xs">
+                    Selected: <span className="font-bold">{locationString}</span>
+                  </p>
+                </div>
+              )}
+              <div 
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
+                style={{ backgroundColor: locationString ? COLORS.success : COLORS.error }}
+              ></div>
             </div>
 
             {/* Calendar Button Card */}

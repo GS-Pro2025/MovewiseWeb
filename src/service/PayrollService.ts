@@ -11,6 +11,7 @@ export interface AssignmentData {
   bonus: number | null;
   role: string;
   id_payment: string | null;
+  operator_phone: string | null;
 }
 
 export interface WeekInfo {
