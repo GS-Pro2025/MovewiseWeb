@@ -143,6 +143,7 @@ export default function PayrollPage() {
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
             assignmentsByDay: {},
+            operator_phone: d.operator_phone,
             // Set temporal para controlar los días sumados
             _bonusDaysAdded: new Set<string>(),
           } as any);
@@ -444,10 +445,12 @@ export default function PayrollPage() {
           operatorData={{
             ...selectedOperator,
             cost: selectedOperator.cost,
+            total: selectedOperator.total || 0, // Asegurar que total no sea undefined
             additionalBonuses: selectedOperator.additionalBonuses || 0, 
             assignmentIds: selectedOperator.assignmentIds || [], 
             paymentIds: selectedOperator.paymentIds || [],
             expense: selectedOperator.expense || 0,
+            operator_phone: selectedOperator.operator_phone || null,
           }}
           periodStart={weekInfo.start_date}
           periodEnd={weekInfo.end_date}

@@ -5,7 +5,7 @@ import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { processDocaiStatement } from "../data/repositoryDOCAI";
-import { searchOrdersByKeyRefLike } from "../data/OrdersRepository";
+import { addExpenseToOrder, addIncomeToOrder, searchOrdersByKeyRefLike } from "../data/OrdersRepository";
 import { enqueueSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import { OCRResult, SuperOrder } from "../domain/ModelsOCR";
@@ -19,6 +19,7 @@ import OCRUploadDialog from "./OCRUploadDialog";
 import PaymentDialog from "./PaymentDialog";
 import SuperOrderDetailsDialog from "./SuperOrderDetailsDialog";
 import DocaiResultDialog from "./DocaiResultDialog";
+import AddAmountDialog from './components/AddAmountDialog';
 
 // Utility function for week range calculation
 function getWeekRange(year: number, week: number): { start: string; end: string } {
@@ -81,6 +82,12 @@ const FinancialView = () => {
   // Estado para controlar si debemos mostrar confirmación
   const [shouldShowConfirmation, setShouldShowConfirmation] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
+
+  // NUEVOS ESTADOS para los diálogos de add amount
+  const [addAmountDialogOpen, setAddAmountDialogOpen] = useState(false);
+  const [addAmountType, setAddAmountType] = useState<'income' | 'expense'>('income');
+  const [addAmountSuperOrder, setAddAmountSuperOrder] = useState<SuperOrder | null>(null);
+  const [addAmountLoading, setAddAmountLoading] = useState(false);
 
   // Group orders by key_ref and calculate totals
   function groupByKeyRef(data: OrderSummary[]): SuperOrder[] {
@@ -215,11 +222,6 @@ const FinancialView = () => {
   const handleClearSearch = () => {
     setSearchResults(null);
     setSearchRef("");
-  };
-
-  const handleOpenPayDialog = (superOrder: SuperOrder) => {
-    setPaySuperOrder(superOrder);
-    setPayDialogOpen(true);
   };
 
   const handleConfirmPay = async (expense: number, income: number) => {
@@ -413,6 +415,64 @@ const FinancialView = () => {
     setConfirmationMessage("");
   };
 
+  // NUEVOS HANDLERS
+  const handleAddIncome = (superOrder: SuperOrder) => {
+    setAddAmountSuperOrder(superOrder);
+    setAddAmountType('income');
+    setAddAmountDialogOpen(true);
+  };
+
+  const handleAddExpense = (superOrder: SuperOrder) => {
+    setAddAmountSuperOrder(superOrder);
+    setAddAmountType('expense');
+    setAddAmountDialogOpen(true);
+  };
+
+  const handleConfirmAddAmount = async (amount: number) => {
+    if (!addAmountSuperOrder) return;
+    
+    setAddAmountLoading(true);
+    try {
+      const payload = {
+        amount,
+        key_ref: addAmountSuperOrder.key_ref
+      };
+
+      let result;
+      if (addAmountType === 'income') {
+        result = await addIncomeToOrder(payload);
+      } else {
+        result = await addExpenseToOrder(payload);
+      }
+
+      if (result && result.length > 0) {
+        enqueueSnackbar(
+          `${addAmountType === 'income' ? 'Income' : 'Expense'} added successfully to ${result.length} order(s)`, 
+          { variant: "success" }
+        );
+        
+        // Recargar datos
+        if (searchResults) {
+          handleSearch();
+        } else {
+          fetchData(page, week);
+        }
+      } else {
+        enqueueSnackbar("No orders were updated", { variant: "warning" });
+      }
+
+      setAddAmountDialogOpen(false);
+      setAddAmountSuperOrder(null);
+    } catch (error: any) {
+      enqueueSnackbar(
+        `Error adding ${addAmountType}: ${error.message || error}`, 
+        { variant: "error" }
+      );
+    } finally {
+      setAddAmountLoading(false);
+    }
+  };
+
   return (
     <Box 
       p={{ xs: 1, sm: 2, md: 3 }} 
@@ -515,7 +575,8 @@ const FinancialView = () => {
           expandedRows={expandedRows}
           onSort={handleSort}
           onToggleExpand={toggleRowExpansion}
-          onPayOrder={handleOpenPayDialog}
+          onAddIncome={handleAddIncome} 
+          onAddExpense={handleAddExpense} 
           onViewDetails={handleViewDetails}
           onOrderPaid={handleOrderPaid}
           onViewOperators={(orderId: string) => navigate(`/app/add-operators-to-order/${orderId}`)}
@@ -560,6 +621,18 @@ const FinancialView = () => {
           result={docaiDialogResult}
         />
       )}
+
+      <AddAmountDialog
+        open={addAmountDialogOpen}
+        type={addAmountType}
+        keyRef={addAmountSuperOrder?.key_ref || ''}
+        loading={addAmountLoading}
+        onClose={() => {
+          setAddAmountDialogOpen(false);
+          setAddAmountSuperOrder(null);
+        }}
+        onConfirm={handleConfirmAddAmount}
+      />
     </Box>
   );
 };

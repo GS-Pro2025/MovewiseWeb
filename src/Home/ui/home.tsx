@@ -22,8 +22,11 @@ import AddFuelCostDialog from '../../addFuelCostToOrder/ui/AddFuelCostDialog';
 // Services
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
 import { finishOrderRepo, updateOrder, deleteOrder, deleteOrderAbsolute } from '../data/repositoryOrders';
-import { getRegisteredLocations } from '../data/repositoryOrders';
-
+import {
+  fetchCountries,
+  fetchStates,
+  fetchCities,
+} from "../../createOrder/repository/repositoryLocation";
 // Utils
 import { exportToExcel, exportToPDF } from './exportUtils';
 
@@ -127,6 +130,9 @@ const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
 // Type for the normalized TableData with proper status type
 type NormalizedTableData = Omit<TableData, 'status'> & {
   status: "finished" | "pending" | "inactive";
+  country?: string;
+  state?: string; 
+  city?: string;
 };
 
 const OrdersTable: React.FC = () => {
@@ -149,9 +155,24 @@ const OrdersTable: React.FC = () => {
   
   // Filters
   const [weekdayFilter, setWeekdayFilter] = useState<string>('');
-  const [locationFilter, setLocationFilter] = useState<string>('');
-  const [locations, setLocations] = useState<string[]>([]);
-  
+  // Estados para la nueva lógica de ubicación
+  const [countries, setCountries] = useState<{ country: string }[]>([]);
+  const [states, setStates] = useState<{ name: string }[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
+  const [locationStep, setLocationStep] = useState<"country" | "state" | "city">("country");
+
+  // Crear el string de ubicación compuesto
+  const locationString = useMemo(() => {
+    if (!country) return "";
+    let loc = country;
+    if (state) loc += `, ${state}`;
+    if (city) loc += `, ${city}`;
+    return loc;
+  }, [country, state, city]);
+
   // Modals
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [finishModalOpen, setFinishModalOpen] = useState(false);
@@ -308,28 +329,65 @@ const OrdersTable: React.FC = () => {
   // Modificar el filtrado de datos para manejar búsqueda global
   useEffect(() => {
     if (isGlobalSearchActive) {
-      // En modo de búsqueda global, mostrar todos los resultados sin filtro adicional
       setFilteredData(data);
     } else {
-      // Filtrado normal por semana y otros filtros
       let filtered = data.filter((item) => item.week === week);
       if (weekdayFilter) {
         filtered = filtered.filter((item) => item.weekday === weekdayFilter);
       }
-      if (locationFilter) {
-        filtered = filtered.filter((item) => item.state === locationFilter);
+      if (locationString) { // locationFilter -> locationString
+        filtered = filtered.filter((item) => {
+          const itemLocation = [item.country, item.state, item.city].filter(Boolean).join(", ");
+          return itemLocation.toLowerCase().includes(locationString.toLowerCase());
+        });
       }
       setFilteredData(filtered);
     }
-  }, [data, week, weekdayFilter, locationFilter, isGlobalSearchActive]); // AGREGAR isGlobalSearchActive
+  }, [data, week, weekdayFilter, locationString, isGlobalSearchActive]); // locationFilter -> locationString
 
+  // Cargar países al iniciar
   useEffect(() => {
-    getRegisteredLocations().then((res) => {
-      if (res.success && Array.isArray(res.data)) {
-        setLocations(res.data);
-      }
+    fetchCountries().then((countries) => {
+      setCountries(countries.map((c) => ({ country: c.name })));
     });
   }, []);
+
+  // Cargar estados cuando se seleccione un país
+  useEffect(() => {
+    if (country) {
+      fetchStates(country).then(setStates);
+      setState("");
+      setCities([]);
+      setCity("");
+      setLocationStep("state");
+    }
+  }, [country]);
+
+  // Cargar ciudades cuando se seleccione un estado
+  useEffect(() => {
+    if (country && state) {
+      fetchCities(country, state).then(setCities);
+      setCity("");
+      setLocationStep("city");
+    }
+  }, [state, country]);
+
+  // Resetear todo si se borra el input
+  useEffect(() => {
+    if (!country) {
+      setState("");
+      setCity("");
+      setStates([]);
+      setCities([]);
+      setLocationStep("country");
+    } else if (!state) {
+      setCity("");
+      setCities([]);
+      setLocationStep("state");
+    } else if (!city) {
+      setLocationStep("city");
+    }
+  }, [country, state, city]);
 
   // Event handlers
   const handlePageChange = (newPage: number) => {
@@ -494,23 +552,36 @@ const OrdersTable: React.FC = () => {
       <TableFilters
         week={week}
         weekdayFilter={weekdayFilter}
-        locationFilter={locationFilter}
-        locations={locations}
+        locationFilter={""} // MANTENER para compatibilidad pero no se usa
+        locations={[]} // MANTENER para compatibilidad pero no se usa
         weekRange={weekRange}
         onWeekChange={setWeek}
         onWeekdayChange={setWeekdayFilter}
-        onLocationChange={setLocationFilter}
+        onLocationChange={() => {}} // MANTENER para compatibilidad pero no se usa
         onCalendarOpen={() => setCalendarOpen(true)}
-        // Props for real-time statistics
         data={data}
         filteredData={filteredData}
-        // Props para búsqueda global
         globalSearch={globalSearch}
         onGlobalSearchChange={setGlobalSearch}
         onGlobalSearchSubmit={handleGlobalSearch}
         onGlobalSearchClear={handleClearGlobalSearch} 
         globalSearchLoading={globalSearchLoading}
         isGlobalSearchActive={isGlobalSearchActive}
+        // AGREGAR estas nuevas props:
+        locationString={locationString}
+        country={country}
+        setCountry={setCountry}
+        state={state}
+        setState={setState}
+        city={city}
+        setCity={setCity}
+        locationStep={locationStep}
+        setLocationStep={setLocationStep}
+        countries={countries}
+        states={states}
+        cities={cities}
+        setCities={setCities}
+        setStates={setStates}
       />
 
       {/* Toolbar */}
