@@ -58,6 +58,15 @@ export interface RegisterResponse {
   validationErrors?: ValidationErrors;
 }
 
+// Nueva interfaz para la respuesta de verificación de licencia
+export interface CheckLicenseResponse {
+  status: boolean;
+  exists: boolean;
+  message: string;
+  company_name: string | null;
+  license_number: string;
+}
+
 export const registerWithCompany = async (
   registerData: RegisterCompanyData
 ): Promise<RegisterResponse> => {
@@ -114,5 +123,45 @@ export const registerWithCompany = async (
       success: false,
       errorMessage: err?.message || 'An unexpected error occurred during registration',
     };
+  }
+};
+
+// Nuevo servicio para verificar disponibilidad de licencia
+export const checkCompanyLicense = async (
+  licenseNumber: string
+): Promise<CheckLicenseResponse> => {
+  try {
+    const response = await fetch(
+      `${BASE_URL_API}/check-company-license/?license_number=${encodeURIComponent(licenseNumber)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || data.message || `HTTP ${response.status}: License check failed`);
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error('License check error:', err);
+    
+    // En caso de error de red, asumir que está disponible para no bloquear el registro
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      return {
+        status: false,
+        exists: false,
+        message: 'Network error: Unable to verify license availability. Please try again.',
+        company_name: null,
+        license_number: licenseNumber
+      };
+    }
+
+    throw err;
   }
 };

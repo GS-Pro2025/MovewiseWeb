@@ -1,7 +1,8 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, FormEvent, useCallback } from "react";
-import { registerWithCompany, RegisterCompanyData, ValidationErrors } from "../../service/RegisterService";
+import React, { useState, FormEvent, useCallback, useEffect } from "react";
+import { registerWithCompany, RegisterCompanyData, ValidationErrors, CheckLicenseResponse, checkCompanyLicense } from "../../service/RegisterService";
+import { Eye, EyeOff } from "lucide-react";
 
 interface RegisterFormProps {
   onRegisterSuccess?: () => void;
@@ -66,7 +67,7 @@ const InputField = React.memo(({
   </div>
 ));
 
-// --- NEW: PasswordField with "eye" toggle ---
+// --- PasswordField with "eye" toggle ---
 const PasswordField = React.memo(({
   value,
   onChange,
@@ -96,10 +97,10 @@ const PasswordField = React.memo(({
       <button
         type="button"
         onClick={() => setShow(s => !s)}
-        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-900"
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors"
         aria-label={show ? "Hide password" : "Show password"}
       >
-        {show ? "🙈" : "👁️"}
+        {show ? <EyeOff size={20} /> : <Eye size={20} />}
       </button>
       {errors && errors.length > 0 && (
         <div className="mt-1 ml-1">
@@ -111,3 +112,625 @@ const PasswordField = React.memo(({
     </div>
   );
 });
+// Actualizar SelectField para manejar múltiples errores
+const SelectField = React.memo(({ 
+  placeholder, 
+  value, 
+  onChange, 
+  errors, 
+  required = false,
+  options 
+}: {
+  placeholder: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  errors?: string[];
+  required?: boolean;
+  options: { value: string; label: string }[];
+}) => (
+  <div className="mb-4">
+    <select
+      value={value}
+      onChange={onChange}
+      required={required}
+      className={`w-full px-4 py-3 rounded-lg bg-white text-gray-900 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+        errors && errors.length > 0 ? "border-red-500 focus:ring-red-500" : "border-gray-300 hover:border-gray-400"
+      } ${!value ? "text-gray-500" : ""}`}
+    >
+      <option value="" disabled className="text-gray-500">
+        {placeholder}
+      </option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value} className="text-gray-900">
+          {option.label}
+        </option>
+      ))}
+    </select>
+    {errors && errors.length > 0 && (
+      <div className="mt-1 ml-1">
+        {errors.map((error, index) => (
+          <p key={index} className="text-red-500 text-sm">{error}</p>
+        ))}
+      </div>
+    )}
+  </div>
+));
+
+const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [company, setCompany] = useState(initialCompany);
+  const [user, setUser] = useState(initialUser);
+  const [errors, setErrors] = useState<any>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [licenseCheck, setLicenseCheck] = useState<CheckLicenseResponse | null>(null);
+  const [isCheckingLicense, setIsCheckingLicense] = useState(false);
+  const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null);
+
+
+  // Opciones para el tipo de ID
+  const idTypeOptions = [
+    { value: "green_card", label: "Green Card" },
+    { value: "passport", label: "Passport" },
+    { value: "drivers_license", label: "Driver's License" },
+    { value: "state_id", label: "State ID" }
+  ];
+  // Función para verificar licencia con debounce
+  const checkLicenseAvailability = useCallback(async (licenseNumber: string) => {
+    if (licenseNumber.trim().length < 3) {
+      setLicenseCheck(null);
+      return;
+    }
+
+    setIsCheckingLicense(true);
+    
+    try {
+      const result = await checkCompanyLicense(licenseNumber.trim());
+      setLicenseCheck(result);
+    } catch (error) {
+      console.error('License check failed:', error);
+      // En caso de error, permitir continuar pero mostrar advertencia
+      setLicenseCheck({
+        status: false,
+        exists: false,
+        message: 'Unable to verify license. Please ensure it is unique.',
+        company_name: null,
+        license_number: licenseNumber
+      });
+    } finally {
+      setIsCheckingLicense(false);
+    }
+  }, []);
+  // Effect para verificar licencia con debounce
+  useEffect(() => {
+    if (licenseCheckTimeout) {
+      clearTimeout(licenseCheckTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      if (company.license_number.trim().length >= 3) {
+        checkLicenseAvailability(company.license_number);
+      }
+    }, 500); // 500ms debounce
+
+    setLicenseCheckTimeout(timeout);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [company.license_number, checkLicenseAvailability]);
+
+  // Limpiar verificación cuando se limpia el campo
+  useEffect(() => {
+    if (company.license_number.trim().length < 3) {
+      setLicenseCheck(null);
+    }
+  }, [company.license_number]);
+
+  // Validaciones locales mejoradas según la documentación de la API
+   const validateCompany = () => {
+    const errs: any = {};
+    
+    if (company.license_number.trim().length === 0) errs.license_number = ["License number is required"];
+    if (company.license_number.trim().length > 50) errs.license_number = ["License number must not exceed 50 characters"];
+    
+    // Verificar si la licencia ya existe
+    if (licenseCheck?.exists) {
+      errs.license_number = errs.license_number 
+        ? [...errs.license_number, "This license number is already in use"]
+        : ["This license number is already in use"];
+    }
+    
+    // Si todavía se está verificando, no permitir continuar
+    if (isCheckingLicense && company.license_number.trim().length >= 3) {
+      errs.license_number = errs.license_number 
+        ? [...errs.license_number, "Please wait while we verify the license number"]
+        : ["Please wait while we verify the license number"];
+    }
+
+    if (company.name.trim().length === 0) errs.name = ["Company name is required"];
+    if (company.name.trim().length > 255) errs.name = ["Company name must not exceed 255 characters"];
+    if (company.address.trim().length === 0) errs.address = ["Address is required"];
+    if (company.address.trim().length > 255) errs.address = ["Address must not exceed 255 characters"];
+    
+    // ZIP validation (existing code)
+    if (company.zip_code.trim().length === 0) {
+      errs.zip_code = ["Zip code is required"];
+    } else {
+      if (company.zip_code.trim().length < 3) errs.zip_code = ["Zip code must be at least 3 characters"];
+      else if (company.zip_code.trim().length > 10) errs.zip_code = ["Zip code must not exceed 10 characters"];
+      if (!/^[A-Za-z0-9]+$/.test(company.zip_code.trim())) {
+        errs.zip_code = errs.zip_code ? [...errs.zip_code, "Zip code must contain only letters and numbers (no spaces or special characters)"] : ["Zip code must contain only letters and numbers (no spaces or special characters)"];
+      }
+    }
+    
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+
+  const validateUser = () => {
+    const errs: any = {};
+    
+    // Username validation
+    if (user.user_name.trim().length === 0) errs.user_name = ["Username is required"];
+    if (user.user_name.trim().length > 50) errs.user_name = ["Username must not exceed 50 characters"];
+    
+    // Password validation según documentación
+    if (user.password.trim().length < 8) {
+      errs.password = ["Password must be at least 8 characters long"];
+    } else {
+      const passwordErrors: string[] = [];
+      if (!/[A-Z]/.test(user.password)) passwordErrors.push("Password must contain at least one uppercase letter");
+      if (!/[a-z]/.test(user.password)) passwordErrors.push("Password must contain at least one lowercase letter");
+      if (!/\d/.test(user.password)) passwordErrors.push("Password must contain at least one number");
+      if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(user.password)) {
+        passwordErrors.push("Password must contain at least one special character");
+      }
+      if (passwordErrors.length > 0) errs.password = passwordErrors;
+    }
+
+    // Confirm password
+    if (confirmPassword !== user.password) {
+      errs.confirm_password = ["Passwords do not match"];
+    }
+    
+    // Person validation
+    const personErrors: any = {};
+    if (!user.person.email.includes("@")) personErrors.email = ["Valid email required"];
+    if (user.person.first_name.trim().length === 0) personErrors.first_name = ["First name is required"];
+    if (user.person.first_name.trim().length > 100) personErrors.first_name = ["First name must not exceed 100 characters"];
+    if (user.person.last_name.trim().length === 0) personErrors.last_name = ["Last name is required"];
+    if (user.person.last_name.trim().length > 100) personErrors.last_name = ["Last name must not exceed 100 characters"];
+    if (!user.person.id_number.trim()) personErrors.id_number = ["ID number is required"];
+    if (user.person.id_number.trim().length > 50) personErrors.id_number = ["ID number must not exceed 50 characters"];
+    if (!user.person.type_id.trim()) personErrors.type_id = ["ID type is required"];
+    
+    if (Object.keys(personErrors).length > 0) {
+      errs.person = personErrors;
+    }
+    
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    
+    // Limpiar errores previos
+    setErrors({});
+    setValidationErrors({});
+    
+    if (step === 1) {
+      if (validateCompany()) setStep(2);
+    } else {
+      if (validateUser()) {
+        setIsLoading(true);
+        
+        const registerData: RegisterCompanyData = {
+          company,
+          user
+          // Remover id_plan - la API usa FREE PLAN automáticamente
+        };
+
+        try {
+          const response = await registerWithCompany(registerData);
+          
+          if (response.success) {
+            console.log("Registration successful:", response.data);
+            
+            // Mostrar mensaje de éxito
+            setShowSuccess(true);
+            
+            // Después de 3 segundos, redirigir al login
+            setTimeout(() => {
+              if (onRegisterSuccess) {
+                onRegisterSuccess();
+              }
+            }, 3000);
+            
+          } else {
+            console.error("Registration failed:", response.errorMessage);
+            
+            // Manejar errores de validación estructurados
+            if (response.validationErrors) {
+              setValidationErrors(response.validationErrors);
+              
+              // Si hay errores de company, volver al step 1
+              if (response.validationErrors.company && Object.keys(response.validationErrors.company).length > 0) {
+                setStep(1);
+              }
+            } else {
+              // Error general
+              setErrors({ general: response.errorMessage });
+            }
+          }
+        } catch (error) {
+          console.error("Unexpected error:", error);
+          setErrors({ general: "An unexpected error occurred. Please try again." });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+  };
+
+  const handleCompanyChange = useCallback((field: keyof typeof initialCompany) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setCompany(prev => ({ ...prev, [field]: e.target.value }));
+      
+      // Limpiar errores del campo cuando el usuario empiece a escribir
+      if (validationErrors.company?.[field]) {
+        setValidationErrors(prev => ({
+          ...prev,
+          company: {
+            ...prev.company,
+            [field]: undefined
+          }
+        }));
+      }
+
+      // Si es el campo license_number, limpiar verificación previa
+      if (field === 'license_number') {
+        setLicenseCheck(null);
+        // Limpiar errores de licencia existente
+        if (errors.license_number) {
+          setErrors((prev: any) => ({ ...prev, license_number: undefined }));
+        }
+      }
+    }, [validationErrors, errors]
+  );
+
+  const handleUserChange = useCallback((field: keyof typeof initialUser) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setUser(prev => ({ ...prev, [field]: e.target.value }));
+      // Limpiar errores del campo cuando el usuario empiece a escribir
+      if (validationErrors.user?.[field as keyof typeof validationErrors.user]) {
+        setValidationErrors(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            [field]: undefined
+          }
+        }));
+      }
+      // Limpiar client-side errors for password/confirm when typing
+      if (field === "password") {
+        setErrors((prev: any) => ({ ...prev, password: undefined, confirm_password: undefined }));
+      }
+    }, [validationErrors]
+  );
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setConfirmPassword(e.target.value);
+      // clear errors when user types
+      setErrors((prev: any) => ({ ...prev, confirm_password: undefined }));
+    };
+  const handlePersonChange = useCallback((field: keyof typeof initialUser.person) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setUser(prev => ({ 
+        ...prev, 
+        person: { ...prev.person, [field]: e.target.value } 
+      }));
+      // Limpiar errores del campo cuando el usuario empiece a escribir
+      if (validationErrors.user?.person?.[field]) {
+        setValidationErrors(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            person: {
+              ...prev.user?.person,
+              [field]: undefined
+            }
+          }
+        }));
+      }
+    }, [validationErrors]
+  );
+
+  const handlePersonSelectChange = useCallback((field: keyof typeof initialUser.person) => 
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setUser(prev => ({ 
+        ...prev, 
+        person: { ...prev.person, [field]: e.target.value } 
+      }));
+      // Limpiar errores del campo cuando el usuario empiece a escribir
+      if (validationErrors.user?.person?.[field]) {
+        setValidationErrors(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            person: {
+              ...prev.user?.person,
+              [field]: undefined
+            }
+          }
+        }));
+      }
+    }, [validationErrors]
+  );
+
+  return (
+    <div className="w-full max-w-lg mx-auto">
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+          <div className="text-center">
+            <strong>Account created successfully!</strong>
+            <p className="text-sm mt-1">Redirecting to login...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
+        <p className="text-gray-300">Join us and start your journey with FREE PLAN</p>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm text-gray-300">Progress</span>
+          <span className="text-sm text-gray-300">{step}/2</span>
+        </div>
+        <div className="w-full bg-gray-600 rounded-full h-2">
+          <div 
+            className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+            style={{ width: `${(step / 2) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Form Container */}
+      <div className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* Error general */}
+          {errors.general && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              <strong>Registration Failed:</strong>
+              <p className="mt-1">{errors.general}</p>
+            </div>
+          )}
+          
+          {step === 1 ? (
+            <>
+              {/* Company Section */}
+              <div>
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-[#F09F52] rounded-full flex items-center justify-center mr-3">
+                    <span className="text-white font-semibold">1</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Company Information</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <InputField
+                    type="text"
+                    placeholder="License Number"
+                    value={company.license_number}
+                    onChange={handleCompanyChange('license_number')}
+                    errors={validationErrors.company?.license_number || errors.license_number}
+                    required
+                  />
+
+                  <InputField
+                    type="text"
+                    placeholder="Company Name"
+                    value={company.name}
+                    onChange={handleCompanyChange('name')}
+                    errors={validationErrors.company?.name || errors.name}
+                    required
+                  />
+
+                  <InputField
+                    type="text"
+                    placeholder="Company Address"
+                    value={company.address}
+                    onChange={handleCompanyChange('address')}
+                    errors={validationErrors.company?.address || errors.address}
+                    required
+                  />
+
+                  <InputField
+                    type="text"
+                    placeholder="Zip Code (3-10 chars, no spaces or special characters)"
+                    value={company.zip_code}
+                    onChange={handleCompanyChange('zip_code')}
+                    errors={validationErrors.company?.zip_code || errors.zip_code}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                disabled={isLoading}
+              >
+                Continue to User Data →
+              </button>
+            </>
+          ) : (
+            <>
+              {/* User Section */}
+              <div>
+                <div className="flex items-center mb-6">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                    <span className="text-white font-semibold">2</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">User Information</h3>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Account Info */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Account Details</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                      <InputField
+                        type="text"
+                        placeholder="Username"
+                        value={user.user_name}
+                        onChange={handleUserChange('user_name')}
+                        errors={validationErrors.user?.user_name || errors.user_name}
+                        required
+                      />
+
+                      {/* Password field using PasswordField with eye */}
+                      <PasswordField
+                        value={user.password}
+                        onChange={handleUserChange('password')}
+                        placeholder="Password (Min 8 chars, A-z, 0-9, special chars)"
+                        errors={validationErrors.user?.password || errors.password}
+                        required
+                      />
+
+                      {/* Confirm Password */}
+                      <PasswordField
+                        value={confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        placeholder="Confirm Password"
+                        errors={errors.confirm_password} // SOLO usar errors locales, no validationErrors del servidor
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Personal Info */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                      <InputField
+                        type="email"
+                        placeholder="Email Address"
+                        value={user.person.email}
+                        onChange={handlePersonChange('email')}
+                        errors={validationErrors.user?.person?.email || errors.person?.email}
+                        required
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <InputField
+                          type="text"
+                          placeholder="First Name"
+                          value={user.person.first_name}
+                          onChange={handlePersonChange('first_name')}
+                          errors={validationErrors.user?.person?.first_name || errors.person?.first_name}
+                          required
+                        />
+                        <InputField
+                          type="text"
+                          placeholder="Last Name"
+                          value={user.person.last_name}
+                          onChange={handlePersonChange('last_name')}
+                          errors={validationErrors.user?.person?.last_name || errors.person?.last_name}
+                          required
+                        />
+                      </div>
+
+                      <InputField
+                        type="date"
+                        placeholder="Birth Date"
+                        value={user.person.birth_date}
+                        onChange={handlePersonChange('birth_date')}
+                        errors={validationErrors.user?.person?.birth_date || errors.person?.birth_date}
+                      />
+
+                      <InputField
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={user.person.phone}
+                        onChange={handlePersonChange('phone')}
+                        errors={validationErrors.user?.person?.phone || errors.person?.phone}
+                      />
+
+                      <InputField
+                        type="text"
+                        placeholder="Address"
+                        value={user.person.address}
+                        onChange={handlePersonChange('address')}
+                        errors={validationErrors.user?.person?.address || errors.person?.address}
+                      />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <InputField
+                          type="text"
+                          placeholder="ID Number"
+                          value={user.person.id_number}
+                          onChange={handlePersonChange('id_number')}
+                          errors={validationErrors.user?.person?.id_number || errors.person?.id_number}
+                          required
+                        />
+                        <SelectField
+                          placeholder="Select ID Type"
+                          value={user.person.type_id}
+                          onChange={handlePersonSelectChange('type_id')}
+                          errors={validationErrors.user?.person?.type_id || errors.person?.type_id}
+                          options={idTypeOptions}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 rounded-lg transition-all duration-300"
+                  disabled={isLoading || showSuccess}
+                >
+                  ← Back
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading || showSuccess}
+                >
+                  {isLoading ? "Creating Account..." : showSuccess ? "Account Created!" : "Create FREE Account"}
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-6">
+        <p className="text-gray-300 text-sm">
+          Already have an account? 
+          <a href="/login" className="text-blue-400 hover:text-blue-300 ml-1 transition-colors">
+            Sign in
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterForm;
