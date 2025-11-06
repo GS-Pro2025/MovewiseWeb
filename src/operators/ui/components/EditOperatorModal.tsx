@@ -47,8 +47,46 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
 
   const [loading, setLoading] = useState(false);
 
+  // Nuevo estado para mostrar errores provenientes de la API (validation / integrity / general)
+  const [apiErrors, setApiErrors] = useState<{ message?: string; fieldErrors?: Record<string, string[]> } | null>(null);
+
   useEffect(() => {
     if (operator) {
+      // Normalizar posibles variantes del campo type id
+      const normalizeTypeId = (raw?: any) => {
+        if (!raw && raw !== 0) return '';
+        const v = String(raw).toLowerCase().trim();
+        const map: Record<string, string> = {
+          'green card': 'green_card',
+          'green_card': 'green_card',
+          'passport': 'passport',
+          "driver's license": 'drivers_license',
+          'drivers license': 'drivers_license',
+          'drivers_license': 'drivers_license',
+          'state id': 'state_id',
+          'state_id': 'state_id',
+          'national id': 'national_id',
+          'national_id': 'national_id',
+          'id_number': 'national_id', // mapa si el backend usa id_number
+          'id number': 'national_id'
+        };
+        return map[v] ?? v.replace(/\s+/g, '_');
+      };
+
+      // Intentar tomar type desde varias claves posibles
+      const rawType =
+        (operator as any).type_id ??
+        (operator as any).id_type ??
+        (operator as any).type ??
+        (operator as any).person?.type_id ??
+        '';
+
+      // debug para ver qué llega realmente
+      // eslint-disable-next-line no-console
+      console.debug('EditOperatorModal: rawType for operator', operator.id_operator, rawType);
+
+      const normalizedType = normalizeTypeId(rawType);
+
       setFormData({
         // Campos del operador
         code: operator.code || '',
@@ -67,11 +105,13 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
           phone: operator.phone || '',
           address: operator.address || '',
           id_number: operator.id_number || '',
-          type_id: operator.type_id || '',
+          type_id: normalizedType || '',
           email: operator.email || '',
           status: 'active'
         }
       });
+     // limpiar errores previos al abrir modal/cargar nuevo operador
+     setApiErrors(null);
     }
   }, [operator]);
 
@@ -103,6 +143,7 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setApiErrors(null);
 
     try {
       const submitFormData = new FormData();
@@ -116,17 +157,22 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
       submitFormData.append('salary', formData.salary);
       submitFormData.append('status', formData.status);
 
-      // Datos de la persona (formato person.campo)
-      submitFormData.append('person.first_name', formData.person.first_name);
-      submitFormData.append('person.last_name', formData.person.last_name);
-      submitFormData.append('person.birth_date', formData.person.birth_date);
-      submitFormData.append('person.phone', formData.person.phone);
-      submitFormData.append('person.address', formData.person.address);
-      submitFormData.append('person.id_number', formData.person.id_number);
-      submitFormData.append('person.type_id', formData.person.type_id);
-      submitFormData.append('person.email', formData.person.email);
-      submitFormData.append('person.status', formData.person.status);
+      // Datos de la persona (campos de primer nivel requeridos por la API)
+      submitFormData.append('first_name', formData.person.first_name);
+      submitFormData.append('last_name', formData.person.last_name);
+      submitFormData.append('birth_date', formData.person.birth_date);
+      submitFormData.append('phone', formData.person.phone);
+      submitFormData.append('address', formData.person.address);
+      submitFormData.append('id_number', formData.person.id_number);
+      submitFormData.append('type_id', formData.person.type_id);
+      submitFormData.append('email', formData.person.email);
+      // status de persona no siempre requerido por backend; incluir solo si necesario
+      if (formData.person.status) submitFormData.append('status', formData.person.status);
 
+      // Sons: enviar como JSON string en el campo 'sons' (si tienes un arreglo)
+      // Ejemplo: const sons = [{ name: 'Ana', birth_date: '2015-03-10', gender: 'F' }];
+      // if (sons && sons.length) submitFormData.append('sons', JSON.stringify(sons));
+      
       // Archivos (solo si se van a actualizar)
       if (files.photo) {
         submitFormData.append('photo', files.photo);
@@ -139,7 +185,18 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
       }
 
       await onSave(submitFormData);
-    } catch (error) {
+    } catch (error: any) {
+      // Manejo de errores estructurados retornados por la API (ver documentación)
+      if (error && (error.errors || error.message)) {
+        setApiErrors({
+          message: typeof error.message === 'string' ? error.message : undefined,
+          fieldErrors: typeof error.errors === 'object' ? error.errors : undefined
+        });
+      } else if (error instanceof Error) {
+        setApiErrors({ message: error.message });
+      } else {
+        setApiErrors({ message: 'Unknown error saving operator' });
+      }
       console.error('Error saving operator:', error);
     } finally {
       setLoading(false);
@@ -164,6 +221,29 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
             <i className="fas fa-times"></i>
           </button>
         </div>
+
+        {/* Mostrar errores de la API si existen */}
+        {apiErrors && (
+          <div className="p-4">
+            {apiErrors.message && (
+              <div className="mb-2 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded">
+                <strong>{apiErrors.message}</strong>
+              </div>
+            )}
+            {apiErrors.fieldErrors && (
+              <div className="space-y-1">
+                {Object.entries(apiErrors.fieldErrors).map(([field, msgs]) => (
+                  <div key={field} className="bg-red-50 border border-red-100 text-red-700 px-3 py-2 rounded">
+                    <div className="font-medium text-sm">{field}</div>
+                    <div className="text-sm mt-1">
+                      {msgs.map((m, i) => <div key={i}>• {m}</div>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Personal Information */}
@@ -224,8 +304,10 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
                   disabled={loading}
                 >
                   <option value="">Select ID Type</option>
+                  <option value="green_card">Green Card</option>
                   <option value="passport">Passport</option>
-                  <option value="license">Driver's License</option>
+                  <option value="drivers_license">Driver's License</option>
+                  <option value="state_id">State ID</option>
                   <option value="national_id">National ID</option>
                 </select>
               </div>

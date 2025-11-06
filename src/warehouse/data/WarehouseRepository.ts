@@ -25,14 +25,68 @@ export const createWorkhouseOrder = async (orderData: WorkhouseCreationOrderData
         body: JSON.stringify(orderData),
         });
     
-        if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.messDev || 'Error creating workhouse order');
+        // Leer respuesta como texto primero para manejo de errores
+        const rawText = await response.text().catch(() => '');
+        let responseData: any = null;
+        try {
+            responseData = rawText ? JSON.parse(rawText) : null;
+        } catch (e) {
+            console.warn('createWorkhouseOrder: response is not valid JSON, raw text:', rawText, e);
         }
+
+        if (response.status === 403) {
+            Cookies.remove('authToken');
+            window.location.href = '/login';
+            throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+
+        if (response.ok) {
+            return responseData;
+        }
+
+        // Manejo estructurado de errores según la documentación de la API
+        if (response.status === 400) {
+            const errorType = responseData?.error_type;
+            const messUser = responseData?.messUser;
+            const errors = responseData?.errors;
+            
+            if (errorType === 'ValidationError') {
+                if (errors) {
+                    // Error de validación con campos específicos
+                    const fieldErrors = Object.entries(errors)
+                        .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+                        .join('; ');
+                    throw new Error(`Validation error: ${fieldErrors}`);
+                } else {
+                    // Error de validación general (CompanyMissing, NoSuperAdminAndNoPersonId)
+                    throw new Error(messUser || 'Validation error occurred');
+                }
+            }
+            
+            // Otros errores 400
+            throw new Error(messUser || responseData?.messDev || 'Bad request error');
+        }
+
+        if (response.status === 404) {
+            const messUser = responseData?.messUser;
+            throw new Error(messUser || 'Customer factory not found');
+        }
+
+        if (response.status === 500) {
+            const messUser = responseData?.messUser;
+            throw new Error(messUser || 'Internal server error occurred');
+        }
+
+        // Otros códigos de error
+        throw new Error(responseData?.messUser || responseData?.messDev || `HTTP error! status: ${response.status}`);
     
-        return await response.json();
-    } catch (err: any) {
-        throw new Error(err.message || 'An unexpected error occurred');
+    } catch (error: any) {
+        console.error('Error creating workhouse order:', error);
+        // Si ya es un error estructurado, re-lanzarlo
+        if (error.message) {
+            throw error;
+        }
+        throw new Error('An unexpected error occurred while creating the workhouse order');
     }
 };
 

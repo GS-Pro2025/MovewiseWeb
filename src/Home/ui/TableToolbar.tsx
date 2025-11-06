@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import PrintIcon from '@mui/icons-material/Print';
 import { TableData } from '../domain/TableData';
 
 interface TableToolbarProps {
@@ -50,22 +50,22 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
       
       <Button
         onClick={() => onExportPDF(data, 'orders_all_data')}
-        startIcon={<PictureAsPdfIcon />}
+        startIcon={<PrintIcon />}
         variant="outlined"
         color="secondary"
         disabled={data.length === 0}
       >
-        Export PDF (All)
+        Print Report (All)
       </Button>
       
       <Button
         onClick={() => onExportPDF(selectedRows, 'orders_selected')}
-        startIcon={<PictureAsPdfIcon />}
+        startIcon={<PrintIcon />}
         variant="outlined"
         color="secondary"
         disabled={selectedRows.length === 0}
       >
-        Export PDF (Selected)
+        Print Report (Selected)
       </Button>
     </Box>
   );
