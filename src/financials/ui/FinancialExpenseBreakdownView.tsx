@@ -751,7 +751,7 @@ const FinancialExpenseBreakdownView = () => {
               <thead>
                 <tr style={{ backgroundColor: '#0B2863' }}>
                   <th className="text-left px-6 py-4 text-white font-semibold text-base">Category</th>
-                  <th className="text-right px-6 py-4 text-white font-semibold text-base">Amount</th>
+                  <th className="text-right px-6 py-4 text-white font-semibold text-base">Amount($USD)</th>
                   <th className="text-center px-6 py-4 text-white font-semibold text-base">Actions</th>
                 </tr>
               </thead>
