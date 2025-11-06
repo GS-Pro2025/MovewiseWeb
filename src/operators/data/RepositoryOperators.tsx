@@ -135,7 +135,6 @@ export const deleteOperator = async (id_operator: number): Promise<void> => {
   }
 };
 
-
 export const updateOperator = async (id_operator: number, operatorData: Partial<Operator> | FormData): Promise<void> => {
   const token = Cookies.get('authToken');
   if (!token) {
@@ -162,15 +161,37 @@ export const updateOperator = async (id_operator: number, operatorData: Partial<
       body: isFormData ? operatorData : JSON.stringify(operatorData),
     });
 
+    // Leer texto crudo para poder parsear mensajes personalizados de la API
+    const rawText = await response.text().catch(() => '');
+    let payload: any = null;
+    try {
+      payload = rawText ? JSON.parse(rawText) : null;
+    } catch (e) {
+      console.warn('updateOperator: response is not valid JSON, raw text:', rawText, e);
+      payload = rawText;
+    }
+
     if (response.status === 403) {
       Cookies.remove('authToken');
       window.location.href = '/login';
       throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
     }
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (response.ok) {
+      // éxito, nada más que hacer (los llamadores refrescan la lista)
+      return;
     }
+
+    // Manejo detallado de errores 400 (validación / integridad / estructurados)
+    if (response.status === 400) {
+      // lanzar el payload (expected { message, errors, ... }) para que el llamador lo muestre
+      const err = payload ?? { message: 'Validation error', status: 400 };
+      console.error('updateOperator: validation/business error', err);
+      throw err;
+    }
+
+    // Otros errores -> incluir rawText para facilitar debugging
+    throw new Error(`HTTP error! status: ${response.status} - ${rawText}`);
   } catch (error) {
     console.error('Error updating operator:', error);
     throw error;

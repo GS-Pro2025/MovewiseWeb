@@ -166,7 +166,9 @@ const CreateWarehouseView = () => {
         navigate(`/app/add-operators-to-order/${orderKey}`);
       }
     } catch (err: any) {
-      enqueueSnackbar(err.message || "Error creating warehouse order", { variant: "error" });
+      // Mostrar mensaje de error específico según la documentación de la API
+      const errorMessage = err.message || "Error creating warehouse order";
+      enqueueSnackbar(errorMessage, { variant: "error" });
     } finally {
       setLoading(false);
     }

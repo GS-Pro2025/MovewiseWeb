@@ -6,14 +6,28 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [message, setMessage] = useState<string>('');
+  const [snackbar, setSnackbar] = useState<{ open: boolean; text: string; variant: 'success' | 'error' }>({
+    open: false,
+    text: '',
+    variant: 'success'
+  });
+
+  const enqueueSnackbar = (text: string, variant: 'success' | 'error' = 'success', duration = 2500) => {
+    setSnackbar({ open: true, text, variant });
+    setTimeout(() => setSnackbar(prev => ({ ...prev, open: false })), duration);
+  };
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const result = await login(email, password);
-    setMessage(result.message);
     if (result.success) {
-      window.location.href = '/dashboard';
+      enqueueSnackbar(result.message || 'Login success', 'success', 1400);
+      // pequeña espera para que se vea el snackbar antes de redirigir
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1400);
+    } else {
+      enqueueSnackbar(result.message || 'Incorrect email or password', 'error', 3500);
     }
   };
 
@@ -24,7 +38,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   return (
     <>
       <p className="text-xl text-gray-100 mb-6">Sign into your account</p>
-      {message && <p className="text-lg text-red-400">{message}</p>}
+      {/* Snackbar */}
+      {snackbar.open && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed top-6 right-6 z-50 px-4 py-2 rounded shadow-lg text-white text-sm ${
+            snackbar.variant === 'success' ? 'bg-green-600' : 'bg-red-600'
+          }`}
+        >
+          {snackbar.text}
+        </div>
+      )}
 
       <form className="sm:w-2/3 w-full mx-auto" onSubmit={handleLogin}>
         <div className="pb-2 pt-4">

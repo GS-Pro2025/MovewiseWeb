@@ -23,7 +23,31 @@ export interface RegisterCompanyData {
       type_id: string;
     };
   };
-  id_plan: number;
+  id_plan?: number; // Opcional ya que la API usa FREE PLAN por defecto
+}
+
+// Interfaces para errores estructurados
+export interface ValidationErrors {
+  company?: {
+    license_number?: string[];
+    name?: string[];
+    address?: string[];
+    zip_code?: string[];
+  };
+  user?: {
+    user_name?: string[];
+    password?: string[];
+    person?: {
+      email?: string[];
+      first_name?: string[];
+      last_name?: string[];
+      id_number?: string[];
+      type_id?: string[];
+      birth_date?: string[];
+      phone?: string[];
+      address?: string[];
+    };
+  };
 }
 
 export interface RegisterResponse {
@@ -31,26 +55,50 @@ export interface RegisterResponse {
   message?: string;
   data?: any;
   errorMessage?: string;
+  validationErrors?: ValidationErrors;
+}
+
+// Nueva interfaz para la respuesta de verificación de licencia
+export interface CheckLicenseResponse {
+  status: boolean;
+  exists: boolean;
+  message: string;
+  company_name: string | null;
+  license_number: string;
 }
 
 export const registerWithCompany = async (
   registerData: RegisterCompanyData
 ): Promise<RegisterResponse> => {
   try {
+    // Remover id_plan del payload ya que la API usa FREE PLAN automáticamente
+    const { id_plan, ...payloadData } = registerData;
+    console.log("id_plan", id_plan);
     const response = await fetch(`${BASE_URL_API}/registerWithCompany/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(registerData),
+      body: JSON.stringify(payloadData),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      // Manejar errores de validación estructurados (400)
+      if (response.status === 400 && data.errors) {
+        return {
+          success: false,
+          errorMessage: data.detail || 'Validation errors occurred',
+          validationErrors: data.errors,
+          data
+        };
+      }
+
+      // Manejar otros errores (500, etc.)
       return {
         success: false,
-        errorMessage: data.detail || data.message || 'Error during registration',
+        errorMessage: data.detail || data.message || `HTTP ${response.status}: Registration failed`,
         data
       };
     }
@@ -62,9 +110,58 @@ export const registerWithCompany = async (
     };
   } catch (err: any) {
     console.error('Registration error:', err);
+    
+    // Diferenciar entre errores de red y otros errores
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      return {
+        success: false,
+        errorMessage: 'Network error: Unable to connect to the server. Please check your connection and try again.',
+      };
+    }
+
     return {
       success: false,
       errorMessage: err?.message || 'An unexpected error occurred during registration',
     };
+  }
+};
+
+// Nuevo servicio para verificar disponibilidad de licencia
+export const checkCompanyLicense = async (
+  licenseNumber: string
+): Promise<CheckLicenseResponse> => {
+  try {
+    const response = await fetch(
+      `${BASE_URL_API}/check-company-license/?license_number=${encodeURIComponent(licenseNumber)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || data.message || `HTTP ${response.status}: License check failed`);
+    }
+
+    return data;
+  } catch (err: any) {
+    console.error('License check error:', err);
+    
+    // En caso de error de red, asumir que está disponible para no bloquear el registro
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      return {
+        status: false,
+        exists: false,
+        message: 'Network error: Unable to verify license availability. Please try again.',
+        company_name: null,
+        license_number: licenseNumber
+      };
+    }
+
+    throw err;
   }
 };

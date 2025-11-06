@@ -9,7 +9,21 @@ import { listCostsApi, updateCostAmountApi, deleteCostApi } from "../data/CostRe
 import { Cost } from "../domain/ModelsCost";
 import CreateCostDialog from "./components/CreateCostDialog";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
-import { OrderSummaryTotalsResponse } from "../domain/ModelsCost"; // Agregar import
+import { OrderSummaryTotalsResponse } from "../domain/ModelsCost";
+
+// FORMATO UNIFICADO PARA TODOS LOS NÚMEROS
+const formatCurrency = (amount: number | string): string => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '$0.00';
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num);
+};
+
 
 // Costos fijos y variables con etiquetas - ACTUALIZADO
 const EXPENSE_TYPES = [
@@ -21,6 +35,7 @@ const EXPENSE_TYPES = [
   { key: "otherSalaries", label: "Operators Salaries", type: "fixed", color: "#0B2863", calculated: true },
   { key: "totalCost", label: "Total Cost", type: "total", color: "#0B2863", calculated: true },
 ];
+
 // Trimestres y semestres exactos
 const TIMELAPSES = [
   { label: "Q1 (Jan-Mar)", startWeek: 1, endWeek: 13 },
@@ -52,8 +67,8 @@ const FinancialExpenseBreakdownView = () => {
   const [summaryData, setSummaryData] = useState<{ 
     expenses: Record<string, number>, 
     discounts: Record<string, number>,
-    income: number, // Cambiar rentingCost por income
-    totalCost: number, // Total cost después de aplicar descuentos
+    income: number,
+    totalCost: number,
     profit: number 
   } | null>(null);
   const [dbCosts, setDbCosts] = useState<Cost[]>([]);
@@ -126,15 +141,15 @@ const FinancialExpenseBreakdownView = () => {
       // Asignar valores directamente desde la respuesta del backend
       const data = result.data;
       
-      // Expenses
-      expenses.expense = Number(data.expense) || 0;
-      expenses.fuelCost = Number(data.fuelCost) || 0;
-      expenses.workCost = Number(data.workCost) || 0;
-      expenses.bonus = Number(data.bonus) || 0;
-      expenses.driverSalaries = Number(data.driverSalaries) || 0;
-      expenses.otherSalaries = Number(data.otherSalaries) || 0;
+      // Expenses - FORMATO UNIFICADO
+      expenses.expense = Number(Number(data.expense || 0).toFixed(2));
+      expenses.fuelCost = Number(Number(data.fuelCost || 0).toFixed(2));
+      expenses.workCost = Number(Number(data.workCost || 0).toFixed(2));
+      expenses.bonus = Number(Number(data.bonus || 0).toFixed(2));
+      expenses.driverSalaries = Number(Number(data.driverSalaries || 0).toFixed(2));
+      expenses.otherSalaries = Number(Number(data.otherSalaries || 0).toFixed(2));
 
-      // CALCULAR totalCost manualmente sumando todas las categorías en lugar de usar data.totalCost
+      // CALCULAR totalCost manualmente sumando todas las categorías
       const calculatedTotalFromCategories = 
         expenses.expense + 
         expenses.fuelCost + 
@@ -144,29 +159,20 @@ const FinancialExpenseBreakdownView = () => {
         expenses.otherSalaries;
 
       // Sumar los costos de la BD
-      const totalDbCosts = dbCosts.reduce((sum, cost) => sum + (Number(cost.cost) || 0), 0);
+      const totalDbCosts = dbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost || 0).toFixed(2)), 0);
       
       // El totalCost será la suma manual + costos de BD
       expenses.totalCost = Number((calculatedTotalFromCategories + totalDbCosts).toFixed(2));
 
-      // Discounts breakdown (estos reducen los costos)
-      discounts.operators_discount = Number(data.operators_discount) || 0;
+      // Discounts breakdown - FORMATO UNIFICADO
+      discounts.operators_discount = Number(Number(data.operators_discount || 0).toFixed(2));
 
-      // Income es solo rentingCost
-      const income = Number(data.rentingCost) || 0;
+      // Income - FORMATO UNIFICADO
+      const income = Number(Number(data.rentingCost || 0).toFixed(2));
 
       // Aplicar descuentos a los costos totales
       const totalDiscounts = Object.values(discounts).reduce((sum, value) => sum + value, 0);
-      const totalCostAfterDiscounts = expenses.totalCost - totalDiscounts;
-
-      // Limitar a 2 decimales
-      Object.keys(expenses).forEach(key => {
-        expenses[key] = Number(expenses[key].toFixed(2));
-      });
-
-      Object.keys(discounts).forEach(key => {
-        discounts[key] = Number(discounts[key].toFixed(2));
-      });
+      const totalCostAfterDiscounts = Number((expenses.totalCost - totalDiscounts).toFixed(2));
 
       // El profit es income - costos después de descuentos
       const profit = Number((income - totalCostAfterDiscounts).toFixed(2));
@@ -174,8 +180,8 @@ const FinancialExpenseBreakdownView = () => {
       setSummaryData({ 
         expenses, 
         discounts,
-        income: Number(income.toFixed(2)),
-        totalCost: Number(totalCostAfterDiscounts.toFixed(2)),
+        income,
+        totalCost: totalCostAfterDiscounts,
         profit 
       });
 
@@ -223,16 +229,15 @@ const FinancialExpenseBreakdownView = () => {
         await updateCostAmountApi(costId, action, amount);
         enqueueSnackbar(`Cost ${action === 'add' ? 'increased' : 'decreased'} successfully`, { variant: "success" });
 
-        // Actualiza el estado localmente sin llamar a la API
+        // Actualiza el estado localmente sin llamar a la API - FORMATO UNIFICADO
         setDbCosts(prevCosts =>
           prevCosts.map(cost =>
             cost.id_cost === costId
               ? {
                   ...cost,
-                  cost:
-                    action === "add"
-                      ? Number((Number(cost.cost) + amount).toFixed(2))
-                      : Number((Number(cost.cost) - amount).toFixed(2)),
+                  cost: Number((action === "add"
+                    ? Number(cost.cost) + amount
+                    : Number(cost.cost) - amount).toFixed(2)),
                 }
               : cost
           )
@@ -294,11 +299,11 @@ const FinancialExpenseBreakdownView = () => {
         prevCosts.filter(cost => cost.id_cost !== deleteModal.cost!.id_cost)
       );
       
-      // Actualizar summaryData localmente
+      // Actualizar summaryData localmente - FORMATO UNIFICADO
       setSummaryData(prev => {
         if (!prev) return prev;
         
-        const deletedCostAmount = Number(deleteModal.cost!.cost);
+        const deletedCostAmount = Number(Number(deleteModal.cost!.cost).toFixed(2));
         const newExpensesTotalCost = Number((prev.expenses.totalCost - deletedCostAmount).toFixed(2));
         const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
         const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
@@ -323,6 +328,7 @@ const FinancialExpenseBreakdownView = () => {
       setActionLoading(null);
     }
   };
+
   const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
 
   const handleWeekSelect = (selectedWeek: number) => {
@@ -369,12 +375,13 @@ const FinancialExpenseBreakdownView = () => {
   // Separar costos de BD por tipo
   const fixedDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'FIXED');
   const variableDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'VARIABLE');
-  // Función para calcular subtotales por categoría
-  const calculateCategorySubtotal = (categoryType: string) => {
+
+  // Función para calcular subtotales por categoría - FORMATO UNIFICADO
+  const calculateCategorySubtotal = (categoryType: string): number => {
     if (!summaryData) return 0;
     
     if (categoryType === 'fixed') {
-      const dbFixedTotal = fixedDbCosts.reduce((sum, cost) => sum + Number(cost.cost), 0);
+      const dbFixedTotal = fixedDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0);
       const calculatedFixedTotal = EXPENSE_TYPES
         .filter(type => type.type === 'fixed')
         .reduce((sum, type) => sum + (summaryData.expenses[type.key] || 0), 0);
@@ -382,7 +389,7 @@ const FinancialExpenseBreakdownView = () => {
     }
     
     if (categoryType === 'variable') {
-      const dbVariableTotal = variableDbCosts.reduce((sum, cost) => sum + Number(cost.cost), 0);
+      const dbVariableTotal = variableDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0);
       const calculatedVariableTotal = EXPENSE_TYPES
         .filter(type => type.type === 'variable')
         .reduce((sum, type) => sum + (summaryData.expenses[type.key] || 0), 0);
@@ -390,12 +397,13 @@ const FinancialExpenseBreakdownView = () => {
     }
     
     if (categoryType === 'discounts') {
-      return Object.values(summaryData.discounts).reduce((sum, value) => sum + value, 0);
+      return Number(Object.values(summaryData.discounts).reduce((sum, value) => sum + value, 0).toFixed(2));
     }
     
     return 0;
   };
-  // Action Menu Component (actualizado)
+
+  // Action Menu Component (actualizado) - FORMATO UNIFICADO
   const ActionMenu = ({ cost }: { cost: Cost }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [amount, setAmount] = useState<number>(0);
@@ -733,7 +741,7 @@ const FinancialExpenseBreakdownView = () => {
               <thead>
                 <tr style={{ backgroundColor: '#0B2863' }}>
                   <th className="text-left px-6 py-4 text-white font-semibold text-base">Category</th>
-                  <th className="text-right px-6 py-4 text-white font-semibold text-base">Amount</th>
+                  <th className="text-right px-6 py-4 text-white font-semibold text-base">Amount($USD)</th>
                   <th className="text-center px-6 py-4 text-white font-semibold text-base">Actions</th>
                 </tr>
               </thead>
@@ -752,7 +760,7 @@ const FinancialExpenseBreakdownView = () => {
                       {cost.description}
                     </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: '#0B2863' }}>
-                      ${cost.cost.toLocaleString("en-US")}
+                      {formatCurrency(cost.cost)}
                     </td>
                     <td className="px-6 py-3 text-center">
                       <ActionMenu cost={cost} />
@@ -770,7 +778,7 @@ const FinancialExpenseBreakdownView = () => {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
-                      ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                      {formatCurrency(summaryData.expenses[type.key] || 0)}
                     </td>
                     <td className="px-6 py-3 text-center text-gray-400 text-sm">
                       No actions
@@ -784,7 +792,7 @@ const FinancialExpenseBreakdownView = () => {
                     Fixed Costs Subtotal
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#0B2863' }}>
-                    ${calculateCategorySubtotal('fixed').toLocaleString("en-US")}
+                    {formatCurrency(calculateCategorySubtotal('fixed'))}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     -
@@ -805,7 +813,7 @@ const FinancialExpenseBreakdownView = () => {
                       {cost.description}
                     </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: '#F09F52' }}>
-                      ${cost.cost.toLocaleString("en-US")}
+                      {formatCurrency(cost.cost)}
                     </td>
                     <td className="px-6 py-3 text-center">
                       <ActionMenu cost={cost} />
@@ -823,7 +831,7 @@ const FinancialExpenseBreakdownView = () => {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
-                      ${summaryData.expenses[type.key]?.toLocaleString("en-US") || 0}
+                      {formatCurrency(summaryData.expenses[type.key] || 0)}
                     </td>
                     <td className="px-6 py-3 text-center text-gray-400 text-sm">
                       No actions
@@ -837,7 +845,7 @@ const FinancialExpenseBreakdownView = () => {
                     Variable Costs Subtotal
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#F09F52' }}>
-                    ${calculateCategorySubtotal('variable').toLocaleString("en-US")}
+                    {formatCurrency(calculateCategorySubtotal('variable'))}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     -
@@ -860,7 +868,7 @@ const FinancialExpenseBreakdownView = () => {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
-                      -${summaryData.discounts[type.key]?.toLocaleString("en-US") || 0}
+                      -{formatCurrency(summaryData.discounts[type.key] || 0)}
                     </td>
                     <td className="px-6 py-3 text-center text-gray-400 text-sm">
                       No actions
@@ -874,7 +882,7 @@ const FinancialExpenseBreakdownView = () => {
                     Discounts subtotal
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
-                    -${calculateCategorySubtotal('discounts').toLocaleString("en-US")}
+                    -{formatCurrency(calculateCategorySubtotal('discounts'))}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     -
@@ -896,7 +904,7 @@ const FinancialExpenseBreakdownView = () => {
                     </span>
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
-                    ${summaryData.income.toLocaleString("en-US")}
+                    {formatCurrency(summaryData.income)}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     No actions
@@ -911,7 +919,7 @@ const FinancialExpenseBreakdownView = () => {
                     </span>
                   </td>
                   <td className="px-6 py-3 text-right font-semibold" style={{ color: '#0B2863' }}>
-                    ${summaryData.totalCost.toLocaleString("en-US")}
+                    {formatCurrency(summaryData.totalCost)}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     No actions
@@ -926,7 +934,7 @@ const FinancialExpenseBreakdownView = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right font-bold text-lg" style={{ color: summaryData.profit >= 0 ? '#2e7d32' : '#c62828' }}>
-                    ${summaryData.profit.toLocaleString("en-US")}
+                    {formatCurrency(summaryData.profit)}
                   </td>
                   <td className="px-6 py-4 text-center text-gray-400 text-sm">
                     No actions
@@ -965,11 +973,11 @@ const FinancialExpenseBreakdownView = () => {
           // Actualizar dbCosts localmente
           setDbCosts(prevCosts => [...prevCosts, newCost]);
           
-          // Actualizar summaryData localmente
+          // Actualizar summaryData localmente - FORMATO UNIFICADO
           setSummaryData(prev => {
             if (!prev) return prev;
             
-            const newExpensesTotalCost = Number((prev.expenses.totalCost + Number(newCost.cost)).toFixed(2));
+            const newExpensesTotalCost = Number((prev.expenses.totalCost + Number(Number(newCost.cost).toFixed(2))).toFixed(2));
             const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
             const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
             const newProfit = Number((prev.income - newTotalCost).toFixed(2));
