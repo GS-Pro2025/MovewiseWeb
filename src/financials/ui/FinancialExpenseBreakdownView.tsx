@@ -24,16 +24,6 @@ const formatCurrency = (amount: number | string): string => {
   }).format(num);
 };
 
-// Función auxiliar para formatear números sin símbolo de moneda
-const formatNumber = (amount: number | string): string => {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '0.00';
-  
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(num);
-};
 
 // Costos fijos y variables con etiquetas - ACTUALIZADO
 const EXPENSE_TYPES = [
