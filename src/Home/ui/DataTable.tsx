@@ -381,11 +381,11 @@ export const DataTable: React.FC<DataTableProps> = ({
                           <button
                             className="p-1 rounded-lg transition-all duration-200 hover:shadow-md"
                             style={{ 
-                              backgroundColor: row.operators?.length > 0 ? '#0B2863' : '#e5e7eb',
-                              color: row.operators?.length > 0 ? 'white' : '#9ca3af'
+                              backgroundColor: '#0B2863',
+                              color: 'white'
                             }}
                             onClick={() => handleExpandClick(row.id)}
-                            disabled={!row.operators || row.operators.length === 0}
+                            title={row.operators?.length > 0 ? (isExpanded ? 'Collapse Operators' : 'Expand Operators') : 'No operators assigned'}
                           >
                             {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           </button>
