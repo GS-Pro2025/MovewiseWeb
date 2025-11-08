@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, FormEvent, useCallback, useEffect } from "react";
 import { registerWithCompany, RegisterCompanyData, ValidationErrors, CheckLicenseResponse, checkCompanyLicense } from "../../service/RegisterService";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, XCircle, Clock } from "lucide-react";
 
 interface RegisterFormProps {
   onRegisterSuccess?: () => void;
@@ -30,14 +30,17 @@ const initialUser = {
   }
 };
 
-// Actualizar InputField para manejar múltiples errores
+// InputField para manejar múltiples errores
 const InputField = React.memo(({ 
   type, 
   placeholder, 
   value, 
   onChange, 
   errors, 
-  required = false 
+  required = false,
+  onBlur,
+  validation,
+  example
 }: {
   type: string;
   placeholder: string;
@@ -45,6 +48,9 @@ const InputField = React.memo(({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   errors?: string[];
   required?: boolean;
+  onBlur?: () => void;
+  validation?: { isValid: boolean; message?: string };
+  example?: string;
 }) => (
   <div className="mb-4 relative">
     <input
@@ -52,34 +58,159 @@ const InputField = React.memo(({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
       required={required}
-      className={`w-full px-4 py-3 rounded-lg bg-white text-gray-900 placeholder-gray-500 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-        errors && errors.length > 0 ? "border-red-500 focus:ring-red-500" : "border-gray-300 hover:border-gray-400"
+      className={`w-full px-4 py-3 pr-10 rounded-lg bg-white text-gray-900 placeholder-gray-500 border transition-all duration-300 focus:outline-none focus:ring-2 focus:border-transparent ${
+        errors && errors.length > 0 
+          ? "border-red-500 focus:ring-red-500" 
+          : validation?.isValid === true
+            ? "border-green-500 focus:ring-green-500"
+            : "border-gray-300 hover:border-gray-400 focus:ring-blue-500"
       }`}
     />
+    
+    {/* Validation icon */}
+    {value && (
+      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+        {errors && errors.length > 0 ? (
+          <XCircle className="text-red-500" size={20} />
+        ) : validation?.isValid === true ? (
+          <CheckCircle className="text-green-500" size={20} />
+        ) : null}
+      </div>
+    )}
+    
+    {/* Example text */}
+    {example && !value && (
+      <p className="text-xs text-gray-400 mt-1">Example: {example}</p>
+    )}
+    
+    {/* Validation message */}
+    {validation?.message && !errors?.length && (
+      <p className="text-xs text-blue-600 mt-1">{validation.message}</p>
+    )}
+    
+    {/* Error messages */}
     {errors && errors.length > 0 && (
       <div className="mt-1 ml-1">
         {errors.map((error, index) => (
-          <p key={index} className="text-red-500 text-sm">{error}</p>
+          <p key={index} className="text-red-500 text-sm flex items-center">
+            <XCircle className="mr-1" size={16} />
+            {error}
+          </p>
         ))}
       </div>
     )}
   </div>
 ));
+// LicenseField con verificación de disponibilidad
+const LicenseField = React.memo(({
+  value,
+  onChange,
+  errors,
+  isChecking,
+  licenseCheck,
+  required = false
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  errors?: string[];
+  isChecking: boolean;
+  licenseCheck: CheckLicenseResponse | null;
+  required?: boolean;
+}) => {
+  const getValidationState = () => {
+    if (value.length === 0) return null;
+    if (value.length < 3) return { isValid: false, message: "Must be at least 3 characters" };
+    if (value.length > 50) return { isValid: false, message: "Must not exceed 50 characters" };
+    if (isChecking) return { isValid: false, message: "Checking availability..." };
+    if (licenseCheck?.exists) return { isValid: false, message: `Already registered to: ${licenseCheck.company_name}, do you want to recover password?` };
+    if (licenseCheck && !licenseCheck.exists) return { isValid: true, message: "Available!" };
+    return null;
+  };
 
+  const validation = getValidationState();
+
+  return (
+    <div className="mb-4 relative">
+      <input
+        type="text"
+        placeholder="Company License Number"
+        value={value}
+        onChange={onChange}
+        required={required}
+        className={`w-full px-4 py-3 pr-10 rounded-lg bg-white text-gray-900 placeholder-gray-500 border transition-all duration-300 focus:outline-none focus:ring-2 focus:border-transparent ${
+          errors && errors.length > 0 
+            ? "border-red-500 focus:ring-red-500" 
+            : validation?.isValid === true
+              ? "border-green-500 focus:ring-green-500"
+              : validation?.isValid === false
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 hover:border-gray-400 focus:ring-blue-500"
+        }`}
+      />
+      
+      {/* Status icon */}
+      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+        {isChecking ? (
+          <Clock className="text-blue-500 animate-spin" size={20} />
+        ) : errors && errors.length > 0 ? (
+          <XCircle className="text-red-500" size={20} />
+        ) : validation?.isValid === true ? (
+          <CheckCircle className="text-green-500" size={20} />
+        ) : validation?.isValid === false ? (
+          <XCircle className="text-red-500" size={20} />
+        ) : null}
+      </div>
+      
+      {/* Example */}
+      {!value && (
+        <p className="text-xs text-gray-400 mt-1">Example: MC-DOT-123456, USDOT789012</p>
+      )}
+      
+      {/* Validation message */}
+      {validation?.message && !errors?.length && (
+        <p className={`text-xs mt-1 flex items-center ${
+          validation.isValid ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {validation.isValid ? (
+            <CheckCircle className="mr-1" size={16} />
+          ) : (
+            <XCircle className="mr-1" size={16} />
+          )}
+          {validation.message}
+        </p>
+      )}
+      
+      {/* Error messages */}
+      {errors && errors.length > 0 && (
+        <div className="mt-1 ml-1">
+          {errors.map((error, index) => (
+            <p key={index} className="text-red-500 text-sm flex items-center">
+              <XCircle className="mr-1" size={16} />
+              {error}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
 // --- PasswordField with "eye" toggle ---
 const PasswordField = React.memo(({
   value,
   onChange,
   placeholder,
   errors,
-  required = false
+  required = false,
+  validation
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   errors?: string[];
   required?: boolean;
+  validation?: { isValid: boolean; message?: string };
 }) => {
   const [show, setShow] = useState(false);
   return (
@@ -102,6 +233,15 @@ const PasswordField = React.memo(({
       >
         {show ? <EyeOff size={20} /> : <Eye size={20} />}
       </button>
+
+      {/* Validation message (client-side) shown when there are no explicit errors */}
+      {validation?.message && !errors?.length && (
+        <p className={`text-xs mt-1 flex items-center ${validation.isValid ? 'text-green-600' : 'text-red-600'}`}>
+          {validation.isValid ? <CheckCircle className="mr-1" size={16} /> : <XCircle className="mr-1" size={16} />}
+          {validation.message}
+        </p>
+      )}
+
       {errors && errors.length > 0 && (
         <div className="mt-1 ml-1">
           {errors.map((error, index) => (
@@ -123,7 +263,7 @@ const SelectField = React.memo(({
 }: {
   placeholder: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => void;
   errors?: string[];
   required?: boolean;
   options: { value: string; label: string }[];
@@ -168,8 +308,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   const [licenseCheck, setLicenseCheck] = useState<CheckLicenseResponse | null>(null);
   const [isCheckingLicense, setIsCheckingLicense] = useState(false);
   const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null);
-
-
+  const [fieldValidations, setFieldValidations] = useState<{[key: string]: {isValid: boolean; message?: string}}>({});
+  console.log(fieldValidations)
   // Opciones para el tipo de ID
   const idTypeOptions = [
     { value: "green_card", label: "Green Card" },
@@ -228,7 +368,88 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       setLicenseCheck(null);
     }
   }, [company.license_number]);
+  
+  const validateField = useCallback((field: string, value: string) => {
+    let validation = { isValid: true, message: '' };
 
+    switch (field) {
+      case 'license_number':
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (value.length < 3) validation = { isValid: false, message: 'Must be at least 3 characters' };
+        else if (value.length > 50) validation = { isValid: false, message: 'Must not exceed 50 characters' };
+        else validation = { isValid: true, message: 'Valid length' };
+        break;
+
+      case 'company_name':
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (value.length > 255) validation = { isValid: false, message: 'Must not exceed 255 characters' };
+        else if (value.length < 2) validation = { isValid: false, message: 'Must be at least 2 characters' };
+        else validation = { isValid: true, message: 'Valid company name' };
+        break;
+
+      case 'address':
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (value.length > 255) validation = { isValid: false, message: 'Must not exceed 255 characters' };
+        else if (value.length < 5) validation = { isValid: false, message: 'Must be at least 5 characters' };
+        else validation = { isValid: true, message: 'Valid address' };
+        break;
+
+      case 'zip_code':
+        { const normalizedZip = value.replace(/[^0-9]/g, '');
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (normalizedZip.length < 3) validation = { isValid: false, message: 'Must contain at least 3 digits' };
+        else if (normalizedZip.length > 10) validation = { isValid: false, message: 'Must contain at most 10 digits' };
+        else if (!/^[A-Za-z0-9]+$/.test(value)) validation = { isValid: false, message: 'Only letters and numbers allowed' };
+        else validation = { isValid: true, message: `Valid zip code (${normalizedZip.length} digits)` };
+        break; }
+
+      case 'username':
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (value.length > 50) validation = { isValid: false, message: 'Must not exceed 50 characters' };
+        else if (value.length < 3) validation = { isValid: false, message: 'Must be at least 3 characters' };
+        else if (!/^[a-zA-Z0-9_]+$/.test(value)) validation = { isValid: false, message: 'Only letters, numbers, and underscore allowed' };
+        else validation = { isValid: true, message: 'Valid username' };
+        break;
+
+      case 'password':
+        { const passwordChecks = [];
+        if (value.length < 8) passwordChecks.push('8+ characters');
+        if (!/[A-Z]/.test(value)) passwordChecks.push('1 uppercase');
+        if (!/[a-z]/.test(value)) passwordChecks.push('1 lowercase');
+        if (!/\d/.test(value)) passwordChecks.push('1 number');
+        if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(value)) passwordChecks.push('1 special char');
+        
+        if (passwordChecks.length === 0) validation = { isValid: true, message: 'Strong password!' };
+        else validation = { isValid: false, message: `Need: ${passwordChecks.join(', ')}` };
+        break; }
+
+      case 'email':
+        { const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (!emailRegex.test(value)) validation = { isValid: false, message: 'Invalid email format' };
+        else validation = { isValid: true, message: 'Valid email address' };
+        break; }
+
+      case 'first_name':
+      case 'last_name':
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (value.length > 100) validation = { isValid: false, message: 'Must not exceed 100 characters' };
+        else if (value.length < 2) validation = { isValid: false, message: 'Must be at least 2 characters' };
+        else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(value)) validation = { isValid: false, message: 'Only letters and spaces allowed' };
+        else validation = { isValid: true, message: 'Valid name' };
+        break;
+
+      case 'id_number':
+        if (value.length === 0) validation = { isValid: false, message: '' };
+        else if (value.length > 50) validation = { isValid: false, message: 'Must not exceed 50 characters' };
+        else if (value.length < 5) validation = { isValid: false, message: 'Must be at least 5 characters' };
+        else validation = { isValid: true, message: 'Valid ID number' };
+        break;
+    }
+
+    setFieldValidations(prev => ({ ...prev, [field]: validation }));
+    return validation;
+  }, []);                   
   // Validaciones locales mejoradas según la documentación de la API
    const validateCompany = () => {
     const errs: any = {};
@@ -377,9 +598,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     }
   };
 
+  // handleCompanyChange:
   const handleCompanyChange = useCallback((field: keyof typeof initialCompany) => 
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setCompany(prev => ({ ...prev, [field]: e.target.value }));
+      const value = e.target.value;
+      setCompany(prev => ({ ...prev, [field]: value }));
+      
+      // Validar campo en tiempo real
+      validateField(field === 'name' ? 'company_name' : field, value);
       
       // Limpiar errores del campo cuando el usuario empiece a escribir
       if (validationErrors.company?.[field]) {
@@ -395,17 +621,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       // Si es el campo license_number, limpiar verificación previa
       if (field === 'license_number') {
         setLicenseCheck(null);
-        // Limpiar errores de licencia existente
         if (errors.license_number) {
           setErrors((prev: any) => ({ ...prev, license_number: undefined }));
         }
       }
-    }, [validationErrors, errors]
+    }, [validationErrors, errors, validateField]
   );
 
+  // handleUserChange:
   const handleUserChange = useCallback((field: keyof typeof initialUser) => 
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setUser(prev => ({ ...prev, [field]: e.target.value }));
+      const value = e.target.value;
+      setUser(prev => ({ ...prev, [field]: value }));
+      
+      // Validar campo en tiempo real
+      if (field === 'user_name') validateField('username', value);
+      if (field === 'password') validateField('password', value);
+      
       // Limpiar errores del campo cuando el usuario empiece a escribir
       if (validationErrors.user?.[field as keyof typeof validationErrors.user]) {
         setValidationErrors(prev => ({
@@ -416,11 +648,39 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
           }
         }));
       }
-      // Limpiar client-side errors for password/confirm when typing
+      
       if (field === "password") {
         setErrors((prev: any) => ({ ...prev, password: undefined, confirm_password: undefined }));
       }
-    }, [validationErrors]
+    }, [validationErrors, validateField]
+  );
+
+  // handlePersonChange:
+  const handlePersonChange = useCallback((field: keyof typeof initialUser.person) => 
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const value = e.target.value;
+      setUser(prev => ({ 
+        ...prev, 
+        person: { ...prev.person, [field]: value } 
+      }));
+      
+      // Validar campo en tiempo real
+      validateField(field, value);
+      
+      // Limpiar errores del campo cuando el usuario empiece a escribir
+      if (validationErrors.user?.person?.[field]) {
+        setValidationErrors(prev => ({
+          ...prev,
+          user: {
+            ...prev.user,
+            person: {
+              ...prev.user?.person,
+              [field]: undefined
+            }
+          }
+        }));
+      }
+    }, [validationErrors, validateField]
   );
 
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -428,50 +688,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       // clear errors when user types
       setErrors((prev: any) => ({ ...prev, confirm_password: undefined }));
     };
-  const handlePersonChange = useCallback((field: keyof typeof initialUser.person) => 
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setUser(prev => ({ 
-        ...prev, 
-        person: { ...prev.person, [field]: e.target.value } 
-      }));
-      // Limpiar errores del campo cuando el usuario empiece a escribir
-      if (validationErrors.user?.person?.[field]) {
-        setValidationErrors(prev => ({
-          ...prev,
-          user: {
-            ...prev.user,
-            person: {
-              ...prev.user?.person,
-              [field]: undefined
-            }
-          }
-        }));
-      }
-    }, [validationErrors]
-  );
-
-  const handlePersonSelectChange = useCallback((field: keyof typeof initialUser.person) => 
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setUser(prev => ({ 
-        ...prev, 
-        person: { ...prev.person, [field]: e.target.value } 
-      }));
-      // Limpiar errores del campo cuando el usuario empiece a escribir
-      if (validationErrors.user?.person?.[field]) {
-        setValidationErrors(prev => ({
-          ...prev,
-          user: {
-            ...prev.user,
-            person: {
-              ...prev.user?.person,
-              [field]: undefined
-            }
-          }
-        }));
-      }
-    }, [validationErrors]
-  );
-
+  
   return (
     <div className="w-full max-w-lg mx-auto">
       {/* Success Message */}
@@ -528,12 +745,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                 </div>
 
                 <div className="space-y-4">
-                  <InputField
-                    type="text"
-                    placeholder="License Number"
+                  <LicenseField
                     value={company.license_number}
                     onChange={handleCompanyChange('license_number')}
                     errors={validationErrors.company?.license_number || errors.license_number}
+                    isChecking={isCheckingLicense}
+                    licenseCheck={licenseCheck}
                     required
                   />
 
@@ -543,6 +760,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                     value={company.name}
                     onChange={handleCompanyChange('name')}
                     errors={validationErrors.company?.name || errors.name}
+                    validation={fieldValidations['company_name']}
+                    example="ABC Moving Company LLC"
                     required
                   />
 
@@ -552,15 +771,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                     value={company.address}
                     onChange={handleCompanyChange('address')}
                     errors={validationErrors.company?.address || errors.address}
+                    validation={fieldValidations['address']}
+                    example="1234 Main Street, Suite 100, New York, NY"
                     required
                   />
 
                   <InputField
                     type="text"
-                    placeholder="Zip Code (3-10 chars, no spaces or special characters)"
+                    placeholder="Zip Code"
                     value={company.zip_code}
                     onChange={handleCompanyChange('zip_code')}
                     errors={validationErrors.company?.zip_code || errors.zip_code}
+                    validation={fieldValidations['zip_code']}
+                    example="12345, 90210, M5V3L9"
                     required
                   />
                 </div>
@@ -596,18 +819,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                         value={user.user_name}
                         onChange={handleUserChange('user_name')}
                         errors={validationErrors.user?.user_name || errors.user_name}
+                        validation={fieldValidations['username']}
+                        example="john_doe, user123, company_admin"
                         required
                       />
 
-                      {/* Password field using PasswordField with eye */}
                       <PasswordField
                         value={user.password}
                         onChange={handleUserChange('password')}
-                        placeholder="Password (Min 8 chars, A-z, 0-9, special chars)"
+                        placeholder="Password"
                         errors={validationErrors.user?.password || errors.password}
                         required
+                        validation={fieldValidations['password']}
                       />
-
+                      
                       {/* Confirm Password */}
                       <PasswordField
                         value={confirmPassword}
@@ -624,57 +849,63 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h4>
                     <div className="grid grid-cols-1 gap-4">
                       <InputField
-                        type="email"
-                        placeholder="Email Address"
-                        value={user.person.email}
-                        onChange={handlePersonChange('email')}
-                        errors={validationErrors.user?.person?.email || errors.person?.email}
-                        required
-                      />
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <InputField
-                          type="text"
-                          placeholder="First Name"
-                          value={user.person.first_name}
-                          onChange={handlePersonChange('first_name')}
-                          errors={validationErrors.user?.person?.first_name || errors.person?.first_name}
-                          required
-                        />
-                        <InputField
-                          type="text"
-                          placeholder="Last Name"
-                          value={user.person.last_name}
-                          onChange={handlePersonChange('last_name')}
-                          errors={validationErrors.user?.person?.last_name || errors.person?.last_name}
-                          required
-                        />
-                      </div>
+                    type="email"
+                    placeholder="Email Address"
+                    value={user.person.email}
+                    onChange={handlePersonChange('email')}
+                    errors={validationErrors.user?.person?.email || errors.person?.email}
+                    validation={fieldValidations['email']}
+                    example="john.doe@company.com"
+                    required
+                  />
 
-                      <InputField
-                        type="date"
-                        placeholder="Birth Date"
-                        value={user.person.birth_date}
-                        onChange={handlePersonChange('birth_date')}
-                        errors={validationErrors.user?.person?.birth_date || errors.person?.birth_date}
-                      />
+                  <InputField
+                    type="text"
+                    placeholder="First Name"
+                    value={user.person.first_name}
+                    onChange={handlePersonChange('first_name')}
+                    errors={validationErrors.user?.person?.first_name || errors.person?.first_name}
+                    validation={fieldValidations['first_name']}
+                    example="John"
+                    required
+                  />
+                  <InputField
+                    type="text"
+                    placeholder="Last Name"
+                    value={user.person.last_name}
+                    onChange={handlePersonChange('last_name')}
+                    errors={validationErrors.user?.person?.last_name || errors.person?.last_name}
+                    validation={fieldValidations['last_name']}
+                    example="Doe"
+                    required
+                  />
 
-                      <InputField
-                        type="tel"
-                        placeholder="Phone Number"
-                        value={user.person.phone}
-                        onChange={handlePersonChange('phone')}
-                        errors={validationErrors.user?.person?.phone || errors.person?.phone}
-                      />
+                  <InputField
+                    type="date"
+                    placeholder="Birth Date"
+                    value={user.person.birth_date}
+                    onChange={handlePersonChange('birth_date')}
+                    errors={validationErrors.user?.person?.birth_date || errors.person?.birth_date}
+                    example="1990-01-15"
+                  />
 
-                      <InputField
-                        type="text"
-                        placeholder="Address"
-                        value={user.person.address}
-                        onChange={handlePersonChange('address')}
-                        errors={validationErrors.user?.person?.address || errors.person?.address}
-                      />
+                  <InputField
+                    type="tel"
+                    placeholder="Phone Number"
+                    value={user.person.phone}
+                    onChange={handlePersonChange('phone')}
+                    errors={validationErrors.user?.person?.phone || errors.person?.phone}
+                    example="+1-555-123-4567, (555) 123-4567"
+                  />
 
+                  <InputField
+                    type="text"
+                    placeholder="Address"
+                    value={user.person.address}
+                    onChange={handlePersonChange('address')}
+                    errors={validationErrors.user?.person?.address || errors.person?.address}
+                    example="123 Main St, Apt 4B, City, State 12345"
+                  />
                       <div className="grid grid-cols-2 gap-4">
                         <InputField
                           type="text"
@@ -682,12 +913,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                           value={user.person.id_number}
                           onChange={handlePersonChange('id_number')}
                           errors={validationErrors.user?.person?.id_number || errors.person?.id_number}
+                          validation={fieldValidations['id_number']}
+                          example="A123456789, DL123456789"
                           required
                         />
                         <SelectField
                           placeholder="Select ID Type"
                           value={user.person.type_id}
-                          onChange={handlePersonSelectChange('type_id')}
+                          onChange={handlePersonChange('type_id')}
                           errors={validationErrors.user?.person?.type_id || errors.person?.type_id}
                           options={idTypeOptions}
                           required
