@@ -128,7 +128,7 @@ const LicenseField = React.memo(({
     <div className="mb-4 relative">
       <input
         type="text"
-        placeholder="e.g. MC-DOT-123456, USDOT789012"
+        placeholder="License Number(e.g. MC-DOT-123456)"
         value={value}
         onChange={onChange}
         required={required}
@@ -744,7 +744,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                 <InputField
                   type="text"
-                  placeholder="e.g. ABC Moving Company LLC"
+                  placeholder="Company Name (e.g. ABC Moving Company LLC)"
                   value={company.name}
                   onChange={handleCompanyChange('name')}
                   errors={validationErrors.company?.name || errors.name}
@@ -754,7 +754,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                 <InputField
                   type="text"
-                  placeholder="e.g. 1234 Main Street, Suite 100, New York, NY"
+                  placeholder="Company Address (e.g. 1234 Main Street, Suite 100, New York, NY)"
                   value={company.address}
                   onChange={handleCompanyChange('address')}
                   errors={validationErrors.company?.address || errors.address}
@@ -764,7 +764,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                 <InputField
                   type="text"
-                  placeholder="e.g. 12345, 90210, M5V3L9"
+                  placeholder="Zip Code (e.g. 12345, 90210, M5V3L9)"
                   value={company.zip_code}
                   onChange={handleCompanyChange('zip_code')}
                   errors={validationErrors.company?.zip_code || errors.zip_code}
