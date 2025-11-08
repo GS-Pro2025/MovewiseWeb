@@ -237,12 +237,55 @@ const CreateOrder: React.FC = () => {
     }
   }, []);
 
+  // Nuevo estado para manejar el input de weight como string
+  const [weightInput, setWeightInput] = useState<string>(() => 
+    continuedOrder?.weight ? String(continuedOrder.weight) : ''
+  );
+
+  // Sincronizar weightInput cuando cambie el order.weight (para continuedOrder)
+  useEffect(() => {
+    if (continuedOrder?.weight !== undefined) {
+      setWeightInput(String(continuedOrder.weight));
+    }
+  }, [continuedOrder?.weight]);
+
+  // Función para validar y formatear el peso
+  const handleWeightChange = (value: string) => {
+    // Permitir solo números, puntos y comas
+    const sanitized = value.replace(/[^0-9.,]/g, '');
+    setWeightInput(sanitized);
+  };
+
+  // Función para validar y guardar el peso en el modelo
+  const handleWeightBlur = () => {
+    const numericValue = parseFloat(weightInput.replace(',', '.'));
+    if (isNaN(numericValue) || numericValue < 0) {
+      setWeightInput('');
+      handleChange('weight', 0);
+    } else {
+      const roundedValue = Math.round(numericValue * 100) / 100; // Redondear a 2 decimales
+      setWeightInput(String(roundedValue));
+      handleChange('weight', roundedValue);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSuccessMsg('');
     setErrorMsg('');
     order.person.address = order.address;
+
+    // Validar peso antes de enviar
+    const parsedWeight = parseFloat(weightInput.replace(',', '.'));
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      setLoading(false);
+      enqueueSnackbar('Please enter a valid weight greater than 0', { variant: 'error' });
+      return;
+    }
+    
+    // Asegurar que el peso esté actualizado en el modelo
+    handleChange('weight', parsedWeight);
 
     if (dispatchTicketFile && dispatchTicketFile.size > 5 * 1024 * 1024) {
       setLoading(false);
@@ -419,15 +462,26 @@ const CreateOrder: React.FC = () => {
                 />
                 <TextField
                   label="Weight (lb)"
-                  type="number"
+                  type="text"                     // Cambiar a text
                   fullWidth
-                  value={order.weight}
-                  onChange={(e) => handleChange('weight', Number(e.target.value))}
+                  value={weightInput}             // Usar weightInput
+                  onChange={(e) => handleWeightChange(e.target.value)}
+                  onBlur={handleWeightBlur}       // Validar al perder foco
                   required
-                  inputProps={{ step: "any" }}
+                  placeholder="Enter weight in pounds"
+                  inputProps={{ 
+                    inputMode: "decimal",         // Teclado numérico en móviles
+                    pattern: "[0-9]*[\\.,]?[0-9]*" // Patrón de validación
+                  }}
                   InputProps={{
                     startAdornment: <ScaleIcon style={{ color: COLORS.secondary, marginRight: 8 }} />,
                   }}
+                  helperText={
+                    weightInput && isNaN(parseFloat(weightInput.replace(',', '.'))) 
+                      ? "Please enter a valid number" 
+                      : "Enter weight in pounds (e.g., 1500 or 1500.50)"
+                  }
+                  error={weightInput !== '' && isNaN(parseFloat(weightInput.replace(',', '.')))}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       '&.Mui-focused fieldset': {
