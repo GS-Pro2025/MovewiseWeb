@@ -30,7 +30,7 @@ const initialUser = {
   }
 };
 
-// InputField para manejar múltiples errores
+// InputField existente:
 const InputField = React.memo(({ 
   type, 
   placeholder, 
@@ -39,8 +39,7 @@ const InputField = React.memo(({
   errors, 
   required = false,
   onBlur,
-  validation,
-  example
+  validation
 }: {
   type: string;
   placeholder: string;
@@ -50,7 +49,6 @@ const InputField = React.memo(({
   required?: boolean;
   onBlur?: () => void;
   validation?: { isValid: boolean; message?: string };
-  example?: string;
 }) => (
   <div className="mb-4 relative">
     <input
@@ -78,11 +76,6 @@ const InputField = React.memo(({
           <CheckCircle className="text-green-500" size={20} />
         ) : null}
       </div>
-    )}
-    
-    {/* Example text */}
-    {example && !value && (
-      <p className="text-xs text-gray-400 mt-1">Example: {example}</p>
     )}
     
     {/* Validation message */}
@@ -124,7 +117,7 @@ const LicenseField = React.memo(({
     if (value.length < 3) return { isValid: false, message: "Must be at least 3 characters" };
     if (value.length > 50) return { isValid: false, message: "Must not exceed 50 characters" };
     if (isChecking) return { isValid: false, message: "Checking availability..." };
-    if (licenseCheck?.exists) return { isValid: false, message: `Already registered to: ${licenseCheck.company_name}, do you want to recover password?` };
+    if (licenseCheck?.exists) return { isValid: false, message: `Already registered to: ${licenseCheck.company_name}` };
     if (licenseCheck && !licenseCheck.exists) return { isValid: true, message: "Available!" };
     return null;
   };
@@ -135,7 +128,7 @@ const LicenseField = React.memo(({
     <div className="mb-4 relative">
       <input
         type="text"
-        placeholder="Company License Number"
+        placeholder="e.g. MC-DOT-123456, USDOT789012"
         value={value}
         onChange={onChange}
         required={required}
@@ -162,11 +155,6 @@ const LicenseField = React.memo(({
           <XCircle className="text-red-500" size={20} />
         ) : null}
       </div>
-      
-      {/* Example */}
-      {!value && (
-        <p className="text-xs text-gray-400 mt-1">Example: MC-DOT-123456, USDOT789012</p>
-      )}
       
       {/* Validation message */}
       {validation?.message && !errors?.length && (
@@ -744,49 +732,46 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   <h3 className="text-xl font-semibold text-white">Company Information</h3>
                 </div>
 
-                <div className="space-y-4">
-                  <LicenseField
-                    value={company.license_number}
-                    onChange={handleCompanyChange('license_number')}
-                    errors={validationErrors.company?.license_number || errors.license_number}
-                    isChecking={isCheckingLicense}
-                    licenseCheck={licenseCheck}
-                    required
-                  />
+              <div className="space-y-4">
+                <LicenseField
+                  value={company.license_number}
+                  onChange={handleCompanyChange('license_number')}
+                  errors={validationErrors.company?.license_number || errors.license_number}
+                  isChecking={isCheckingLicense}
+                  licenseCheck={licenseCheck}
+                  required
+                />
 
-                  <InputField
-                    type="text"
-                    placeholder="Company Name"
-                    value={company.name}
-                    onChange={handleCompanyChange('name')}
-                    errors={validationErrors.company?.name || errors.name}
-                    validation={fieldValidations['company_name']}
-                    example="ABC Moving Company LLC"
-                    required
-                  />
+                <InputField
+                  type="text"
+                  placeholder="e.g. ABC Moving Company LLC"
+                  value={company.name}
+                  onChange={handleCompanyChange('name')}
+                  errors={validationErrors.company?.name || errors.name}
+                  validation={fieldValidations['company_name']}
+                  required
+                />
 
-                  <InputField
-                    type="text"
-                    placeholder="Company Address"
-                    value={company.address}
-                    onChange={handleCompanyChange('address')}
-                    errors={validationErrors.company?.address || errors.address}
-                    validation={fieldValidations['address']}
-                    example="1234 Main Street, Suite 100, New York, NY"
-                    required
-                  />
+                <InputField
+                  type="text"
+                  placeholder="e.g. 1234 Main Street, Suite 100, New York, NY"
+                  value={company.address}
+                  onChange={handleCompanyChange('address')}
+                  errors={validationErrors.company?.address || errors.address}
+                  validation={fieldValidations['address']}
+                  required
+                />
 
-                  <InputField
-                    type="text"
-                    placeholder="Zip Code"
-                    value={company.zip_code}
-                    onChange={handleCompanyChange('zip_code')}
-                    errors={validationErrors.company?.zip_code || errors.zip_code}
-                    validation={fieldValidations['zip_code']}
-                    example="12345, 90210, M5V3L9"
-                    required
-                  />
-                </div>
+                <InputField
+                  type="text"
+                  placeholder="e.g. 12345, 90210, M5V3L9"
+                  value={company.zip_code}
+                  onChange={handleCompanyChange('zip_code')}
+                  errors={validationErrors.company?.zip_code || errors.zip_code}
+                  validation={fieldValidations['zip_code']}
+                  required
+                />
+              </div>
               </div>
 
               <button 
@@ -805,24 +790,24 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                     <span className="text-white font-semibold">2</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900">User Information</h3>
+                  <h3 className="text-xl font-semibold text-white-900">User Information</h3>
                 </div>
 
                 <div className="space-y-4">
                   {/* Account Info */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Account Details</h4>
+                    <h4 className="text-sm font-medium text-white-700 mb-3">Account Details</h4>
                     <div className="grid grid-cols-1 gap-4">
-                      <InputField
+                     <InputField
                         type="text"
-                        placeholder="Username"
+                        placeholder="Username (e.g. john_doe)"
                         value={user.user_name}
                         onChange={handleUserChange('user_name')}
                         errors={validationErrors.user?.user_name || errors.user_name}
                         validation={fieldValidations['username']}
-                        example="john_doe, user123, company_admin"
                         required
                       />
+
 
                       <PasswordField
                         value={user.password}
@@ -846,75 +831,75 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                   {/* Personal Info */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Personal Information</h4>
+                    <h4 className="text-sm font-medium text-white-700 mb-3">Personal Information</h4>
                     <div className="grid grid-cols-1 gap-4">
+
                       <InputField
-                    type="email"
-                    placeholder="Email Address"
-                    value={user.person.email}
-                    onChange={handlePersonChange('email')}
-                    errors={validationErrors.user?.person?.email || errors.person?.email}
-                    validation={fieldValidations['email']}
-                    example="john.doe@company.com"
-                    required
-                  />
+                        type="email"
+                        placeholder="Email (e.g. john.doe@company.com)"
+                        value={user.person.email}
+                        onChange={handlePersonChange('email')}
+                        errors={validationErrors.user?.person?.email || errors.person?.email}
+                        validation={fieldValidations['email']}
+                        required
+                      />
 
-                  <InputField
-                    type="text"
-                    placeholder="First Name"
-                    value={user.person.first_name}
-                    onChange={handlePersonChange('first_name')}
-                    errors={validationErrors.user?.person?.first_name || errors.person?.first_name}
-                    validation={fieldValidations['first_name']}
-                    example="John"
-                    required
-                  />
-                  <InputField
-                    type="text"
-                    placeholder="Last Name"
-                    value={user.person.last_name}
-                    onChange={handlePersonChange('last_name')}
-                    errors={validationErrors.user?.person?.last_name || errors.person?.last_name}
-                    validation={fieldValidations['last_name']}
-                    example="Doe"
-                    required
-                  />
+                      <InputField
+                        type="text"
+                        placeholder="First Name (e.g. John)"
+                        value={user.person.first_name}
+                        onChange={handlePersonChange('first_name')}
+                        errors={validationErrors.user?.person?.first_name || errors.person?.first_name}
+                        validation={fieldValidations['first_name']}
+                        required
+                      />
 
-                  <InputField
-                    type="date"
-                    placeholder="Birth Date"
-                    value={user.person.birth_date}
-                    onChange={handlePersonChange('birth_date')}
-                    errors={validationErrors.user?.person?.birth_date || errors.person?.birth_date}
-                    example="1990-01-15"
-                  />
+                      <InputField
+                        type="text"
+                        placeholder="Last Name (e.g. Doe)"
+                        value={user.person.last_name}
+                        onChange={handlePersonChange('last_name')}
+                        errors={validationErrors.user?.person?.last_name || errors.person?.last_name}
+                        validation={fieldValidations['last_name']}
+                        required
+                      />
+                      <div className="text-start text-white-400 mb-2">
+                        Birthdate
+                      </div>
+                      <InputField
+                        type="date"
+                        placeholder=""
+                        value={user.person.birth_date}
+                        onChange={handlePersonChange('birth_date')}
+                        errors={validationErrors.user?.person?.birth_date || errors.person?.birth_date}
+                      />
 
-                  <InputField
-                    type="tel"
-                    placeholder="Phone Number"
-                    value={user.person.phone}
-                    onChange={handlePersonChange('phone')}
-                    errors={validationErrors.user?.person?.phone || errors.person?.phone}
-                    example="+1-555-123-4567, (555) 123-4567"
-                  />
+                      <InputField
+                        type="tel"
+                        placeholder="Phone Number (e.g. +1-555-123-4567, (555) 123-4567)"
+                        value={user.person.phone}
+                        onChange={handlePersonChange('phone')}
+                        errors={validationErrors.user?.person?.phone || errors.person?.phone}
+                      />
 
-                  <InputField
-                    type="text"
-                    placeholder="Address"
-                    value={user.person.address}
-                    onChange={handlePersonChange('address')}
-                    errors={validationErrors.user?.person?.address || errors.person?.address}
-                    example="123 Main St, Apt 4B, City, State 12345"
-                  />
+                      <InputField
+                        type="text"
+                        placeholder="Address (e.g. 123 Main St, Apt 4B, City, State 12345)"
+                        value={user.person.address}
+                        onChange={handlePersonChange('address')}
+                        errors={validationErrors.user?.person?.address || errors.person?.address}
+                      />
+                      <div className="text-center">
+                        Identification
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <InputField
                           type="text"
-                          placeholder="ID Number"
+                          placeholder="e.g. A123456789, DL123456789"
                           value={user.person.id_number}
                           onChange={handlePersonChange('id_number')}
                           errors={validationErrors.user?.person?.id_number || errors.person?.id_number}
                           validation={fieldValidations['id_number']}
-                          example="A123456789, DL123456789"
                           required
                         />
                         <SelectField

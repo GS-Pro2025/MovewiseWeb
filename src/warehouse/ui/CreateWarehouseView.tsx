@@ -161,7 +161,7 @@ const CreateWarehouseView = () => {
       setDispatchTicket(null);
       setDispatchTicketPreview(null);
 
-      const orderKey = response?.key || response?.id || response?.orderKey;
+      const orderKey = response?.data.key;
       if (orderKey) {
         navigate(`/app/add-operators-to-order/${orderKey}`);
       }
