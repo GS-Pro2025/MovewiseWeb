@@ -1,5 +1,5 @@
 // components/OCRUploadDialog.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,12 +7,17 @@ import {
   CardContent,
   Alert,
   Divider,
-  Chip
+  Chip,
+  FormControlLabel,
+  Switch,
+  Tooltip
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
+import InfoIcon from '@mui/icons-material/Info';
 import { OCRResult } from '../domain/ModelsOCR';
+import { ProcessMode } from '../data/repositoryDOCAI';
 import LoaderSpinner from '../../components/Login_Register/LoadingSpinner';
 
 interface OCRUploadDialogProps {
@@ -23,8 +28,10 @@ interface OCRUploadDialogProps {
   results: OCRResult[];
   onClose: () => void;
   onFilesSelected: (files: File[]) => void;
-  onUpload: () => void;
+  onUpload: (processMode: ProcessMode) => void;
   onProcessMore: () => void;
+  onViewDetails?: () => void; // Nueva prop
+  hasDetailedResults?: boolean; // Nueva prop
 }
 
 const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
@@ -36,8 +43,12 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
   onClose,
   onFilesSelected,
   onUpload,
-  onProcessMore
+  onProcessMore,
+  onViewDetails,
+  hasDetailedResults
 }) => {
+  const [processMode, setProcessMode] = useState<ProcessMode>('full_process');
+
   // Full Screen Loader Component
   const FullScreenLoader = ({ text }: { text: string }) => (
     <Box
@@ -62,24 +73,70 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
     </Box>
   );
 
+  // Process mode info component
+  const ProcessModeInfo = () => (
+    <Card sx={{ mb: 3, backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}>
+      <CardContent sx={{ py: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InfoIcon sx={{ fontSize: 18, color: '#0458AB' }} />
+            Processing Mode
+          </Typography>
+          <Tooltip title={
+            processMode === 'full_process' 
+              ? "Save statements AND update order income/expenses"
+              : "Only save statement records without updating orders"
+          }>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={processMode === 'full_process'}
+                  onChange={(e) => setProcessMode(e.target.checked ? 'full_process' : 'save_only')}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label={processMode === 'full_process' ? 'Full Process' : 'Save Only'}
+              sx={{ margin: 0 }}
+            />
+          </Tooltip>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
+          {processMode === 'full_process' 
+            ? "📊 Will save statement records AND update order income/expenses"
+            : "💾 Will only save statement records without modifying existing orders"
+          }
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+
   // Calculate results summary
   const getResultsSummary = () => {
     let totalUpdated = 0;
     let totalNotFound = 0;
+    let totalSaved = 0;
     const allNotFoundOrders: string[] = [];
     const allUpdatedOrders: Array<{ key_ref: string; income: number; orders_updated: number }> = [];
 
     results.forEach(result => {
       if (result.success && result.data) {
-        totalUpdated += result.data.total_updated || 0;
-        totalNotFound += result.data.total_not_found || 0;
-        
-        if (result.data.not_found_orders) {
-          allNotFoundOrders.push(...result.data.not_found_orders);
+        // Full process mode
+        if (result.data.total_updated !== undefined) {
+          totalUpdated += result.data.total_updated || 0;
+          totalNotFound += result.data.total_not_found || 0;
+          
+          if (result.data.not_found_orders) {
+            allNotFoundOrders.push(...result.data.not_found_orders);
+          }
+          
+          if (result.data.updated_orders) {
+            allUpdatedOrders.push(...result.data.updated_orders);
+          }
         }
-        
-        if (result.data.updated_orders) {
-          allUpdatedOrders.push(...result.data.updated_orders);
+        // Save only mode
+        else if (result.processMode === 'save_only') {
+          totalSaved += result.data.statement_records_created || 0;
         }
       }
     });
@@ -87,6 +144,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
     return {
       totalUpdated,
       totalNotFound,
+      totalSaved,
       allNotFoundOrders,
       allUpdatedOrders,
     };
@@ -215,6 +273,8 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
         {results.length === 0 ? (
           // File Selection Phase
           <>
+            <ProcessModeInfo />
+            
             <input
               id="ocr-upload-input"
               type="file"
@@ -256,9 +316,9 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
             <div className="flex gap-2 mt-2">
               <PrimaryButton
                 disabled={files.length === 0 || loading}
-                onClick={onUpload}
+                onClick={() => onUpload(processMode)}
               >
-                {loading ? "🔄 Processing..." : "🚀 Process Files"}
+                {loading ? "🔄 Processing..." : `🚀 ${processMode === 'full_process' ? 'Process & Update' : 'Save Only'}`}
               </PrimaryButton>
               <SecondaryButton
                 onClick={onClose}
@@ -278,15 +338,29 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
               
               {(() => {
                 const summary = getResultsSummary();
+                const hasFullProcessResults = summary.totalUpdated > 0 || summary.totalNotFound > 0;
+                const hasSaveOnlyResults = summary.totalSaved > 0;
+                
                 return (
                   <Box sx={{ mb: 2 }}>
                     <Alert 
-                      severity={summary.totalNotFound > 0 ? "warning" : "success"} 
+                      severity={
+                        hasFullProcessResults && summary.totalNotFound > 0 ? "warning" : 
+                        hasFullProcessResults || hasSaveOnlyResults ? "success" : "info"
+                      } 
                       sx={{ mb: 2, borderRadius: 3 }}
                     >
                       <Typography variant="body2">
-                        <strong>Summary:</strong> {summary.totalUpdated} orders updated successfully
-                        {summary.totalNotFound > 0 && `, ${summary.totalNotFound} orders not found in the system`}
+                        <strong>Summary:</strong> 
+                        {hasFullProcessResults && (
+                          <> {summary.totalUpdated} orders updated successfully</>
+                        )}
+                        {hasSaveOnlyResults && (
+                          <> {summary.totalSaved} statement records saved</>
+                        )}
+                        {hasFullProcessResults && summary.totalNotFound > 0 && (
+                          <>, {summary.totalNotFound} orders not found in the system</>
+                        )}
                       </Typography>
                     </Alert>
                     
@@ -456,6 +530,17 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
               <PrimaryButton onClick={onClose}>
                 ✅ Done
               </PrimaryButton>
+              
+              {/* Botón para ver detalles detallados - solo si hay resultados */}
+              {hasDetailedResults && onViewDetails && (
+                <SecondaryButton
+                  onClick={onViewDetails}
+                  style={{ minWidth: '150px' }}
+                >
+                  🔍 View Detailed Results
+                </SecondaryButton>
+              )}
+              
               <SecondaryButton
                 onClick={onProcessMore}
                 style={{ minWidth: '150px' }}

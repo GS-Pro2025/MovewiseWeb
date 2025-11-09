@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
+import { DeleteConfirmDialog } from './DeleteTruckDialog';
+import { Truck } from '../../domain/TruckModels';
+import { EditTruckDialog } from './UpdateTruckDialog';
 
 // Componente para menú contextual
 export const TruckContextMenu: React.FC<{
