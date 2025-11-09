@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Cookies from 'js-cookie';
 import { 
   TruckWeeklySummaryResponse, 
@@ -155,5 +156,185 @@ export async function fetchTruckByWeek(
         ? error.message 
         : 'Error desconocido al obtener los datos del truck por semana'
     );
+  }
+}
+
+export async function createTruck(payload: {
+  number_truck: string;
+  type: string;
+  name: string;
+  category: string;
+}): Promise<Truck> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/trucks/`;
+    console.log('Creating truck via URL:', url, 'payload:', payload);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    const apiResponse = await response.json();
+
+    // Manejo de errores de validación retornados por la API
+    if (!response.ok || apiResponse?.status === 'error') {
+      // Estructura esperada de error:
+      // { status: "error", messDev: "...", messUser: "...", data: { field: [ ... ] } }
+      const err: any = new Error(apiResponse?.messUser || apiResponse?.messDev || response.statusText || 'Error creating truck');
+      err.type = apiResponse?.status || 'error';
+      err.messDev = apiResponse?.messDev;
+      err.messUser = apiResponse?.messUser;
+      err.validation = apiResponse?.data; // detalles por campo (p. ej. number_truck: [...])
+      throw err;
+    }
+
+    // Éxito esperado:
+    // { status: "success", messDev: "...", messUser: "...", data: { ...truck... } }
+    if (apiResponse?.status === 'success' && apiResponse?.data) {
+      return apiResponse.data as Truck;
+    }
+
+    throw new Error('Respuesta inesperada del servidor al crear truck.');
+  } catch (error) {
+    console.error('Error creating truck:', error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+export async function deleteTruck(truckId: number): Promise<{ messUser?: string } | null> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/trucks/${truckId}/delete/`;
+    console.log('Deleting truck via URL:', url);
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    // Some 404 responses return a simple JSON with detail
+    if (response.status === 404) {
+      const body = await response.json().catch(() => ({}));
+      const detail = body?.detail || 'Resource not found';
+      const err: any = new Error(detail);
+      err.detail = detail;
+      throw err;
+    }
+
+    const apiResponse = await response.json().catch(() => null);
+
+    // Expected success body:
+    // { status: "success", messDev: "...", messUser: "...", data: null }
+    if (response.ok && apiResponse?.status === 'success') {
+      return { messUser: apiResponse.messUser };
+    }
+
+    // Unexpected/error body
+    if (apiResponse?.detail) {
+      const err: any = new Error(apiResponse.detail);
+      err.detail = apiResponse.detail;
+      throw err;
+    }
+
+    const message = apiResponse?.messUser || apiResponse?.messDev || response.statusText || 'Error deleting truck';
+    const err: any = new Error(message);
+    err.validation = apiResponse?.data;
+    throw err;
+  } catch (error) {
+    console.error('Error deleting truck:', error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+export async function updateTruck(
+  truckId: number,
+  payload: { type: string; name: string; category: string; }
+): Promise<Truck> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const url = `${BASE_URL_API}/trucks/${truckId}/update/`;
+    console.log('Updating truck via URL:', url, 'payload:', payload);
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    // Manejo de 404 que puede devolver { detail: "No Truck matches the given query." }
+    if (response.status === 404) {
+      const body = await response.json().catch(() => ({}));
+      const detail = body?.detail || 'Resource not found';
+      const err: any = new Error(detail);
+      err.detail = detail;
+      throw err;
+    }
+
+    const apiResponse = await response.json().catch(() => null);
+
+    // Manejo de errores de validación retornados por la API
+    if (!response.ok || apiResponse?.status === 'error') {
+      const err: any = new Error(apiResponse?.messUser || apiResponse?.messDev || response.statusText || 'Error updating truck');
+      err.type = apiResponse?.status || 'error';
+      err.messDev = apiResponse?.messDev;
+      err.messUser = apiResponse?.messUser;
+      err.validation = apiResponse?.data;
+      throw err;
+    }
+
+    // Éxito esperado:
+    // { status: "success", messDev: "...", messUser: "...", data: { ...truck... } }
+    if (apiResponse?.status === 'success' && apiResponse?.data) {
+      return apiResponse.data as Truck;
+    }
+
+    throw new Error('Respuesta inesperada del servidor al actualizar truck.');
+  } catch (error) {
+    console.error('Error updating truck:', error);
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }

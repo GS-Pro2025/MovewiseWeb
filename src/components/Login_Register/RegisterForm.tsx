@@ -750,7 +750,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   errors={validationErrors.company?.name || errors.name}
                   validation={fieldValidations['company_name']}
                   required
-                />
+                />  
 
                 <InputField
                   type="text"
@@ -760,8 +760,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   errors={validationErrors.company?.address || errors.address}
                   validation={fieldValidations['address']}
                   required
-                />
-
+                />|
                 <InputField
                   type="text"
                   placeholder="Zip Code (e.g. 12345, 90210, M5V3L9)"

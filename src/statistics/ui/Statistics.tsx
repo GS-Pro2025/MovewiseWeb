@@ -186,12 +186,12 @@ const Statistics = () => {
       }
       
       .week-dropdown-container {
-        z-index: 9999 !important;
+        z-index: 40 !important;
         position: relative;
       }
       
       .week-dropdown {
-        z-index: 10000 !important;
+        z-index: 41 !important;
         position: absolute;
         top: 100%;
         left: 0;
