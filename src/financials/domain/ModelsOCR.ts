@@ -60,19 +60,44 @@ export interface ProcessDocaiResponse {
   };
 }
 
+
 export interface OCRResult {
   name: string;
   success: boolean;
   message: string;
-  ocr_text?: string;
-  order_key?: string | null;
-  parsed_orders?: ParsedOrder[];
+  processMode?: 'save_only' | 'full_process'; // Nuevo campo
   data?: {
-    updated_orders?: UpdatedOrderOCR[];
+    updated_orders?: Array<{
+      key_ref: string;
+      orders_updated: number;
+      income: number;
+      expense?: number;
+      key?: string;
+      amount_added?: string;
+      type?: string;
+      new_income?: string;
+      new_expense?: string;
+      factory?: string;
+      orders_count?: number;
+    }>;
     not_found_orders?: string[];
     total_updated?: number;
     total_not_found?: number;
-    duplicated_orders?: DuplicatedOrder[];
+    duplicated_orders?: Array<{
+      key_ref: string;
+      count: number;
+      total_amount: string;
+      amount_per_order: string;
+      type: string;
+    }>;
     total_duplicated?: number;
+    statement_records_created?: number; // Nuevo campo para modo save_only
   };
+  ocr_text?: string;
+  order_key?: string | null;
+  parsed_orders?: Array<{
+    OrderNumber: string;
+    ShipperName: string;
+    CommissionAmount: string;
+  }>;
 }

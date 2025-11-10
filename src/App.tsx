@@ -23,6 +23,7 @@ import OperatorsPage from './operators/ui/OperatorsPage';
 import AdminsPage from './adminPanel/ui/AdminsPage';
 import ProfilePage from './profile/ui/ProfilePage';
 import FinancialExpenseBreakdownView from "./financials/ui/FinancialExpenseBreakdownView";
+import StatementPage from './statement/ui/StatementPage';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -109,7 +110,8 @@ const App = () => {
           <Route path="order-breakdown" element={<OrderBreakdownPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="financial-expense-breakdown" element={<FinancialExpenseBreakdownView />} />
-        </Route>
+          <Route path="statements" element={<StatementPage />} />
+        </Route> 
 
         {/* Ruta por defecto */}
         <Route 

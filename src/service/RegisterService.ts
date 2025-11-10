@@ -165,3 +165,88 @@ export const checkCompanyLicense = async (
     throw err;
   }
 };
+
+
+export interface ValidateCompanyResponse {
+  status: boolean;
+  valid: boolean;
+  company?: {
+    license_number: string;
+    name: string;
+    address: string;
+    zip_code: string;
+  };
+  license_exists?: boolean;
+  message?: string;
+  zip_code_normalized?: string;
+  errors?: any;
+  data?: any;
+  errorMessage?: string;
+}
+
+/**
+ * Validate company payload endpoint client
+ * POST { company: { license_number, name, address, zip_code } }
+ * Returns 200 with validation result or 400 with errors.
+ */
+export const validateCompanyPayload = async (
+  companyPayload: {
+    license_number: string;
+    name: string;
+    address: string;
+    zip_code: string;
+  }
+): Promise<ValidateCompanyResponse> => {
+  try {
+    const response = await fetch(`${BASE_URL_API}/validate-company/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ company: companyPayload }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 400 && data.errors) {
+        return {
+          status: false,
+          valid: false,
+          errors: data.errors,
+          data,
+        };
+      }
+      return {
+        status: false,
+        valid: false,
+        errorMessage: data.detail || data.message || `HTTP ${response.status}: Validation failed`,
+        data,
+      };
+    }
+
+    return {
+      status: true,
+      valid: data.valid ?? true,
+      company: data.company ?? companyPayload,
+      license_exists: data.license_exists ?? false,
+      message: data.message,
+      zip_code_normalized: data.zip_code_normalized,
+      data,
+    };
+  } catch (err: any) {
+    console.error('Company validation error:', err);
+    if (err.name === 'TypeError' && err.message?.includes('fetch')) {
+      return {
+        status: false,
+        valid: false,
+        errorMessage: 'Network error: Unable to connect to the server. Please try again.',
+      };
+    }
+    return {
+      status: false,
+      valid: false,
+      errorMessage: err?.message || 'Unexpected error during company validation',
+    };
+  }
+};
