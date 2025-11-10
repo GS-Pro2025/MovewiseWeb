@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { Box, Typography, Chip, Divider, Button, Alert, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Bot, FileText, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { Bot, FileText, CheckCircle, XCircle, Copy, AlertTriangle, DollarSign } from 'lucide-react';
 
 interface DocaiResultDialogProps {
   open: boolean;
@@ -15,60 +15,32 @@ interface DocaiResultDialogProps {
       ShipperName: string;
       CommissionAmount: string;
     }>;
-    // Actualizar para usar tanto update_result como update_summary para compatibilidad
-    update_result?: {
-      updated_orders?: Array<{
-        key_ref: string;
-        orders_updated: number;
-        expense?: number;
-        income?: number;
-        key?: string;
-        amount_added?: string;
-        type?: string;
-        new_income?: string;
-        new_expense?: string;
-        factory?: string; // ← Agregar este campo
-        orders_count?: number; // ← Agregar este campo
-      }>;
-      not_found_orders?: string[];
-      total_updated?: number;
-      total_not_found?: number;
-      duplicated_orders?: Array<{
-        key_ref: string;
-        count: number;
-        total_amount: string;
-        amount_per_order: string;
-        type: string;
-      }>;
-      total_duplicated?: number;
-    };
-    // Nueva estructura del backend
-    update_summary?: {
-      updated_orders?: Array<{
-        key_ref: string;
-        key: string;
-        amount_added: string;
-        type: string;
-        new_income: string;
-        new_expense: string;
-        factory: string; // ← Este es el campo del cliente/compañía
-        orders_count: number;
-      }>;
-      not_found_orders?: string[];
-      total_updated?: number;
-      total_not_found?: number;
-      duplicated_orders?: Array<{
-        key_ref: string;
-        count: number;
-        total_amount: string;
-        amount_per_order: string;
-        type: string;
-      }>;
-      total_duplicated?: number;
-    };
+    update_result?: any;
+    update_summary?: any;
   };
 }
-
+interface ParsedOrder {
+  OrderNumber: string;
+  ShipperName: string;
+  CommissionAmount: string;
+}
+interface UpdatedOrder {
+  key_ref: string;
+  key: string;
+  amount_added: string;
+  type: string;
+  new_income: string;
+  new_expense: string;
+  factory: string;
+  orders_count: number;
+}
+interface DuplicatedOrder {
+  key_ref: string;
+  count: number;
+  total_amount: string;
+  amount_per_order: string;
+  type: string;
+}
 const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, result }) => {
   if (!open) return null;
 
@@ -127,7 +99,12 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
             AI Document Processing Result
           </Typography>
         </Box>
-        <Alert severity="info" sx={{ mb: 2 }}>
+        
+        <Alert 
+          severity="info" 
+          sx={{ mb: 2 }}
+          icon={<Bot size={20} />}
+        >
           {message}
         </Alert>
 
@@ -136,9 +113,12 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           <>
             <Divider sx={{ my: 2 }} />
             <Accordion sx={{ mb: 2 }}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <AccordionSummary 
+                expandIcon={<ChevronDown size={20} />}
+                sx={{ backgroundColor: '#f8f9fa' }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FileText size={20} />
+                  <FileText size={20} color="#1976d2" />
                   <Typography variant="subtitle1">
                     Extracted Orders ({parsed_orders.length})
                   </Typography>
@@ -146,20 +126,26 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
               </AccordionSummary>
               <AccordionDetails>
                 <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
-                  {parsed_orders.map((order, idx) => (
+                  {parsed_orders.map((order: ParsedOrder, idx: number) => (
                     <Box key={idx} sx={{ 
                       mb: 1, 
                       p: 2, 
                       border: '1px solid #eee', 
                       borderRadius: 1,
-                      backgroundColor: '#f9f9f9'
+                      backgroundColor: '#f9f9f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
                     }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {order.OrderNumber}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {order.ShipperName} - {order.CommissionAmount}
-                      </Typography>
+                      <DollarSign size={16} color="#666" />
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {order.OrderNumber}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {order.ShipperName} - {order.CommissionAmount}
+                        </Typography>
+                      </Box>
                     </Box>
                   ))}
                 </Box>
@@ -171,13 +157,15 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
         <Divider sx={{ my: 2 }} />
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-          <Bot size={20} />
+          <Bot size={20} color="#1976d2" />
           <Typography variant="subtitle1">Update Summary:</Typography>
         </Box>
+        
         <Box sx={{ mb: 2 }}>
           <Alert 
             severity={totalNotFound > 0 || totalDuplicated > 0 ? "warning" : "success"} 
             sx={{ mb: 2 }}
+            icon={totalNotFound > 0 || totalDuplicated > 0 ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
           >
             <strong>{totalUpdated}</strong> order(s) updated successfully
             {totalNotFound > 0 && (
@@ -199,7 +187,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
               </Typography>
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {updatedOrders.map((order, idx) => {
+              {updatedOrders.map((order: UpdatedOrder, idx: number) => {
                 const typeColor = getTypeColor(order.type || 'income');
                 const typeText = getTypeText(order.type || 'income');
                 const formattedAmount = formatAmount(order);
@@ -212,7 +200,8 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                     backgroundColor: order.type === 'expense' ? '#fef2f2' : '#f1f8e9'
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FileText size={16} />
                         Order: {order.key_ref}
                       </Typography>
                       <Box sx={{ 
@@ -222,8 +211,12 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                         backgroundColor: typeColor,
                         color: 'white',
                         fontSize: '0.75rem',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
                       }}>
+                        <DollarSign size={12} />
                         {typeText}
                       </Box>
                     </Box>
@@ -291,7 +284,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
               </Typography>
             </Box>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {duplicatedOrders.map((order, idx) => {
+              {duplicatedOrders.map((order: DuplicatedOrder, idx: number) => {
                 const typeColor = getTypeColor(order.type);
                 const typeText = getTypeText(order.type);
                 
@@ -303,7 +296,8 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                     backgroundColor: '#fff3e0'
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Copy size={16} />
                         {order.key_ref} (x{order.count})
                       </Typography>
                       <Box sx={{ 
@@ -313,8 +307,12 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                         backgroundColor: typeColor,
                         color: 'white',
                         fontSize: '0.75rem',
-                        fontWeight: 600
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
                       }}>
+                        <DollarSign size={12} />
                         {typeText}
                       </Box>
                     </Box>
@@ -357,7 +355,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
               borderRadius: 1,
               backgroundColor: "#fffbe6"
             }}>
-              {notFoundOrders.map((order, idx) => (
+              {notFoundOrders.map((order: string, idx: number) => (
                 <Chip
                   key={idx}
                   label={order}
@@ -373,9 +371,12 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
 
         {/* OCR Text Section */}
         <Accordion sx={{ mb: 2 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <AccordionSummary 
+            expandIcon={<ChevronDown size={20} />}
+            sx={{ backgroundColor: '#f8f9fa' }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FileText size={20} />
+              <FileText size={20} color="#1976d2" />
               <Typography variant="subtitle1">Raw OCR Text</Typography>
             </Box>
           </AccordionSummary>
@@ -398,7 +399,13 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
         <Divider sx={{ my: 2 }} />
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-          <Button variant="contained" color="primary" onClick={onClose}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={onClose}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <CheckCircle size={16} />
             Close
           </Button>
         </Box>

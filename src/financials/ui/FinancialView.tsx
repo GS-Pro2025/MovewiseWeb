@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
-import { processDocaiStatement } from "../data/repositoryDOCAI";
+import { processDocaiStatement, ProcessMode } from "../data/repositoryDOCAI";
 import { addExpenseToOrder, addIncomeToOrder, searchOrdersByKeyRefLike } from "../data/OrdersRepository";
 import { enqueueSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
@@ -251,36 +251,43 @@ const FinancialView = () => {
   };
 
   //  OCR Handlers
-  const handleOcrUpload = async () => {
+  const handleOcrUpload = async (processMode: ProcessMode = 'full_process', targetWeek?: number, targetYear?: number) => {
     setOcrLoading(true);
     setOcrStep("Setting data");
-    enqueueSnackbar("Starting document processing...", { variant: "info" });
+    enqueueSnackbar(`Starting document processing in ${processMode} mode...`, { variant: "info" });
     
     const results: OCRResult[] = [];
     let hasAnySuccess = false;
     let totalUpdatedOrders = 0;
     let totalNotFoundOrders = 0;
+    let totalSavedRecords = 0;
     
     for (const file of ocrFiles) {
-      setOcrStep(`Processing ${file.name}...`);
+      setOcrStep(`Processing ${file.name} in ${processMode} mode...`);
       enqueueSnackbar(`Processing ${file.name}...`, { variant: "info" });
       
       try {
-        const res = await processDocaiStatement(file);
-        const isSuccess = res.success !== false && res.update_result !== undefined;
+        const res = await processDocaiStatement(file, processMode, targetWeek, targetYear);
+        const isSuccess = res.success !== false;
         
         if (isSuccess) {
           hasAnySuccess = true;
-          totalUpdatedOrders += res.update_result?.total_updated || 0;
-          totalNotFoundOrders += res.update_result?.total_not_found || 0;
+          
+          if (processMode === 'full_process' && res.data?.update_summary) {
+            totalUpdatedOrders += res.data.update_summary.total_updated || 0;
+            totalNotFoundOrders += res.data.update_summary.total_not_found || 0;
+          } else if (processMode === 'save_only' && res.data?.save_summary) {
+            totalSavedRecords += res.data.save_summary.statement_records_created || 0;
+          }
         }
 
         results.push({
           name: file.name,
           success: isSuccess,
           message: res.message || (isSuccess ? "Success" : "Failed"),
+          processMode: res.process_mode || processMode,
           data: res.update_result ? {
-            updated_orders: (res.update_result.updated_orders || []).map(order => ({
+            updated_orders: (res.update_result.updated_orders || []).map((order: { income: any; }) => ({
               ...order,
               income: order.income ?? 0,
             })),
@@ -289,40 +296,24 @@ const FinancialView = () => {
             total_not_found: res.update_result.total_not_found || 0,
             duplicated_orders: res.update_result.duplicated_orders || [],
             total_duplicated: res.update_result.total_duplicated || 0,
+            statement_records_created: res.data?.update_summary?.statement_records_created || 
+              res.data?.save_summary?.statement_records_created
           } : undefined,
           ocr_text: res.ocr_text,
           order_key: res.order_key,
-          parsed_orders: res.parsed_orders,
+          parsed_orders: res.data?.parsed_orders,
         });
 
-        // Preparar datos para el dialog de confirmación
-        if (isSuccess && res.update_result) {
-          const normalizedUpdateResult = {
-            ...res.update_result,
-            updated_orders: (res.update_result.updated_orders || []).map(order => ({
-              key_ref: order.key_ref,
-              orders_updated: order.orders_updated,
-              income: order.income ?? 0,
-              expense: order.expense ?? 0,
-              key: order.key,
-              amount_added: order.amount_added,
-              type: order.type,
-              new_income: order.new_income,
-              new_expense: order.new_expense,
-            })),
-            not_found_orders: res.update_result.not_found_orders || [],
-            total_updated: res.update_result.total_updated ?? 0,
-            total_not_found: res.update_result.total_not_found ?? 0,
-            duplicated_orders: res.update_result.duplicated_orders || [],
-            total_duplicated: res.update_result.total_duplicated ?? 0,
-          };
-
-          // Configurar datos del dialog para mostrar después
+        // Preparar datos para el dialog de confirmación - Solo para el primer archivo exitoso
+        if (isSuccess && res.data && !docaiDialogResult) {
           setDocaiDialogResult({
             message: res.message,
+            process_mode: res.process_mode || processMode,
+            data: res.data,
+            // Mapear para compatibilidad
             ocr_text: res.ocr_text,
-            parsed_orders: res.parsed_orders,
-            update_result: normalizedUpdateResult,
+            parsed_orders: res.data.parsed_orders,
+            update_result: res.update_result,
           });
         }
       } catch (err: any) {
@@ -330,6 +321,7 @@ const FinancialView = () => {
           name: file.name,
           success: false,
           message: err?.message || "Network error",
+          processMode,
           data: undefined,
         });
       }
@@ -338,47 +330,45 @@ const FinancialView = () => {
     setOcrResults(results);
     setOcrLoading(false);
 
-    // Manejo mejorado de mensajes y confirmación
+    // Manejo mejorado de mensajes según el modo
     const successCount = results.filter(r => r.success).length;
     
     if (successCount === results.length && hasAnySuccess) {
-      // Todos los archivos se procesaron exitosamente
-      const confirmMsg = `Processing completed successfully! ${totalUpdatedOrders} orders updated, ${totalNotFoundOrders} not found.`;
+      let confirmMsg = "";
+      if (processMode === 'full_process') {
+        confirmMsg = `Processing completed successfully! ${totalUpdatedOrders} orders updated, ${totalNotFoundOrders} not found.`;
+      } else {
+        confirmMsg = `Statement processing completed! ${totalSavedRecords} statement records saved.`;
+      }
+      
       setConfirmationMessage(confirmMsg);
       setShouldShowConfirmation(true);
       enqueueSnackbar("All files processed successfully!", { variant: "success" });
       
-      // Mostrar el dialog de resultados después de un breve delay
-      setTimeout(() => {
-        setDocaiDialogOpen(true);
-      }, 500);
+      // NO abrir automáticamente el DocaiResultDialog aquí
+      // Dejar que el usuario decida desde el OCRUploadDialog
       
     } else if (successCount === 0) {
       enqueueSnackbar("All files failed to process. Please check your files and try again.", { variant: "error" });
     } else if (hasAnySuccess) {
-      // Algunos archivos exitosos
-      const confirmMsg = `⚠️ Partial success: ${successCount} of ${results.length} files processed. ${totalUpdatedOrders} orders updated.`;
+      const confirmMsg = `⚠️ Partial success: ${successCount} of ${results.length} files processed.`;
       setConfirmationMessage(confirmMsg);
       setShouldShowConfirmation(true);
       enqueueSnackbar(`${successCount} of ${results.length} files processed successfully.`, { variant: "warning" });
-      
-      // Mostrar dialog si hay al menos un resultado exitoso
-      if (docaiDialogResult) {
-        setTimeout(() => {
-          setDocaiDialogOpen(true);
-        }, 500);
-      }
     } else {
-      enqueueSnackbar("No orders were updated. Please verify your documents.", { variant: "warning" });
+      enqueueSnackbar("No files were processed successfully. Please verify your documents.", { variant: "warning" });
     }
 
-    // Recargar datos para mostrar las actualizaciones
-    fetchData(page, week);
+    // Recargar datos solo si se actualizaron órdenes (full_process mode)
+    if (processMode === 'full_process') {
+      fetchData(page, week);
+    }
   };
 
   // Manejar cierre del dialog de confirmación
   const handleDocaiDialogClose = () => {
     setDocaiDialogOpen(false);
+    setDocaiDialogResult(null);
     
     // Mostrar mensaje adicional de confirmación si es necesario
     if (shouldShowConfirmation) {
@@ -413,6 +403,13 @@ const FinancialView = () => {
     // Mantener el dialog de confirmación abierto para más archivos
     setShouldShowConfirmation(false);
     setConfirmationMessage("");
+  };
+
+  // NUEVO HANDLER para ver detalles desde OCRUploadDialog
+  const handleViewDetailedResults = () => {
+    // Cerrar OCRUploadDialog y abrir DocaiResultDialog
+    setOcrDialogOpen(false);
+    setDocaiDialogOpen(true);
   };
 
   // NUEVOS HANDLERS
@@ -611,16 +608,18 @@ const FinancialView = () => {
         onFilesSelected={setOcrFiles}
         onUpload={handleOcrUpload}
         onProcessMore={handleOcrProcessMore}
+        onViewDetails={handleViewDetailedResults}
+        hasDetailedResults={!!docaiDialogResult}
+        currentWeek={week}
+        currentYear={year}
       />
 
-      {/* Dialog de resultados con manejo mejorado */}
-      {docaiDialogOpen && docaiDialogResult && (
-        <DocaiResultDialog
-          open={docaiDialogOpen}
-          onClose={handleDocaiDialogClose}
-          result={docaiDialogResult}
-        />
-      )}
+      {/* Dialog de resultados detallados - Solo se abre desde OCRUploadDialog */}
+      <DocaiResultDialog
+        open={docaiDialogOpen}
+        onClose={handleDocaiDialogClose}
+        result={docaiDialogResult}
+      />
 
       <AddAmountDialog
         open={addAmountDialogOpen}

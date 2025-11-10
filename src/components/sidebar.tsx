@@ -249,11 +249,15 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
         </div>
         
         <ul className="mt-4 list-none p-0 m-0 flex flex-col pb-4">
-          {/* ✅ CAMBIO: Actualizar todas las rutas con /app prefix */}
+          {/* CAMBIO: Actualizar todas las rutas con /app prefix */}
           <NavItem icon="fa-home" text="Dashboard" isCollapsed={isCollapsed && !isMobileOpen} to="/app/dashboard" onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-box" text="Create daily" isCollapsed={isCollapsed && !isMobileOpen} to="/app/create-daily" onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed && !isMobileOpen} to="/app/payroll" onClick={closeMobileMenu} />
           <NavItem icon="fa-users" text="Operators" isCollapsed={isCollapsed && !isMobileOpen} to="/app/operators" onClick={closeMobileMenu} /> 
+          
+          {/* NUEVO: Agregar opción de Statements */}
+          <NavItem icon="fa-file-invoice-dollar" text="Statements" isCollapsed={isCollapsed && !isMobileOpen} to="/app/statements" onClick={closeMobileMenu} />
+          
           <NavItem icon="fa-chart-bar" text="Statistics" isCollapsed={isCollapsed && !isMobileOpen} to="/app/statistics" onClick={closeMobileMenu} />
 
           {/* Dropdown Cost */}
