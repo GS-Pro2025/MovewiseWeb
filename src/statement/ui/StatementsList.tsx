@@ -12,7 +12,7 @@ import { StatementDataTable } from './StatementDataTable';
 import { fetchStatementsByWeek } from '../data/StatementRepository';
 
 // Types
-import { StatementRecord, WeekSummary, StatementsByWeekResponse } from '../domain/statementModels';
+import { StatementRecord, WeekSummary, StatementsByWeekResponse } from '../domain/StatementModels';
 
 // Utils
 const getWeekOfYear = (date: Date): number => {

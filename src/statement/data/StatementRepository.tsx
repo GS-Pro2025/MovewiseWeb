@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* Consumer para /statements/by-week/ */
 import Cookies from 'js-cookie';
-import { StatementsByWeekResponse } from '../domain/statementModels';
+import { StatementsByWeekResponse } from '../domain/StatementModels';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 

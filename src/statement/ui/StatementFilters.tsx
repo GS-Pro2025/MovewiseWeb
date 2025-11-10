@@ -9,7 +9,7 @@ import {
   Divider
 } from '@mui/material';
 import { CalendarDays, FileText, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
-import { WeekSummary } from '../domain/statementModels';
+import { WeekSummary } from '../domain/StatementModels';
 
 interface StatementFiltersProps {
   week: number;

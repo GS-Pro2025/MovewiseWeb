@@ -6,7 +6,7 @@ import {
   Chip,
 } from '@mui/material';
 import { FileSpreadsheet, FileText, RefreshCw } from 'lucide-react';
-import { StatementRecord } from '../domain/statementModels';
+import { StatementRecord } from '../domain/StatementModels';
 
 interface StatementToolbarProps {
   data: StatementRecord[];

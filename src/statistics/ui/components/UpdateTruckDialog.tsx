@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from 'react';
 import { updateTruck } from '../../data/repositoryTruck';
 import { Truck } from '../../domain/TruckModels';
 
@@ -18,7 +19,7 @@ export const EditTruckDialog: React.FC<{
     category: 'own'
   });
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string[]}>({});
+  const [errors, setErrors] = useState<{[key: string]: string[] | undefined}>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

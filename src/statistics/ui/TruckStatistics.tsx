@@ -58,6 +58,7 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
   // Estados para datos
   const [weeklyStats, setWeeklyStats] = useState<WeeklyOverviewStats | null>(null);
   const [availableTrucks, setAvailableTrucks] = useState<Truck[]>([]);
+  console.log("availableTrucks", availableTrucks);
   // Nuevos estados para gestión de trucks
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
@@ -509,7 +510,6 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Distance</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Orders</th>
@@ -537,15 +537,6 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
                       <td className="px-6 py-4">
                         <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                           {truck.truckType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          truck.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {truck.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-medium">

@@ -5,7 +5,7 @@ import {
   Box,
   CircularProgress,
 } from '@mui/material';
-import { StatementRecord } from '../domain/statementModels';
+import { StatementRecord } from '../domain/StatementModels';
 
 interface StatementDataTableProps {
   data: StatementRecord[];
