@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // components/OCRUploadDialog.tsx
 import React, { useState } from 'react';
 import {
@@ -12,13 +13,11 @@ import {
   Switch,
   Tooltip
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import WarningIcon from '@mui/icons-material/Warning';
-import InfoIcon from '@mui/icons-material/Info';
+import { CheckCircle, X, AlertTriangle, Info, Upload, FileText, Calendar } from 'lucide-react';
 import { OCRResult } from '../domain/ModelsOCR';
 import { ProcessMode } from '../data/repositoryDOCAI';
 import LoaderSpinner from '../../components/Login_Register/LoadingSpinner';
+import WeekYearPicker from '../../components/WeekYearPicker';
 
 interface OCRUploadDialogProps {
   open: boolean;
@@ -28,10 +27,12 @@ interface OCRUploadDialogProps {
   results: OCRResult[];
   onClose: () => void;
   onFilesSelected: (files: File[]) => void;
-  onUpload: (processMode: ProcessMode) => void;
+  onUpload: (processMode: ProcessMode, week: number, year: number) => void;
   onProcessMore: () => void;
-  onViewDetails?: () => void; // Nueva prop
-  hasDetailedResults?: boolean; // Nueva prop
+  onViewDetails?: () => void;
+  hasDetailedResults?: boolean;
+  currentWeek: number;
+  currentYear: number;
 }
 
 const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
@@ -45,9 +46,12 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
   onUpload,
   onProcessMore,
   onViewDetails,
-  hasDetailedResults
+  hasDetailedResults,
+  currentWeek,
+  currentYear
 }) => {
   const [processMode, setProcessMode] = useState<ProcessMode>('full_process');
+  const [selectedWeek, setSelectedWeek] = useState({ week: currentWeek, year: currentYear });
 
   // Full Screen Loader Component
   const FullScreenLoader = ({ text }: { text: string }) => (
@@ -79,7 +83,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
       <CardContent sx={{ py: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
           <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoIcon sx={{ fontSize: 18, color: '#0458AB' }} />
+            <Info size={18} color="#0458AB" />
             Processing Mode
           </Typography>
           <Tooltip title={
@@ -107,6 +111,29 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
             : "💾 Will only save statement records without modifying existing orders"
           }
         </Typography>
+      </CardContent>
+    </Card>
+  );
+
+  // Week Selection Component
+  const WeekSelectionInfo = () => (
+    <Card sx={{ mb: 3, backgroundColor: '#f0f8ff', border: '1px solid #cce7ff' }}>
+      <CardContent sx={{ py: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Calendar size={18} color="#1976d2" />
+            Week & Year Selection
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+          Select the target week and year for processing the statements
+        </Typography>
+        <WeekYearPicker
+          value={selectedWeek}
+          onChange={setSelectedWeek}
+          label="Target Week & Year"
+          size="small"
+        />
       </CardContent>
     </Card>
   );
@@ -197,42 +224,6 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
     </button>
   );
 
-  const OutlinedButton = ({ 
-    onClick, 
-    disabled, 
-    children,
-    as = 'button'
-  }: { 
-    onClick?: () => void, 
-    disabled?: boolean, 
-    children: React.ReactNode,
-    as?: 'button' | 'span'
-  }) => {
-    const className = `w-full min-h-[60px] px-6 py-3 mb-6 rounded-xl border-2 border-gray-200 
-      text-indigo-500 font-semibold bg-transparent hover:border-indigo-500 
-      hover:bg-indigo-50 shadow-md hover:shadow-lg transition-all duration-300 
-      hover:-translate-y-1 disabled:opacity-60 disabled:cursor-not-allowed 
-      disabled:transform-none flex items-center justify-center gap-2`;
-
-    if (as === 'span') {
-      return (
-        <span className={className}>
-          {children}
-        </span>
-      );
-    }
-
-    return (
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={className}
-      >
-        {children}
-      </button>
-    );
-  };
-
   if (!open) return null;
 
   if (loading) {
@@ -266,14 +257,16 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
         }}
         onClick={e => e.stopPropagation()}
       >
-        <Typography variant="h5" mb={3} sx={{ fontWeight: 600, color: '#667eea' }}>
-          📄 Upload Statement PDFs (OCR)
+        <Typography variant="h5" mb={3} sx={{ fontWeight: 600, color: '#667eea', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Upload size={24} />
+          Upload Statement PDFs (OCR)
         </Typography>
         
         {results.length === 0 ? (
           // File Selection Phase
           <>
             <ProcessModeInfo />
+            <WeekSelectionInfo />
             
             <input
               id="ocr-upload-input"
@@ -288,14 +281,38 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
               disabled={loading}
             />
             <label htmlFor="ocr-upload-input">
-              <OutlinedButton
-                as="span"
-                disabled={loading || files.length >= 10}
+              <Box
+                sx={{
+                  width: '100%',
+                  minHeight: 60,
+                  px: 3,
+                  py: 2,
+                  mb: 3,
+                  borderRadius: 3,
+                  border: '2px dashed',
+                  borderColor: 'grey.300',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  backgroundColor: 'background.paper',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    backgroundColor: 'primary.50',
+                    transform: 'translateY(-2px)',
+                  }
+                }}
+                component="span"
               >
-                {files.length > 0
-                  ? `📁 ${files.length} file(s) selected`
-                  : "📁 Select PDF files (max 10)"}
-              </OutlinedButton>
+                <FileText size={24} color="#667eea" />
+                <Typography variant="body1" color="primary" fontWeight="semibold">
+                  {files.length > 0
+                    ? `📁 ${files.length} file(s) selected`
+                    : "📁 Select PDF files (max 10)"}
+                </Typography>
+              </Box>
             </label>
             
             <Box sx={{ mb: 3, maxHeight: 200, overflow: 'auto' }}>
@@ -316,7 +333,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
             <div className="flex gap-2 mt-2">
               <PrimaryButton
                 disabled={files.length === 0 || loading}
-                onClick={() => onUpload(processMode)}
+                onClick={() => onUpload(processMode, selectedWeek.week, selectedWeek.year)}
               >
                 {loading ? "🔄 Processing..." : `🚀 ${processMode === 'full_process' ? 'Process & Update' : 'Save Only'}`}
               </PrimaryButton>
@@ -332,8 +349,9 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
           // Results Phase
           <>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" mb={2} sx={{ color: '#667eea', fontWeight: 600 }}>
-                📊 Processing Results
+              <Typography variant="h6" mb={2} sx={{ color: '#667eea', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CheckCircle size={20} />
+                Processing Results
               </Typography>
               
               {(() => {
@@ -349,9 +367,13 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                         hasFullProcessResults || hasSaveOnlyResults ? "success" : "info"
                       } 
                       sx={{ mb: 2, borderRadius: 3 }}
+                      icon={
+                        hasFullProcessResults && summary.totalNotFound > 0 ? <AlertTriangle size={20} /> : 
+                        <CheckCircle size={20} />
+                      }
                     >
                       <Typography variant="body2">
-                        <strong>Summary:</strong> 
+                        <strong>Summary for Week {selectedWeek.week}, {selectedWeek.year}:</strong> 
                         {hasFullProcessResults && (
                           <> {summary.totalUpdated} orders updated successfully</>
                         )}
@@ -364,18 +386,19 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                       </Typography>
                     </Alert>
                     
+                    {/* Updated Orders Summary */}
                     {summary.totalUpdated > 0 && (
                       <Card sx={{ mb: 3, borderRadius: 3 }}>
                         <CardContent>
                           <Typography variant="subtitle2" color="success.main" sx={{ mb: 1, display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-                            <CheckCircleIcon sx={{ mr: 1, fontSize: 18 }} />
+                            <CheckCircle size={18} style={{ marginRight: 8 }} />
                             ✅ Updated Orders ({summary.totalUpdated}):
                           </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             {summary.allUpdatedOrders.map((order, idx) => (
                               <Chip 
                                 key={idx} 
-                                label={`${order.key_ref} (${order.income.toLocaleString()})`}
+                                label={`${order.key_ref} ($${order.income.toLocaleString()})`}
                                 size="small" 
                                 color="success" 
                                 variant="outlined"
@@ -387,11 +410,12 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                       </Card>
                     )}
                     
+                    {/* Not Found Orders Summary */}
                     {summary.totalNotFound > 0 && (
                       <Card sx={{ mb: 3, borderRadius: 3 }}>
                         <CardContent>
                           <Typography variant="subtitle2" color="warning.main" sx={{ mb: 1, display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-                            <WarningIcon sx={{ mr: 1, fontSize: 18 }} />
+                            <AlertTriangle size={18} style={{ marginRight: 8 }} />
                             ⚠️ Orders Not Found in System ({summary.totalNotFound}):
                           </Typography>
                           <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
@@ -438,9 +462,9 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       {result.success ? (
-                        <CheckCircleIcon sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                        <CheckCircle size={20} color="#4caf50" style={{ marginRight: 8 }} />
                       ) : (
-                        <ErrorIcon sx={{ color: 'error.main', mr: 1, fontSize: 20 }} />
+                        <X size={20} color="#f44336" style={{ marginRight: 8 }} />
                       )}
                       <Typography variant="body1" fontWeight="bold">
                         {result.name}
@@ -469,10 +493,10 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                               Updated:
                             </Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                              {result.data.updated_orders.map((order, orderIdx) => (
+                              {result.data.updated_orders.map((order: any, orderIdx: number) => (
                                 <Chip 
                                   key={orderIdx}
-                                  label={`${order.key_ref} (${order.income})`}
+                                  label={`${order.key_ref} ($${order.income})`}
                                   size="small"
                                   color="success"
                                   variant="outlined"
@@ -497,7 +521,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                               maxHeight: 60,
                               overflow: 'auto'
                             }}>
-                              {result.data.not_found_orders.slice(0, 10).map((order, orderIdx) => (
+                              {result.data.not_found_orders.slice(0, 10).map((order: string, orderIdx: number) => (
                                 <Chip 
                                   key={orderIdx}
                                   label={order}

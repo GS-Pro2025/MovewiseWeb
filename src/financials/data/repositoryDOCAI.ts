@@ -58,10 +58,23 @@ export interface DocaiProcessResult {
 
 export async function processDocaiStatement(
   pdf_file: File, 
-  processMode: ProcessMode = 'full_process'
+  processMode: ProcessMode = 'full_process',
+  week?: number,
+  year?: number
 ): Promise<DocaiProcessResult> {
   const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
-  const url = `${BASE_URL_API}/api/utilities/pdf/process_pdf_and_update_order/?process_mode=${processMode}`;
+  
+  // Construir URL con parámetros
+  let url = `${BASE_URL_API}/api/utilities/pdf/process_pdf_and_update_order/?process_mode=${processMode}`;
+  
+  if (week !== undefined) {
+    url += `&week=${week}`;
+  }
+  
+  if (year !== undefined) {
+    url += `&year=${year}`;
+  }
+  
   const token = Cookies.get('authToken');
   
   if (!token) {

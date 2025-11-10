@@ -251,7 +251,7 @@ const FinancialView = () => {
   };
 
   //  OCR Handlers
-  const handleOcrUpload = async (processMode: ProcessMode = 'full_process') => {
+  const handleOcrUpload = async (processMode: ProcessMode = 'full_process', targetWeek?: number, targetYear?: number) => {
     setOcrLoading(true);
     setOcrStep("Setting data");
     enqueueSnackbar(`Starting document processing in ${processMode} mode...`, { variant: "info" });
@@ -267,7 +267,7 @@ const FinancialView = () => {
       enqueueSnackbar(`Processing ${file.name}...`, { variant: "info" });
       
       try {
-        const res = await processDocaiStatement(file, processMode);
+        const res = await processDocaiStatement(file, processMode, targetWeek, targetYear);
         const isSuccess = res.success !== false;
         
         if (isSuccess) {
@@ -608,8 +608,10 @@ const FinancialView = () => {
         onFilesSelected={setOcrFiles}
         onUpload={handleOcrUpload}
         onProcessMore={handleOcrProcessMore}
-        onViewDetails={handleViewDetailedResults} // Nueva prop
-        hasDetailedResults={!!docaiDialogResult} // Nueva prop
+        onViewDetails={handleViewDetailedResults}
+        hasDetailedResults={!!docaiDialogResult}
+        currentWeek={week}
+        currentYear={year}
       />
 
       {/* Dialog de resultados detallados - Solo se abre desde OCRUploadDialog */}
