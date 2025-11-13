@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import { RegistryOperator } from '../../domain/RegistryOperatorModel';
 import PersonalDataStep from './RegisterOperatorSteps/PersonalDataStep';
@@ -21,6 +21,8 @@ const STEPS = [
   { id: 4, name: 'Documents', icon: 'fa-file-upload' },
   { id: 5, name: 'Children', icon: 'fa-baby' }
 ];
+
+const LOCAL_KEY = 'register_operator_draft_v1';
 
 const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
   isOpen,
@@ -52,7 +54,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
     sons: []
   });
 
-  // Archivos separados (para FormData)
+  // Archivos separados (para FormData) — no se guardan en localStorage
   const [files, setFiles] = useState<{
     photo?: File;
     license_front?: File;
@@ -61,9 +63,60 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Cargar draft desde localStorage al abrir (si existe)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          setFormData(prev => ({ ...prev, ...(parsed.data || parsed.formData || {}) }));
+        }
+      }
+    } catch (err) {
+      // ignore parse errors
+      console.warn('Could not parse register draft', err);
+    }
+  }, []); // cargar una vez al montar el componente (persistente entre aperturas)
+
+  // Guardar draft en cada cambio relevante (no guardamos archivos)
+  const saveDraft = useCallback((payload?: Partial<RegistryOperator>) => {
+    try {
+      const toStore = {
+        data: { ...formData, ...(payload || {}) }
+      };
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(toStore));
+    } catch (err) {
+      console.warn('Could not save register draft', err);
+    }
+  }, [formData]);
+
+  // Guardar automáticamente cuando formData cambie
+  useEffect(() => {
+    saveDraft();
+  }, [formData, saveDraft]);
+
+  const clearDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(LOCAL_KEY);
+    } catch {
+      // ignore
+      console.warn('Could not clear register draft');
+    }
+  }, []);
+
   // Actualizar datos del formulario
   const updateFormData = useCallback((data: Partial<RegistryOperator>) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setFormData(prev => {
+      const next = { ...prev, ...data };
+      // guardar draft inmediatamente con los cambios
+      try {
+        localStorage.setItem(LOCAL_KEY, JSON.stringify({ data: next }));
+      } catch {
+        console.warn('Could not save register draft');
+      }
+      return next;
+    });
     // Limpiar errores del campo actualizado
     const updatedFields = Object.keys(data);
     setErrors(prev => {
@@ -73,7 +126,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
     });
   }, []);
 
-  // Actualizar archivos
+  // Actualizar archivos (no se guardan en cache)
   const updateFiles = useCallback((newFiles: typeof files) => {
     setFiles(prev => ({ ...prev, ...newFiles }));
   }, []);
@@ -107,19 +160,13 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         if (!formData.salary || formData.salary <= 0) newErrors.salary = 'Valid salary is required';
         break;
 
-      //case 4: // Documents
-        //if (!files.photo) newErrors.photo = 'Photo is required';
-        //if (!files.license_front) newErrors.license_front = 'License front is required';
-        //if (!files.license_back) newErrors.license_back = 'License back is required';
-        //break;
-
-      case 5: // Children (opcional, no hay validaciones obligatorias)
+      case 5: // Children (opcional)
         break;
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, files]);
+  }, [formData]);
 
   // Navegación entre pasos
   const handleNext = useCallback(() => {
@@ -127,8 +174,10 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       if (currentStep < STEPS.length) {
         setCurrentStep(prev => prev + 1);
       }
+    } else {
+      enqueueSnackbar('Please fix validation errors in this step', { variant: 'error' });
     }
-  }, [currentStep, validateStep]);
+  }, [currentStep, validateStep, enqueueSnackbar]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 1) {
@@ -138,7 +187,21 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
 
   // Submit final
   const handleSubmit = useCallback(async () => {
-    if (!validateStep(currentStep)) return;
+    // validar todo antes de enviar
+    const allErrors: Record<string, string> = {};
+    if (!formData.first_name || !formData.first_name.toString().trim()) allErrors.first_name = 'First name is required';
+    if (!formData.last_name || !formData.last_name.toString().trim()) allErrors.last_name = 'Last name is required';
+    if (!formData.id_number || !formData.id_number.toString().trim()) allErrors.id_number = 'ID number is required';
+    if (!formData.type_id) allErrors.type_id = 'ID type is required';
+    if (!formData.phone || !formData.phone.toString().trim()) allErrors.phone = 'Phone is required';
+    if (!formData.number_licence || !formData.number_licence.toString().trim()) allErrors.number_licence = 'License number is required';
+    if (formData.salary !== undefined && formData.salary !== null && Number.isNaN(Number(formData.salary))) allErrors.salary = 'Salary must be a number';
+
+    setErrors(allErrors);
+    if (Object.keys(allErrors).length > 0) {
+      enqueueSnackbar('Please fix validation errors before submitting', { variant: 'error' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -154,7 +217,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       formDataToSend.append('salary', (formData.salary || 0).toString());
       formDataToSend.append('status', formData.status || 'active');
 
-      // Datos personales (person.campo)
+      // Datos personales (compatibilidad)
       formDataToSend.append('first_name', formData.first_name || '');
       formDataToSend.append('last_name', formData.last_name || '');
       formDataToSend.append('birth_date', formData.birth_date || '');
@@ -175,25 +238,24 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         formDataToSend.append('sons', JSON.stringify(formData.sons));
       }
 
-      // Otros campos opcionales
       if (formData.zipcode) formDataToSend.append('zipcode', formData.zipcode);
 
       await onSave(formDataToSend);
+
+      // Éxito: limpiar draft y cerrar modal
+      clearDraft();
+      enqueueSnackbar('Operator registered successfully', { variant: 'success' });
       onClose();
     } catch (error: any) {
       console.error('Error submitting operator:', error);
-      // Backend may return structured error: { message, errors }
       if (error && typeof error === 'object') {
         const msg = error.message || 'Server validation error';
         enqueueSnackbar(msg, { variant: 'error' });
 
-        // If there are field errors, normalize and display in the form
         if (error.errors && typeof error.errors === 'object') {
           const normalized: Record<string, string> = {};
           Object.entries(error.errors).forEach(([key, val]) => {
-            // val may be array of messages
             const firstMsg = Array.isArray(val) ? (val[0] as string) : String(val);
-            // normalize nested keys like "person.email" -> "email"
             const shortKey = key.includes('.') ? key.split('.').pop()! : key;
             normalized[shortKey] = firstMsg;
           });
@@ -202,10 +264,11 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       } else {
         enqueueSnackbar(String(error), { variant: 'error' });
       }
+      // no clear draft - keep cached for retry
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentStep, formData, files, validateStep, onSave, onClose]);
+  }, [formData, files, onSave, clearDraft, enqueueSnackbar, onClose]);
 
   if (!isOpen) return null;
 

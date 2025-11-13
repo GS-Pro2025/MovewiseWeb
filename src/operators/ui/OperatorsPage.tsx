@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import { useSnackbar } from 'notistack';
 import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator, createOperator } from '../data/RepositoryOperators';
+import { fetchFreelanceOperators, FreelanceOperator } from '../data/RepositoryFreelancer';
 import { Operator } from '../domain/OperatorsModels';
 import { InactiveOperator } from '../domain/OperatorsModels';
 import OperatorsHeader from './components/OperatorsHeader';
@@ -12,6 +13,7 @@ import ManageChildrenModal from './components/ManageChildrenModal';
 import OperatorDetailsModal from './components/OperatorDetailsModal';
 import ConfirmDeleteDialog from './components/ConfirmDeleteDialog';
 import RegisterOperatorModal from './components/RegisterOperatorModal';
+import CreateFreelancer from './components/CreateFreelancer';
 
 const COLORS = {
   primary: '#0B2863',
@@ -40,6 +42,38 @@ const OperatorsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
+
+  // NEW: View mode state
+  const [viewMode, setViewMode] = useState<'operators' | 'freelancers'>('operators');
+
+  // Freelancers states
+  const [freelancers, setFreelancers] = useState<FreelanceOperator[]>([]);
+  const [freelancersLoading, setFreelancersLoading] = useState<boolean>(false);
+  const [freelancersPage, setFreelancersPage] = useState<number>(1);
+  const [freelancersPageSize] = useState<number>(10);
+  const [freelancersTotal, setFreelancersTotal] = useState<number>(0);
+  const [isCreateFreelancerOpen, setIsCreateFreelancerOpen] = useState<boolean>(false);
+
+  // Handler para refrescar lista después de crear
+  const handleFreelancerCreated = useCallback(async (created?: FreelanceOperator) => {
+    try {
+      // puedes optar por re-fetch para tener conteo exacto
+      const resp = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
+      setFreelancers(resp.results);
+      setFreelancersTotal(resp.count);
+      enqueueSnackbar('Freelancer creado y lista actualizada', { variant: 'success' });
+    } catch (err) {
+      console.error('Error refreshing freelancers after create:', err);
+      enqueueSnackbar('Freelancer creado, pero error al actualizar la lista', { variant: 'warning' });
+      // como fallback, si backend devuelve el creado, lo puedes agregar localmente:
+      if (created) {
+        setFreelancers(prev => [created, ...prev]);
+        setFreelancersTotal(prev => prev + 1);
+      }
+    } finally {
+      setIsCreateFreelancerOpen(false);
+    }
+  }, [enqueueSnackbar, freelancersPage, freelancersPageSize]);
   // Load operators
   useEffect(() => {
     const loadOperators = async () => {
@@ -55,8 +89,11 @@ const OperatorsPage: React.FC = () => {
         setLoading(false);
       }
     };
-    loadOperators();
-  }, [enqueueSnackbar]);
+    
+    if (viewMode === 'operators') {
+      loadOperators();
+    }
+  }, [enqueueSnackbar, viewMode]);
 
   // Load inactive operators
   useEffect(() => {
@@ -71,8 +108,32 @@ const OperatorsPage: React.FC = () => {
         setInactiveLoading(false);
       }
     };
-    loadInactiveOperators();
-  }, []);
+    
+    if (viewMode === 'operators') {
+      loadInactiveOperators();
+    }
+  }, [viewMode]);
+
+  // NEW: Load freelancers
+  useEffect(() => {
+    const loadFreelancers = async () => {
+      try {
+        setFreelancersLoading(true);
+        const response = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
+        setFreelancers(response.results);
+        setFreelancersTotal(response.count);
+      } catch (err) {
+        console.error('Error loading freelancers:', err);
+        enqueueSnackbar(err instanceof Error ? err.message : 'Error loading freelancers', { variant: 'error' });
+      } finally {
+        setFreelancersLoading(false);
+      }
+    };
+
+    if (viewMode === 'freelancers') {
+      loadFreelancers();
+    }
+  }, [viewMode, freelancersPage, freelancersPageSize, enqueueSnackbar]);
 
   // Helper function para crear FormData según la estructura del backend
   const createOperatorFormData = useCallback((operatorData: any): FormData => {
@@ -141,6 +202,7 @@ const OperatorsPage: React.FC = () => {
   const handleRegisterOperator = useCallback(() => {
     setIsRegisterModalOpen(true);
   }, []);
+  
   const handleSaveNewOperator = useCallback(async (formData: FormData) => {
     try {
       await createOperator(formData); 
@@ -151,6 +213,7 @@ const OperatorsPage: React.FC = () => {
       enqueueSnackbar('Error registering operator', { variant: 'error' });
     }
   }, [enqueueSnackbar]);
+  
   const handleEditOperator = useCallback((operator: Operator) => {
     setOperatorToEdit(operator);
     setIsEditDialogOpen(true);
@@ -249,6 +312,34 @@ const OperatorsPage: React.FC = () => {
     }
   }, [operatorForChildren, selectedOperator, enqueueSnackbar]);
 
+  // NEW: Function to map FreelanceOperator to Operator for component compatibility
+  const mapFreelanceToOperator = useCallback((freelancer: FreelanceOperator): Operator => {
+    return {
+      id_operator: freelancer.id_operator,
+      code: freelancer.code || '',
+      first_name: freelancer.first_name || '',
+      last_name: freelancer.last_name || '',
+      email: freelancer.email || '',
+      phone: freelancer.phone || '',
+      number_licence: freelancer.number_licence || '',
+      salary: freelancer.salary || '',
+      status: freelancer.status || 'freelance',
+      n_children: freelancer.n_children || 0,
+      // Add other required Operator fields with default values
+      size_t_shift: freelancer.size_t_shift || '',
+      name_t_shift: freelancer.name_t_shift || '',
+      photo: freelancer.photo || null,
+      license_front: freelancer.license_front || null,
+      license_back: freelancer.license_back || null,
+      birth_date: freelancer.birth_date || null,
+      type_id: freelancer.type_id || '',
+      id_number: freelancer.id_number || '',
+      address: freelancer.address || '',
+      id_company: freelancer.id_company || null,
+      sons: freelancer.sons || []
+    } as Operator;
+  }, []);
+
   // Filtrar operadores basado en el término de búsqueda
   const filteredOperators = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -291,11 +382,42 @@ const OperatorsPage: React.FC = () => {
     });
   }, [inactiveOperators, searchTerm]);
 
-  if (loading) {
+  // NEW: Filter freelancers
+  const filteredFreelancers = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return freelancers;
+    }
+
+    const term = searchTerm.toLowerCase();
+    return freelancers.filter(freelancer => {
+      const safeString = (value: string | null | undefined): string => {
+        return value ? value.toLowerCase() : '';
+      };
+
+      return (
+        safeString(freelancer.first_name).includes(term) ||
+        safeString(freelancer.last_name).includes(term) ||
+        safeString(freelancer.code).includes(term) ||
+        safeString(freelancer.phone).includes(term) ||
+        safeString(freelancer.id_number).includes(term)
+      );
+    });
+  }, [freelancers, searchTerm]);
+
+  // Convert filtered freelancers to Operator format for table compatibility
+  const mappedFreelancers = useMemo(() => {
+    return filteredFreelancers.map(mapFreelanceToOperator);
+  }, [filteredFreelancers, mapFreelanceToOperator]);
+
+  if (loading && viewMode === 'operators') {
     return <LoaderSpinner />;
   }
 
-  if (error) {
+  if (freelancersLoading && viewMode === 'freelancers') {
+    return <LoaderSpinner />;
+  }
+
+  if (error && viewMode === 'operators') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div 
@@ -312,7 +434,7 @@ const OperatorsPage: React.FC = () => {
             <span className="text-white text-3xl font-bold">!</span>
           </div>
           <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.error }}>
-            Error Loading Operators
+            Error Loading Data
           </h3>
           <p className="text-gray-600">{error}</p>
         </div>
@@ -322,70 +444,253 @@ const OperatorsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Component */}
-      <OperatorsHeader
-        operators={operators}
-        inactiveOperators={inactiveOperators}
-        activeTab={activeTab}
-        searchTerm={searchTerm}
-        filteredOperators={filteredOperators}
-        filteredInactiveOperators={filteredInactiveOperators}
-        onTabChange={setActiveTab}
-        onSearchChange={setSearchTerm}
-        onRegisterOperator={handleRegisterOperator}
-      />
+      {/* NEW: View Mode Tabs */}
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="flex space-x-2">
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              viewMode === 'operators'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => {
+              setViewMode('operators');
+              setSearchTerm('');
+            }}
+          >
+            <i className="fas fa-users mr-2"></i>
+            Operators
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              viewMode === 'freelancers'
+                ? 'bg-orange-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            onClick={() => {
+              setViewMode('freelancers');
+              setSearchTerm('');
+              setFreelancersPage(1);
+            }}
+          >
+            <i className="fas fa-user-tie mr-2"></i>
+            Freelancers ({freelancersTotal})
+          </button>
+        </div>
+      </div>
 
-      {/* Table Component */}
-      <OperatorsTable
-        activeTab={activeTab}
-        operators={filteredOperators}
-        inactiveOperators={filteredInactiveOperators}
-        inactiveLoading={inactiveLoading}
-        searchTerm={searchTerm}
-        onViewDetails={handleViewDetails}
-        onEditOperator={handleEditOperator}
-        onDeleteOperator={handleDeleteOperator}
-        onManageChildren={handleManageChildren}
-        onActivateOperator={handleActivateOperator}
-      />
+      {viewMode === 'operators' && (
+        <>
+          {/* Header Component for Operators */}
+          <OperatorsHeader
+            operators={operators}
+            inactiveOperators={inactiveOperators}
+            activeTab={activeTab}
+            searchTerm={searchTerm}
+            filteredOperators={filteredOperators}
+            filteredInactiveOperators={filteredInactiveOperators}
+            onTabChange={setActiveTab}
+            onSearchChange={setSearchTerm}
+            onRegisterOperator={handleRegisterOperator}
+          />
 
-      {/* Modals */}
-      {isEditDialogOpen && operatorToEdit && (
-        <EditOperatorModal
-          operator={operatorToEdit}
-          isOpen={isEditDialogOpen}
-          onClose={() => {
-            setIsEditDialogOpen(false);
-            setOperatorToEdit(null);
-          }}
-          onSave={handleSaveEdit}
-        />
+          {/* Table Component for Operators */}
+          <OperatorsTable
+            activeTab={activeTab}
+            operators={filteredOperators}
+            inactiveOperators={filteredInactiveOperators}
+            inactiveLoading={inactiveLoading}
+            searchTerm={searchTerm}
+            onViewDetails={handleViewDetails}
+            onEditOperator={handleEditOperator}
+            onDeleteOperator={handleDeleteOperator}
+            onManageChildren={handleManageChildren}
+            onActivateOperator={handleActivateOperator}
+          />
+        </>
       )}
 
-      {isChildrenModalOpen && operatorForChildren && (
-        <ManageChildrenModal
-          operator={operatorForChildren}
-          isOpen={isChildrenModalOpen}
-          onClose={() => {
-            setIsChildrenModalOpen(false);
-            setOperatorForChildren(null);
-          }}
-          onSave={handleAddChild}
-        />
+      {viewMode === 'freelancers' && (
+        <>
+          {/* Modified Header for Freelancers */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  <i className="fas fa-user-tie mr-3 text-orange-600"></i>
+                  Freelancers Directory
+                </h2>
+                <p className="text-gray-600">Manage and view freelancer information</p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Total Freelancers</div>
+                <div className="text-2xl font-bold text-orange-600">{freelancersTotal}</div>
+              </div>
+              {/* Create freelancer button */}
+              <div>
+                <button
+                  onClick={() => setIsCreateFreelancerOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg shadow-sm hover:bg-orange-700 transition"
+                >
+                  <i className="fas fa-user-plus"></i>
+                  <span>Create Freelancer</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search Bar for Freelancers */}
+            <div className="mb-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i className="fas fa-search text-gray-400"></i>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search freelancers by name, code, phone, or ID number..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+            </div>
+
+            {/* Stats for Freelancers */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-600">Total Freelancers</p>
+                    <p className="text-2xl font-bold text-orange-800">{freelancersTotal}</p>
+                  </div>
+                  <i className="fas fa-user-tie text-2xl text-orange-500"></i>
+                </div>
+              </div>
+              
+              <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-600">Active Status</p>
+                    <p className="text-2xl font-bold text-green-800">{freelancers.length}</p>
+                  </div>
+                  <i className="fas fa-check-circle text-2xl text-green-500"></i>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-600">Search Results</p>
+                    <p className="text-2xl font-bold text-blue-800">{mappedFreelancers.length}</p>
+                  </div>
+                  <i className="fas fa-filter text-2xl text-blue-500"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Freelancers Table using existing OperatorsTable component */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">
+                <i className="fas fa-user-tie mr-2 text-orange-600"></i>
+                Freelancers {searchTerm && `(${mappedFreelancers.length} results)`}
+              </h3>
+            </div>
+            
+            <OperatorsTable
+              activeTab="active"
+              operators={mappedFreelancers}
+              inactiveOperators={[]}
+              inactiveLoading={false}
+              searchTerm={searchTerm}
+              onViewDetails={handleViewDetails}
+              onEditOperator={() => {}} // Disable edit for freelancers
+              onDeleteOperator={() => {}} // Disable delete for freelancers
+              onManageChildren={() => {}} // Disable children management for freelancers
+              onActivateOperator={() => {}} // Not applicable for freelancers
+            />
+          </div>
+
+          {/* Pagination for Freelancers */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Showing {((freelancersPage - 1) * freelancersPageSize) + 1} - {Math.min(freelancersPage * freelancersPageSize, freelancersTotal)} of {freelancersTotal} freelancers
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setFreelancersPage(prev => Math.max(1, prev - 1))}
+                  disabled={freelancersPage === 1}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded-md">
+                  Page {freelancersPage}
+                </span>
+                <button
+                  onClick={() => setFreelancersPage(prev => prev + 1)}
+                  disabled={freelancersPage * freelancersPageSize >= freelancersTotal}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
-      {isDeleteDialogOpen && operatorToDelete && (
-        <ConfirmDeleteDialog
-          operator={operatorToDelete}
-          isOpen={isDeleteDialogOpen}
-          onClose={() => {
-            setIsDeleteDialogOpen(false);
-            setOperatorToDelete(null);
-          }}
-          onConfirm={handleConfirmDelete}
-        />
+      {/* Modals - Only show for operators */}
+      {viewMode === 'operators' && (
+        <>
+          {isEditDialogOpen && operatorToEdit && (
+            <EditOperatorModal
+              operator={operatorToEdit}
+              isOpen={isEditDialogOpen}
+              onClose={() => {
+                setIsEditDialogOpen(false);
+                setOperatorToEdit(null);
+              }}
+              onSave={handleSaveEdit}
+            />
+          )}
+
+          {isChildrenModalOpen && operatorForChildren && (
+            <ManageChildrenModal
+              operator={operatorForChildren}
+              isOpen={isChildrenModalOpen}
+              onClose={() => {
+                setIsChildrenModalOpen(false);
+                setOperatorForChildren(null);
+              }}
+              onSave={handleAddChild}
+            />
+          )}
+
+          {isDeleteDialogOpen && operatorToDelete && (
+            <ConfirmDeleteDialog
+              operator={operatorToDelete}
+              isOpen={isDeleteDialogOpen}
+              onClose={() => {
+                setIsDeleteDialogOpen(false);
+                setOperatorToDelete(null);
+              }}
+              onConfirm={handleConfirmDelete}
+            />
+          )}
+
+          {isRegisterModalOpen && (
+            <RegisterOperatorModal
+              isOpen={isRegisterModalOpen}
+              onClose={() => setIsRegisterModalOpen(false)}
+              onSave={handleSaveNewOperator}
+            />
+          )}
+        </>
       )}
 
+      {/* Shared View Details Modal */}
       {isDialogOpen && selectedOperator && (
         <OperatorDetailsModal
           operator={selectedOperator}
@@ -396,14 +701,12 @@ const OperatorsPage: React.FC = () => {
           }}
         />
       )}
-
-      {isRegisterModalOpen && (
-        <RegisterOperatorModal
-          isOpen={isRegisterModalOpen}
-          onClose={() => setIsRegisterModalOpen(false)}
-          onSave={handleSaveNewOperator}
-        />
-      )}
+      {/* Create Freelancer modal (freelancers view) */}
+      <CreateFreelancer
+        isOpen={isCreateFreelancerOpen}
+        onClose={() => setIsCreateFreelancerOpen(false)}
+        onCreated={handleFreelancerCreated}
+      />
     </div>
   );
 };
