@@ -17,6 +17,7 @@ import {
   Search,
   Globe
 } from 'lucide-react';
+import WeekPicker from '../../components/WeekPicker';
 
 import type { TableData } from '../domain/TableData';
 
@@ -105,7 +106,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   setStates,
 }) => {
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
+  console.log("Rendering TableFilters with week:", showWeekDropdown);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // AGREGAR: Lógica para opciones y labels dinámicos según el paso
@@ -225,30 +226,6 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const weeks = Array.from({ length: 53 }, (_, i) => i + 1);
-
-  const handleWeekSelect = (selectedWeek: number) => {
-    onWeekChange(selectedWeek);
-    setShowWeekDropdown(false);
-  };
-
-  const handleWeekInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newWeek = parseInt(event.target.value, 10);
-    if (newWeek >= 1 && newWeek <= 53) {
-      onWeekChange(newWeek);
-    }
-  };
-
-  const handleWeekKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setShowWeekDropdown(true);
-    } else if (e.key === 'Escape') {
-      setShowWeekDropdown(false);
-    } else if (e.key === 'Enter') {
-      setShowWeekDropdown(!showWeekDropdown);
-    }
-  };
 
   const handleGlobalSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !globalSearchLoading && globalSearch.trim()) {
@@ -541,148 +518,16 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Week Input Card */}
             <div 
-              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md"
+              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 shadow-md relative"
               style={{ borderColor: COLORS.primary }}
-              ref={dropdownRef}
             >
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-bold" style={{ color: COLORS.primary }}>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    Week Number
-                  </div>
-                </label>
-                <button
-                  onClick={() => setViewMode(viewMode === 'select' ? 'input' : 'select')}
-                  className="text-xs px-2 py-1 rounded-md border transition-colors duration-200"
-                  style={{ 
-                    backgroundColor: COLORS.secondary,
-                    borderColor: COLORS.primary,
-                    color: 'white'
-                  }}
-                  title={`Switch to ${viewMode === 'select' ? 'input' : 'dropdown'} view`}
-                >
-                  {viewMode === 'select' ? <Filter size={12} /> : <ChevronDown size={12} />}
-                </button>
-              </div>
-              
-              {viewMode === 'select' ? (
-                <div className="relative">
-                  <div
-                    className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm"
-                    style={{ borderColor: COLORS.secondary }}
-                    onClick={() => setShowWeekDropdown(!showWeekDropdown)}
-                    onKeyDown={handleWeekKeyDown}
-                    tabIndex={0}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                  >
-                    <span style={{ color: COLORS.primary }}>Week {week}</span>
-                    <ChevronDown 
-                      size={16}
-                      className={`transition-transform duration-200 ${showWeekDropdown ? 'rotate-180' : ''}`}
-                      style={{ color: COLORS.secondary }}
-                    />
-                  </div>
-
-                  {showWeekDropdown && (
-                    <div className="week-dropdown mt-2 bg-white border-2 rounded-lg shadow-xl w-[350px]" style={{ borderColor: COLORS.primary }}>
-                      <div className="p-4">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs font-semibold" style={{ color: COLORS.primary }}>Select week (1-53):</span>
-                          <button
-                            onClick={() => setShowWeekDropdown(false)}
-                            className="p-1 rounded transition-colors"
-                            style={{ backgroundColor: COLORS.error, color: 'white' }}
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                        
-                        <div className="flex gap-1 mb-3">
-                          {[
-                            { label: 'First', week: 1 },
-                            { label: 'Q1', week: 13 },
-                            { label: 'Mid', week: 26 },
-                            { label: 'Q3', week: 39 },
-                            { label: 'Last', week: 53 }
-                          ].map((item) => (
-                            <button
-                              key={item.label}
-                              onClick={() => handleWeekSelect(item.week)}
-                              className="text-xs px-2 py-1 rounded transition-colors"
-                              style={{ 
-                                backgroundColor: COLORS.secondary,
-                                color: 'white'
-                              }}
-                            >
-                              {item.label}
-                            </button>
-                          ))}
-                        </div>
-                        
-                        <div className="grid grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-                          {weeks.map((weekNum) => (
-                            <button
-                              key={weekNum}
-                              onClick={() => handleWeekSelect(weekNum)}
-                              className={`p-2 text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105`}
-                              style={{
-                                backgroundColor: week === weekNum ? COLORS.success : '#f9fafb',
-                                color: week === weekNum ? 'white' : COLORS.primary,
-                                borderColor: week === weekNum ? COLORS.success : '#e5e7eb'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (week !== weekNum) {
-                                  e.currentTarget.style.backgroundColor = COLORS.secondary;
-                                  e.currentTarget.style.color = 'white';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (week !== weekNum) {
-                                  e.currentTarget.style.backgroundColor = '#f9fafb';
-                                  e.currentTarget.style.color = COLORS.primary;
-                                }
-                              }}
-                              title={`Select week ${weekNum}`}
-                            >
-                              {weekNum}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    max="53"
-                    value={week}
-                    onChange={handleWeekInputChange}
-                    className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-300 font-bold text-center bg-white shadow-sm"
-                    style={{ 
-                      borderColor: COLORS.primary,
-                      color: COLORS.primary
-                    }}
-                    placeholder="1-53"
-                    onFocus={(e) => {
-                      e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-                      e.target.style.transform = 'scale(1.02)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.boxShadow = 'none';
-                      e.target.style.transform = 'scale(1)';
-                    }}
-                  />
-                </div>
-              )}
+              <WeekPicker
+                week={week}
+                onWeekSelect={onWeekChange}
+                min={1}
+                max={53}
+                className=""
+              />
               <div 
                 className="absolute -top-1 -right-1 w-4 h-4 rounded-full"
                 style={{ backgroundColor: week ? COLORS.success : COLORS.error }}

@@ -5,11 +5,12 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { SuperOrder } from '../domain/ModelsOCR';
 import ExportMenuComponent from './ExportMenuComponent';
 import { Calendar, Search, RotateCcw } from 'lucide-react';
+import WeekPicker from '../../components/WeekPicker';
 
 interface FinancialControlsProps {
   // Week controls
   week: number;
-  onWeekChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onWeekChange: (week: number) => void;
   weekRange: { start: string; end: string };
   showWeekControls: boolean;
 
@@ -164,52 +165,32 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
           {/* Week Controls - Mobile */}
           {showWeekControls && (
             <div className="space-y-3">
-              <TextField
-                label="Week"
-                type="number"
-                value={week}
-                onChange={onWeekChange}
-                inputProps={{ min: 1, max: 53 }}
-                size="small"
-                fullWidth
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 3,
-                    '& fieldset': {
-                      borderColor: '#0B2863',
-                      borderWidth: 2
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#FFE67B'
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#0B2863'
-                    }
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: '#0B2863',
-                    fontWeight: 600
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#0B2863'
-                  }
-                }}
-              />
-              <div 
-                className="flex items-center gap-2 px-3 py-3 rounded-lg border-2"
-                style={{ 
-                  backgroundColor: '#FFE67B',
-                  borderColor: '#0B2863',
-                  color: '#0B2863'
-                }}
-              >
-                <Calendar size={18} />
-                <Typography variant="body2" className="!font-bold">
-                  {weekRange.start} → {weekRange.end}
-                </Typography>
+              <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', overflow: 'visible' }}>
+                  <WeekPicker
+                    week={week}
+                    onWeekSelect={(w) => onWeekChange(w)}
+                    min={1}
+                    max={53}
+                    className=""
+                  />
+                </div>
               </div>
-            </div>
-          )}
+               <div 
+                 className="flex items-center gap-2 px-3 py-3 rounded-lg border-2"
+                 style={{ 
+                   backgroundColor: '#FFE67B',
+                   borderColor: '#0B2863',
+                   color: '#0B2863'
+                 }}
+               >
+                 <Calendar size={18} />
+                 <Typography variant="body2" className="!font-bold">
+                   {weekRange.start} → {weekRange.end}
+                 </Typography>
+               </div>
+             </div>
+           )}
           
           {/* Search Controls - Mobile */}
           <div className="space-y-3">
@@ -299,58 +280,38 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
           {showWeekControls && (
             <div className={`flex ${isTablet ? 'flex-row' : 'flex-col'} gap-4 items-start`}>
               <div className="flex flex-col gap-2">
-                <TextField
-                  label="Week"
-                  type="number"
-                  value={week}
-                  onChange={onWeekChange}
-                  inputProps={{ min: 1, max: 53 }}
-                  size="small"
-                  sx={{ 
-                    minWidth: 100,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                      '& fieldset': {
-                        borderColor: '#0B2863',
-                        borderWidth: 2
-                      },
-                      '&:hover fieldset': {
-                        borderColor: '#FFE67B'
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#0B2863'
-                      }
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: '#0B2863',
-                      fontWeight: 600
-                    },
-                    '& .MuiInputLabel-root.Mui-focused': {
-                      color: '#0B2863'
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex flex-col items-start min-w-[180px]">
-                <Typography variant="caption" className="!font-semibold !mb-1" style={{ color: '#0B2863' }}>
-                  Period
-                </Typography>
-                <div 
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border-2"
-                  style={{ 
-                    backgroundColor: '#FFE67B',
-                    borderColor: '#0B2863',
-                    color: '#0B2863'
-                  }}
-                >
-                  <Calendar size={18} />
-                  <Typography variant="body2" className="!font-bold">
-                    {weekRange.start} → {weekRange.end}
-                  </Typography>
+                <div style={{ minWidth: 100 }}>
+                  <div style={{ position: 'relative', overflow: 'visible' }}>
+                    <WeekPicker
+                      week={week}
+                      onWeekSelect={(w) => onWeekChange(w)}
+                      min={1}
+                      max={53}
+                      className=""
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+               </div>
+               <div className="flex flex-col items-start min-w-[180px]">
+                 <Typography variant="caption" className="!font-semibold !mb-1" style={{ color: '#0B2863' }}>
+                   Period
+                 </Typography>
+                 <div 
+                   className="flex items-center gap-2 px-3 py-2 rounded-lg border-2"
+                   style={{ 
+                     backgroundColor: '#FFE67B',
+                     borderColor: '#0B2863',
+                     color: '#0B2863'
+                   }}
+                 >
+                   <Calendar size={18} />
+                   <Typography variant="body2" className="!font-bold">
+                     {weekRange.start} → {weekRange.end}
+                   </Typography>
+                 </div>
+               </div>
+             </div>
+           )}
           
           {/* Search Controls - Desktop/Tablet */}
           <div className={`flex gap-3 items-center ${isTablet ? 'flex-wrap' : 'flex-nowrap'}`}>

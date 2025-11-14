@@ -21,6 +21,7 @@ import FinancialView from "../../financials/ui/FinancialView";
 import IncomeCalculator from './components/IncomeCalculator';
 import FinancialExpenseBreakdownView from "../../financials/ui/FinancialExpenseBreakdownView";
 import { useTranslation } from "react-i18next";
+import WeekPicker from "../../components/WeekPicker";
 
 interface StatItem {
   label: string;
@@ -65,10 +66,7 @@ const Statistics = () => {
     return new Date().getFullYear();
   });
 
-  // Week dropdown states
-  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState<"select" | "input">("select");
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // Mobile menu ref (week dropdown handled by WeekPicker)
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Available years from service
@@ -257,13 +255,6 @@ const Statistics = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowWeekDropdown(false);
-      }
-      
-      if (
         mobileMenuRef.current &&
         !mobileMenuRef.current.contains(event.target as Node)
       ) {
@@ -407,28 +398,6 @@ const Statistics = () => {
     loadStatistics(selectedWeek, selectedYear);
   }, [selectedWeek, selectedYear, loadStatistics]);
 
-  const handleWeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const week = Number(e.target.value);
-    if (week >= 1 && week <= 53) {
-      setSelectedWeek(week);
-    }
-  };
-
-  const handleWeekSelect = (selectedWeek: number) => {
-    setSelectedWeek(selectedWeek);
-    setShowWeekDropdown(false);
-  };
-
-  const handleWeekKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setShowWeekDropdown(true);
-    } else if (e.key === "Escape") {
-      setShowWeekDropdown(false);
-    } else if (e.key === "Enter") {
-      setShowWeekDropdown(!showWeekDropdown);
-    }
-  };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const year = Number(e.target.value);
@@ -441,7 +410,6 @@ const Statistics = () => {
   };
 
   const weekRange = getWeekRange(selectedYear, selectedWeek);
-  const weeks = Array.from({ length: 53 }, (_, i) => i + 1);
 
   // Styled Components
   const TabButton = ({
@@ -766,153 +734,18 @@ const Statistics = () => {
               <div className="w-full sm:w-auto sm:min-w-[200px]">
                 <div
                   className="bg-gradient-to-br from-white/90 to-green-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-green-100 shadow-sm hover:shadow-md transition-all duration-300"
-                  ref={dropdownRef}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs sm:text-sm font-bold text-gray-700">
-                      Week Number
-                    </label>
-                    <button
-                      onClick={() =>
-                        setViewMode(viewMode === "select" ? "input" : "select")
-                      }
-                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 transition-colors duration-200 px-2 py-1 rounded-md border border-green-200"
-                      title={`Switch to ${
-                        viewMode === "select" ? "input" : "dropdown"
-                      } view`}
-                    >
-                      {viewMode === "select" ? "Input" : "Dropdown"}
-                    </button>
-                  </div>
-
-                  {viewMode === "select" ? (
-                    // Week dropdown mode
-                    <div className="relative">
-                      <div
-                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:border-green-300 hover:shadow-sm text-sm sm:text-base"
-                        onClick={() => setShowWeekDropdown(!showWeekDropdown)}
-                        onKeyDown={handleWeekKeyDown}
-                        tabIndex={0}
-                      >
-                        <span className="text-green-700">
-                          Week {selectedWeek}
-                        </span>
-                        <svg
-                          className={`w-4 h-4 text-green-500 transition-transform duration-200 ${
-                            showWeekDropdown ? "rotate-180" : ""
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-
-                      {showWeekDropdown && (
-                        <div className="week-dropdown mt-2 bg-white border-2 border-green-200 rounded-lg shadow-xl w-full sm:w-[350px]">
-                          <div className="p-3 sm:p-4">
-                            <div className="flex justify-between items-center mb-3">
-                              <span className="text-xs font-semibold text-gray-600">
-                                Select week (1-53):
-                              </span>
-                              <button
-                                onClick={() => setShowWeekDropdown(false)}
-                                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded transition-colors"
-                              >
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-
-                            {/* Quick actions */}
-                            <div className="flex gap-1 mb-3 flex-wrap">
-                              <button
-                                onClick={() => handleWeekSelect(1)}
-                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded transition-colors"
-                              >
-                                First
-                              </button>
-                              <button
-                                onClick={() => handleWeekSelect(13)}
-                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded transition-colors"
-                              >
-                                Q1
-                              </button>
-                              <button
-                                onClick={() => handleWeekSelect(26)}
-                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded transition-colors"
-                              >
-                                Mid
-                              </button>
-                              <button
-                                onClick={() => handleWeekSelect(39)}
-                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded transition-colors"
-                              >
-                                Q3
-                              </button>
-                              <button
-                                onClick={() => handleWeekSelect(53)}
-                                className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 hover:text-green-700 rounded transition-colors"
-                              >
-                                Last
-                              </button>
-                            </div>
-
-                            <div className="grid grid-cols-6 sm:grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-                              {weeks.map((weekNum) => (
-                                <button
-                                  key={weekNum}
-                                  onClick={() => handleWeekSelect(weekNum)}
-                                  className={`p-1 sm:p-2 text-xs sm:text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105 ${
-                                    selectedWeek === weekNum
-                                      ? "bg-green-500 text-white border-green-600 shadow-md ring-2 ring-green-300"
-                                      : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-100 hover:border-green-300 hover:text-green-700"
-                                  }`}
-                                  title={`Select week ${weekNum}`}
-                                >
-                                  {weekNum}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    // Week input mode
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="1"
-                        max="53"
-                        value={selectedWeek}
-                        onChange={handleWeekChange}
-                        className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-green-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 font-bold text-center bg-white shadow-sm text-sm sm:text-base"
-                        placeholder="1-53"
-                        disabled={loading}
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative', overflow: 'visible', minWidth: 200 }}>
+                      <WeekPicker
+                        week={selectedWeek}
+                        onWeekSelect={(w) => setSelectedWeek(w)}
+                        min={1}
+                        max={53}
+                        className=""
                       />
-                      <div className="absolute -bottom-5 left-0 right-0 text-xs text-gray-500 text-center">
-                        Press Enter to confirm
-                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
@@ -1057,9 +890,9 @@ const Statistics = () => {
           }
         }
 
-        /* Responsive utilities */
-        @media (max-width: 640px) {
-          .mobile-nav-button {
+        /* Responsive utilities */utilities */
+        @media (max-width: 640px) {width: 640px) {
+          .mobile-nav-button {          .mobile-nav-button {
             min-width: 44px;
             min-height: 44px;
           }
@@ -1067,8 +900,8 @@ const Statistics = () => {
           .week-dropdown {
             position: fixed !important;
             left: 1rem !important;
-            right: 1rem !important;
-            width: auto !important;
+            right: 1rem !important;ortant;
+            width: auto !important;portant;
             z-index: 50 !important;
           }
           
@@ -1077,33 +910,33 @@ const Statistics = () => {
           }
         }
 
-        @media (min-width: 641px) and (max-width: 1024px) {
-          .week-dropdown .grid {
+        @media (min-width: 641px) and (max-width: 1024px) { 641px) and (max-width: 1024px) {
+          .week-dropdown .grid { .grid {
             grid-template-columns: repeat(8, 1fr) !important;
           }
         }
 
         /* Improved touch targets for mobile */
-        @media (max-width: 768px) {
+        @media (max-width: 768px) { 768px) {
           button {
-            min-height: 44px;
+            min-height: 44px;: 44px;
           }
           
-          select, input {
-            min-height: 44px;
-          }
+          select, input {lect, input {
+            min-height: 44px;n-height: 44px;
+          }          }
         }
 
-        /* Custom scrollbar for mobile */
+        /* Custom scrollbar for mobile */ustom scrollbar for mobile */
         @media (max-width: 640px) {
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
+          .custom-scrollbar::-webkit-scrollbar {ar::-webkit-scrollbar {
+            width: 8px; 8px;
             height: 8px;
           }
         }
 
-        /* Prevent horizontal scroll on mobile */
-        @media (max-width: 640px) {
+        /* Prevent horizontal scroll on mobile */ horizontal scroll on mobile */
+        @media (max-width: 640px) {(max-width: 640px) {
           html, body {
             overflow-x: hidden;
           }
