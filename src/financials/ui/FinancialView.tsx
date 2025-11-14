@@ -180,11 +180,11 @@ const FinancialView = () => {
   const currentExportData = searchResults ? groupByKeyRef(searchResults) : superOrders;
 
   // Event Handlers
-  const handleWeekChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newWeek = parseInt(event.target.value, 10);
-    if (newWeek >= 1 && newWeek <= 53) setWeek(newWeek);
+  const handleWeekChange = (newWeek: number) => {
+    if (Number.isInteger(newWeek) && newWeek >= 1 && newWeek <= 53) {
+      setWeek(newWeek);
+    }
   };
-
   const handleSort = (column: keyof SuperOrder) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');

@@ -10,7 +10,8 @@ import {
 } from '@mui/material';
 import { CalendarDays, FileText, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { WeekSummary } from '../domain/StatementModels';
-
+import WeekPicker from '../../components/WeekPicker';
+ 
 interface StatementFiltersProps {
   week: number;
   year: number;
@@ -80,7 +81,7 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
   };
 
   return (
-    <Card sx={{ mb: 3, borderRadius: 3 }}>
+    <Card sx={{ mb: 3, borderRadius: 3, overflow: 'visible' }}>
       <CardContent>
         {/* Week and Year Selection */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
@@ -103,24 +104,24 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
             mb: 3
           }}
         >
-          <TextField
-            label="Week"
-            type="number"
-            size="small"
-            value={week}
-            onChange={(e) => onWeekChange(parseInt(e.target.value) || 1)}
-            inputProps={{ min: 1, max: 53 }}
-            fullWidth
-          />
-          <TextField
-            label="Year"
-            type="number"
-            size="small"
-            value={year}
-            onChange={(e) => onYearChange(parseInt(e.target.value) || new Date().getFullYear())}
-            inputProps={{ min: 2020, max: 2030 }}
-            fullWidth
-          />
+          <Box sx={{ position: 'relative', overflow: 'visible' }}>
+            <WeekPicker
+              week={week}
+              onWeekSelect={onWeekChange}
+              min={1}
+              max={53}
+              className=""
+            />
+          </Box>
+           <TextField
+             label="Year"
+             type="number"
+             size="small"
+             value={year}
+             onChange={(e) => onYearChange(parseInt(e.target.value) || new Date().getFullYear())}
+             inputProps={{ min: 2020, max: 2030 }}
+             fullWidth
+           />
           <Box 
             sx={{ 
               display: 'flex', 

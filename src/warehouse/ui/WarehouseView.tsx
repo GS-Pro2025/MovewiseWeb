@@ -10,6 +10,7 @@ import OperatorsTable from "../../Home/ui/operatorsTable";
 import EditOrderDialog from "../../Home/ui/editOrderModal"; 
 import { parseWarehouseToUpdateOrder } from "../data/parseWarehouse";
 import { updateOrder } from "../../Home/data/repositoryOrders"; 
+import WeekPicker from "../../components/WeekPicker";
 import type { UpdateOrderData } from "../../Home/domain/ModelOrderUpdate";
 
 const PAGE_SIZE = 10;
@@ -187,7 +188,8 @@ const WarehouseView = () => {
           />
         </Box>
       ) : null,
-  });
+  }
+  );
 
   // Cuando abres el modal, parsea a UpdateOrderData:
   const handleEditOrder = (order: WorkhouseOrderData) => {
@@ -251,15 +253,16 @@ const WarehouseView = () => {
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
         Here you can find all the warehouse orders registered in the system.
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          label="Week"
-          type="number"
-          value={week}
-          onChange={e => setWeek(Number(e.target.value))}
-          inputProps={{ min: 1, max: 53 }}
-          size="small"
-        />
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+        <Box sx={{ position: 'relative', overflow: 'visible', minWidth: 160 }}>
+          <WeekPicker
+            week={week}
+            onWeekSelect={(w) => setWeek(w)}
+            min={1}
+            max={53}
+            className=""
+          />
+        </Box>
         <TextField
           label="Year"
           type="number"

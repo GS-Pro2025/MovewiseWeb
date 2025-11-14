@@ -4,7 +4,7 @@ import { Truck } from '../domain/TruckModels';
 import { CreateTruckDialog } from './components/CreateTruckDialog';
 import { TruckContextMenu } from './components/TruckContextMenu';
 import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
-
+import WeekPicker from "../../components/WeekPicker";
 interface TruckWeeklyStats {
   truckId: number;
   truckName: string;
@@ -371,15 +371,17 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
             
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Week:</label>
-              <input
-                type="number"
-                min="1"
-                max="53"
-                value={selectedWeek}
-                onChange={(e) => handleWeekChange(Number(e.target.value))}
-                className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              />
+              <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', overflow: 'visible', minWidth: 120 }}>
+                  <WeekPicker
+                    week={selectedWeek}
+                    onWeekSelect={(w) => handleWeekChange(w)}
+                    min={1}
+                    max={53}
+                    className=""
+                  />
+                </div>
+              </div>
             </div>
 
             <button

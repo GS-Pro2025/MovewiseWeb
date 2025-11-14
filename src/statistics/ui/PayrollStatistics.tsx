@@ -6,6 +6,7 @@ import { fetchWeeklyOperatorRanking } from '../data/repositoryStatistics';
 import { Operator } from '../domain/OperatorsModels';
 import { OperatorWeeklyRanking } from '../domain/OperatorWeeklyRankingModels';
 import { InactiveOperator } from '../domain/OperatortsInactiveModels';
+import WeekPicker from "../../components/WeekPicker";
 
 const PayrollStatistics: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -466,14 +467,17 @@ const PayrollStatistics: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-gray-700">Week:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="53"
-                  value={selectedWeek}
-                  onChange={e => setSelectedWeek(Number(e.target.value))}
-                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', overflow: 'visible', minWidth: 120 }}>
+                    <WeekPicker
+                      week={selectedWeek}
+                      onWeekSelect={(w) => setSelectedWeek(w)}
+                      min={1}
+                      max={53}
+                      className=""
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
