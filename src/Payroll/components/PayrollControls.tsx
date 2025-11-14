@@ -4,6 +4,7 @@ import TextField from "@mui/material/TextField";
 import { WeekInfo } from "../../service/PayrollService";
 import PayrollExport from '../util/PayrollExport';
 import { OperatorRowExtended } from '../types/payroll.types';
+import WeekPicker from '../../components/WeekPicker'; // <-- nueva importación
 
 interface PayrollControlsProps {
   searchTerm: string;
@@ -70,7 +71,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
   filteredTotalGrand,
 }) => {
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
+  console.log("Rendering PayrollControls with week:", showWeekDropdown);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Estilos para el scrollbar personalizado
@@ -125,9 +126,6 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Generar array de semanas (1-53) SOLO
-  const weeks = Array.from({ length: 53 }, (_, i) => i + 1);
-
   // Opciones y labels dinámicos según el paso - TIPOS CORRECTOS
   let options: LocationOption[] = [];
   let getOptionLabel: (option: LocationOption) => string = () => "";
@@ -166,27 +164,6 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
     value = city || null;
   }
 
-  // Función para seleccionar semana desde el dropdown
-  const handleWeekSelect = (selectedWeek: number) => {
-    const syntheticEvent = {
-      target: { value: selectedWeek.toString() }
-    } as React.ChangeEvent<HTMLInputElement>;
-    changeWeek(syntheticEvent);
-    setShowWeekDropdown(false);
-  };
-
-  // Función para navegar con teclado en el dropdown
-  const handleWeekKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setShowWeekDropdown(true);
-    } else if (e.key === 'Escape') {
-      setShowWeekDropdown(false);
-    } else if (e.key === 'Enter') {
-      setShowWeekDropdown(!showWeekDropdown);
-    }
-  };
-
   return (
     <div className="bg-white/0 backdrop-blur-lg rounded-2xl shadow-lg border border-white/40 p-6 mb-6 week-dropdown-container">
       {/* Animated border */}
@@ -196,127 +173,15 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
       <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
         {/* Week Input - Mejorado */}
         <div className="min-w-[200px]">
-          <div className="bg-white/80 rounded-xl p-4 border-2 border-gray-100 shadow-sm" ref={dropdownRef}>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-bold text-gray-700">
-                📅 Week Number
-              </label>
-              <button
-                onClick={() => setViewMode(viewMode === 'select' ? 'input' : 'select')}
-                className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors duration-200 px-2 py-1 rounded-md border border-blue-200"
-                title={`Switch to ${viewMode === 'select' ? 'input' : 'dropdown'} view`}
-              >
-                {viewMode === 'select' ? '⌨️ Input' : '▼ Dropdown'}
-              </button>
-            </div>
-            
-            {viewMode === 'select' ? (
-              // Modo dropdown mejorado
-              <div className="relative">
-                <div
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:border-gray-300"
-                  onClick={() => setShowWeekDropdown(!showWeekDropdown)}
-                  onKeyDown={handleWeekKeyDown}
-                  tabIndex={0}
-                >
-                  <span className="text-blue-700">Week {week}</span>
-                  <svg 
-                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showWeekDropdown ? 'rotate-180' : ''}`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-
-                {showWeekDropdown && (
-                  <div className="week-dropdown mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-xl w-[350px]">
-                    <div className="p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-semibold text-gray-600">Select week (1-53):</span>
-                        <button
-                          onClick={() => setShowWeekDropdown(false)}
-                          className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded transition-colors"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Quick actions */}
-                      <div className="flex gap-1 mb-3">
-                        <button
-                          onClick={() => handleWeekSelect(1)}
-                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                        >
-                          First
-                        </button>
-                        <button
-                          onClick={() => handleWeekSelect(13)}
-                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                        >
-                          Q1
-                        </button>
-                        <button
-                          onClick={() => handleWeekSelect(26)}
-                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                        >
-                          Mid
-                        </button>
-                        <button
-                          onClick={() => handleWeekSelect(39)}
-                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                        >
-                          Q3
-                        </button>
-                        <button
-                          onClick={() => handleWeekSelect(53)}
-                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                        >
-                          Last
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-9 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-                        {weeks.map((weekNum) => (
-                          <button
-                            key={weekNum}
-                            onClick={() => handleWeekSelect(weekNum)}
-                            className={`p-2 text-sm rounded-md border transition-all duration-200 font-medium hover:scale-105 ${
-                              week === weekNum
-                                ? 'bg-blue-500 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
-                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-700'
-                            }`}
-                            title={`Select week ${weekNum}`}
-                          >
-                            {weekNum}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Modo input numérico
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  max="53"
-                  value={week}
-                  onChange={changeWeek}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 font-bold text-center bg-white shadow-sm"
-                  placeholder="1-53"
-                />
-                <div className="relative -bottom-5 left-0 right-0 text-xs text-gray-500 text-center">
-                  Press Enter to confirm
-                </div>
-              </div>
-            )}
-          </div>
+          <WeekPicker
+            week={week}
+            onWeekSelect={(selectedWeek) => {
+              // crear evento sintético para mantener la firma de changeWeek
+              const syntheticEvent = { target: { value: selectedWeek.toString() } } as React.ChangeEvent<HTMLInputElement>;
+              changeWeek(syntheticEvent);
+            }}
+            className="/* puedes pasar clases si necesitas */"
+          />
         </div>
         
         {/* Resto del código permanece igual */}
