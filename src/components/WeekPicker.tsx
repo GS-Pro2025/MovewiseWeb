@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Calendar, ChevronDown, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronDown, X } from "lucide-react";
 
 interface WeekPickerProps {
   week: number;
@@ -61,16 +61,6 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
     }
   };
 
-  const prevWeek = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (week > min) onWeekSelect(week - 1);
-  };
-
-  const nextWeek = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (week < max) onWeekSelect(week + 1);
-  };
-
   return (
     <div className={className}>
       <div ref={dropdownRef} className="relative" style={{ minWidth: 140 }}>
@@ -95,56 +85,9 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
             >
               <Calendar size={16} color={PRIMARY} />
             </div>
-
-            <div className="text-left flex items-center gap-3">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  onClick={prevWeek}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  aria-label="Previous week"
-                  disabled={week <= min}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 6,
-                    border: `1px solid ${PRIMARY}`,
-                    background: week <= min ? '#f1f5f9' : SURFACE,
-                    color: PRIMARY,
-                    cursor: week <= min ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <ChevronLeft size={14} />
-                </button>
-
-                <div className="text-left">
-                  <div className="text-xs text-gray-500">Period</div>
-                  <div className="text-sm font-bold" style={{ color: PRIMARY }}>Week {week}</div>
-                </div>
-
-                <button
-                  onClick={nextWeek}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  aria-label="Next week"
-                  disabled={week >= max}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 6,
-                    border: `1px solid ${PRIMARY}`,
-                    background: week >= max ? '#f1f5f9' : SURFACE,
-                    color: PRIMARY,
-                    cursor: week >= max ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
+            <div className="text-left">
+              <div className="text-xs text-gray-500">Period</div>
+              <div className="text-sm font-bold" style={{ color: PRIMARY }}>Week {week}</div>
             </div>
           </div>
 
