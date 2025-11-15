@@ -3,6 +3,7 @@
 import React, { useState, FormEvent, useCallback, useEffect } from "react";
 import { registerWithCompany, RegisterCompanyData, ValidationErrors, CheckLicenseResponse, checkCompanyLicense } from "../../service/RegisterService";
 import { Eye, EyeOff, CheckCircle, XCircle, Clock } from "lucide-react";
+import IDTypePicker from "../IDTypePicker";
 
 interface RegisterFormProps {
   onRegisterSuccess?: () => void;
@@ -240,49 +241,6 @@ const PasswordField = React.memo(({
     </div>
   );
 });
-// Actualizar SelectField para manejar múltiples errores
-const SelectField = React.memo(({ 
-  placeholder, 
-  value, 
-  onChange, 
-  errors, 
-  required = false,
-  options 
-}: {
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => void;
-  errors?: string[];
-  required?: boolean;
-  options: { value: string; label: string }[];
-}) => (
-  <div className="mb-4">
-    <select
-      value={value}
-      onChange={onChange}
-      required={required}
-      className={`w-full px-4 py-3 rounded-lg bg-white text-gray-900 border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-        errors && errors.length > 0 ? "border-red-500 focus:ring-red-500" : "border-gray-300 hover:border-gray-400"
-      } ${!value ? "text-gray-500" : ""}`}
-    >
-      <option value="" disabled className="text-gray-500">
-        {placeholder}
-      </option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value} className="text-gray-900">
-          {option.label}
-        </option>
-      ))}
-    </select>
-    {errors && errors.length > 0 && (
-      <div className="mt-1 ml-1">
-        {errors.map((error, index) => (
-          <p key={index} className="text-red-500 text-sm">{error}</p>
-        ))}
-      </div>
-    )}
-  </div>
-));
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   const [step, setStep] = useState<1 | 2>(1);
@@ -298,13 +256,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null);
   const [fieldValidations, setFieldValidations] = useState<{[key: string]: {isValid: boolean; message?: string}}>({});
   console.log(fieldValidations)
-  // Opciones para el tipo de ID
-  const idTypeOptions = [
-    { value: "green_card", label: "Green Card" },
-    { value: "passport", label: "Passport" },
-    { value: "drivers_license", label: "Driver's License" },
-    { value: "state_id", label: "State ID" }
-  ];
   // Función para verificar licencia con debounce
   const checkLicenseAvailability = useCallback(async (licenseNumber: string) => {
     if (licenseNumber.trim().length < 3) {
@@ -671,6 +622,31 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     }, [validationErrors, validateField]
   );
 
+  // Handler específico para IDTypePicker
+  const handleTypeIdChange = useCallback((value: string) => {
+    setUser(prev => ({ 
+      ...prev, 
+      person: { ...prev.person, type_id: value } 
+    }));
+    
+    // Validar campo en tiempo real
+    validateField('type_id', value);
+    
+    // Limpiar errores del campo
+    if (validationErrors.user?.person?.type_id) {
+      setValidationErrors(prev => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          person: {
+            ...prev.user?.person,
+            type_id: undefined
+          }
+        }
+      }));
+    }
+  }, [validationErrors, validateField]);
+
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setConfirmPassword(e.target.value);
       // clear errors when user types
@@ -901,14 +877,25 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                           validation={fieldValidations['id_number']}
                           required
                         />
-                        <SelectField
-                          placeholder="Select ID Type"
-                          value={user.person.type_id}
-                          onChange={handlePersonChange('type_id')}
-                          errors={validationErrors.user?.person?.type_id || errors.person?.type_id}
-                          options={idTypeOptions}
-                          required
-                        />
+                        <div>
+                          <IDTypePicker
+                            value={user.person.type_id}
+                            onChange={handleTypeIdChange}
+                            placeholder="Select ID Type"
+                            className="mb-0"
+                          />
+                          {/* Mostrar errores del IDTypePicker */}
+                          {(validationErrors.user?.person?.type_id || errors.person?.type_id) && (
+                            <div className="mt-1 ml-1">
+                              {(validationErrors.user?.person?.type_id || errors.person?.type_id)?.map((error: string, index: number) => (
+                                <p key={index} className="text-red-500 text-sm flex items-center">
+                                  <XCircle className="mr-1" size={16} />
+                                  {error}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
