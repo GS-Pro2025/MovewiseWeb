@@ -1,5 +1,7 @@
 import React from 'react';
 import { RegistryOperator, IdentificationType } from '../../../domain/RegistryOperatorModel';
+import IDTypePicker from '../../../../components/IDTypePicker';
+import { XCircle } from 'lucide-react';
 
 interface PersonalDataStepProps {
   data: Partial<RegistryOperator>;
@@ -7,18 +9,16 @@ interface PersonalDataStepProps {
   onChange: (data: Partial<RegistryOperator>) => void;
 }
 
-const ID_TYPES: { value: IdentificationType; label: string }[] = [
-  { value: 'id_number', label: 'ID Number' },
-  { value: 'passport', label: 'Passport' },
-  { value: 'drivers_license', label: 'Driver\'s License' },
-  { value: 'green_card', label: 'Green Card' }
-];
-
 const PersonalDataStep: React.FC<PersonalDataStepProps> = ({
   data,
   errors,
   onChange
 }) => {
+  // Handler específico para IDTypePicker
+  const handleTypeIdChange = (value: string) => {
+    onChange({ type_id: value as IdentificationType });
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
@@ -92,21 +92,19 @@ const PersonalDataStep: React.FC<PersonalDataStepProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             ID Type <span className="text-red-500">*</span>
           </label>
-          <select
-            value={data.type_id || 'id_number'}
-            onChange={(e) => onChange({ type_id: e.target.value as IdentificationType })}
-            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              errors.type_id ? 'border-red-500' : 'border-gray-300'
-            }`}
-          >
-            {ID_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+          <IDTypePicker
+            value={data.type_id || ''}
+            onChange={handleTypeIdChange}
+            placeholder="Select ID Type"
+            className={`${errors.type_id ? 'border-red-500' : ''}`}
+          />
           {errors.type_id && (
-            <p className="mt-1 text-sm text-red-500">{errors.type_id}</p>
+            <div className="mt-1">
+              <p className="text-red-500 text-sm flex items-center">
+                <XCircle className="mr-1" size={16} />
+                {errors.type_id}
+              </p>
+            </div>
           )}
         </div>
 
