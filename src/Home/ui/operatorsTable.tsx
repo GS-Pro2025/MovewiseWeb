@@ -39,7 +39,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
       size: 100,
     }),
     columnHelper.accessor('salary', {
-      header: 'Salary (Order Currency)',
+      header: 'Salary',
       size: 120,
       Cell: ({ cell }) => `$${cell.getValue<number>().toLocaleString('en-US')}`,
     }),
