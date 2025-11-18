@@ -1,4 +1,5 @@
 import React from 'react';
+import { Users, UserX, Baby, Filter, Search, UserPlus } from 'lucide-react';
 import { Operator, InactiveOperator } from '../../domain/OperatorsModels';
 
 interface OperatorsHeaderProps {
@@ -10,8 +11,16 @@ interface OperatorsHeaderProps {
   filteredInactiveOperators: InactiveOperator[];
   onTabChange: (tab: 'active' | 'inactive') => void;
   onSearchChange: (term: string) => void;
-  onRegisterOperator: () => void; // Nueva prop
+  onRegisterOperator: () => void;
 }
+
+const COLORS = {
+  primary: '#0B2863',
+  secondary: '#F09F52',
+  success: '#22c55e',
+  error: '#ef4444',
+  gray: '#6b7280',
+};
 
 const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
   operators,
@@ -27,121 +36,160 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
   return (
     <>
       {/* Header with Search */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-xl shadow-sm border p-4" style={{ borderColor: COLORS.primary }}>
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Operators Directory</h2>
-            <p className="text-gray-600">Manage and view operator information</p>
+            <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
+              <Users size={20} />
+              Operators Directory
+            </h2>
+            <p className="text-xs text-gray-600">Manage and view operator information</p>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Botón de Registro - Solo visible en pestaña activa */}
+          <div className="flex items-center gap-3">
+            {/* Botón de Registro */}
             {activeTab === 'active' && (
               <button
                 onClick={onRegisterOperator}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg transition-all shadow-sm hover:shadow-md"
+                style={{ backgroundColor: COLORS.primary }}
               >
-                <i className="fas fa-user-plus"></i>
+                <UserPlus size={16} />
                 <span>Register Operator</span>
               </button>
             )}
             <div className="text-right">
-              <div className="text-sm text-gray-500">Total Operators</div>
-              <div className="text-2xl font-bold text-blue-600">{operators.length + inactiveOperators.length}</div>
+              <div className="text-xs text-gray-500">Total Operators</div>
+              <div className="text-xl font-bold" style={{ color: COLORS.primary }}>
+                {operators.length + inactiveOperators.length}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="mb-4">
+        <div className="mb-3">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i className="fas fa-search text-gray-400"></i>
-            </div>
+            <Search 
+              size={14} 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2"
+              style={{ color: COLORS.gray }}
+            />
             <input
               type="text"
               placeholder="Search operators by name, code, email, phone, or license..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full pl-10 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ borderColor: COLORS.primary }}
+              onFocus={(e) => {
+                e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div 
-            className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500 cursor-pointer hover:bg-green-100 transition-colors"
+            className="rounded-lg p-3 border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+            style={{ borderColor: COLORS.success }}
             onClick={() => onTabChange('active')}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600">Active Operators</p>
-                <p className="text-2xl font-bold text-green-800">{operators.length}</p>
+                <p className="text-xs font-semibold" style={{ color: COLORS.success }}>
+                  Active Operators
+                </p>
+                <p className="text-xl font-bold" style={{ color: COLORS.success }}>
+                  {operators.length}
+                </p>
               </div>
-              <i className="fas fa-user-check text-2xl text-green-500"></i>
+              <Users size={24} style={{ color: COLORS.success }} />
             </div>
           </div>
           
           <div 
-            className="bg-red-50 rounded-lg p-4 border-l-4 border-red-500 cursor-pointer hover:bg-red-100 transition-colors"
+            className="rounded-lg p-3 border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+            style={{ borderColor: COLORS.error }}
             onClick={() => onTabChange('inactive')}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-red-600">Inactive Operators</p>
-                <p className="text-2xl font-bold text-red-800">{inactiveOperators.length}</p>
+                <p className="text-xs font-semibold" style={{ color: COLORS.error }}>
+                  Inactive Operators
+                </p>
+                <p className="text-xl font-bold" style={{ color: COLORS.error }}>
+                  {inactiveOperators.length}
+                </p>
               </div>
-              <i className="fas fa-user-times text-2xl text-red-500"></i>
+              <UserX size={24} style={{ color: COLORS.error }} />
             </div>
           </div>
           
-          <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
+          <div 
+            className="rounded-lg p-3 border-2 transition-all duration-200 hover:shadow-md"
+            style={{ borderColor: COLORS.secondary }}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-purple-600">With Children</p>
-                <p className="text-2xl font-bold text-purple-800">
+                <p className="text-xs font-semibold" style={{ color: COLORS.secondary }}>
+                  With Children
+                </p>
+                <p className="text-xl font-bold" style={{ color: COLORS.secondary }}>
                   {operators.filter(op => op.n_children > 0).length}
                 </p>
               </div>
-              <i className="fas fa-baby text-2xl text-purple-500"></i>
+              <Baby size={24} style={{ color: COLORS.secondary }} />
             </div>
           </div>
 
-          <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+          <div 
+            className="rounded-lg p-3 border-2 transition-all duration-200 hover:shadow-md"
+            style={{ borderColor: COLORS.primary }}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600">Search Results</p>
-                <p className="text-2xl font-bold text-blue-800">
+                <p className="text-xs font-semibold" style={{ color: COLORS.primary }}>
+                  Search Results
+                </p>
+                <p className="text-xl font-bold" style={{ color: COLORS.primary }}>
                   {activeTab === 'active' ? filteredOperators.length : filteredInactiveOperators.length}
                 </p>
               </div>
-              <i className="fas fa-filter text-2xl text-blue-500"></i>
+              <Filter size={24} style={{ color: COLORS.primary }} />
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-white rounded-xl shadow-sm border p-3" style={{ borderColor: COLORS.primary }}>
         <div className="flex space-x-2">
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'active'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'text-white shadow-md'
+                : 'text-gray-700 hover:bg-gray-100'
             }`}
+            style={{ backgroundColor: activeTab === 'active' ? COLORS.success : 'transparent' }}
             onClick={() => onTabChange('active')}
           >
+            <Users size={16} />
             Active Operators
           </button>
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
               activeTab === 'inactive'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'text-white shadow-md'
+                : 'text-gray-700 hover:bg-gray-100'
             }`}
+            style={{ backgroundColor: activeTab === 'inactive' ? COLORS.error : 'transparent' }}
             onClick={() => onTabChange('inactive')}
           >
+            <UserX size={16} />
             Inactive Operators
           </button>
         </div>

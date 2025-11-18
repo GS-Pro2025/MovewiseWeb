@@ -9,15 +9,14 @@ interface WeekPickerProps {
   className?: string;
 }
 
-const PRIMARY = "#0B2863"; // company navy
-const ACCENT = "#FFE67B";  // company yellow
-const SURFACE = "#ffffff"; // surface
+const PRIMARY = "#0B2863";
+const ACCENT = "#FFE67B";
+const SURFACE = "#ffffff";
 
 const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, max = 53, className }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-
   const [inputValue, setInputValue] = useState<string>(week.toString());
 
   useEffect(() => {
@@ -73,12 +72,12 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
 
   return (
     <div className={className}>
-      <div ref={dropdownRef} className="relative" style={{ minWidth: 140 }}>
+      <div ref={dropdownRef} className="relative w-full">
         <div
-          className="rounded-lg p-3 border shadow-sm flex items-center justify-between gap-3 cursor-pointer"
+          className="rounded-lg p-2 border-2 shadow-sm flex items-center justify-between gap-2 cursor-pointer w-full"
           style={{
             background: `linear-gradient(180deg, ${SURFACE}, #f6f8fb)`,
-            border: `2px solid ${PRIMARY}`
+            borderColor: PRIMARY
           }}
           onClick={() => setShowDropdown(!showDropdown)}
           onKeyDown={handleKeyDown}
@@ -87,71 +86,75 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
           aria-expanded={showDropdown}
           role="button"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <div
-              className="p-2 rounded-md flex items-center justify-center"
-              style={{ background: ACCENT, borderRadius: 8 }}
+              className="p-1.5 rounded-md flex items-center justify-center flex-shrink-0"
+              style={{ background: ACCENT, borderRadius: 6 }}
               aria-hidden
             >
-              <Calendar size={16} color={PRIMARY} />
+              <Calendar size={14} color={PRIMARY} />
             </div>
 
-            <div className="text-left flex items-center gap-3">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  onClick={prevWeek}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  aria-label="Previous week"
-                  disabled={week <= min}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 6,
-                    border: `1px solid ${PRIMARY}`,
-                    background: week <= min ? '#f1f5f9' : SURFACE,
-                    color: PRIMARY,
-                    cursor: week <= min ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <ChevronLeft size={14} />
-                </button>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <button
+                onClick={prevWeek}
+                onMouseDown={(e) => e.stopPropagation()}
+                aria-label="Previous week"
+                disabled={week <= min}
+                className="flex-shrink-0"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 4,
+                  border: `1px solid ${PRIMARY}`,
+                  background: week <= min ? '#f1f5f9' : SURFACE,
+                  color: PRIMARY,
+                  cursor: week <= min ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <ChevronLeft size={12} />
+              </button>
 
-                <div className="text-left">
-                  <div className="text-xs text-gray-500">Period</div>
-                  <div className="text-sm font-bold" style={{ color: PRIMARY }}>Week {week}</div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="text-xs font-bold truncate" style={{ color: PRIMARY }}>
+                  Week {week}
                 </div>
-
-                <button
-                  onClick={nextWeek}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  aria-label="Next week"
-                  disabled={week >= max}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 6,
-                    border: `1px solid ${PRIMARY}`,
-                    background: week >= max ? '#f1f5f9' : SURFACE,
-                    color: PRIMARY,
-                    cursor: week >= max ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <ChevronRight size={14} />
-                </button>
               </div>
+
+              <button
+                onClick={nextWeek}
+                onMouseDown={(e) => e.stopPropagation()}
+                aria-label="Next week"
+                disabled={week >= max}
+                className="flex-shrink-0"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 4,
+                  border: `1px solid ${PRIMARY}`,
+                  background: week >= max ? '#f1f5f9' : SURFACE,
+                  color: PRIMARY,
+                  cursor: week >= max ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <ChevronRight size={12} />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
-              onClick={(e) => { e.stopPropagation(); setViewMode(viewMode === 'select' ? 'input' : 'select'); }}
-              className="text-xs px-2 py-1 rounded-md border"
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setViewMode(viewMode === 'select' ? 'input' : 'select'); 
+              }}
+              className="text-xs px-1.5 py-0.5 rounded border flex-shrink-0"
               style={{ borderColor: '#e6edf7', background: SURFACE, color: PRIMARY }}
               title={viewMode === 'select' ? 'Switch to input' : 'Switch to dropdown'}
               aria-label="Toggle week input mode"
@@ -159,45 +162,79 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
               {viewMode === 'select' ? '⌨️' : '▼'}
             </button>
 
-            <span className={`p-1 rounded-md`} title="Open week selector" aria-hidden>
-              <ChevronDown size={18} color={PRIMARY} className={`${showDropdown ? 'rotate-180' : ''}`} />
+            <span className="p-0.5 rounded flex-shrink-0" title="Open week selector" aria-hidden>
+              <ChevronDown 
+                size={14} 
+                color={PRIMARY} 
+                className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
+              />
             </span>
           </div>
         </div>
 
         {showDropdown && viewMode === 'select' && (
           <div
-            className="absolute z-50 left-0 mt-2 w-[360px] rounded-lg shadow-lg"
+            className="absolute z-50 left-0 right-0 mt-2 rounded-lg shadow-lg max-w-full"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}
           >
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-sm font-semibold" style={{ color: PRIMARY }}>
-                  Select week ({min} - {max})
+            <div className="p-3">
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-xs font-bold" style={{ color: PRIMARY }}>
+                  Select week ({min}-{max})
                 </div>
                 <button
                   onClick={() => setShowDropdown(false)}
                   className="p-1 rounded hover:bg-gray-100"
                   aria-label="Close"
                 >
-                  <X size={16} color={PRIMARY} />
+                  <X size={14} color={PRIMARY} />
                 </button>
               </div>
 
-              <div className="flex gap-2 mb-3 flex-wrap">
-                <button onClick={() => { onWeekSelect(min); setShowDropdown(false); }} className="px-2 py-1 text-xs rounded" style={{ background: '#f1f5f9', color: PRIMARY }}>First</button>
-                <button onClick={() => { onWeekSelect(Math.max(min, Math.floor((max - min + 1) * 0.25))); setShowDropdown(false); }} className="px-2 py-1 text-xs rounded" style={{ background: '#f1f5f9', color: PRIMARY }}>Q1</button>
-                <button onClick={() => { onWeekSelect(Math.floor((min + max) / 2)); setShowDropdown(false); }} className="px-2 py-1 text-xs rounded" style={{ background: '#f1f5f9', color: PRIMARY }}>Mid</button>
-                <button onClick={() => { onWeekSelect(Math.max(min, Math.floor((max - min + 1) * 0.75))); setShowDropdown(false); }} className="px-2 py-1 text-xs rounded" style={{ background: '#f1f5f9', color: PRIMARY }}>Q3</button>
-                <button onClick={() => { onWeekSelect(max); setShowDropdown(false); }} className="px-2 py-1 text-xs rounded" style={{ background: '#f1f5f9', color: PRIMARY }}>Last</button>
+              <div className="flex gap-1.5 mb-2 flex-wrap">
+                <button 
+                  onClick={() => { onWeekSelect(min); setShowDropdown(false); }} 
+                  className="px-2 py-1 text-xs rounded font-medium" 
+                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                >
+                  First
+                </button>
+                <button 
+                  onClick={() => { onWeekSelect(Math.max(min, Math.floor((max - min + 1) * 0.25) + min)); setShowDropdown(false); }} 
+                  className="px-2 py-1 text-xs rounded font-medium" 
+                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                >
+                  Q1
+                </button>
+                <button 
+                  onClick={() => { onWeekSelect(Math.floor((min + max) / 2)); setShowDropdown(false); }} 
+                  className="px-2 py-1 text-xs rounded font-medium" 
+                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                >
+                  Mid
+                </button>
+                <button 
+                  onClick={() => { onWeekSelect(Math.max(min, Math.floor((max - min + 1) * 0.75) + min)); setShowDropdown(false); }} 
+                  className="px-2 py-1 text-xs rounded font-medium" 
+                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                >
+                  Q3
+                </button>
+                <button 
+                  onClick={() => { onWeekSelect(max); setShowDropdown(false); }} 
+                  className="px-2 py-1 text-xs rounded font-medium" 
+                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                >
+                  Last
+                </button>
               </div>
 
-              <div className="grid grid-cols-9 gap-2 max-h-64 overflow-y-auto">
+              <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                 {weeks.map((w) => (
                   <button
                     key={w}
                     onClick={() => { onWeekSelect(w); setShowDropdown(false); }}
-                    className={`p-2 text-sm rounded-md font-medium text-center`}
+                    className="p-1.5 text-xs rounded font-semibold text-center transition-all duration-200 hover:shadow-sm"
                     style={{
                       background: w === week ? PRIMARY : '#f8fafc',
                       color: w === week ? '#fff' : PRIMARY,
@@ -214,7 +251,10 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
         )}
 
         {showDropdown && viewMode === 'input' && (
-          <div className="absolute z-50 left-0 mt-2 w-full p-3 rounded-lg shadow-lg" style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}>
+          <div 
+            className="absolute z-50 left-0 right-0 mt-2 p-3 rounded-lg shadow-lg" 
+            style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}
+          >
             <div className="flex flex-col gap-2">
               <input
                 type="text"
@@ -236,15 +276,16 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
                   }
                 }}
                 onBlur={() => { commitInput(); setShowDropdown(false); }}
-                className="w-full px-4 py-3 rounded-md border"
-                style={{ border: `1px solid ${PRIMARY}`, textAlign: 'center' }}
+                className="w-full px-3 py-2 rounded-md border text-sm font-bold"
+                style={{ borderColor: PRIMARY, textAlign: 'center', color: PRIMARY }}
                 placeholder={`${min}-${max}`}
                 aria-label="Enter week number"
+                autoFocus
               />
-              <div className="flex justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <Calendar size={14} color={PRIMARY} />
-                  <span>Enter week & press Enter</span>
+              <div className="flex justify-between text-xs" style={{ color: PRIMARY }}>
+                <div className="flex items-center gap-1">
+                  <Calendar size={12} color={PRIMARY} />
+                  <span>Press Enter</span>
                 </div>
                 <div className="text-right">Valid: {min}-{max}</div>
               </div>
@@ -252,6 +293,23 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
           </div>
         )}
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: ${PRIMARY};
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #08305a;
+        }
+      `}</style>
     </div>
   );
 };
