@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import { Search, MapPin, X, Calendar, ArrowRight } from 'lucide-react';
 import { WeekInfo } from "../../service/PayrollService";
 import PayrollExport from '../util/PayrollExport';
 import { OperatorRowExtended } from '../types/payroll.types';
-import WeekPicker from '../../components/WeekPicker'; // <-- nueva importación
+import WeekPicker from '../../components/WeekPicker';
 
 interface PayrollControlsProps {
   searchTerm: string;
@@ -40,7 +41,14 @@ interface PayrollControlsProps {
   filteredTotalGrand: number;
 }
 
-// Tipos para las opciones de location
+const COLORS = {
+  primary: '#0B2863',
+  secondary: '#F09F52',
+  success: '#22c55e',
+  error: '#ef4444',
+  gray: '#6b7280',
+};
+
 type LocationOption = { country: string } | { name: string } | string;
 
 export const PayrollControls: React.FC<PayrollControlsProps> = ({
@@ -70,11 +78,8 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
   paymentStats,
   filteredTotalGrand,
 }) => {
-  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
-  console.log("Rendering PayrollControls with week:", showWeekDropdown);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Estilos para el scrollbar personalizado
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -94,7 +99,6 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
         background: #a0aec0;
       }
       
-      /* Asegurar que el dropdown tenga el z-index más alto */
       .week-dropdown-container {
         z-index: 1 !important;
         position: relative;
@@ -114,19 +118,6 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
     };
   }, []);
 
-  // Cerrar dropdown al hacer clic fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowWeekDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Opciones y labels dinámicos según el paso - TIPOS CORRECTOS
   let options: LocationOption[] = [];
   let getOptionLabel: (option: LocationOption) => string = () => "";
   let label = "";
@@ -165,166 +156,188 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
   }
 
   return (
-    <div className="bg-white/0 backdrop-blur-lg rounded-2xl shadow-lg border border-white/40 p-6 mb-6 week-dropdown-container">
-      {/* Animated border */}
-      <div className="top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 animate-pulse" style={{ backgroundSize: '200% 100%' }}></div>
-      
+    <div className="bg-white rounded-xl shadow-md border p-4 mb-4 week-dropdown-container" style={{ borderColor: COLORS.primary }} ref={dropdownRef}>
       {/* Main Controls */}
-      <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
-        {/* Week Input - Mejorado */}
-        <div className="min-w-[200px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Week Input */}
+        <div className="relative">
           <WeekPicker
             week={week}
             onWeekSelect={(selectedWeek) => {
-              // crear evento sintético para mantener la firma de changeWeek
               const syntheticEvent = { target: { value: selectedWeek.toString() } } as React.ChangeEvent<HTMLInputElement>;
               changeWeek(syntheticEvent);
             }}
-            className="/* puedes pasar clases si necesitas */"
           />
         </div>
         
-        {/* Resto del código permanece igual */}
         {/* Search Input */}
-        <div className="flex-1 max-w-md">
-          <div className="bg-white/80 rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              🔍 Search Operators
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search by code, name, or last name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all duration-300 bg-white"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="relative right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 hover:bg-gray-100 rounded-md"
-                  title="Clear search"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+        <div className="relative">
+          <label className="block text-xs font-bold mb-2" style={{ color: COLORS.primary }}>
+            <div className="flex items-center gap-1.5">
+              <Search size={14} />
+              Search Operators
             </div>
+          </label>
+          <div className="relative">
+            <Search 
+              size={14} 
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10"
+              style={{ color: COLORS.primary }}
+            />
+            <input
+              type="text"
+              placeholder="Search by code, name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-8 py-2 border rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ 
+                borderColor: COLORS.primary,
+                backgroundColor: 'white',
+                color: COLORS.primary
+              }}
+              onFocus={(e) => {
+                e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-0.5 rounded transition-colors"
+                style={{ color: COLORS.error }}
+                title="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         </div>
         
         {/* Location Input */}
-        <div className="w-72">
-          <div className="bg-white/80 rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-bold text-gray-700">
-                📍 Location
-              </label>
-              {locationString && (
-                <button
-                  onClick={() => {
-                    setCountry("");
-                    setState("");
-                    setCity("");
-                    setStates([]);
-                    setCities([]);
-                    setLocationStep("country");
-                  }}
-                  className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200 flex items-center gap-1 px-2 py-1 hover:bg-red-50 rounded-md border border-red-200"
-                  title="Clear location"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Clear
-                </button>
-              )}
-            </div>
-            <Autocomplete
-              options={options}
-              getOptionLabel={getOptionLabel}
-              value={value}
-              onChange={(_, newValue) => {
-                if (newValue === null) {
-                  if (locationStep === "city") {
-                    setCity("");
-                    setLocationStep("state");
-                  } else if (locationStep === "state") {
-                    setState("");
-                    setLocationStep("country");
-                  } else if (locationStep === "country") {
-                    setCountry("");
-                  }
-                } else {
-                  if (locationStep === "country" && typeof newValue === 'object' && 'country' in newValue) {
-                    setCountry(newValue.country);
-                  } else if (locationStep === "state" && typeof newValue === 'object' && 'name' in newValue) {
-                    setState(newValue.name);
-                  } else if (locationStep === "city" && typeof newValue === 'string') {
-                    setCity(newValue);
-                  }
-                }
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label={label}
-                  placeholder={`Select ${label.toLowerCase()}`}
-                  size="small"
-                  className="bg-white rounded-lg"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '0.5rem',
-                      backgroundColor: 'white',
-                    }
-                  }}
-                />
-              )}
-              isOptionEqualToValue={(option, value) =>
-                getOptionLabel(option) === getOptionLabel(value)
-              }
-              disableClearable={false}
-              disabled={locationStep === "state" && !country}
-            />
-            {locationString && (
-              <div className="mt-3 p-2 bg-purple-50 rounded-lg border border-purple-200">
-                <p className="text-purple-700 font-medium text-xs">
-                  Selected: <span className="font-bold">{locationString}</span>
-                </p>
+        <div className="relative">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold" style={{ color: COLORS.primary }}>
+              <div className="flex items-center gap-1.5">
+                <MapPin size={14} />
+                Location
               </div>
+            </label>
+            {locationString && (
+              <button
+                onClick={() => {
+                  setCountry("");
+                  setState("");
+                  setCity("");
+                  setStates([]);
+                  setCities([]);
+                  setLocationStep("country");
+                }}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200 flex items-center gap-1 px-1.5 py-0.5 hover:bg-red-50 rounded border border-red-200"
+                title="Clear location"
+              >
+                <X size={10} />
+                Clear
+              </button>
             )}
           </div>
+          <Autocomplete
+            options={options}
+            getOptionLabel={getOptionLabel}
+            value={value}
+            onChange={(_, newValue) => {
+              if (newValue === null) {
+                if (locationStep === "city") {
+                  setCity("");
+                  setLocationStep("state");
+                } else if (locationStep === "state") {
+                  setState("");
+                  setLocationStep("country");
+                } else if (locationStep === "country") {
+                  setCountry("");
+                }
+              } else {
+                if (locationStep === "country" && typeof newValue === 'object' && 'country' in newValue) {
+                  setCountry(newValue.country);
+                } else if (locationStep === "state" && typeof newValue === 'object' && 'name' in newValue) {
+                  setState(newValue.name);
+                } else if (locationStep === "city" && typeof newValue === 'string') {
+                  setCity(newValue);
+                }
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={label}
+                placeholder={`Select ${label.toLowerCase()}`}
+                size="small"
+                className="bg-white rounded-lg"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '0.5rem',
+                    backgroundColor: 'white',
+                    fontSize: '0.875rem',
+                  },
+                  '& .MuiInputLabel-root': {
+                    fontSize: '0.875rem',
+                  }
+                }}
+              />
+            )}
+            isOptionEqualToValue={(option, value) =>
+              getOptionLabel(option) === getOptionLabel(value)
+            }
+            disableClearable={false}
+            disabled={locationStep === "state" && !country}
+          />
+          {locationString && (
+            <div className="mt-2 p-1.5 bg-purple-50 rounded border border-purple-200">
+              <p className="text-purple-700 font-medium text-xs">
+                <span className="font-bold">{locationString}</span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Period and Export */}
-      <div className="flex flex-col items-center mt-8 gap-4">
-        {weekInfo && (
-          <div className="flex items-center gap-4 bg-amber-50 rounded-xl p-5 border-2 border-amber-200 shadow-sm w-full max-w-md">
-            <div className="bg-amber-100 p-3 rounded-full">
-              <span className="text-amber-700 text-lg">⏰</span>
-            </div>
-            <div>
-              <div className="text-sm font-bold text-amber-800 uppercase tracking-wide">Payroll Period</div>
-              <div className="text-amber-700 font-semibold text-lg">
-                {weekInfo.start_date} → {weekInfo.end_date}
+      {weekInfo && (
+        <div className="mt-4 pt-4 border-t" style={{ borderColor: COLORS.primary }}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+            {/* Period Info */}
+            <div className="flex items-center gap-3 rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.secondary }}>
+              <div className="p-1.5 rounded-lg" style={{ backgroundColor: COLORS.primary }}>
+                <Calendar size={14} className="text-white" />
+              </div>
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wide" style={{ color: COLORS.primary }}>
+                  Payroll Period
+                </div>
+                <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: COLORS.gray }}>
+                  <span>{weekInfo.start_date}</span>
+                  <ArrowRight size={12} style={{ color: COLORS.primary }} />
+                  <span>{weekInfo.end_date}</span>
+                </div>
               </div>
             </div>
+
+            {/* Export Button */}
+            {!loading && grouped.length > 0 && (
+              <PayrollExport
+                operators={filteredOperators}
+                weekInfo={weekInfo}
+                weekDates={weekDates}
+                week={week}
+                location={locationString}
+                paymentStats={paymentStats}
+                totalGrand={filteredTotalGrand}
+              />
+            )}
           </div>
-        )}
-        {!loading && weekInfo && grouped.length > 0 && (
-          <PayrollExport
-            operators={filteredOperators}
-            weekInfo={weekInfo}
-            weekDates={weekDates}
-            week={week}
-            location={locationString}
-            paymentStats={paymentStats}
-            totalGrand={filteredTotalGrand}
-          />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

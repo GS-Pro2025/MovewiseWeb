@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  Box,
-  Typography,
-  TextField,
-  Chip,
-  Divider
-} from '@mui/material';
-import { CalendarDays, FileText, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { CalendarDays, FileText, DollarSign, TrendingUp, TrendingDown, Filter, Calendar } from 'lucide-react';
 import { WeekSummary } from '../domain/StatementModels';
 import WeekPicker from '../../components/WeekPicker';
  
@@ -27,6 +18,15 @@ interface StatementFiltersProps {
   weekSummary: WeekSummary | null;
   totalRecords: number;
 }
+
+const COLORS = {
+  primary: '#0B2863',
+  secondary: '#F09F52',
+  success: '#22c55e',
+  error: '#ef4444',
+  warning: '#f59e0b',
+  gray: '#6b7280',
+};
 
 export const StatementFilters: React.FC<StatementFiltersProps> = ({
   week,
@@ -52,21 +52,19 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
     }).format(num);
   };
 
-  // Función para obtener el color del chip según el estado
   const getStateChipColor = (state: string) => {
     switch (state.toLowerCase()) {
       case 'processed':
-        return 'success';
+        return COLORS.success;
       case 'exists':
-        return 'warning';
+        return COLORS.warning;
       case 'not_exists':
-        return 'error';
+        return COLORS.error;
       default:
-        return 'default';
+        return COLORS.gray;
     }
   };
 
-  // Función para formatear el nombre del estado para mostrar
   const formatStateName = (state: string): string => {
     switch (state.toLowerCase()) {
       case 'not_exists':
@@ -81,204 +79,212 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
   };
 
   return (
-    <Card sx={{ mb: 3, borderRadius: 3, overflow: 'visible' }}>
-      <CardContent>
-        {/* Week and Year Selection */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <CalendarDays size={24} color="#1976d2" />
-          <Typography variant="h6" color="primary">
-            Statement Records - Week {week}, {year}
-          </Typography>
-        </Box>
+    <div className="bg-white rounded-xl shadow-sm border p-3 sm:p-4 mb-4 overflow-hidden" style={{ borderColor: COLORS.primary }}>
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
+        <CalendarDays size={18} className="flex-shrink-0" style={{ color: COLORS.primary }} />
+        <h3 className="text-sm sm:text-base font-bold truncate" style={{ color: COLORS.primary }}>
+          Statement Records - Week {week}, {year}
+        </h3>
+      </div>
+      
+      {/* Week and Year Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <div className="relative w-full">
+        <label className="block text-xs font-bold mb-1" style={{ color: COLORS.primary }}>
+            Week
+          </label>
+          <WeekPicker
+            week={week}
+            onWeekSelect={onWeekChange}
+            min={1}
+            max={53}
+          />
+        </div>
         
-        {/* Week and Year Grid */}
-        <Box 
-          sx={{ 
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(4, 1fr)'
-            },
-            gap: 2,
-            mb: 3
-          }}
-        >
-          <Box sx={{ position: 'relative', overflow: 'visible' }}>
-            <WeekPicker
-              week={week}
-              onWeekSelect={onWeekChange}
-              min={1}
-              max={53}
-              className=""
-            />
-          </Box>
-           <TextField
-             label="Year"
-             type="number"
-             size="small"
-             value={year}
-             onChange={(e) => onYearChange(parseInt(e.target.value) || new Date().getFullYear())}
-             inputProps={{ min: 2020, max: 2030 }}
-             fullWidth
-           />
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 1,
-              gridColumn: { xs: '1', md: 'span 2' }
+        <div className="w-full">
+          <label className="block text-xs font-bold mb-1" style={{ color: COLORS.primary }}>
+            Year
+          </label>
+          <input
+            type="number"
+            value={year}
+            onChange={(e) => onYearChange(parseInt(e.target.value) || new Date().getFullYear())}
+            min={2020}
+            max={2030}
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+            style={{ borderColor: COLORS.primary }}
+            onFocus={(e) => {
+              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
             }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Date Range:
-            </Typography>
-            <Chip 
-              label={`${weekRange.start} to ${weekRange.end}`} 
-              variant="outlined" 
-              color="primary" 
-              size="small"
-            />
-          </Box>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Filters */}
-        <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-          Filters
-        </Typography>
+            onBlur={(e) => {
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+        </div>
         
-        <Box 
-          sx={{ 
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(3, 1fr)'
-            },
-            gap: 2,
-            mb: 3
-          }}
-        >
-          <TextField
-            label="Filter by State"
-            size="small"
+        <div className="col-span-1 sm:col-span-2 flex items-center gap-2 p-2 rounded-lg border overflow-hidden" style={{ borderColor: COLORS.secondary }}>
+          <Calendar size={14} className="flex-shrink-0" style={{ color: COLORS.secondary }} />
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0 flex-1">
+            <span className="text-xs font-semibold whitespace-nowrap" style={{ color: COLORS.gray }}>
+              Date Range:
+            </span>
+            <span className="text-xs font-bold truncate" style={{ color: COLORS.primary }}>
+              {weekRange.start} → {weekRange.end}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t my-3" style={{ borderColor: COLORS.primary }}></div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-2 mb-2">
+        <Filter size={14} className="flex-shrink-0" style={{ color: COLORS.primary }} />
+        <h4 className="text-xs sm:text-sm font-bold" style={{ color: COLORS.primary }}>Filters</h4>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div className="w-full">
+          <label className="block text-xs font-bold mb-1 truncate" style={{ color: COLORS.primary }}>
+            Filter by State
+          </label>
+          <input
+            type="text"
             value={stateFilter}
             onChange={(e) => onStateFilterChange(e.target.value)}
             placeholder="Enter state..."
-            fullWidth
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+            style={{ borderColor: COLORS.primary }}
+            onFocus={(e) => {
+              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+            }}
+            onBlur={(e) => {
+              e.target.style.boxShadow = 'none';
+            }}
           />
-          <TextField
-            label="Filter by Shipper"
-            size="small"
+        </div>
+        
+        <div className="w-full">
+          <label className="block text-xs font-bold mb-1 truncate" style={{ color: COLORS.primary }}>
+            Filter by Shipper
+          </label>
+          <input
+            type="text"
             value={shipperFilter}
             onChange={(e) => onShipperFilterChange(e.target.value)}
             placeholder="Enter shipper name..."
-            fullWidth
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+            style={{ borderColor: COLORS.primary }}
+            onFocus={(e) => {
+              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+            }}
+            onBlur={(e) => {
+              e.target.style.boxShadow = 'none';
+            }}
           />
-          <TextField
-            label="Filter by Company"
-            size="small"
+        </div>
+        
+        <div className="w-full">
+          <label className="block text-xs font-bold mb-1 truncate" style={{ color: COLORS.primary }}>
+            Filter by Company
+          </label>
+          <input
+            type="text"
             value={companyFilter}
             onChange={(e) => onCompanyFilterChange(e.target.value)}
             placeholder="Enter company name..."
-            fullWidth
+            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+            style={{ borderColor: COLORS.primary }}
+            onFocus={(e) => {
+              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+            }}
+            onBlur={(e) => {
+              e.target.style.boxShadow = 'none';
+            }}
           />
-        </Box>
+        </div>
+      </div>
 
-        <Divider sx={{ my: 2 }} />
+      <div className="border-t my-3" style={{ borderColor: COLORS.primary }}></div>
 
-        {/* Week Summary Statistics */}
-        {weekSummary && (
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-              Week Summary
-            </Typography>
-            <Box 
-              sx={{ 
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)',
-                  sm: 'repeat(4, 1fr)'
-                },
-                gap: 2
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FileText size={20} color="#666" />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Records
-                  </Typography>
-                  <Typography variant="h6" color="primary">
-                    {totalRecords}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TrendingUp size={20} color="#22c55e" />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Income
-                  </Typography>
-                  <Typography variant="h6" color="success.main">
-                    {formatCurrency(weekSummary.total_income)}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TrendingDown size={20} color="#ef4444" />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Expense
-                  </Typography>
-                  <Typography variant="h6" color="error.main">
-                    {formatCurrency(weekSummary.total_expense)}
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <DollarSign size={20} color="#1976d2" />
-                <Box>
-                  <Typography variant="body2" color="text.secondary">
-                    Net Amount
-                  </Typography>
-                  <Typography 
-                    variant="h6" 
-                    color={parseFloat(weekSummary.net_amount) >= 0 ? "success.main" : "error.main"}
+      {/* Week Summary Statistics */}
+      {weekSummary && (
+        <div>
+          <h4 className="text-xs sm:text-sm font-bold mb-3" style={{ color: COLORS.primary }}>
+            Week Summary
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="rounded-lg p-2 sm:p-3 border-2 shadow-sm" style={{ borderColor: COLORS.primary }}>
+              <div className="flex items-center gap-2 mb-1">
+                <FileText size={16} className="flex-shrink-0" style={{ color: COLORS.primary }} />
+                <span className="text-xs font-semibold truncate" style={{ color: COLORS.gray }}>
+                  Records
+                </span>
+              </div>
+              <p className="text-lg sm:text-xl font-bold truncate" style={{ color: COLORS.primary }}>
+                {totalRecords}
+              </p>
+            </div>
+            
+            <div className="rounded-lg p-2 sm:p-3 border-2 shadow-sm" style={{ borderColor: COLORS.success }}>
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp size={16} className="flex-shrink-0" style={{ color: COLORS.success }} />
+                <span className="text-xs font-semibold truncate" style={{ color: COLORS.gray }}>
+                  Income
+                </span>
+              </div>
+              <p className="text-sm sm:text-lg font-bold truncate" style={{ color: COLORS.success }}>
+                {formatCurrency(weekSummary.total_income)}
+              </p>
+            </div>
+            
+            <div className="rounded-lg p-2 sm:p-3 border-2 shadow-sm" style={{ borderColor: COLORS.error }}>
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingDown size={16} className="flex-shrink-0" style={{ color: COLORS.error }} />
+                <span className="text-xs font-semibold truncate" style={{ color: COLORS.gray }}>
+                  Expense
+                </span>
+              </div>
+              <p className="text-sm sm:text-lg font-bold truncate" style={{ color: COLORS.error }}>
+                {formatCurrency(weekSummary.total_expense)}
+              </p>
+            </div>
+            
+            <div className="rounded-lg p-2 sm:p-3 border-2 shadow-sm" style={{ borderColor: parseFloat(weekSummary.net_amount) >= 0 ? COLORS.success : COLORS.error }}>
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign size={16} className="flex-shrink-0" style={{ color: parseFloat(weekSummary.net_amount) >= 0 ? COLORS.success : COLORS.error }} />
+                <span className="text-xs font-semibold truncate" style={{ color: COLORS.gray }}>
+                  Net
+                </span>
+              </div>
+              <p className="text-sm sm:text-lg font-bold truncate" style={{ color: parseFloat(weekSummary.net_amount) >= 0 ? COLORS.success : COLORS.error }}>
+                {formatCurrency(weekSummary.net_amount)}
+              </p>
+            </div>
+          </div>
+
+          {/* State Breakdown */}
+          {weekSummary.state_breakdown && Object.keys(weekSummary.state_breakdown).length > 0 && (
+            <div className="mt-3 p-2 rounded-lg bg-gray-50 overflow-hidden">
+              <p className="text-xs font-semibold mb-2" style={{ color: COLORS.gray }}>
+                Status Breakdown:
+              </p>
+              <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+                {Object.entries(weekSummary.state_breakdown).map(([state, count]) => (
+                  <span 
+                    key={state}
+                    className="px-2 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap"
+                    style={{ backgroundColor: getStateChipColor(state) }}
                   >
-                    {formatCurrency(weekSummary.net_amount)}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* State Breakdown */}
-            {weekSummary.state_breakdown && Object.keys(weekSummary.state_breakdown).length > 0 && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Status Breakdown:
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {Object.entries(weekSummary.state_breakdown).map(([state, count]) => (
-                    <Chip 
-                      key={state}
-                      label={`${formatStateName(state)}: ${count}`}
-                      size="small"
-                      variant="outlined"
-                      color={getStateChipColor(state) as 'success' | 'warning' | 'error' | 'default'}
-                      sx={{ fontWeight: 'medium' }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            )}
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+                    {formatStateName(state)}: {count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };

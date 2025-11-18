@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import { useSnackbar } from 'notistack';
+import { Users, UserPlus, Search, Filter, CheckCircle, AlertCircle } from 'lucide-react';
 import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator, createOperator } from '../data/RepositoryOperators';
 import { fetchFreelanceOperators, FreelanceOperator } from '../data/RepositoryFreelancer';
 import { Operator } from '../domain/OperatorsModels';
@@ -20,6 +21,7 @@ const COLORS = {
   secondary: '#F09F52',
   success: '#22c55e',
   error: '#ef4444',
+  gray: '#6b7280',
 };
 
 const OperatorsPage: React.FC = () => {
@@ -42,8 +44,6 @@ const OperatorsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
-
-  // NEW: View mode state
   const [viewMode, setViewMode] = useState<'operators' | 'freelancers'>('operators');
 
   // Freelancers states
@@ -54,18 +54,15 @@ const OperatorsPage: React.FC = () => {
   const [freelancersTotal, setFreelancersTotal] = useState<number>(0);
   const [isCreateFreelancerOpen, setIsCreateFreelancerOpen] = useState<boolean>(false);
 
-  // Handler para refrescar lista después de crear
   const handleFreelancerCreated = useCallback(async (created?: FreelanceOperator) => {
     try {
-      // puedes optar por re-fetch para tener conteo exacto
       const resp = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
       setFreelancers(resp.results);
       setFreelancersTotal(resp.count);
-      enqueueSnackbar('Freelancer creado y lista actualizada', { variant: 'success' });
+      enqueueSnackbar('Freelancer created successfully', { variant: 'success' });
     } catch (err) {
       console.error('Error refreshing freelancers after create:', err);
-      enqueueSnackbar('Freelancer creado, pero error al actualizar la lista', { variant: 'warning' });
-      // como fallback, si backend devuelve el creado, lo puedes agregar localmente:
+      enqueueSnackbar('Freelancer created, but error updating list', { variant: 'warning' });
       if (created) {
         setFreelancers(prev => [created, ...prev]);
         setFreelancersTotal(prev => prev + 1);
@@ -74,6 +71,7 @@ const OperatorsPage: React.FC = () => {
       setIsCreateFreelancerOpen(false);
     }
   }, [enqueueSnackbar, freelancersPage, freelancersPageSize]);
+
   // Load operators
   useEffect(() => {
     const loadOperators = async () => {
@@ -95,7 +93,6 @@ const OperatorsPage: React.FC = () => {
     }
   }, [enqueueSnackbar, viewMode]);
 
-  // Load inactive operators
   useEffect(() => {
     const loadInactiveOperators = async () => {
       try {
@@ -114,7 +111,6 @@ const OperatorsPage: React.FC = () => {
     }
   }, [viewMode]);
 
-  // NEW: Load freelancers
   useEffect(() => {
     const loadFreelancers = async () => {
       try {
@@ -135,11 +131,9 @@ const OperatorsPage: React.FC = () => {
     }
   }, [viewMode, freelancersPage, freelancersPageSize, enqueueSnackbar]);
 
-  // Helper function para crear FormData según la estructura del backend
   const createOperatorFormData = useCallback((operatorData: any): FormData => {
     const formData = new FormData();
 
-    // Campos del operador
     if (operatorData.code) formData.append('code', operatorData.code);
     if (operatorData.number_licence) formData.append('number_licence', operatorData.number_licence);
     if (operatorData.n_children !== undefined) formData.append('n_children', operatorData.n_children.toString());
@@ -148,7 +142,6 @@ const OperatorsPage: React.FC = () => {
     if (operatorData.salary) formData.append('salary', operatorData.salary);
     if (operatorData.status) formData.append('status', operatorData.status);
 
-    // Datos de la persona (formato person.campo)
     if (operatorData.person) {
       const person = operatorData.person;
       if (person.first_name) formData.append('person.first_name', person.first_name);
@@ -161,7 +154,6 @@ const OperatorsPage: React.FC = () => {
       if (person.email) formData.append('person.email', person.email);
       if (person.status) formData.append('person.status', person.status);
     } else {
-      // Si los datos vienen en formato plano (compatibilidad)
       if (operatorData.first_name) formData.append('person.first_name', operatorData.first_name);
       if (operatorData.last_name) formData.append('person.last_name', operatorData.last_name);
       if (operatorData.birth_date) formData.append('person.birth_date', operatorData.birth_date);
@@ -172,7 +164,6 @@ const OperatorsPage: React.FC = () => {
       if (operatorData.email) formData.append('person.email', operatorData.email);
     }
 
-    // Archivos (solo si se van a actualizar)
     if (operatorData.photo && operatorData.photo instanceof File) {
       formData.append('photo', operatorData.photo);
     }
@@ -186,7 +177,6 @@ const OperatorsPage: React.FC = () => {
     return formData;
   }, []);
 
-  // Event Handlers
   const handleActivateOperator = useCallback(async (id_operator: number) => {
     try {
       await activateOperator(id_operator);
@@ -312,7 +302,6 @@ const OperatorsPage: React.FC = () => {
     }
   }, [operatorForChildren, selectedOperator, enqueueSnackbar]);
 
-  // NEW: Function to map FreelanceOperator to Operator for component compatibility
   const mapFreelanceToOperator = useCallback((freelancer: FreelanceOperator): Operator => {
     return {
       id_operator: freelancer.id_operator,
@@ -325,7 +314,6 @@ const OperatorsPage: React.FC = () => {
       salary: freelancer.salary || '',
       status: freelancer.status || 'freelance',
       n_children: freelancer.n_children || 0,
-      // Add other required Operator fields with default values
       size_t_shift: freelancer.size_t_shift || '',
       name_t_shift: freelancer.name_t_shift || '',
       photo: freelancer.photo || null,
@@ -340,18 +328,11 @@ const OperatorsPage: React.FC = () => {
     } as Operator;
   }, []);
 
-  // Filtrar operadores basado en el término de búsqueda
   const filteredOperators = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return operators;
-    }
-
+    if (!searchTerm.trim()) return operators;
     const term = searchTerm.toLowerCase();
     return operators.filter(operator => {
-      const safeString = (value: string | null | undefined): string => {
-        return value ? value.toLowerCase() : '';
-      };
-
+      const safeString = (value: string | null | undefined): string => value ? value.toLowerCase() : '';
       return (
         safeString(operator.first_name).includes(term) ||
         safeString(operator.last_name).includes(term) ||
@@ -364,16 +345,10 @@ const OperatorsPage: React.FC = () => {
   }, [operators, searchTerm]);
 
   const filteredInactiveOperators = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return inactiveOperators;
-    }
-
+    if (!searchTerm.trim()) return inactiveOperators;
     const term = searchTerm.toLowerCase();
     return inactiveOperators.filter(operator => {
-      const safeString = (value: string | null | undefined): string => {
-        return value ? value.toLowerCase() : '';
-      };
-
+      const safeString = (value: string | null | undefined): string => value ? value.toLowerCase() : '';
       return (
         safeString(operator.first_name).includes(term) ||
         safeString(operator.last_name).includes(term) ||
@@ -382,18 +357,11 @@ const OperatorsPage: React.FC = () => {
     });
   }, [inactiveOperators, searchTerm]);
 
-  // NEW: Filter freelancers
   const filteredFreelancers = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return freelancers;
-    }
-
+    if (!searchTerm.trim()) return freelancers;
     const term = searchTerm.toLowerCase();
     return freelancers.filter(freelancer => {
-      const safeString = (value: string | null | undefined): string => {
-        return value ? value.toLowerCase() : '';
-      };
-
+      const safeString = (value: string | null | undefined): string => value ? value.toLowerCase() : '';
       return (
         safeString(freelancer.first_name).includes(term) ||
         safeString(freelancer.last_name).includes(term) ||
@@ -404,34 +372,25 @@ const OperatorsPage: React.FC = () => {
     });
   }, [freelancers, searchTerm]);
 
-  // Convert filtered freelancers to Operator format for table compatibility
   const mappedFreelancers = useMemo(() => {
     return filteredFreelancers.map(mapFreelanceToOperator);
   }, [filteredFreelancers, mapFreelanceToOperator]);
 
-  if (loading && viewMode === 'operators') {
-    return <LoaderSpinner />;
-  }
-
-  if (freelancersLoading && viewMode === 'freelancers') {
-    return <LoaderSpinner />;
-  }
+  if (loading && viewMode === 'operators') return <LoaderSpinner />;
+  if (freelancersLoading && viewMode === 'freelancers') return <LoaderSpinner />;
 
   if (error && viewMode === 'operators') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div 
-          className="text-center p-8 rounded-2xl border-2 shadow-lg max-w-md"
-          style={{ 
-            borderColor: COLORS.error,
-            backgroundColor: 'rgba(239, 68, 68, 0.05)'
-          }}
+          className="text-center p-8 rounded-xl border-2 shadow-lg max-w-md"
+          style={{ borderColor: COLORS.error, backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
         >
           <div 
             className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
             style={{ backgroundColor: COLORS.error }}
           >
-            <span className="text-white text-3xl font-bold">!</span>
+            <AlertCircle size={32} className="text-white" />
           </div>
           <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.error }}>
             Error Loading Data
@@ -443,37 +402,39 @@ const OperatorsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* NEW: View Mode Tabs */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
+    <div className="space-y-4">
+      {/* View Mode Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border p-3" style={{ borderColor: COLORS.primary }}>
         <div className="flex space-x-2">
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
               viewMode === 'operators'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'text-white shadow-md'
+                : 'text-gray-700 hover:bg-gray-100'
             }`}
+            style={{ backgroundColor: viewMode === 'operators' ? COLORS.primary : 'transparent' }}
             onClick={() => {
               setViewMode('operators');
               setSearchTerm('');
             }}
           >
-            <i className="fas fa-users mr-2"></i>
+            <Users size={16} />
             Operators
           </button>
           <button
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
               viewMode === 'freelancers'
-                ? 'bg-orange-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'text-white shadow-md'
+                : 'text-gray-700 hover:bg-gray-100'
             }`}
+            style={{ backgroundColor: viewMode === 'freelancers' ? COLORS.secondary : 'transparent' }}
             onClick={() => {
               setViewMode('freelancers');
               setSearchTerm('');
               setFreelancersPage(1);
             }}
           >
-            <i className="fas fa-user-tie mr-2"></i>
+            <UserPlus size={16} />
             Freelancers ({freelancersTotal})
           </button>
         </div>
@@ -481,7 +442,6 @@ const OperatorsPage: React.FC = () => {
 
       {viewMode === 'operators' && (
         <>
-          {/* Header Component for Operators */}
           <OperatorsHeader
             operators={operators}
             inactiveOperators={inactiveOperators}
@@ -494,7 +454,6 @@ const OperatorsPage: React.FC = () => {
             onRegisterOperator={handleRegisterOperator}
           />
 
-          {/* Table Component for Operators */}
           <OperatorsTable
             activeTab={activeTab}
             operators={filteredOperators}
@@ -512,87 +471,94 @@ const OperatorsPage: React.FC = () => {
 
       {viewMode === 'freelancers' && (
         <>
-          {/* Modified Header for Freelancers */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          {/* Freelancers Header */}
+          <div className="bg-white rounded-xl shadow-sm border p-4" style={{ borderColor: COLORS.primary }}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  <i className="fas fa-user-tie mr-3 text-orange-600"></i>
+                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
+                  <UserPlus size={20} style={{ color: COLORS.secondary }} />
                   Freelancers Directory
                 </h2>
-                <p className="text-gray-600">Manage and view freelancer information</p>
+                <p className="text-sm text-gray-600">Manage and view freelancer information</p>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-500">Total Freelancers</div>
-                <div className="text-2xl font-bold text-orange-600">{freelancersTotal}</div>
+                <div className="text-xs text-gray-500">Total Freelancers</div>
+                <div className="text-xl font-bold" style={{ color: COLORS.secondary }}>{freelancersTotal}</div>
               </div>
-              {/* Create freelancer button */}
-              <div>
-                <button
-                  onClick={() => setIsCreateFreelancerOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg shadow-sm hover:bg-orange-700 transition"
-                >
-                  <i className="fas fa-user-plus"></i>
-                  <span>Create Freelancer</span>
-                </button>
-              </div>
+              <button
+                onClick={() => setIsCreateFreelancerOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
+                style={{ backgroundColor: COLORS.secondary }}
+              >
+                <UserPlus size={16} />
+                Create Freelancer
+              </button>
             </div>
 
-            {/* Search Bar for Freelancers */}
+            {/* Search Bar */}
             <div className="mb-4">
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-search text-gray-400"></i>
-                </div>
+                <Search 
+                  size={14} 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2"
+                  style={{ color: COLORS.gray }}
+                />
                 <input
                   type="text"
                   placeholder="Search freelancers by name, code, phone, or ID number..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                  className="block w-full pl-10 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                  style={{ borderColor: COLORS.primary }}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = 'none';
+                  }}
                 />
               </div>
             </div>
 
-            {/* Stats for Freelancers */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-500">
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.secondary }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-600">Total Freelancers</p>
-                    <p className="text-2xl font-bold text-orange-800">{freelancersTotal}</p>
+                    <p className="text-xs font-semibold" style={{ color: COLORS.secondary }}>Total Freelancers</p>
+                    <p className="text-xl font-bold" style={{ color: COLORS.secondary }}>{freelancersTotal}</p>
                   </div>
-                  <i className="fas fa-user-tie text-2xl text-orange-500"></i>
+                  <UserPlus size={24} style={{ color: COLORS.secondary }} />
                 </div>
               </div>
               
-              <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
+              <div className="rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.success }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-600">Active Status</p>
-                    <p className="text-2xl font-bold text-green-800">{freelancers.length}</p>
+                    <p className="text-xs font-semibold" style={{ color: COLORS.success }}>Active Status</p>
+                    <p className="text-xl font-bold" style={{ color: COLORS.success }}>{freelancers.length}</p>
                   </div>
-                  <i className="fas fa-check-circle text-2xl text-green-500"></i>
+                  <CheckCircle size={24} style={{ color: COLORS.success }} />
                 </div>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+              <div className="rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.primary }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-600">Search Results</p>
-                    <p className="text-2xl font-bold text-blue-800">{mappedFreelancers.length}</p>
+                    <p className="text-xs font-semibold" style={{ color: COLORS.primary }}>Search Results</p>
+                    <p className="text-xl font-bold" style={{ color: COLORS.primary }}>{mappedFreelancers.length}</p>
                   </div>
-                  <i className="fas fa-filter text-2xl text-blue-500"></i>
+                  <Filter size={24} style={{ color: COLORS.primary }} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Freelancers Table using existing OperatorsTable component */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">
-                <i className="fas fa-user-tie mr-2 text-orange-600"></i>
+          {/* Freelancers Table */}
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: COLORS.primary }}>
+            <div className="px-4 py-3 border-b" style={{ borderColor: COLORS.primary }}>
+              <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
+                <UserPlus size={16} style={{ color: COLORS.secondary }} />
                 Freelancers {searchTerm && `(${mappedFreelancers.length} results)`}
               </h3>
             </div>
@@ -604,34 +570,36 @@ const OperatorsPage: React.FC = () => {
               inactiveLoading={false}
               searchTerm={searchTerm}
               onViewDetails={handleViewDetails}
-              onEditOperator={() => {}} // Disable edit for freelancers
-              onDeleteOperator={() => {}} // Disable delete for freelancers
-              onManageChildren={() => {}} // Disable children management for freelancers
-              onActivateOperator={() => {}} // Not applicable for freelancers
+              onEditOperator={() => {}}
+              onDeleteOperator={() => {}}
+              onManageChildren={() => {}}
+              onActivateOperator={() => {}}
             />
           </div>
 
-          {/* Pagination for Freelancers */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          {/* Pagination */}
+          <div className="bg-white rounded-xl shadow-sm border p-3" style={{ borderColor: COLORS.primary }}>
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
+              <div className="text-xs text-gray-700">
                 Showing {((freelancersPage - 1) * freelancersPageSize) + 1} - {Math.min(freelancersPage * freelancersPageSize, freelancersTotal)} of {freelancersTotal} freelancers
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setFreelancersPage(prev => Math.max(1, prev - 1))}
                   disabled={freelancersPage === 1}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-xs font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ borderColor: COLORS.primary, color: COLORS.primary }}
                 >
                   Previous
                 </button>
-                <span className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded-md">
+                <span className="px-3 py-1 text-xs font-semibold rounded-lg" style={{ backgroundColor: COLORS.primary, color: 'white' }}>
                   Page {freelancersPage}
                 </span>
                 <button
                   onClick={() => setFreelancersPage(prev => prev + 1)}
                   disabled={freelancersPage * freelancersPageSize >= freelancersTotal}
-                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-xs font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ borderColor: COLORS.primary, color: COLORS.primary }}
                 >
                   Next
                 </button>
@@ -641,7 +609,7 @@ const OperatorsPage: React.FC = () => {
         </>
       )}
 
-      {/* Modals - Only show for operators */}
+      {/* Modals */}
       {viewMode === 'operators' && (
         <>
           {isEditDialogOpen && operatorToEdit && (
@@ -690,7 +658,6 @@ const OperatorsPage: React.FC = () => {
         </>
       )}
 
-      {/* Shared View Details Modal */}
       {isDialogOpen && selectedOperator && (
         <OperatorDetailsModal
           operator={selectedOperator}
@@ -701,7 +668,7 @@ const OperatorsPage: React.FC = () => {
           }}
         />
       )}
-      {/* Create Freelancer modal (freelancers view) */}
+
       <CreateFreelancer
         isOpen={isCreateFreelancerOpen}
         onClose={() => setIsCreateFreelancerOpen(false)}

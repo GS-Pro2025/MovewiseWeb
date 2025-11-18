@@ -19,12 +19,12 @@ interface SortConfig {
 }
 
 const columns: Column[] = [
-  { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
-  { id: 'actions', label: 'Actions', minWidth: 120, align: 'center', sortable: false },
+  { id: 'expand', label: '', minWidth: 40, align: 'center', sortable: false },
+  { id: 'actions', label: 'Actions', minWidth: 100, align: 'center', sortable: false },
   { 
     id: 'status', 
     label: 'Status', 
-    minWidth: 100,
+    minWidth: 90,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const status = String(value || '');
@@ -36,50 +36,50 @@ const columns: Column[] = [
       };
       const style = styles[status as keyof typeof styles] || styles.default;
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-bold" style={style}>
+        <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={style}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
       );
     }
   },
-  { id: 'key_ref', label: 'Reference', minWidth: 100, sortable: true, copyable: true },
-  { id: 'firstName', label: 'First Name', minWidth: 100, sortable: true },
-  { id: 'lastName', label: 'Last Name', minWidth: 100, sortable: true },
-  { id: 'email', label: 'Email', minWidth: 120, sortable: true },
+  { id: 'key_ref', label: 'Reference', minWidth: 90, sortable: true, copyable: true },
+  { id: 'firstName', label: 'First Name', minWidth: 90, sortable: true },
+  { id: 'lastName', label: 'Last Name', minWidth: 90, sortable: true },
+  { id: 'email', label: 'Email', minWidth: 110, sortable: true },
   { 
     id: 'phone', 
     label: 'Phone', 
-    minWidth: 120,
+    minWidth: 110,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const phone = String(value || '');
       return phone ? phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : 'N/A';
     }
   },
-  { id: 'company', label: 'Company', minWidth: 120, sortable: true },
-  { id: 'city', label: 'City', minWidth: 100, sortable: true },
-  { id: 'state', label: 'Location', minWidth: 100, sortable: true },
-  { id: 'weekday', label: 'Weekday', minWidth: 100, sortable: true },
-  { id: 'dateReference', label: 'Date', minWidth: 120, sortable: true },
-  { id: 'job', label: 'Job', minWidth: 120, sortable: true },
+  { id: 'company', label: 'Company', minWidth: 110, sortable: true },
+  { id: 'city', label: 'City', minWidth: 90, sortable: true },
+  { id: 'state', label: 'Location', minWidth: 90, sortable: true },
+  { id: 'weekday', label: 'Weekday', minWidth: 90, sortable: true },
+  { id: 'dateReference', label: 'Date', minWidth: 110, sortable: true },
+  { id: 'job', label: 'Job', minWidth: 110, sortable: true },
   { 
     id: 'weight', 
     label: 'Weight', 
-    minWidth: 100,
+    minWidth: 90,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
   },
   { 
     id: 'truckType', 
     label: 'Truck Type', 
-    minWidth: 120,
+    minWidth: 110,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
   },
   { 
     id: 'distance', 
     label: 'Distance (mi)', 
-    minWidth: 120,
+    minWidth: 110,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
@@ -89,7 +89,7 @@ const columns: Column[] = [
   { 
     id: 'expense', 
     label: 'Expense', 
-    minWidth: 120,
+    minWidth: 110,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
@@ -99,7 +99,7 @@ const columns: Column[] = [
   { 
     id: 'income', 
     label: 'Income', 
-    minWidth: 120,
+    minWidth: 110,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value);
@@ -109,23 +109,23 @@ const columns: Column[] = [
   { 
     id: 'totalCost', 
     label: 'Total Cost', 
-    minWidth: 120,
+    minWidth: 110,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value || 0);
       return `${num.toLocaleString('en-US')}`;
     }
   },
-  { id: 'week', label: 'Week of Year', minWidth: 100, sortable: true },
+  { id: 'week', label: 'Week', minWidth: 70, sortable: true },
   { 
     id: 'payStatus', 
     label: 'Pay Status', 
-    minWidth: 120,
+    minWidth: 100,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => {
       const status = Number(value || 0);
       return (
-        <span className={`px-3 py-1 rounded-full text-xs font-bold text-white`} style={{ 
+        <span className={`px-2 py-0.5 rounded-full text-xs font-bold text-white`} style={{ 
           backgroundColor: status === 0 ? '#ef4444' : '#22c55e' 
         }}>
           {status === 0 ? 'Unpaid' : 'Paid'}
@@ -136,10 +136,10 @@ const columns: Column[] = [
   { 
     id: 'created_by', 
     label: 'Created By', 
-    minWidth: 120,
+    minWidth: 100,
     sortable: true,
     format: (value: string | number | null | undefined | unknown) => (
-      <span className="font-semibold" style={{ color: '#0B2863' }}>
+      <span className="font-semibold text-xs" style={{ color: '#0B2863' }}>
         {String(value || 'N/A')}
       </span>
     )
@@ -159,11 +159,11 @@ interface DataTableProps {
   onSelectAll: (selectAll: boolean) => void;
   onFinishOrder: (orderId: string) => void;
   onContextMenu: (event: React.MouseEvent, row: TableData) => void;
-  onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void; // Nueva prop
+  onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void;
 }
 
 const LoadingSpinner = () => (
-  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#0B2863' }}></div>
+  <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2" style={{ borderColor: '#0B2863' }}></div>
 );
 
 const sortData = (data: TableData[], sortConfig: SortConfig): TableData[] => {
@@ -200,11 +200,11 @@ const SortIcon: React.FC<{ column: Column; sortConfig: SortConfig }> = ({ column
 
   if (isActive) {
     return sortConfig.direction === 'asc' ? 
-      <ArrowUp size={14} style={{ color: iconColor }} /> : 
-      <ArrowDown size={14} style={{ color: iconColor }} />;
+      <ArrowUp size={12} style={{ color: iconColor }} /> : 
+      <ArrowDown size={12} style={{ color: iconColor }} />;
   }
 
-  return <ArrowUpDown size={14} style={{ color: iconColor }} />;
+  return <ArrowUpDown size={12} style={{ color: iconColor }} />;
 };
 
 export const DataTable: React.FC<DataTableProps> = ({
@@ -279,15 +279,15 @@ export const DataTable: React.FC<DataTableProps> = ({
   const getColumnValue = (row: TableData, columnId: keyof TableData): unknown => row[columnId];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border-2 overflow-hidden" style={{ borderColor: '#0B2863' }}>
+    <div className="bg-white rounded-xl shadow-md border overflow-hidden" style={{ borderColor: '#0B2863' }}>
       <div className="overflow-x-auto" style={{ maxHeight: '600px' }}>
         <table className="w-full">
           <thead className="sticky top-0 z-10 text-white" style={{ backgroundColor: '#0B2863' }}>
             <tr>
-              <th className="px-4 py-3 text-left">
+              <th className="px-3 py-2 text-left">
                 <input
                   type="checkbox"
-                  className="rounded border-2 border-white"
+                  className="rounded border-2 border-white w-3.5 h-3.5"
                   checked={isAllSelected}
                   onChange={(e) => onSelectAll(e.target.checked)}
                   disabled={sortedData.length === 0}
@@ -296,13 +296,13 @@ export const DataTable: React.FC<DataTableProps> = ({
               {columns.map((column, index) => (
                 <th
                   key={`header-${String(column.id)}-${index}`}
-                  className={`px-4 py-3 text-${column.align || 'left'} font-bold text-sm whitespace-nowrap ${
+                  className={`px-3 py-2 text-${column.align || 'left'} font-bold text-xs whitespace-nowrap ${
                     column.sortable ? 'cursor-pointer hover:bg-blue-800 transition-colors duration-200' : ''
                   }`}
                   style={{ minWidth: column.minWidth }}
                   onClick={() => column.sortable && handleSort(column.id as keyof TableData)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span>{column.label}</span>
                     <SortIcon column={column} sortConfig={sortConfig} />
                   </div>
@@ -314,36 +314,36 @@ export const DataTable: React.FC<DataTableProps> = ({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length + 1} className="text-center py-12">
-                  <div className="flex flex-col items-center space-y-4">
+                <td colSpan={columns.length + 1} className="text-center py-10">
+                  <div className="flex flex-col items-center space-y-3">
                     <LoadingSpinner />
-                    <span className="text-gray-500">Loading data...</span>
+                    <span className="text-gray-500 text-sm">Loading data...</span>
                   </div>
                 </td>
               </tr>
             ) : sortedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 1} className="text-center py-16">
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="mb-4">
+                <td colSpan={columns.length + 1} className="text-center py-12">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="mb-2">
                       <Inbox 
-                        size={80}
+                        size={64}
                         style={{ color: '#0B2863', opacity: 0.6 }}
                       />
                     </div>
                     <div className="text-center">
                       <h3 
-                        className="text-xl font-bold mb-2"
+                        className="text-lg font-bold mb-1"
                         style={{ color: '#0B2863' }}
                       >
                         No Orders Found
                       </h3>
-                      <p className="text-gray-600 mb-4 max-w-md">
+                      <p className="text-gray-600 text-sm mb-3 max-w-md">
                         There are no orders available for the selected filters. 
                         Try adjusting your search criteria or create a new order.
                       </p>
-                      <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                        <FileX size={16} />
+                      <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <FileX size={14} />
                         <span>Tip: Check your week and filter settings above</span>
                       </div>
                     </div>
@@ -359,27 +359,27 @@ export const DataTable: React.FC<DataTableProps> = ({
                   return (
                     <React.Fragment key={row.id}>
                       <tr 
-                        className={`transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${
+                        className={`transition-all duration-200 hover:shadow-sm cursor-pointer ${
                           rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                        } ${isRowSelected ? 'ring-2 ring-blue-200' : ''}`}
+                        } ${isRowSelected ? 'ring-1 ring-blue-200' : ''}`}
                         style={{ 
                           backgroundColor: isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined 
                         }}
                         onContextMenu={(e) => onContextMenu(e, row)}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <input
                             type="checkbox"
-                            className="rounded border-2"
+                            className="rounded border-2 w-3.5 h-3.5"
                             style={{ borderColor: '#0B2863' }}
                             checked={isRowSelected}
                             onChange={() => onRowSelect(row)}
                           />
                         </td>
                         
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-3 py-2 text-center">
                           <button
-                            className="p-1 rounded-lg transition-all duration-200 hover:shadow-md"
+                            className="p-1 rounded-lg transition-all duration-200 hover:shadow-sm"
                             style={{ 
                               backgroundColor: '#0B2863',
                               color: 'white'
@@ -387,14 +387,14 @@ export const DataTable: React.FC<DataTableProps> = ({
                             onClick={() => handleExpandClick(row.id)}
                             title={row.operators?.length > 0 ? (isExpanded ? 'Collapse Operators' : 'Expand Operators') : 'No operators assigned'}
                           >
-                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </button>
                         </td>
                         
-                        <td className="px-4 py-3 text-center">
-                          <div className="flex items-center justify-center gap-2">
+                        <td className="px-3 py-2 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
-                              className={`p-2 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+                              className={`p-1.5 rounded-lg transition-all duration-200 hover:shadow-sm ${
                                 row.status === 'finished' ? 'cursor-not-allowed' : 'cursor-pointer'
                               }`}
                               style={{
@@ -409,15 +409,14 @@ export const DataTable: React.FC<DataTableProps> = ({
                               title={row.status === 'finished' ? "Order finished" : "Finish Order"}
                             >
                               {row.status === 'finished' ? (
-                                <CheckCircle size={16} />
+                                <CheckCircle size={14} />
                               ) : (
-                                <Check size={16} />
+                                <Check size={14} />
                               )}
                             </button>
                             
-                            {/* Botón de tres puntos */}
                             <button
-                              className="p-2 rounded-lg transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:bg-gray-100"
+                              className="p-1.5 rounded-lg transition-all duration-200 hover:shadow-sm hover:bg-gray-100"
                               style={{ color: '#0B2863' }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -427,7 +426,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                               }}
                               title="More actions"
                             >
-                              <MoreVertical size={16} />
+                              <MoreVertical size={14} />
                             </button>
                           </div>
                         </td>
@@ -457,25 +456,25 @@ export const DataTable: React.FC<DataTableProps> = ({
                           return (
                             <td 
                               key={`${row.id}-${String(column.id)}-${columnIndex}`} 
-                              className={`px-4 py-3 text-${column.align || 'left'} whitespace-nowrap ${
+                              className={`px-3 py-2 text-${column.align || 'left'} text-xs whitespace-nowrap ${
                                 isCopyableColumn ? 'group relative' : ''
                               }`}
                               onContextMenu={isCopyableColumn ? (e) => handleCopyToClipboard(e, cellValue, `${row.id}-${column.id}`) : undefined}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5">
                                 {displayValue}
                                 {isCopyableColumn && (
                                   <button
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded hover:bg-gray-200"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-0.5 rounded hover:bg-gray-200"
                                     onClick={(e) => handleCopyToClipboard(e, cellValue, `${row.id}-${column.id}`)}
                                     title="Copy to clipboard"
                                   >
-                                    <Copy size={14} style={{ color: isCopied ? '#22c55e' : '#0B2863' }} />
+                                    <Copy size={12} style={{ color: isCopied ? '#22c55e' : '#0B2863' }} />
                                   </button>
                                 )}
                               </div>
                               {isCopied && (
-                                <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
                                   Copied!
                                 </span>
                               )}
@@ -487,7 +486,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                       {isExpanded && (
                         <tr>
                           <td colSpan={columns.length + 1} className="px-0 py-0">
-                            <div className="px-6 py-4 bg-gray-50">
+                            <div className="px-4 py-3 bg-gray-50">
                               <OperatorsTable 
                                 operators={row.operators || []}
                                 orderKey={row.id} 
@@ -505,13 +504,13 @@ export const DataTable: React.FC<DataTableProps> = ({
         </table>
       </div>
       
-      <div className="bg-white border-t-2 px-6 py-4 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
-        <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-700">Rows per page:</span>
+      <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
+        <div className="flex items-center space-x-3">
+          <span className="text-xs text-gray-700">Rows per page:</span>
           <select 
             value={rowsPerPage} 
             onChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
-            className="border-2 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2"
+            className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2"
             style={{ borderColor: '#0B2863' }}
           >
             <option value={25}>25</option>
@@ -521,13 +520,13 @@ export const DataTable: React.FC<DataTableProps> = ({
           </select>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-700">
+        <div className="flex items-center space-x-3">
+          <span className="text-xs text-gray-700">
             {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, totalRows)} of {totalRows}
           </span>
           <div className="flex space-x-2">
             <button
-              className="px-3 py-1 rounded-lg border-2 text-sm font-semibold transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 rounded-lg border text-xs font-semibold transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
                 borderColor: '#0B2863',
                 color: '#0B2863'
@@ -538,7 +537,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               Previous
             </button>
             <button
-              className="px-3 py-1 rounded-lg border-2 text-sm font-semibold transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 rounded-lg border text-xs font-semibold transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
                 borderColor: '#0B2863',
                 color: '#0B2863'
@@ -553,4 +552,4 @@ export const DataTable: React.FC<DataTableProps> = ({
       </div>
     </div>
   );
-}
+};
