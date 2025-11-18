@@ -21,7 +21,6 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
   const handleAddOperator = () => {
     navigate(`/app/add-operators-to-order/${orderKey}`);
   };
-
   // Función helper para formatear números correctamente
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return 'N/A';
