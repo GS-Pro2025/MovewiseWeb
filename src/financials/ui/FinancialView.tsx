@@ -273,11 +273,17 @@ const FinancialView = () => {
         if (isSuccess) {
           hasAnySuccess = true;
           
-          if (processMode === 'full_process' && res.data?.update_summary) {
-            totalUpdatedOrders += res.data.update_summary.total_updated || 0;
-            totalNotFoundOrders += res.data.update_summary.total_not_found || 0;
-          } else if (processMode === 'save_only' && res.data?.save_summary) {
-            totalSavedRecords += res.data.save_summary.statement_records_created || 0;
+          // Contar según el modo
+          if (processMode === 'full_process' && res.regular_orders_data?.update_summary) {
+            totalUpdatedOrders += res.regular_orders_data.update_summary.total_updated || 0;
+            totalNotFoundOrders += res.regular_orders_data.update_summary.total_not_found || 0;
+          } else if (processMode === 'save_only' && res.regular_orders_data?.save_summary) {
+            totalSavedRecords += res.regular_orders_data.save_summary.statement_records_created || 0;
+          }
+          
+          // También contar other_transactions si están presentes
+          if (res.other_transactions_data?.save_summary) {
+            totalSavedRecords += res.other_transactions_data.save_summary.statements_created || 0;
           }
         }
 
@@ -296,24 +302,30 @@ const FinancialView = () => {
             total_not_found: res.update_result.total_not_found || 0,
             duplicated_orders: res.update_result.duplicated_orders || [],
             total_duplicated: res.update_result.total_duplicated || 0,
-            statement_records_created: res.data?.update_summary?.statement_records_created || 
-              res.data?.save_summary?.statement_records_created
+            statement_records_created: res.regular_orders_data?.update_summary?.statement_records_created || 
+              res.regular_orders_data?.save_summary?.statement_records_created ||
+              res.other_transactions_data?.save_summary?.statements_created
           } : undefined,
           ocr_text: res.ocr_text,
           order_key: res.order_key,
-          parsed_orders: res.data?.parsed_orders,
+          parsed_orders: res.regular_orders_data?.parsed_orders,
         });
 
         // Preparar datos para el dialog de confirmación - Solo para el primer archivo exitoso
-        if (isSuccess && res.data && !docaiDialogResult) {
+        if (isSuccess && !docaiDialogResult) {
           setDocaiDialogResult({
             message: res.message,
+            processing_type: res.processing_type,
+            other_transactions_page: res.other_transactions_page,
+            total_pages_scanned: res.total_pages_scanned,
             process_mode: res.process_mode || processMode,
-            data: res.data,
-            // Mapear para compatibilidad
+            // Mapear para compatibilidad con el diálogo
             ocr_text: res.ocr_text,
-            parsed_orders: res.data.parsed_orders,
+            parsed_orders: res.regular_orders_data?.parsed_orders,
             update_result: res.update_result,
+            update_summary: res.regular_orders_data?.update_summary,
+            other_transactions_data: res.other_transactions_data,
+            data: res.regular_orders_data,
           });
         }
       } catch (err: any) {
@@ -344,9 +356,6 @@ const FinancialView = () => {
       setConfirmationMessage(confirmMsg);
       setShouldShowConfirmation(true);
       enqueueSnackbar("All files processed successfully!", { variant: "success" });
-      
-      // NO abrir automáticamente el DocaiResultDialog aquí
-      // Dejar que el usuario decida desde el OCRUploadDialog
       
     } else if (successCount === 0) {
       enqueueSnackbar("All files failed to process. Please check your files and try again.", { variant: "error" });

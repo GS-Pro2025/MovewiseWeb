@@ -47,19 +47,28 @@ const StatementPage: React.FC = () => {
             success: isSuccess,
             message: res.message || (isSuccess ? 'Success' : 'Failed'),
             processMode: res.process_mode || processMode,
+            processing_type: res.processing_type, // Agregar processing_type
             data: res.data,
             ocr_text: res.ocr_text,
-            parsed_orders: res.data?.parsed_orders,
+            parsed_orders: res.data?.parsed_orders || res.regular_orders_data?.parsed_orders,
             update_result: res.update_result || res.data?.update_summary || res.data?.save_summary,
+            other_transactions_data: res.other_transactions_data, // Agregar other_transactions_data
+            other_transactions_page: res.other_transactions_page,
+            total_pages_scanned: res.total_pages_scanned,
           });
 
           // set first successful result for detailed dialog
           if (isSuccess && !docaiDialogResult) {
             setDocaiDialogResult({
               message: res.message,
+              processing_type: res.processing_type,
+              other_transactions_page: res.other_transactions_page,
+              total_pages_scanned: res.total_pages_scanned,
               ocr_text: res.ocr_text,
-              parsed_orders: res.data?.parsed_orders,
+              parsed_orders: res.data?.parsed_orders || res.regular_orders_data?.parsed_orders,
               update_result: res.update_result || res.data?.update_summary || res.data?.save_summary,
+              update_summary: res.data?.update_summary || res.regular_orders_data?.update_summary,
+              other_transactions_data: res.other_transactions_data,
               data: res.data,
             });
           }
