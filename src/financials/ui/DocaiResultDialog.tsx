@@ -2,28 +2,57 @@
 import React from "react";
 import { Box, Typography, Chip, Divider, Button, Alert, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { ChevronDown } from 'lucide-react';
-import { Bot, FileText, CheckCircle, XCircle, Copy, AlertTriangle, DollarSign } from 'lucide-react';
+import { Bot, FileText, CheckCircle, XCircle, Copy, AlertTriangle, DollarSign, Layers, Receipt, Truck } from 'lucide-react';
+import { OtherTransaction } from '../domain/ModelsOCR';
 
 interface DocaiResultDialogProps {
   open: boolean;
   onClose: () => void;
   result: {
     message: string;
+    processing_type?: 'regular_orders_only' | 'other_transactions' | 'mixed';
+    other_transactions_page?: number;
+    total_pages_scanned?: number;
     ocr_text?: string;
     parsed_orders?: Array<{
       OrderNumber: string;
       ShipperName: string;
-      CommissionAmount: string;
+      CommissionAmount?: string;
+      Amount?: string;
     }>;
     update_result?: any;
     update_summary?: any;
+    other_transactions_data?: {
+      processing_type: 'other_transactions';
+      page_processed: number;
+      document_date?: string;
+      document_week?: number;
+      parsed_transactions?: OtherTransaction[];
+      save_summary?: {
+        costs_created?: number;
+        statements_created?: number;
+        skipped_warehouse?: number;
+        skipped_no_parentheses?: number;
+        skipped_invalid_amount?: number;
+        parsing_errors?: number;
+        total_processed?: number;
+        successfully_processed?: number;
+      };
+      status: 'completed' | 'failed';
+      error?: string;
+      text_analyzed_length?: number;
+      text_preview?: string;
+    };
   };
 }
+
 interface ParsedOrder {
   OrderNumber: string;
   ShipperName: string;
-  CommissionAmount: string;
+  CommissionAmount?: string;
+  Amount?: string;
 }
+
 interface UpdatedOrder {
   key_ref: string;
   key: string;
@@ -34,6 +63,7 @@ interface UpdatedOrder {
   factory: string;
   orders_count: number;
 }
+
 interface DuplicatedOrder {
   key_ref: string;
   count: number;
@@ -41,10 +71,21 @@ interface DuplicatedOrder {
   amount_per_order: string;
   type: string;
 }
+
 const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, result }) => {
   if (!open) return null;
 
-  const { message, ocr_text, parsed_orders, update_result, update_summary } = result;
+  const { 
+    message, 
+    processing_type,
+    other_transactions_page,
+    total_pages_scanned,
+    ocr_text, 
+    parsed_orders, 
+    update_result, 
+    update_summary,
+    other_transactions_data 
+  } = result;
   
   // Usar update_summary si está disponible, sino usar update_result para compatibilidad
   const updateData = update_summary || update_result;
@@ -55,6 +96,11 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
   const totalUpdated = updateData?.total_updated ?? 0;
   const totalNotFound = updateData?.total_not_found ?? 0;
   const totalDuplicated = updateData?.total_duplicated ?? 0;
+
+  // Datos de Other Transactions
+  const hasOtherTransactions = !!other_transactions_data;
+  const otherTransactions = other_transactions_data?.parsed_transactions ?? [];
+  const otherTransactionsSummary = other_transactions_data?.save_summary;
 
   // Helper function para formatear el monto basado en el tipo
   const formatAmount = (order: any) => {
@@ -75,6 +121,24 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
     return type === 'expense' ? 'Expense' : 'Income';
   };
 
+  // Helper para determinar si un monto de Other Transaction es gasto
+  const isExpenseAmount = (amount: string) => {
+    return amount.includes('(') && amount.includes(')');
+  };
+
+  // Helper para formatear monto de Other Transaction
+  const formatOtherTransactionAmount = (amount: string) => {
+    const cleanAmount = amount.replace(/[$,()]/g, '');
+    const numericAmount = parseFloat(cleanAmount);
+    const isExpense = isExpenseAmount(amount);
+    
+    return {
+      formatted: `$${numericAmount.toLocaleString()}`,
+      isExpense,
+      color: isExpense ? '#ef4444' : '#22c55e'
+    };
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10"
@@ -86,8 +150,8 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           borderRadius: 3,
           boxShadow: 6,
           p: 4,
-          minWidth: 500,
-          maxWidth: 800,
+          minWidth: 600,
+          maxWidth: 900,
           maxHeight: "90vh",
           overflow: "auto",
         }}
@@ -98,6 +162,15 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           <Typography variant="h6" color="primary">
             AI Document Processing Result
           </Typography>
+          {processing_type && (
+            <Chip 
+              icon={processing_type === 'other_transactions' || processing_type === 'mixed' ? <Layers size={16} /> : <FileText size={16} />}
+              label={processing_type.replace('_', ' ').toUpperCase()}
+              color={processing_type === 'other_transactions' || processing_type === 'mixed' ? 'secondary' : 'primary'}
+              size="small"
+              variant="outlined"
+            />
+          )}
         </Box>
         
         <Alert 
@@ -107,6 +180,21 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
         >
           {message}
         </Alert>
+
+        {/* Processing Info */}
+        {(total_pages_scanned || other_transactions_page) && (
+          <Alert 
+            severity="info" 
+            sx={{ mb: 2 }}
+            icon={<Layers size={20} />}
+          >
+            <Typography variant="body2">
+              <strong>Multi-page processing:</strong> 
+              {total_pages_scanned && ` ${total_pages_scanned} pages scanned`}
+              {other_transactions_page && `, Other Transactions found on page ${other_transactions_page}`}
+            </Typography>
+          </Alert>
+        )}
 
         {/* Parsed Orders Section */}
         {parsed_orders && parsed_orders.length > 0 && (
@@ -118,7 +206,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                 sx={{ backgroundColor: '#f8f9fa' }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FileText size={20} color="#1976d2" />
+                  <Truck size={20} color="#1976d2" />
                   <Typography variant="subtitle1">
                     Extracted Orders ({parsed_orders.length})
                   </Typography>
@@ -143,7 +231,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                           {order.OrderNumber}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {order.ShipperName} - {order.CommissionAmount}
+                          {order.ShipperName} - {order.Amount || order.CommissionAmount}
                         </Typography>
                       </Box>
                     </Box>
@@ -158,7 +246,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Bot size={20} color="#1976d2" />
-          <Typography variant="subtitle1">Update Summary:</Typography>
+          <Typography variant="subtitle1">Regular Orders Update Summary:</Typography>
         </Box>
         
         <Box sx={{ mb: 2 }}>
@@ -177,7 +265,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           </Alert>
         </Box>
 
-        {/* Updated Orders con información completa incluyendo cliente/compañía */}
+        {/* Updated Orders */}
         {updatedOrders.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -221,21 +309,19 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                       </Box>
                     </Box>
                     
-                    {/* Información del cliente/compañía */}
                     {order.factory && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                         <strong>Client/Company:</strong> {order.factory}
                       </Typography>
                     )}
                     
-                    {/* Información de órdenes si está disponible */}
                     {(order as any).orders_count && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
                         <strong>Orders Count:</strong> {(order as any).orders_count}
                       </Typography>
                     )}
                     
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 1 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minWidth(120px, 1fr))', gap: 1 }}>
                       <Box>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           Amount Added:
@@ -274,7 +360,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           </Box>
         )}
 
-        {/* Duplicated Orders Section mejorada */}
+        {/* Duplicated Orders */}
         {duplicatedOrders.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -317,7 +403,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                       </Box>
                     </Box>
                     
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 1 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minWidth(100px, 1fr))', gap: 1 }}>
                       <Box>
                         <Typography variant="caption" color="text.secondary">
                           Total: ${parseFloat(order.total_amount).toLocaleString()}
@@ -336,6 +422,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           </Box>
         )}
 
+        {/* Not Found Orders */}
         {notFoundOrders.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -346,7 +433,7 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
             </Box>
             <Box sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minWidth(120px, 1fr))",
               gap: 0.5,
               maxHeight: 120,
               overflow: "auto",
@@ -365,6 +452,92 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
                   sx={{ fontSize: "0.8rem" }}
                 />
               ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Simple Other Transactions Breakdown */}
+        {hasOtherTransactions && otherTransactions.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Divider sx={{ my: 2 }} />
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Receipt size={18} color="#9c27b0" />
+              <Typography variant="subtitle2" color="secondary.main">
+                Other Transactions ({otherTransactions.length})
+              </Typography>
+              {otherTransactionsSummary && (
+                <Chip 
+                  label={`${otherTransactionsSummary.costs_created || 0} expense records created`}
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                />
+              )}
+            </Box>
+            
+            <Box sx={{ 
+              display: 'grid', 
+              gap: 1, 
+              maxHeight: 200, 
+              overflow: 'auto',
+              border: '1px solid #e0e0e0',
+              borderRadius: 2,
+              p: 2,
+              backgroundColor: '#fafafa'
+            }}>
+              {otherTransactions.map((transaction: OtherTransaction, idx: number) => {
+                const amountInfo = formatOtherTransactionAmount(transaction.Amount);
+                
+                return (
+                  <Box key={idx} sx={{ 
+                    p: 2, 
+                    border: `1px solid ${amountInfo.color}`, 
+                    borderRadius: 1,
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2
+                  }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }} noWrap>
+                        {transaction.DocumentNumber}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} noWrap>
+                        {transaction.ItemDescription === 'undefined' ? 'N/A' : transaction.ItemDescription || 'N/A'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      flexShrink: 0
+                    }}>
+                      <Typography variant="body2" sx={{ 
+                        fontWeight: 600, 
+                        color: amountInfo.color,
+                        minWidth: 'fit-content'
+                      }}>
+                        {amountInfo.formatted}
+                      </Typography>
+                      {amountInfo.isExpense && (
+                        <Chip
+                          label="Expense"
+                          size="small"
+                          sx={{ 
+                            backgroundColor: amountInfo.color,
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: 20
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
         )}
