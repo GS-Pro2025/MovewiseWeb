@@ -4,52 +4,102 @@ import Cookies from 'js-cookie';
 
 export type ProcessMode = 'save_only' | 'full_process';
 
+export interface OtherTransaction {
+  DocumentNumber: string;
+  ItemDescription: string;
+  Amount: string;
+}
+
+export interface ParsedOrder {
+  OrderNumber: string;
+  ShipperName: string;
+  Amount: string;
+}
+
+export interface UpdatedOrder {
+  key_ref: string;
+  key?: string;
+  amount_added: string;
+  type: string;
+  new_income?: string;
+  new_expense?: string;
+  factory: string;
+  orders_count?: number;
+}
+
+export interface DuplicatedOrder {
+  key_ref: string;
+  count: number;
+  total_amount: string;
+  amount_per_order: string;
+  type: string;
+}
+
+export interface SaveSummary {
+  statement_records_created?: number;
+  records_by_status?: {
+    saved: number;
+    not_exists: number;
+    exists: number;
+  };
+  // Para Other Transactions
+  costs_created?: number;
+  statements_created?: number;
+  skipped_warehouse?: number;
+  skipped_no_parentheses?: number;
+  skipped_invalid_amount?: number;
+  parsing_errors?: number;
+  total_processed?: number;
+  successfully_processed?: number;
+}
+
+export interface UpdateSummary {
+  updated_orders?: UpdatedOrder[];
+  total_updated?: number;
+  statement_records_created?: number;
+  not_found_orders?: string[];
+  total_not_found?: number;
+  duplicated_orders?: DuplicatedOrder[];
+  total_duplicated?: number;
+}
+
+export interface RegularOrdersData {
+  document_date?: string;
+  parsed_orders?: ParsedOrder[];
+  update_summary?: UpdateSummary;
+  save_summary?: SaveSummary;
+}
+
+export interface OtherTransactionsData {
+  processing_type: 'other_transactions';
+  page_processed: number;
+  document_date?: string;
+  document_week?: number;
+  parsed_transactions?: OtherTransaction[];
+  save_summary?: SaveSummary;
+  status: 'completed' | 'failed';
+  error?: string;
+  text_analyzed_length?: number;
+  text_preview?: string;
+}
+
 export interface DocaiProcessResult {
   success?: boolean;
   message?: string;
   process_mode?: ProcessMode;
-  data?: {
-    document_date?: string;
-    parsed_orders?: Array<{
-      OrderNumber: string;
-      ShipperName: string;
-      CommissionAmount: string;
-    }>;
-    // Para modo full_process
-    update_summary?: {
-      updated_orders?: Array<{
-        key_ref: string;
-        key: string;
-        amount_added: string;
-        type: string;
-        new_income: string;
-        new_expense: string;
-        factory: string;
-        orders_count: number;
-      }>;
-      total_updated?: number;
-      statement_records_created?: number;
-      not_found_orders?: string[];
-      total_not_found?: number;
-      duplicated_orders?: Array<{
-        key_ref: string;
-        count: number;
-        total_amount: string;
-        amount_per_order: string;
-        type: string;
-      }>;
-      total_duplicated?: number;
-    };
-    // Para modo save_only
-    save_summary?: {
-      statement_records_created?: number;
-      records_by_status?: {
-        saved: number;
-        not_exists: number;
-        exists: number;
-      };
-    };
-  };
+  processing_type?: 'regular_orders_only' | 'other_transactions' | 'mixed';
+  other_transactions_page?: number;
+  total_pages_scanned?: number;
+  document_week?: number;
+  regular_text_length?: number;
+  
+  // Para órdenes regulares (modo legacy y nuevo)
+  data?: RegularOrdersData;
+  regular_orders_data?: RegularOrdersData;
+  
+  // Para Other Transactions (nuevo)
+  other_transactions_data?: OtherTransactionsData;
+  
   // Campos legacy para compatibilidad
   ocr_text?: string;
   order_key?: string | null;
@@ -108,13 +158,23 @@ export async function processDocaiStatement(
       success: true,
       message: result.message,
       process_mode: result.process_mode || processMode,
-      data: result.data,
+      processing_type: result.processing_type,
+      other_transactions_page: result.other_transactions_page,
+      total_pages_scanned: result.total_pages_scanned,
+      document_week: result.document_week,
+      regular_text_length: result.regular_text_length,
+      data: result.data || result.regular_orders_data,
+      regular_orders_data: result.regular_orders_data,
+      other_transactions_data: result.other_transactions_data,
+      // Agregar ocr_text para compatibilidad
+      ocr_text: result.ocr_text,
     };
 
     // Para compatibilidad con el código existente, mapear update_summary a update_result
-    if (result.data?.update_summary) {
+    const regularData = result.data || result.regular_orders_data;
+    if (regularData?.update_summary) {
       docaiResult.update_result = {
-        updated_orders: result.data.update_summary.updated_orders?.map((order: any) => ({
+        updated_orders: regularData.update_summary.updated_orders?.map((order: any) => ({
           key_ref: order.key_ref,
           orders_updated: order.orders_count || 1,
           expense: order.type === 'expense' ? Math.abs(parseFloat(order.amount_added)) : parseFloat(order.new_expense || '0'),
@@ -127,11 +187,11 @@ export async function processDocaiStatement(
           factory: order.factory,
           orders_count: order.orders_count
         })) || [],
-        not_found_orders: result.data.update_summary.not_found_orders || [],
-        total_updated: result.data.update_summary.total_updated || 0,
-        total_not_found: result.data.update_summary.total_not_found || 0,
-        duplicated_orders: result.data.update_summary.duplicated_orders || [],
-        total_duplicated: result.data.update_summary.total_duplicated || 0
+        not_found_orders: regularData.update_summary.not_found_orders || [],
+        total_updated: regularData.update_summary.total_updated || 0,
+        total_not_found: regularData.update_summary.total_not_found || 0,
+        duplicated_orders: regularData.update_summary.duplicated_orders || [],
+        total_duplicated: regularData.update_summary.total_duplicated || 0
       };
     }
 
