@@ -1,4 +1,4 @@
-import { ExtraCostRepository, ExtraCostRepositoryInterface } from './ExtraCostRepository';
+import { ExtraCostRepository, ExtraCostRepositoryInterface, ExtraCostParams } from './ExtraCostRepository';
 import { ExtraCostResponse } from '../domain/ExtraCostModel';
 
 export class ExtraCostService {
@@ -8,7 +8,7 @@ export class ExtraCostService {
         this.extraCostRepository = extraCostRepository || new ExtraCostRepository();
     }
 
-    async getExtraCosts(): Promise<ExtraCostResponse> {
-        return await this.extraCostRepository.getExtraCosts();
+    async getExtraCosts(params: ExtraCostParams): Promise<ExtraCostResponse> {
+        return await this.extraCostRepository.getExtraCosts(params);
     }
 }

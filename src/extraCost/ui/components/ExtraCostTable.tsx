@@ -43,33 +43,40 @@ type ExtraCostTableProps = {
 const columnHelper = createMRTColumnHelper<GroupedExtraCost>();
 
 const columns = [
-  columnHelper.accessor('order.key_ref', {
+  columnHelper.accessor((row) => row.order.key_ref, {
+    id: 'order.key_ref',
     header: 'Referencia',
     size: 100,
   }),
-  columnHelper.accessor('order.date', {
+  columnHelper.accessor((row) => row.order.date, {
+    id: 'order.date',
     header: 'Fecha',
     size: 120,
   }),
-  columnHelper.accessor('order.status', {
+  columnHelper.accessor((row) => row.order.status, {
+    id: 'order.status',
     header: 'Estado',
     size: 100,
   }),
-  columnHelper.accessor('order.weight', {
+  columnHelper.accessor((row) => row.order.weight, {
+    id: 'order.weight',
     header: 'Peso',
     size: 100,
     Cell: ({ cell }) => `${cell.getValue<string>()} lb`,
   }),
-  columnHelper.accessor('order.person.first_name', {
+  columnHelper.accessor((row) => row.order.person.first_name, {
+    id: 'order.person.first_name',
     header: 'Conductor',
     size: 150,
     Cell: ({ row }) => `${row.original.order.person.first_name} ${row.original.order.person.last_name}`,
   }),
-  columnHelper.accessor('order.state_usa', {
+  columnHelper.accessor((row) => row.order.state_usa, {
+    id: 'order.state_usa',
     header: 'Estado USA',
     size: 100,
   }),
-  columnHelper.accessor('totalCost', {
+  columnHelper.accessor((row) => row.totalCost, {
+    id: 'totalCost',
     header: 'Costo Total',
     size: 100,
     Cell: ({ cell }) => `$${cell.getValue<number>().toFixed(2)}`,
@@ -85,7 +92,7 @@ const csvConfig = mkConfig({
 const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
   // CORREGIDO: Solo crear tableData, eliminar groupedData no usado
   const tableData = useMemo(() => {
-    const grouped = data?.results.results.reduce((acc, cost) => {
+    const grouped = data?.results.reduce((acc, cost) => {
       const orderKey = cost.order.key;
       if (!acc[orderKey]) {
         acc[orderKey] = {
@@ -121,13 +128,13 @@ const ExtraCostTable = ({ data, isLoading }: ExtraCostTableProps) => {
     download(csvConfig)(csv);
   }, []);
 
-  const table = useMaterialReactTable({
-    columns,
-    data: tableData,
-    enableRowSelection: true,
-    enableExpanding: true,
-    muiTableBodyRowProps: { hover: false }, // Disable hover effect
-    renderDetailPanel: ({ row }) => (
+  const table = useMaterialReactTable<GroupedExtraCost>({
+     columns,
+     data: tableData,
+     enableRowSelection: true,
+     enableExpanding: true,
+     muiTableBodyRowProps: { hover: false }, // Disable hover effect
+     renderDetailPanel: ({ row }) => (
       <Box sx={{ p: 2 }}>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>Información de la Orden</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 3 }}>

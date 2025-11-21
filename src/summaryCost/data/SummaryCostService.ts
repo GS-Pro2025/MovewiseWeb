@@ -1,4 +1,4 @@
-import { SummaryCostRepository, SummaryCostRepositoryInterface } from "./SummaryCostRepository";
+import { SummaryCostRepository, SummaryCostRepositoryInterface, SummaryCostParams } from "./SummaryCostRepository";
 import { PaginatedOrderSummaryResult } from "../domain/OrderSummaryModel";
 
 export class SummaryCostService {
@@ -8,7 +8,7 @@ export class SummaryCostService {
         this.summaryCostRepository = summaryCostRepository || new SummaryCostRepository();
     }
 
-    async getSummaryCost(pages: number): Promise<PaginatedOrderSummaryResult> {
-        return await this.summaryCostRepository.getSummaryCost(pages);
+    async getSummaryCost(params: SummaryCostParams): Promise<PaginatedOrderSummaryResult> {
+        return await this.summaryCostRepository.getSummaryCost(params);
     }
 }
