@@ -26,7 +26,12 @@ export interface TableData {
   distance: number;
   created_by: string | null;
   operators: Operator[];
-  dispatch_ticket: string; // Agregado ya que se usa en el código
+  dispatch_ticket: string;
+  
+  // Propiedades opcionales específicas de ExtraCost
+  extraCostName?: string;
+  extraCostType?: string;
+  extraCostCost?: number;
 }
 
 // Interfaz para exportar solo los campos planos
