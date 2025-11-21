@@ -1,11 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { DataTable } from '../../../Home/ui/DataTable';
 import { ExtraCostService } from '../../data/ExtraCostService';
-import { ExtraCostResponse, mapExtraCostToTableData } from '../../domain/ExtraCostModel';
-import { TableData } from '../../../Home/domain/TableData';
+import { ExtraCostResponse } from '../../domain/ExtraCostModel';
 import WeekPicker from '../../../components/WeekPicker';
 import YearPicker from '../../../components/YearPicker';
 import { ExtraCostParams } from '../../data/ExtraCostRepository';
+import ExtraCostDataTable from '../components/ExtraCostDataTable';
 
 // función helper para semana ISO
 const getISOWeek = (date: Date): number => {
@@ -30,12 +30,10 @@ const ExtraCostPage: React.FC = () => {
   
   const [extraCosts, setExtraCosts] = useState<ExtraCostResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [tableData, setTableData] = useState<TableData[]>([]);
-  const [selectedRows, setSelectedRows] = useState<TableData[]>([]);
   
   // Pagination state
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [page] = useState(0);
+  const [rowsPerPage] = useState(25);
   
   const extraCostService = useMemo(() => new ExtraCostService(), []);
   
@@ -59,11 +57,9 @@ const ExtraCostPage: React.FC = () => {
 
       const response = await extraCostService.getExtraCosts(params);
       setExtraCosts(response);
-      setTableData(mapExtraCostToTableData(response.results));
     } catch (error) {
       console.error('Error fetching extra costs:', error);
       setExtraCosts(null);
-      setTableData([]);
     } finally {
       setIsLoading(false);
     }
@@ -73,49 +69,21 @@ const ExtraCostPage: React.FC = () => {
     fetchExtraCosts();
   }, [fetchExtraCosts]);
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (newRowsPerPage: number) => {
-    setRowsPerPage(newRowsPerPage);
-    setPage(0); // Reset to first page
-  };
-
-  const handleRowSelect = (row: TableData) => {
-    setSelectedRows(prev => {
-      const exists = prev.find(selected => selected.id === row.id);
-      if (exists) {
-        return prev.filter(selected => selected.id !== row.id);
-      } else {
-        return [...prev, row];
-      }
-    });
-  };
-
-  const handleSelectAll = (selectAll: boolean) => {
-    if (selectAll) {
-      setSelectedRows(tableData);
-    } else {
-      setSelectedRows([]);
-    }
-  };
-
   const handleFinishOrder = (orderId: string) => {
     console.log('Finishing order:', orderId);
-    // Implement finish order logic
+    // Implement finish order logic here
   };
 
-  const handleContextMenu = (event: React.MouseEvent, row: TableData) => {
+  const handleContextMenu = (event: React.MouseEvent, row: any) => {
     event.preventDefault();
     console.log('Context menu for:', row);
-    // Implement context menu logic
+    // Implement context menu logic here
   };
 
-  const handleActionsMenuClick = (event: React.MouseEvent, row: TableData) => {
+  const handleActionsMenuClick = (event: React.MouseEvent, row: any) => {
     event.stopPropagation();
     console.log('Actions menu for:', row);
-    // Implement actions menu logic
+    // Implement actions menu logic here
   };
 
   return (
@@ -216,26 +184,20 @@ const ExtraCostPage: React.FC = () => {
         </div>
       </div>
 
-      <DataTable
-        data={tableData}
+      {/* Tabla de Extra Costs */}
+      <ExtraCostDataTable 
+        data={extraCosts} 
         loading={isLoading}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalRows={extraCosts?.count || 0}
-        selectedRows={selectedRows}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleRowsPerPageChange}
-        onRowSelect={handleRowSelect}
-        onSelectAll={handleSelectAll}
         onFinishOrder={handleFinishOrder}
         onContextMenu={handleContextMenu}
         onActionsMenuClick={handleActionsMenuClick}
       />
 
-      {selectedRows.length > 0 && (
-        <div className="mt-4 p-3 bg-blue-50 border rounded-lg" style={{ borderColor: '#0B2863' }}>
+      {/* Información de resultados */}
+      {extraCosts && (
+        <div className="mt-4 p-3 bg-gray-50 border rounded-lg" style={{ borderColor: '#0B2863' }}>
           <span className="text-sm font-medium" style={{ color: '#0B2863' }}>
-            {selectedRows.length} fila(s) seleccionada(s)
+            Total de registros: {extraCosts.count} | Mostrando página {page + 1}
           </span>
         </div>
       )}
