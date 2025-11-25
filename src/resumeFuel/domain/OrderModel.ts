@@ -7,12 +7,12 @@ export interface Order {
     key_ref: string;
     date: string;
     distance: number | null;
-    weight: string;
+    weight: number | null; // Cambiar de string a number
     status: string;
     state_usa: string;
     person: Person;
     job: number;
     fuelCost: FuelCost[];
 }
-// Tipo específico para la paginación de órdenes
+
 export type PaginatedOrderResult = PaginatedResult<Order>;

@@ -1,4 +1,5 @@
-import { ResumeFuelRepository, ResumeFuelRepositoryInterface } from "./ResumeFuelRepository";
+import { ResumeFuelRepository, ResumeFuelRepositoryInterface, ResumeFuelParams } from "./ResumeFuelRepository";
+import { PaginatedOrderResult } from "../domain/OrderModel";
 
 export class ResumeFuelService  {
     private resumeFuelRepository: ResumeFuelRepositoryInterface;
@@ -7,7 +8,7 @@ export class ResumeFuelService  {
         this.resumeFuelRepository = resumeFuelRepository || new ResumeFuelRepository();
     }
 
-    async getResumeFuel(pages: number): Promise<any> {
-        return await this.resumeFuelRepository.getResumeFuel(pages);
+    async getResumeFuel(params: ResumeFuelParams): Promise<PaginatedOrderResult> {
+        return await this.resumeFuelRepository.getResumeFuel(params);
     }   
 }

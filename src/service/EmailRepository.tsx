@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Cookies from 'js-cookie';
+import { fetchWithAuth, logout } from './authService';
 
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
@@ -22,12 +22,6 @@ export async function sendPdfEmail(
   subject: string,
   to: string | string[]
 ): Promise<SendPdfEmailResult> {
-  const token = Cookies.get('authToken');
-  if (!token) {
-    window.location.href = '/login';
-    throw new Error('No hay token de autenticación');
-  }
-
   try {
     const formData = new FormData();
     formData.append('pdf_file', pdfFile);
@@ -36,18 +30,16 @@ export async function sendPdfEmail(
     const toValue = Array.isArray(to) ? to.join(',') : to;
     formData.append('to', toValue);
 
-    const response = await fetch(`${BASE_URL_API}/api/utilities/email/send_pdf/`, {
+    const response = await fetchWithAuth(`${BASE_URL_API}/api/utilities/email/send_pdf/`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      // no Content-Type aquí — fetchWithAuth detecta FormData y no fuerza application/json
       body: formData,
     });
 
     // handle auth expiration
-    if (response.status === 403) {
-      Cookies.remove('authToken');
-      window.location.href = '/login';
+    if (response.status === 401 || response.status === 403) {
+      // logout (borra tokens y redirige)
+      logout();
       throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
     }
 
