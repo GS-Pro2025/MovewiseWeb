@@ -1,48 +1,48 @@
 import { PaginatedOrderResult } from "../domain/OrderModel";
-import Cookies from 'js-cookie';
+import { fetchWithAuth } from '../../service/authService';
+
+export interface ResumeFuelParams {
+    page?: number;
+    pageSize?: number;
+    mode?: 'single_week' | 'week_range';
+    numberWeek?: number;
+    startWeek?: number;
+    endWeek?: number;
+    year?: number;
+}
 
 export interface ResumeFuelRepositoryInterface {
-    getResumeFuel(pages: number): Promise<PaginatedOrderResult>;
+    getResumeFuel(params: ResumeFuelParams): Promise<PaginatedOrderResult>;
 }
 
 export class ResumeFuelRepository implements ResumeFuelRepositoryInterface {
-    private baseUrl: string =
-        import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
+    private baseUrl: string = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
-    async getResumeFuel(pages: number): Promise<PaginatedOrderResult> {
-        const token = Cookies.get('authToken');
+    async getResumeFuel(params: ResumeFuelParams): Promise<PaginatedOrderResult> {
+        // Construir query params
+        const queryParams = new URLSearchParams();
         
-        if (!token) {
-            window.location.href = '/login';
-            throw new Error('No hay token de autenticación');
-        }
+        if (params.page !== undefined) queryParams.append('page', params.page.toString());
+        if (params.pageSize !== undefined) queryParams.append('page_size', params.pageSize.toString());
+        if (params.year !== undefined) queryParams.append('year', params.year.toString());
+        if (params.mode !== undefined) queryParams.append('mode', params.mode);
+        if (params.numberWeek !== undefined) queryParams.append('number_week', params.numberWeek.toString());
+        if (params.startWeek !== undefined) queryParams.append('start_week', params.startWeek.toString());
+        if (params.endWeek !== undefined) queryParams.append('end_week', params.endWeek.toString());
 
         try {
-            const response = await fetch(`${this.baseUrl}/orders-with-costFuel/?page=${pages}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.status === 403) {
-                // Si el token ha expirado o no es válido, redirigir al login
-                Cookies.remove('authToken');
-                window.location.href = '/login';
-                throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-            }
+            const response = await fetchWithAuth(
+                `${this.baseUrl}/orders-with-costFuel/?${queryParams.toString()}`
+            );
 
             if (!response.ok) {
-                throw new Error('Error al obtener los datos');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             return await response.json();
         } catch (error) {
-            if (error instanceof Error) {
-                throw error;
-            }
-            throw new Error('Error en la solicitud');
+            console.error('Error in getResumeFuel:', error);
+            throw error;
         }
     }
 }

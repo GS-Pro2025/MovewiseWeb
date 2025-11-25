@@ -1,4 +1,5 @@
-import Cookies from "js-cookie";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { fetchWithAuth, logout } from "./authService";
 
 export interface AssignmentData {
   id_assign: number;
@@ -62,20 +63,14 @@ export async function payrollService(
   year: number = 1,
   location: string = "",
 ): Promise<ApiResponse> {
-  const token: string | undefined = Cookies.get("authToken");
   const url = `${API_BASE}/list-assign-operator?number_week=${numberWeek}&year=${year}&location=${location}`;
-
-  const res: Response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-  });
+  const res: Response = await fetchWithAuth(url, { method: "GET" });
 
   if (!res.ok) {
-    const msg = await res.text();
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const msg = await res.text().catch(() => res.statusText);
     throw new Error(`API ${res.status}: ${msg || res.statusText}`);
   }
 
@@ -100,21 +95,17 @@ export interface CreatePaymentPayload {
 export async function createPayment(
   payload: CreatePaymentPayload,
 ): Promise<ApiResponse> {
-  const token: string | undefined = Cookies.get("authToken");
   const url = `${API_BASE}/assign/create-payment/`;
-
-  const res: Response = await fetch(url, {
+  const res: Response = await fetchWithAuth(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
     body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
-    const msg = await res.text();
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const msg = await res.text().catch(() => res.statusText);
     throw new Error(`API ${res.status}: ${msg || res.statusText}`);
   }
 
@@ -129,20 +120,14 @@ export async function createPayment(
 export async function getPaymentById(
   paymentId: number | string,
 ): Promise<PaymentData> {
-  const token: string | undefined = Cookies.get("authToken");
   const url = `${API_BASE}/payments/${paymentId}/`;
-
-  const res: Response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-  });
+  const res: Response = await fetchWithAuth(url, { method: "GET" });
 
   if (!res.ok) {
-    const msg = await res.text();
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const msg = await res.text().catch(() => res.statusText);
     throw new Error(`API ${res.status}: ${msg || res.statusText}`);
   }
 
@@ -150,21 +135,17 @@ export async function getPaymentById(
 }
 
 export async function cancelPayments(assign_ids: number[]): Promise<{ status: string; message: string }> {
-  const token: string | undefined = Cookies.get("authToken");
   const url = `${API_BASE}/assign/cancel-payments/`;
-
-  const res: Response = await fetch(url, {
+  const res: Response = await fetchWithAuth(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
     body: JSON.stringify({ assign_ids }),
   });
 
   if (!res.ok) {
-    const msg = await res.text();
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const msg = await res.text().catch(() => res.statusText);
     throw new Error(`API ${res.status}: ${msg || res.statusText}`);
   }
 
