@@ -4,8 +4,12 @@ import { Copy, Inbox, FileX } from 'lucide-react';
 import {
   Box,
   CircularProgress,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { StatementRecord } from '../domain/StatementModels';
+import { updateStatementState } from '../data/StatementRepository';
+import { useSnackbar } from 'notistack';
 
 interface StatementDataTableProps {
   data: StatementRecord[];
@@ -18,6 +22,7 @@ interface StatementDataTableProps {
   onRowsPerPageChange: (rowsPerPage: number) => void;
   onRowSelect: (row: StatementRecord) => void;
   onSelectAll: (selectAll: boolean) => void;
+  onStateUpdated?: (updated: StatementRecord) => void;
 }
 
 const LoadingSpinner = () => (
@@ -34,10 +39,13 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
   onPageChange,
   onRowsPerPageChange,
   onRowSelect,
-  onSelectAll
+  onSelectAll,
+  onStateUpdated
 }) => {
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
-
+  const { enqueueSnackbar } = useSnackbar();
+  const [updatingIds, setUpdatingIds] = React.useState<Set<number>>(new Set());
+  console.log("updatingIds:", updatingIds);
   const isSelected = useCallback((row: StatementRecord) => 
     selectedRows.some(selected => selected.id === row.id), 
     [selectedRows]
@@ -82,6 +90,29 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
       console.error('Failed to copy to clipboard:', err);
     }
   }, []);
+
+  const setRowUpdating = (id: number, v: boolean) => {
+    setUpdatingIds(prev => {
+      const s = new Set(prev);
+      if (v) s.add(id); else s.delete(id);
+      return s;
+    });
+  };
+
+  const handleStateChange = async (row: StatementRecord, newState: 'Exists' | 'Not_exists' | 'Processed') => {
+    if (!row || row.state === newState) return;
+    setRowUpdating(row.id, true);
+    try {
+      const updated = await updateStatementState(row.id, newState);
+      // notify parent to update its copies
+      onStateUpdated?.(updated);
+    } catch (err: any) {
+      console.error('Failed to update state', err);
+      enqueueSnackbar(err?.message || 'Failed to update state', { variant: 'error' });
+    } finally {
+      setRowUpdating(row.id, false);
+    }
+  };
 
   if (loading) {
     return (
@@ -257,12 +288,45 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
                     </td>
                     
                     <td className="px-4 py-3 text-center">
-                      <span 
-                        className="px-3 py-1 rounded-full text-xs font-bold"
-                        style={getStateColor(row.state)}
-                      >
-                        {row.state || 'Unknown'}
-                      </span>
+                      {updatingIds.has(row.id) ? (
+                        <div className="flex items-center justify-center">
+                          <CircularProgress size={18} />
+                        </div>
+                      ) : (
+                        <Select
+                          value={row.state || ''}
+                          onChange={(e) => handleStateChange(row, e.target.value as 'Exists' | 'Not_exists' | 'Processed')}
+                          size="small"
+                          aria-label={`State for ${row.keyref}`}
+                          renderValue={(val) => {
+                            const v = String(val || 'Unknown');
+                            const style = getStateColor(v);
+                            return (
+                              <span style={{ ...style, padding: '4px 10px', borderRadius: 999, fontSize: 12, display: 'inline-block', minWidth: 80, textAlign: 'center' }}>
+                                {v}
+                              </span>
+                            );
+                          }}
+                          sx={{
+                            minWidth: 140,
+                            '& .MuiSelect-select': {
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }
+                          }}
+                        >
+                          <MenuItem value="Exists">
+                            <span style={{ ...getStateColor('Exists'), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>Exists</span>
+                          </MenuItem>
+                          <MenuItem value="Not_exists">
+                            <span style={{ ...getStateColor('Not_exists'), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>Not_exists</span>
+                          </MenuItem>
+                          <MenuItem value="Processed">
+                            <span style={{ ...getStateColor('Processed'), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>Processed</span>
+                          </MenuItem>
+                        </Select>
+                      )}
                     </td>
                   </tr>
                 );
