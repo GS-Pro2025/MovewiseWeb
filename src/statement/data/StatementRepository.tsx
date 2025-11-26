@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* Consumer para /statements/by-week/ */
-import Cookies from 'js-cookie';
-import { StatementsByWeekResponse } from '../domain/StatementModels';
+import { StatementsByWeekResponse, StatementRecord } from '../domain/StatementModels';
+import { fetchWithAuth, logout } from '../../service/authService';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
@@ -15,12 +15,6 @@ export async function fetchStatementsByWeek(
   page: number = 1,
   pageSize: number = 20
 ): Promise<StatementsByWeekResponse> {
-  const token = Cookies.get('authToken');
-  if (!token) {
-    window.location.href = '/login';
-    throw new Error('No auth token');
-  }
-
   try {
     const params = new URLSearchParams();
     params.append('week', String(week));
@@ -31,17 +25,11 @@ export async function fetchStatementsByWeek(
     const url = `${BASE_URL_API}/statements/by-week/?${params.toString()}`;
     console.log('Fetching statements by week from URL:', url);
 
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const res = await fetchWithAuth(url, { method: 'GET' });
 
-    if (res.status === 403) {
-      Cookies.remove('authToken');
-      window.location.href = '/login';
+    if (res.status === 401 || res.status === 403) {
+      // Auth issue: force logout and redirect
+      logout();
       throw new Error('Session expired');
     }
 
@@ -64,6 +52,53 @@ export async function fetchStatementsByWeek(
   }
 }
 
+/**
+ * Update the `state` field of a StatementRecord.
+ * Allowed values: "Exists" | "Not_exists" | "Processed"
+ * PATCH {{BASE_URL_API}}/statements/{pk}/state/   (expects { state })
+ */
+export async function updateStatementState(
+  pk: number,
+  newState: 'Exists' | 'Not_exists' | 'Processed'
+): Promise<StatementRecord> {
+  const allowed = ['Exists', 'Not_exists', 'Processed'];
+  if (!allowed.includes(newState)) {
+    throw new Error('Invalid state value');
+  }
+
+  const url = `${BASE_URL_API}/statements/${pk}/state/`;
+
+  try {
+    const res = await fetchWithAuth(url, {
+      method: 'PATCH',
+      body: JSON.stringify({ state: newState }),
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      throw new Error('Session expired');
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Failed to update state: ${res.status} ${res.statusText} ${txt}`);
+    }
+
+    const payload = await res.json().catch(() => null);
+    // backend examples return { status: 'success', data: { ... }, message: '...' }
+    if (payload && payload.data) {
+      return payload.data as StatementRecord;
+    }
+
+    // fallback: return raw payload if it matches StatementRecord shape
+    return payload as StatementRecord;
+  } catch (error) {
+    console.error(`Error updating statement ${pk} state:`, error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
 export default {
   fetchStatementsByWeek,
+  updateStatementState,
 };

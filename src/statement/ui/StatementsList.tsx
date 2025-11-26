@@ -10,9 +10,7 @@ import { StatementDataTable } from './StatementDataTable';
 
 // Services
 import { fetchStatementsByWeek } from '../data/StatementRepository';
-
-// Types
-import { StatementRecord, WeekSummary, StatementsByWeekResponse } from '../domain/StatementModels';
+import { StatementRecord, StatementsByWeekResponse, WeekSummary } from '../domain/StatementModels';
 
 // Utils
 const getWeekOfYear = (date: Date): number => {
@@ -64,6 +62,13 @@ const StatementsTable: React.FC = () => {
   // Hooks
   const { enqueueSnackbar } = useSnackbar();
 
+  // Actualiza registro en estado local (recibido desde la tabla)
+  const handleStateUpdated = (updated: StatementRecord) => {
+    setData(prev => prev.map(d => d.id === updated.id ? updated : d));
+    setFilteredData(prev => prev.map(d => d.id === updated.id ? updated : d));
+    enqueueSnackbar(`Statement ${updated.keyref} state updated to ${updated.state}`, { variant: 'success' });
+  };
+
   // Load data function
   const loadData = useCallback(async () => {
     try {
@@ -86,7 +91,7 @@ const StatementsTable: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination, week, year]);
+  }, [enqueueSnackbar, pagination.pageIndex, pagination.pageSize, week, year]);
 
   // Effects
   useEffect(() => {
@@ -199,6 +204,7 @@ const StatementsTable: React.FC = () => {
         onRowsPerPageChange={handleRowsPerPageChange}
         onRowSelect={handleRowSelect}
         onSelectAll={handleSelectAll}
+        onStateUpdated={handleStateUpdated}
       />
     </Box>
   );

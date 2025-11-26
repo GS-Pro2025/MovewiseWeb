@@ -6,11 +6,14 @@ import { SuperOrder } from '../domain/ModelsOCR';
 import ExportMenuComponent from './ExportMenuComponent';
 import { Calendar, Search, RotateCcw } from 'lucide-react';
 import WeekPicker from '../../components/WeekPicker';
+import YearPicker from '../../components/YearPicker';
 
 interface FinancialControlsProps {
   // Week controls
   week: number;
   onWeekChange: (week: number) => void;
+  year: number;
+  onYearChange: (year: number) => void;
   weekRange: { start: string; end: string };
   showWeekControls: boolean;
 
@@ -28,7 +31,6 @@ interface FinancialControlsProps {
   // Export controls
   exportData: SuperOrder[];
   isSearchResults: boolean;
-  year: number;
   loading: boolean;
 
   onViewExpenseBreakdown?: () => void;
@@ -37,6 +39,8 @@ interface FinancialControlsProps {
 const FinancialControls: React.FC<FinancialControlsProps> = ({
   week,
   onWeekChange,
+  year,
+  onYearChange,
   weekRange,
   showWeekControls,
   searchRef,
@@ -48,13 +52,14 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
   onUploadClick,
   exportData,
   isSearchResults,
-  year,
   loading,
   onViewExpenseBreakdown,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const isLaptopSmall = useMediaQuery('(max-width: 1420px)'); // Para pantallas entre 1024-1420px
+  const isDesktopSmall = useMediaQuery('(max-width: 1200px)'); // Para ajustes adicionales
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' && searchRef.trim() && !searchLoading) {
@@ -165,15 +170,28 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
           {/* Week Controls - Mobile */}
           {showWeekControls && (
             <div className="space-y-3">
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'relative', overflow: 'visible' }}>
-                  <WeekPicker
-                    week={week}
-                    onWeekSelect={(w) => onWeekChange(w)}
-                    min={1}
-                    max={53}
-                    className=""
-                  />
+              <div className="grid grid-cols-2 gap-3">
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', overflow: 'visible' }}>
+                    <WeekPicker
+                      week={week}
+                      onWeekSelect={(w) => onWeekChange(w)}
+                      min={1}
+                      max={53}
+                      className=""
+                    />
+                  </div>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', overflow: 'visible' }}>
+                    <YearPicker
+                      year={year}
+                      onYearSelect={(y) => onYearChange(y)}
+                      min={2020}
+                      max={new Date().getFullYear() + 2}
+                      className=""
+                    />
+                  </div>
                 </div>
               </div>
                <div 
@@ -186,7 +204,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
                >
                  <Calendar size={18} />
                  <Typography variant="body2" className="!font-bold">
-                   {weekRange.start} → {weekRange.end}
+                   Week {week}, {year}: {weekRange.start} → {weekRange.end}
                  </Typography>
                </div>
              </div>
@@ -275,24 +293,37 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
         </div>
       ) : (
         /* Desktop/Tablet Layout */
-        <div className={`flex ${isTablet ? 'flex-col' : 'flex-row'} gap-4 items-start`}>
+        <div className={`flex ${isTablet || isLaptopSmall ? 'flex-col' : 'flex-row'} gap-4 ${isTablet || isLaptopSmall ? 'items-stretch' : 'items-start'}`}>
           {/* Week Controls - Desktop/Tablet */}
           {showWeekControls && (
-            <div className={`flex ${isTablet ? 'flex-row' : 'flex-col'} gap-4 items-start`}>
+            <div className={`flex ${isTablet || isLaptopSmall ? 'flex-row justify-between' : 'flex-col'} gap-4 items-start ${isTablet || isLaptopSmall ? 'w-full' : ''}`}>
               <div className="flex flex-col gap-2">
-                <div style={{ minWidth: 100 }}>
-                  <div style={{ position: 'relative', overflow: 'visible' }}>
-                    <WeekPicker
-                      week={week}
-                      onWeekSelect={(w) => onWeekChange(w)}
-                      min={1}
-                      max={53}
-                      className=""
-                    />
+                <div className={`grid ${isTablet || isLaptopSmall ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+                  <div style={{ minWidth: isTablet || isLaptopSmall ? 80 : 100 }}>
+                    <div style={{ position: 'relative', overflow: 'visible' }}>
+                      <WeekPicker
+                        week={week}
+                        onWeekSelect={(w) => onWeekChange(w)}
+                        min={1}
+                        max={53}
+                        className=""
+                      />
+                    </div>
+                  </div>
+                  <div style={{ minWidth: isTablet || isLaptopSmall ? 80 : 100 }}>
+                    <div style={{ position: 'relative', overflow: 'visible' }}>
+                      <YearPicker
+                        year={year}
+                        onYearSelect={(y) => onYearChange(y)}
+                        min={2020}
+                        max={new Date().getFullYear() + 2}
+                        className=""
+                      />
+                    </div>
                   </div>
                 </div>
                </div>
-               <div className="flex flex-col items-start min-w-[180px]">
+               <div className={`flex flex-col items-start ${isTablet || isLaptopSmall ? 'min-w-[120px]' : 'min-w-[180px]'}`}>
                  <Typography variant="caption" className="!font-semibold !mb-1" style={{ color: '#0B2863' }}>
                    Period
                  </Typography>
@@ -305,8 +336,8 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
                    }}
                  >
                    <Calendar size={18} />
-                   <Typography variant="body2" className="!font-bold">
-                     {weekRange.start} → {weekRange.end}
+                   <Typography variant={isTablet || isLaptopSmall ? "caption" : "body2"} className="!font-bold">
+                     {isDesktopSmall ? `W${week} ${year}` : `W${week}, ${year}: ${weekRange.start} → ${weekRange.end}`}
                    </Typography>
                  </div>
                </div>
@@ -314,7 +345,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
            )}
           
           {/* Search Controls - Desktop/Tablet */}
-          <div className={`flex gap-3 items-center ${isTablet ? 'flex-wrap' : 'flex-nowrap'}`}>
+          <div className={`flex gap-3 items-center ${isTablet || isLaptopSmall ? 'flex-wrap w-full' : 'flex-nowrap'}`}>
             <div className="relative">
               <TextField
                 label="Search by Reference"
@@ -323,7 +354,8 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
                 onKeyPress={handleKeyPress}
                 size="small"
                 sx={{ 
-                  minWidth: isTablet ? 200 : 250,
+                  minWidth: isTablet ? 180 : isLaptopSmall ? 200 : 250,
+                  width: isTablet || isLaptopSmall ? '100%' : 'auto',
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 3,
                     '& fieldset': {
@@ -354,48 +386,65 @@ const FinancialControls: React.FC<FinancialControlsProps> = ({
               />
             </div>
             
-            <SearchButton
-              onClick={onSearch}
-              disabled={searchLoading || !searchRef.trim()}
-            >
-              {searchLoading ? (
-                <>
-                  <RotateCcw size={16} className="animate-spin" />
-                  {!isTablet && 'Searching...'}
-                </>
-              ) : (
-                <>
-                  <Search size={16} />
-                  {!isTablet && 'Search'}
-                </>
+            <div className={`flex gap-2 ${isTablet || isLaptopSmall ? 'w-full' : ''}`}>
+              <SearchButton
+                onClick={onSearch}
+                disabled={searchLoading || !searchRef.trim()}
+                fullWidth={isTablet || isLaptopSmall}
+              >
+                {searchLoading ? (
+                  <>
+                    <RotateCcw size={16} className="animate-spin" />
+                    {!isTablet && !isLaptopSmall && 'Searching...'}
+                  </>
+                ) : (
+                  <>
+                    <Search size={16} />
+                    {!isTablet && !isLaptopSmall && 'Search'}
+                  </>
+                )}
+              </SearchButton>
+              
+              {hasSearchResults && (
+                <ClearButton onClick={onClearSearch} fullWidth={isTablet || isLaptopSmall} />
               )}
-            </SearchButton>
-            
-            {hasSearchResults && (
-              <ClearButton onClick={onClearSearch} />
-            )}
+            </div>
           </div>
           
           {/* Action Controls - Desktop/Tablet */}
-          <div className={`flex gap-4 ${isTablet ? 'w-full justify-center' : 'ml-auto'}`}>
-            <UploadButton onClick={onUploadClick} />
-            
-            <ExportMenuComponent
-              superOrders={exportData}
-              isSearchResults={isSearchResults}
-              week={week}
-              year={year}
-              weekRange={weekRange}
-              disabled={loading}
-            />
-            <Button
-              variant="outlined"
-              color="primary"
-              sx={{ minHeight: '48px', fontWeight: 600 }}
-              onClick={onViewExpenseBreakdown}
-            >
-              View Expense Breakdown
-            </Button>
+          <div className={`flex ${isTablet || isLaptopSmall ? 'flex-wrap gap-2 w-full' : 'gap-4 ml-auto'} ${isTablet || isLaptopSmall ? 'justify-center' : ''}`}>
+            <div className={isTablet || isLaptopSmall ? 'w-full' : ''}>
+              <UploadButton onClick={onUploadClick} fullWidth={isTablet || isLaptopSmall} />
+            </div>
+             
+            <div className={`flex gap-2 ${isTablet || isLaptopSmall ? 'w-full' : ''}`}>
+              <div className={isTablet || isLaptopSmall ? 'flex-1' : ''}>
+                <ExportMenuComponent
+                  superOrders={exportData}
+                  isSearchResults={isSearchResults}
+                  week={week}
+                  year={year}
+                  weekRange={weekRange}
+                  disabled={loading}
+                  fullWidth={isTablet || isLaptopSmall}
+                />
+              </div>
+              <div className={isTablet || isLaptopSmall ? 'flex-1' : ''}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  sx={{ 
+                    minHeight: '48px', 
+                    fontWeight: 600,
+                    width: isTablet || isLaptopSmall ? '100%' : 'auto',
+                    fontSize: isTablet ? '0.75rem' : isLaptopSmall ? '0.8rem' : '0.875rem'
+                  }}
+                  onClick={onViewExpenseBreakdown}
+                >
+                  {isTablet ? 'Expenses' : isLaptopSmall ? 'Expense Breakdown' : 'View Expense Breakdown'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -50,6 +50,7 @@ export interface WeekInfo {
   export interface PayrollExportProps {
     operators: OperatorRow[];
     weekInfo: WeekInfo;
+    year: number;
     weekDates: { [key in keyof WeekAmounts]?: string };
     week: number;
     location: string;
