@@ -6,6 +6,7 @@ import { WeekInfo } from "../../service/PayrollService";
 import PayrollExport from '../util/PayrollExport';
 import { OperatorRowExtended } from '../types/payroll.types';
 import WeekPicker from '../../components/WeekPicker';
+import YearPicker from '../../components/YearPicker';
 
 interface PayrollControlsProps {
   searchTerm: string;
@@ -26,6 +27,8 @@ interface PayrollControlsProps {
   setStates: (states: { name: string }[]) => void;
   week: number;
   changeWeek: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  year: number;
+  changeYear: (year: number) => void;
   weekInfo: WeekInfo | null;
   loading: boolean;
   grouped: OperatorRowExtended[];
@@ -70,6 +73,8 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
   setStates,
   week,
   changeWeek,
+  year,
+  changeYear,
   weekInfo,
   loading,
   grouped,
@@ -158,7 +163,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-md border p-4 mb-4 week-dropdown-container" style={{ borderColor: COLORS.primary }} ref={dropdownRef}>
       {/* Main Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Week Input */}
         <div className="relative">
           <WeekPicker
@@ -167,6 +172,16 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
               const syntheticEvent = { target: { value: selectedWeek.toString() } } as React.ChangeEvent<HTMLInputElement>;
               changeWeek(syntheticEvent);
             }}
+          />
+        </div>
+        
+        {/* Year Input */}
+        <div className="relative">
+          <YearPicker
+            year={year}
+            onYearSelect={changeYear}
+            min={2020}
+            max={new Date().getFullYear() + 2}
           />
         </div>
         
@@ -313,7 +328,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
               </div>
               <div>
                 <div className="text-xs font-bold uppercase tracking-wide" style={{ color: COLORS.primary }}>
-                  Payroll Period
+                  Payroll Period (Week {week}, {year})
                 </div>
                 <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: COLORS.gray }}>
                   <span>{weekInfo.start_date}</span>
@@ -330,6 +345,7 @@ export const PayrollControls: React.FC<PayrollControlsProps> = ({
                 weekInfo={weekInfo}
                 weekDates={weekDates}
                 week={week}
+                year={year}
                 location={locationString}
                 paymentStats={paymentStats}
                 totalGrand={filteredTotalGrand}

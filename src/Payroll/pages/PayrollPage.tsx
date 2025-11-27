@@ -40,6 +40,7 @@ export default function PayrollPage() {
     [key in keyof WeekAmounts]?: string;
   }>({});
   const [week, setWeek] = useState(() => getISOWeek(new Date()));
+  const [year, setYear] = useState(() => new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState("");
 
   // Estados para país, estado y ciudad
@@ -111,8 +112,7 @@ export default function PayrollPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const currentYear = new Date().getFullYear();
-      const response = await payrollService(week, currentYear, locationString);
+      const response = await payrollService(week, year, locationString);
 
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(response.week_info.start_date);
@@ -276,7 +276,7 @@ export default function PayrollPage() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [week, country, state, city]);
+  }, [week, year, country, state, city]);
 
   const handleModalClose = () => {
     setSelectedOperator(null);
@@ -365,6 +365,12 @@ export default function PayrollPage() {
     }
   };
 
+  const changeYear = (newYear: number) => {
+    if (Number.isInteger(newYear) && newYear >= 2020 && newYear <= new Date().getFullYear() + 2) {
+      setYear(newYear);
+    }
+  };
+
   const handleCloseEmailDialog = () => {
     setEmailDialogOpen(false);
     setSelectedOperatorForEmail(null);
@@ -396,6 +402,8 @@ export default function PayrollPage() {
           setStates={setStates}
           week={week}
           changeWeek={changeWeek}
+          year={year}
+          changeYear={changeYear}
           weekInfo={weekInfo}
           loading={loading}
           grouped={grouped}

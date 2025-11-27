@@ -218,7 +218,7 @@ export const ResumeFuelTable: React.FC<{
         conductor: `${order.person?.first_name || ''} ${order.person?.last_name || ''}`,
         distancia: order.distance || 0,
         peso: order.weight || 0,
-        trabajo: order.job,
+        trabajo: order.job_name,
         costo_por_galon: fuelCostData.cost_gl || 0,
         cantidad_combustible: fuelCostData.fuel_qty || 0,
         distancia_recorrida: fuelCostData.distance || 0,
@@ -245,7 +245,7 @@ export const ResumeFuelTable: React.FC<{
         conductor: `${order.person?.first_name} ${order.person?.last_name}`,
         distancia: order.distance,
         peso: order.weight,
-        trabajo: order.job,
+        trabajo: order.job_name,
         costo_por_galon: fuelCostData.cost_gl,
         cantidad_combustible: fuelCostData.fuel_qty,
         distancia_recorrida: fuelCostData.distance,
@@ -375,7 +375,7 @@ export const ResumeFuelTable: React.FC<{
                                   <p className="text-xs"><strong>Date:</strong> {new Date(row.date).toLocaleDateString()}</p>
                                   <p className="text-xs"><strong>Location:</strong> {row.state_usa}</p>
                                   <p className="text-xs"><strong>Status:</strong> {row.status}</p>
-                                  <p className="text-xs"><strong>Job:</strong> {row.job}</p>
+                                  <p className="text-xs"><strong>Job:</strong> {row.job_name}</p>
                                   <p className="text-xs"><strong>Driver:</strong> {row.person?.first_name} {row.person?.last_name}</p>
                                   <p className="text-xs"><strong>Distance:</strong> {row.distance != null ? new Intl.NumberFormat('en-US').format(row.distance) : '0'} mi</p>
                                   <p className="text-xs"><strong>Weight:</strong> {row.weight != null ? new Intl.NumberFormat('en-US').format(Number(row.weight)) : '0'} lb</p>

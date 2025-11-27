@@ -12,6 +12,7 @@ export interface Order {
     state_usa: string;
     person: Person;
     job: number;
+    job_name: string;
     fuelCost: FuelCost[];
 }
 

@@ -51,7 +51,7 @@ const FinancialView = () => {
     const start = new Date(now.getFullYear(), 0, 1);
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
-  const [year] = useState<number>(new Date().getFullYear());
+  const [year, setYear] = useState<number>(new Date().getFullYear());
   const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
 
   // Table states
@@ -127,12 +127,11 @@ const FinancialView = () => {
   }
 
   // Fetch data function
-  const fetchData = useCallback(async (pageNumber: number, week: number) => {
-    const currentYear = new Date().getFullYear();
+  const fetchData = useCallback(async (pageNumber: number, week: number, year: number) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await repository.getSummaryCost(pageNumber, week, currentYear);
+      const result = await repository.getSummaryCost(pageNumber, week, year);
       setData(result.results);
       setRowCount(result.count);
     } catch (err: any) {
@@ -144,7 +143,7 @@ const FinancialView = () => {
 
   // Load data on component mount and when week changes
   useEffect(() => {
-    fetchData(page, week);
+    fetchData(page, week, year);
   }, [page, week, year]);
 
   // Process and sort super orders
@@ -185,6 +184,13 @@ const FinancialView = () => {
       setWeek(newWeek);
     }
   };
+
+  const handleYearChange = (newYear: number) => {
+    if (Number.isInteger(newYear) && newYear >= 2020 && newYear <= new Date().getFullYear() + 2) {
+      setYear(newYear);
+    }
+  };
+
   const handleSort = (column: keyof SuperOrder) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -231,7 +237,7 @@ const FinancialView = () => {
     setPaySuperOrder(null);
     if (res.success) {
       enqueueSnackbar("Payment registered successfully", { variant: "success" });
-      fetchData(page, week);
+      fetchData(page, week, year);
     } else {
       enqueueSnackbar(res.errorMessage || "Error processing payment", { variant: "error" });
     }
@@ -246,7 +252,7 @@ const FinancialView = () => {
     if (searchResults) {
       handleSearch();
     } else {
-      fetchData(page, week);
+      fetchData(page, week, year);
     }
   };
 
@@ -370,7 +376,7 @@ const FinancialView = () => {
 
     // Recargar datos solo si se actualizaron órdenes (full_process mode)
     if (processMode === 'full_process') {
-      fetchData(page, week);
+      fetchData(page, week, year);
     }
   };
 
@@ -461,7 +467,7 @@ const FinancialView = () => {
         if (searchResults) {
           handleSearch();
         } else {
-          fetchData(page, week);
+          fetchData(page, week, year);
         }
       } else {
         enqueueSnackbar("No orders were updated", { variant: "warning" });
@@ -534,6 +540,8 @@ const FinancialView = () => {
         <FinancialControls
           week={week}
           onWeekChange={handleWeekChange}
+          year={year}
+          onYearChange={handleYearChange}
           weekRange={weekRange}
           showWeekControls={!searchResults}
           searchRef={searchRef}
@@ -545,7 +553,6 @@ const FinancialView = () => {
           onUploadClick={() => setOcrDialogOpen(true)}
           exportData={currentExportData}
           isSearchResults={!!searchResults}
-          year={year}
           loading={loading}
           onViewExpenseBreakdown={() => navigate("/app/financial-expense-breakdown")}
         />
