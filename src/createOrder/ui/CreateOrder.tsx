@@ -597,7 +597,6 @@ const CreateOrder: React.FC = () => {
                             {...params}
                             label="State/Province"
                             fullWidth
-                            required
                             InputProps={{
                               ...params.InputProps,
                               endAdornment: (
@@ -633,7 +632,6 @@ const CreateOrder: React.FC = () => {
                             {...params}
                             label="City"
                             fullWidth
-                            required
                             InputProps={{
                               ...params.InputProps,
                               endAdornment: (
