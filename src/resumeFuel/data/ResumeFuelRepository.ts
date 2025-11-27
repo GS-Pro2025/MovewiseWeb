@@ -39,7 +39,22 @@ export class ResumeFuelRepository implements ResumeFuelRepositoryInterface {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            return await response.json();
+            // Normalizar respuesta: backend devuelve { status, ..., data: { count, results, ... } }
+            const body = await response.json().catch(() => null);
+            if (!body) throw new Error('Empty response body from orders-with-costFuel');
+            
+            // Si viene envuelto en "data", devolver data (paginado)
+            if (body.data && (body.data.results || body.data.count !== undefined)) {
+                return body.data as PaginatedOrderResult;
+            }
+
+            // Si la API ya devolvió el paginado en la raíz
+            if (body.results || body.count !== undefined) {
+                return body as PaginatedOrderResult;
+            }
+
+            // Forma inesperada: lanzar para detectar en front durante desarrollo
+            throw new Error('Unexpected response shape from orders-with-costFuel');
         } catch (error) {
             console.error('Error in getResumeFuel:', error);
             throw error;
