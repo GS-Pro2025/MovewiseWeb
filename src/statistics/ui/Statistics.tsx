@@ -834,11 +834,13 @@ const Statistics = () => {
                 
                 {/* Paid/Unpaid Week Range Chart */}
                 <div className="w-full overflow-x-auto">
-                  <PaidUnpaidWeekRangeChart
-                    initialYear={selectedYear}
-                    initialStartWeek={Math.max(1, selectedWeek - 5)}
-                    initialEndWeek={Math.min(53, selectedWeek + 5)}
-                  />
+                  {selectedYear >= 2000 && selectedWeek >= 1 && selectedWeek <= 53 && (
+                    <PaidUnpaidWeekRangeChart
+                      initialYear={selectedYear}
+                      initialStartWeek={Math.max(1, selectedWeek - 5)}
+                      initialEndWeek={Math.min(53, selectedWeek + 5)}
+                    />
+                  )}
                 </div>
               </div>
             )}

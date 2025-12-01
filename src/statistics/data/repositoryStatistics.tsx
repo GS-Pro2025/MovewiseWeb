@@ -557,8 +557,30 @@ export async function fetchOrdersPaidUnpaidWeekRange(
     throw new Error('No hay token de autenticación');
   }
 
+  // VALIDACIÓN ESTRICTA: evitar enviar undefined/NaN al backend
+  if (
+    typeof startWeek !== 'number' || isNaN(startWeek) ||
+    typeof endWeek !== 'number' || isNaN(endWeek) ||
+    typeof year !== 'number' || isNaN(year)
+  ) {
+    console.error('fetchOrdersPaidUnpaidWeekRange: invalid params', { startWeek, endWeek, year });
+    throw new Error('Invalid parameters: startWeek, endWeek, and year must be valid numbers');
+  }
+
+  if (startWeek < 1 || startWeek > 53 || endWeek < 1 || endWeek > 53) {
+    console.error('fetchOrdersPaidUnpaidWeekRange: week out of range', { startWeek, endWeek });
+    throw new Error('Invalid week range: weeks must be between 1 and 53');
+  }
+
   try {
-    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}`;
+    const params = new URLSearchParams();
+    params.append('mode', 'week_range');
+    params.append('start_week', String(startWeek));
+    params.append('end_week', String(endWeek));
+    params.append('year', String(year));
+
+    const url = `${BASE_URL_API}/orders-paidUnpaidWeekRange/?${params.toString()}`;
+    console.debug('fetchOrdersPaidUnpaidWeekRange URL:', url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -593,39 +615,83 @@ export async function fetchOrdersPaidUnpaidWeekRange(
 
 // Función mejorada para procesar datos del gráfico paid unpaid orders
 export function processPaidUnpaidChartData(data: OrdersPaidUnpaidWeekRangeResponse) {
-  if (!data.weekly_counts || data.weekly_counts.length === 0) {
+  console.log('processPaidUnpaidChartData called with:', {
+    hasData: !!data,
+    hasWeeklyCounts: !!data?.weekly_counts,
+    weeklyCountsLength: data?.weekly_counts?.length || 0,
+    totalPaid: data?.total_paid,
+    totalUnpaid: data?.total_unpaid,
+    mode: data?.mode,
+    rawDataKeys: data ? Object.keys(data) : [],
+    hasDataProperty: !!(data as any)?.data
+  });
+
+  // El backend envía los datos en data.data
+  const actualData = (data as any)?.data || data;
+  
+  console.log('actualData keys:', actualData ? Object.keys(actualData) : []);
+  
+  const weeklyCounts = actualData?.weekly_counts;
+
+  if (!weeklyCounts || weeklyCounts.length === 0) {
+    console.warn('processPaidUnpaidChartData: No weekly_counts found', {
+      hasActualData: !!actualData,
+      actualDataKeys: actualData ? Object.keys(actualData) : [],
+      weeklyCounts
+    });
     return [];
   }
 
-  return data.weekly_counts.map((week: WeeklyCount) => ({
-    week: week.week,
-    paid: week.paid,
-    unpaid: week.unpaid,
-    total: week.paid + week.unpaid,
-    paidPercentage: week.paid + week.unpaid > 0 ? Number(((week.paid / (week.paid + week.unpaid)) * 100).toFixed(1)) : 0,
-    unpaidPercentage: week.paid + week.unpaid > 0 ? Number(((week.unpaid / (week.paid + week.unpaid)) * 100).toFixed(1)) : 0
-  }));
+  const processed = weeklyCounts.map((week: WeeklyCount) => {
+    const total = week.paid + week.unpaid;
+    const paidPercentage = total > 0 ? Number(((week.paid / total) * 100).toFixed(1)) : 0;
+    const unpaidPercentage = total > 0 ? Number(((week.unpaid / total) * 100).toFixed(1)) : 0;
+
+    return {
+      week: week.week,
+      paid: week.paid,
+      unpaid: week.unpaid,
+      total,
+      paidPercentage,
+      unpaidPercentage
+    };
+  });
+
+  console.log('processPaidUnpaidChartData processed:', {
+    inputWeeks: weeklyCounts.length,
+    outputWeeks: processed.length,
+    sample: processed.slice(0, 2)
+  });
+
+  return processed;
 }
 
 // Función para obtener detalles de órdenes por semana
 export function getOrdersByWeek(data: OrdersPaidUnpaidWeekRangeResponse, week: number): OrderPaidUnpaidWeekRange[] {
   const weekKey = week.toString();
-  return data.orders_by_week?.[weekKey] || [];
+  // Manejar estructura anidada del backend
+  const actualData = (data as any)?.data || data;
+  return actualData.orders_by_week?.[weekKey] || [];
 }
 
 // Función para obtener resumen de estadísticas
 export function getPaidUnpaidSummary(data: OrdersPaidUnpaidWeekRangeResponse) {
-  const totalOrders = data.total_paid + data.total_unpaid;
-  const paidPercentage = totalOrders > 0 ? Number(((data.total_paid / totalOrders) * 100).toFixed(1)) : 0;
-  const unpaidPercentage = totalOrders > 0 ? Number(((data.total_unpaid / totalOrders) * 100).toFixed(1)) : 0;
+  // Manejar estructura anidada del backend
+  const actualData = (data as any)?.data || data;
+  
+  const totalPaid = actualData.total_paid || 0;
+  const totalUnpaid = actualData.total_unpaid || 0;
+  const totalOrders = totalPaid + totalUnpaid;
+  const paidPercentage = totalOrders > 0 ? Number(((totalPaid / totalOrders) * 100).toFixed(1)) : 0;
+  const unpaidPercentage = totalOrders > 0 ? Number(((totalUnpaid / totalOrders) * 100).toFixed(1)) : 0;
 
   return {
     totalOrders,
-    totalPaid: data.total_paid,
-    totalUnpaid: data.total_unpaid,
+    totalPaid,
+    totalUnpaid,
     paidPercentage,
     unpaidPercentage,
-    mode: data.mode || 'unknown'
+    mode: actualData.mode || 'unknown'
   };
 }
 // Función para obtener ranking semanal de operadores
