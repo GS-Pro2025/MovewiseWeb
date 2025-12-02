@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { UpdatePaymentData } from "../domain/ModelOrderUpdate";
-import { LightOrderSummaryResult, OrderSummaryTotalsResponse } from "../domain/ModelsCost"; // Agregar import
+import { LightOrderSummaryResult } from "../domain/ModelsCost";
+import { OrderSummaryLightTotalsResponse } from "../domain/ModelsSummaryLight";
 import { PaginatedOrderSummaryResult } from "../domain/OrderSummaryModel";
 import Cookies from 'js-cookie';
 
@@ -150,13 +151,13 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
     }
   }
 
-    // MÉTODO PARA TOTALS MODE
+    // MÉTODO ACTUALIZADO PARA TOTALS MODE CON COSTOS INCLUIDOS
     async getSummaryCostRangeTotals(
       startWeek: number,
       endWeek: number,
       year: number,
       onlyPaid?: boolean
-    ): Promise<OrderSummaryTotalsResponse> {
+    ): Promise<OrderSummaryLightTotalsResponse> {
       const token = Cookies.get('authToken');
       if (!token) {
         window.location.href = '/login';
@@ -168,7 +169,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
         url += '&only_paid=true';
       }
       
-      console.log(`Fetching summary totals for range ${startWeek}-${endWeek}, year ${year}, onlyPaid=${onlyPaid}`);
+      console.log(`Fetching summary totals with costs for range ${startWeek}-${endWeek}, year ${year}, onlyPaid=${onlyPaid}`);
       
       try {
         const response = await fetch(url, {
