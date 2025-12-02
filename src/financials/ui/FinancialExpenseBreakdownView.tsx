@@ -5,11 +5,12 @@ import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import { useNavigate } from "react-router-dom";
 import { enqueueSnackbar } from "notistack";
 import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownExportDialog";
-import { listCostsApi, updateCostAmountApi, deleteCostApi } from "../data/CostRepository";
+import { deleteCostApi } from "../data/CostRepository";
 import { Cost } from "../domain/ModelsCost";
 import CreateCostDialog from "./components/CreateCostDialog";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
-import { OrderSummaryTotalsResponse } from "../domain/ModelsCost";
+import { OrderSummaryLightTotalsResponse } from "../domain/ModelsSummaryLight";
+import CostsTableDropdown from './components/CostsTableDropdown';
 
 // FORMATO UNIFICADO PARA TODOS LOS NÚMEROS
 const formatCurrency = (amount: number | string): string => {
@@ -69,7 +70,8 @@ const FinancialExpenseBreakdownView = () => {
     discounts: Record<string, number>,
     income: number,
     totalCost: number,
-    profit: number 
+    profit: number,
+    totalCostFromTable?: number // AGREGAR
   } | null>(null);
   const [dbCosts, setDbCosts] = useState<Cost[]>([]);
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
@@ -107,23 +109,14 @@ const FinancialExpenseBreakdownView = () => {
     setSelectedTimelapse(null);
   }, [year]);
 
-  // Fetch database costs
-  const fetchDbCosts = async () => {
-    try {
-      const costs = await listCostsApi();
-      setDbCosts(costs);
-    } catch (err: any) {
-      console.error("Error fetching database costs:", err);
-      enqueueSnackbar("Error loading database costs", { variant: "error" });
-    }
-  };
-
-  // Fetch breakdown usando el nuevo endpoint de totals
+  // Fetch breakdown usando el nuevo endpoint de totals CON COSTOS
   const fetchBreakdown = async (fromWeek: number, toWeek: number, selectedYear: number) => {
     setLoading(true);
     setError(null);
     try {
-      const result: OrderSummaryTotalsResponse = await repository.getSummaryCostRangeTotals(fromWeek, toWeek, selectedYear, true);
+      const result: OrderSummaryLightTotalsResponse = await repository.getSummaryCostRangeTotals(fromWeek, toWeek, selectedYear, true);
+
+      console.log('Full API Response:', result);
 
       const expenses: Record<string, number> = {};
       const discounts: Record<string, number> = {};
@@ -138,8 +131,11 @@ const FinancialExpenseBreakdownView = () => {
         discounts[type.key] = 0;
       });
 
-      // Asignar valores directamente desde la respuesta del backend
-      const data = result.data;
+      const data = result.data || result;
+      
+      console.log('Extracted data:', data);
+      console.log('Costs from backend:', data.costs);
+      console.log('Total cost from table:', data.totalCostFromTable);
       
       // Expenses - FORMATO UNIFICADO
       expenses.expense = Number(Number(data.expense || 0).toFixed(2));
@@ -149,49 +145,78 @@ const FinancialExpenseBreakdownView = () => {
       expenses.driverSalaries = Number(Number(data.driverSalaries || 0).toFixed(2));
       expenses.otherSalaries = Number(Number(data.otherSalaries || 0).toFixed(2));
 
-      // CALCULAR totalCost manualmente sumando todas las categorías
-      const calculatedTotalFromCategories = 
-        expenses.expense + 
-        expenses.fuelCost + 
-        expenses.workCost + 
-        expenses.bonus + 
-        expenses.driverSalaries + 
-        expenses.otherSalaries;
-
-      // Sumar los costos de la BD
-      const totalDbCosts = dbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost || 0).toFixed(2)), 0);
+      // ACTUALIZAR dbCosts - MAPEAR other_transaction como FIXED
+      const costsFromBackend = (data.costs || []).map((cost: any) => ({
+        id_cost: cost.id_cost,
+        description: cost.description || 'Undefined',
+        cost: cost.cost,
+        type: cost.type === 'other_transaction' ? 'FIXED' : cost.type,
+        date: cost.date,
+        update: cost.date,
+        is_active: true
+      }));
       
-      // El totalCost será la suma manual + costos de BD
-      expenses.totalCost = Number((calculatedTotalFromCategories + totalDbCosts).toFixed(2));
+      console.log('Costs mapped from backend:', costsFromBackend);
+      console.log('Number of costs:', costsFromBackend.length);
+      
+      setDbCosts(costsFromBackend);
 
-      // Discounts breakdown - FORMATO UNIFICADO
+      // El backend ya suma totalCostFromTable en totalCost
+      expenses.totalCost = Number(Number(data.totalCost || 0).toFixed(2));
+      
+      const totalCostFromTable = Number(Number(data.totalCostFromTable || 0).toFixed(2));
+
+      console.log('=== VERIFICACIÓN DE COSTOS ===');
+      console.log('Expense:', expenses.expense);
+      console.log('Fuel Cost:', expenses.fuelCost);
+      console.log('Work Cost:', expenses.workCost);
+      console.log('Bonus:', expenses.bonus);
+      console.log('Driver Salaries:', expenses.driverSalaries);
+      console.log('Other Salaries:', expenses.otherSalaries);
+      console.log('DB Costs (from table):', totalCostFromTable);
+      console.log('Total Cost (backend calculated):', expenses.totalCost);
+      
+      const manualSum = expenses.expense + expenses.fuelCost + expenses.workCost + 
+                       expenses.bonus + expenses.driverSalaries + expenses.otherSalaries + 
+                       totalCostFromTable;
+      console.log('Manual Sum:', Number(manualSum.toFixed(2)));
+      console.log('Difference:', Number((expenses.totalCost - manualSum).toFixed(2)));
+
+      // Discounts breakdown - SOLO PARA MOSTRAR, NO SE USAN EN CÁLCULOS
       discounts.operators_discount = Number(Number(data.operators_discount || 0).toFixed(2));
 
-      // Income - FORMATO UNIFICADO
+      // Income - YA INCLUYE operators_discount sumado por el backend
       const income = Number(Number(data.rentingCost || 0).toFixed(2));
 
-      // Aplicar descuentos a los costos totales
-      const totalDiscounts = Object.values(discounts).reduce((sum, value) => sum + value, 0);
-      const totalCostAfterDiscounts = Number((expenses.totalCost - totalDiscounts).toFixed(2));
+      // YA NO aplicamos descuentos - el backend ya los manejó
+      // El totalCost ya está completo del backend
+      const totalCost = expenses.totalCost;
 
-      // El profit es income - costos después de descuentos
-      const profit = Number((income - totalCostAfterDiscounts).toFixed(2));
+      // El profit viene directamente del backend (ya calculado correctamente)
+      const profit = Number(Number(data.net_profit).toFixed(2));
+
+      console.log('=== VERIFICACIÓN DE PROFIT ===');
+      console.log('Income (includes operators_discount):', income);
+      console.log('Operators Discount (for display only):', discounts.operators_discount);
+      console.log('Total Cost:', totalCost);
+      console.log('Net Profit (backend):', profit);
+      console.log('Verification: Income - Total Cost =', Number((income - totalCost).toFixed(2)));
 
       setSummaryData({ 
         expenses, 
         discounts,
         income,
-        totalCost: totalCostAfterDiscounts,
-        profit 
+        totalCost, // Ya no se restan descuentos aquí
+        profit,
+        totalCostFromTable
       });
 
-      // Debug: mostrar los cálculos en consola
-      console.log('Backend totalCost:', Number(data.totalCost));
-      console.log('Manual calculation:', calculatedTotalFromCategories);
-      console.log('With DB costs:', expenses.totalCost);
-      console.log('After discounts:', totalCostAfterDiscounts);
+      console.log('Total costs from DB table:', data.totalCostFromTable);
+      console.log('Final totalCost:', totalCost);
+      console.log('Number of costs from DB:', costsFromBackend.length);
       
     } catch (err: any) {
+      console.error('Error in fetchBreakdown:', err);
       setError(err.message || "Error loading breakdown");
     } finally {
       setLoading(false);
@@ -199,9 +224,9 @@ const FinancialExpenseBreakdownView = () => {
   };
 
   // Fetch inicial y cuando cambian los pickers
+  // YA NO NECESITAS fetchDbCosts() separado
   useEffect(() => {
     fetchBreakdown(startWeek, currentWeek, year);
-    fetchDbCosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startWeek, currentWeek, year]);
 
@@ -216,68 +241,11 @@ const FinancialExpenseBreakdownView = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle cost actions
-  const handleCostAction = async (costId: string, action: 'add' | 'subtract' | 'delete', amount?: number) => {
-    setActionLoading(costId);
-    try {
-      if (action === 'delete') {
-        await deleteCostApi(costId);
-        enqueueSnackbar("Cost deleted successfully", { variant: "success" });
-        await fetchDbCosts();
-        await fetchBreakdown(startWeek, currentWeek, year);
-      } else if (amount && amount > 0) {
-        await updateCostAmountApi(costId, action, amount);
-        enqueueSnackbar(`Cost ${action === 'add' ? 'increased' : 'decreased'} successfully`, { variant: "success" });
-
-        // Actualiza el estado localmente sin llamar a la API - FORMATO UNIFICADO
-        setDbCosts(prevCosts =>
-          prevCosts.map(cost =>
-            cost.id_cost === costId
-              ? {
-                  ...cost,
-                  cost: Number((action === "add"
-                    ? Number(cost.cost) + amount
-                    : Number(cost.cost) - amount).toFixed(2)),
-                }
-              : cost
-          )
-        );
-
-        setSummaryData(prev => {
-          if (!prev) return prev;
-          // Sumar/restar al totalCost original y recalcular con descuentos
-          const dbCostChange = action === "add" ? amount : -amount;
-          const newExpensesTotalCost = Number((prev.expenses.totalCost + dbCostChange).toFixed(2));
-          const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
-          const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
-          const newProfit = Number((prev.income - newTotalCost).toFixed(2));
-          
-          return {
-            ...prev,
-            expenses: {
-              ...prev.expenses,
-              totalCost: newExpensesTotalCost,
-            },
-            totalCost: newTotalCost,
-            profit: newProfit,
-          };
-        });
-      }
-    } catch (err: any) {
-      enqueueSnackbar(err.message || "Error performing action", { variant: "error" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  // Handle refresh button
+  // Handle refresh button - SIMPLIFICADO
   const handleRefresh = async () => {
     setRefreshLoading(true);
     try {
-      await Promise.all([
-        fetchDbCosts(),
-        fetchBreakdown(startWeek, currentWeek, year)
-      ]);
+      await fetchBreakdown(startWeek, currentWeek, year);
       enqueueSnackbar("Data refreshed successfully", { variant: "success" });
     } catch (err: any) {
       enqueueSnackbar("Error refreshing data", { variant: "error" });
@@ -286,7 +254,7 @@ const FinancialExpenseBreakdownView = () => {
     }
   };
 
-  // Handle delete confirmation
+  // Handle delete confirmation - ACTUALIZADO
   const handleDeleteConfirm = async () => {
     if (!deleteModal.cost) return;
     
@@ -294,19 +262,17 @@ const FinancialExpenseBreakdownView = () => {
     try {
       await deleteCostApi(deleteModal.cost.id_cost);
       
-      // Actualizar dbCosts localmente removiendo el costo
       setDbCosts(prevCosts => 
         prevCosts.filter(cost => cost.id_cost !== deleteModal.cost!.id_cost)
       );
       
-      // Actualizar summaryData localmente - FORMATO UNIFICADO
+      // ACTUALIZADO: Ya no restamos descuentos
       setSummaryData(prev => {
         if (!prev) return prev;
         
         const deletedCostAmount = Number(Number(deleteModal.cost!.cost).toFixed(2));
         const newExpensesTotalCost = Number((prev.expenses.totalCost - deletedCostAmount).toFixed(2));
-        const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
-        const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
+        const newTotalCost = newExpensesTotalCost; // YA NO se restan descuentos
         const newProfit = Number((prev.income - newTotalCost).toFixed(2));
         
         return {
@@ -372,11 +338,26 @@ const FinancialExpenseBreakdownView = () => {
     fetchBreakdown(start, end, year);
   };
 
-  // Separar costos de BD por tipo
-  const fixedDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'FIXED');
+  // Separar costos de BD por tipo - ACTUALIZADO
+  // TODOS los costos de other_transaction ahora son FIXED
+  const fixedDbCosts = dbCosts.filter(cost => {
+    const costType = cost.type.toUpperCase();
+    return costType === 'FIXED'; // Solo FIXED (ya mapeados desde other_transaction)
+  });
+  
   const variableDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'VARIABLE');
 
-  // Función para calcular subtotales por categoría - FORMATO UNIFICADO
+  console.log('=== COSTS BREAKDOWN ===');
+  console.log('Total DB Costs:', dbCosts.length);
+  console.log('Fixed DB Costs:', fixedDbCosts.length);
+  console.log('Variable DB Costs:', variableDbCosts.length);
+  console.log('Sample costs:', dbCosts.slice(0, 3).map(c => ({ 
+    type: c.type, 
+    cost: c.cost, 
+    description: c.description 
+  })));
+
+  // Función para calcular subtotales por categoría - ACTUALIZADO
   const calculateCategorySubtotal = (categoryType: string): number => {
     if (!summaryData) return 0;
     
@@ -396,107 +377,12 @@ const FinancialExpenseBreakdownView = () => {
       return Number((dbVariableTotal + calculatedVariableTotal).toFixed(2));
     }
     
+    // Los descuentos ahora son solo informativos
     if (categoryType === 'discounts') {
       return Number(Object.values(summaryData.discounts).reduce((sum, value) => sum + value, 0).toFixed(2));
     }
     
     return 0;
-  };
-
-  // Action Menu Component (actualizado) - FORMATO UNIFICADO
-  const ActionMenu = ({ cost }: { cost: Cost }) => {
-    const [showMenu, setShowMenu] = useState(false);
-    const [amount, setAmount] = useState<number>(0);
-    const [showAmountInput, setShowAmountInput] = useState<'add' | 'subtract' | null>(null);
-
-    return (
-      <div className="relative">
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          disabled={actionLoading === cost.id_cost}
-          className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
-        >
-          {actionLoading === cost.id_cost ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-600 border-t-transparent"></div>
-          ) : (
-            <i className="fas fa-ellipsis-v text-gray-600"></i>
-          )}
-        </button>
-
-        {showMenu && (
-          <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[150px]">
-            <button
-              onClick={() => {
-                setShowAmountInput('add');
-                setShowMenu(false);
-              }}
-              className="w-full px-4 py-2 text-left hover:bg-green-50 text-green-600 transition-colors"
-            >
-              <i className="fas fa-plus mr-2"></i>Add Amount
-            </button>
-            <button
-              onClick={() => {
-                setShowAmountInput('subtract');
-                setShowMenu(false);
-              }}
-              className="w-full px-4 py-2 text-left hover:bg-orange-50 text-orange-600 transition-colors"
-            >
-              <i className="fas fa-minus mr-2"></i>Subtract Amount
-            </button>
-            <button
-              onClick={() => {
-                setDeleteModal({ open: true, cost });
-                setShowMenu(false);
-              }}
-              className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 transition-colors border-t border-gray-100"
-            >
-              <i className="fas fa-trash mr-2"></i>Delete
-            </button>
-          </div>
-        )}
-
-        {showAmountInput && (
-          <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 min-w-[200px]">
-            <h4 className="font-semibold mb-2">
-              {showAmountInput === 'add' ? 'Add Amount' : 'Subtract Amount'}
-            </h4>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3"
-              placeholder="Enter amount"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  if (amount > 0) {
-                    handleCostAction(cost.id_cost, showAmountInput, amount);
-                  }
-                  setShowAmountInput(null);
-                  setAmount(0);
-                }}
-                className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => {
-                  setShowAmountInput(null);
-                  setAmount(0);
-                }}
-                className="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -753,20 +639,13 @@ const FinancialExpenseBreakdownView = () => {
                   </td>
                 </tr>
                 
-                {/* Database Fixed Costs */}
-                {fixedDbCosts.map(cost => (
-                  <tr key={cost.id_cost} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 text-gray-700">
-                      {cost.description}
-                    </td>
-                    <td className="px-6 py-3 text-right font-medium" style={{ color: '#0B2863' }}>
-                      {formatCurrency(cost.cost)}
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <ActionMenu cost={cost} />
-                    </td>
-                  </tr>
-                ))}
+                {/* Database Fixed Costs - AHORA COMO DROPDOWN */}
+                {fixedDbCosts.length > 0 && (
+                  <CostsTableDropdown 
+                    costs={fixedDbCosts}
+                    totalAmount={fixedDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
+                  />
+                )}
                 
                 {/* Calculated Fixed Costs */}
                 {EXPENSE_TYPES.filter(type => type.type === "fixed").map(type => (
@@ -806,20 +685,13 @@ const FinancialExpenseBreakdownView = () => {
                   </td>
                 </tr>
                 
-                {/* Database Variable Costs */}
-                {variableDbCosts.map(cost => (
-                  <tr key={cost.id_cost} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 text-gray-700">
-                      {cost.description}
-                    </td>
-                    <td className="px-6 py-3 text-right font-medium" style={{ color: '#F09F52' }}>
-                      {formatCurrency(cost.cost)}
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <ActionMenu cost={cost} />
-                    </td>
-                  </tr>
-                ))}
+                {/* Database Variable Costs - AHORA COMO DROPDOWN */}
+                {variableDbCosts.length > 0 && (
+                  <CostsTableDropdown 
+                    costs={variableDbCosts}
+                    totalAmount={variableDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
+                  />
+                )}
                 
                 {/* Calculated Variable Costs */}
                 {EXPENSE_TYPES.filter(type => type.type === "variable").map(type => (
@@ -852,7 +724,7 @@ const FinancialExpenseBreakdownView = () => {
                   </td>
                 </tr>
 
-                {/* Discounts Section */}
+                {/* Discounts Section - AHORA SOLO INFORMATIVO */}
                 <tr className="bg-green-100">
                   <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#000000ff' }}>
                     DISCOUNTS
@@ -864,11 +736,11 @@ const FinancialExpenseBreakdownView = () => {
                     <td className="px-6 py-3 pl-12 text-gray-700">
                       {type.label}
                       <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
-                        CALCULATED
+                        INFORMATIONAL
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
-                      -{formatCurrency(summaryData.discounts[type.key] || 0)}
+                      {formatCurrency(summaryData.discounts[type.key] || 0)}
                     </td>
                     <td className="px-6 py-3 text-center text-gray-400 text-sm">
                       No actions
@@ -876,13 +748,13 @@ const FinancialExpenseBreakdownView = () => {
                   </tr>
                 ))}
                 
-                {/* Discounts Subtotal*/}
+                {/* Discounts Subtotal - AHORA SOLO INFORMATIVO */}
                 <tr className="bg-green-50 border-b-2 border-green-200">
                   <td className="px-6 py-3 pl-8 font-bold text-gray-800">
-                    Discounts subtotal
+                    Discounts Total (Informational)
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
-                    -{formatCurrency(calculateCategorySubtotal('discounts'))}
+                    {formatCurrency(calculateCategorySubtotal('discounts'))}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     -
@@ -898,7 +770,7 @@ const FinancialExpenseBreakdownView = () => {
                 
                 <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#22c55e' }}>
-                    Income
+                    Income (includes operators discount)
                     <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                       CALCULATED
                     </span>
@@ -913,7 +785,7 @@ const FinancialExpenseBreakdownView = () => {
                 
                 <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-3 pl-12 font-semibold text-gray-700">
-                    Total Cost (After Discounts)
+                    Total Cost
                     <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                       CALCULATED
                     </span>
@@ -970,16 +842,14 @@ const FinancialExpenseBreakdownView = () => {
         open={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         onSuccess={async (newCost: Cost) => {
-          // Actualizar dbCosts localmente
           setDbCosts(prevCosts => [...prevCosts, newCost]);
           
-          // Actualizar summaryData localmente - FORMATO UNIFICADO
+          // ACTUALIZADO: Ya no restamos descuentos
           setSummaryData(prev => {
             if (!prev) return prev;
             
             const newExpensesTotalCost = Number((prev.expenses.totalCost + Number(Number(newCost.cost).toFixed(2))).toFixed(2));
-            const totalDiscounts = Object.values(prev.discounts).reduce((sum, value) => sum + value, 0);
-            const newTotalCost = Number((newExpensesTotalCost - totalDiscounts).toFixed(2));
+            const newTotalCost = newExpensesTotalCost; // YA NO se restan descuentos
             const newProfit = Number((prev.income - newTotalCost).toFixed(2));
             
             return {

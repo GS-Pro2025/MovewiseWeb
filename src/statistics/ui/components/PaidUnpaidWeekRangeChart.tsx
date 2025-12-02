@@ -5,7 +5,7 @@ import { ResponsiveLine } from '@nivo/line';
 import { ResponsivePie } from '@nivo/pie';
 import { usePaidUnpaidData } from '../../hooks/usePaidUnpaidData';
 import { getWeekRange, getAvailableYears } from '../../utils/dateUtils';
-import { OrderPaidUnpaidWeekRange } from '../../domain/OrdersPaidUnpaidModels';
+import { OrderPaidUnpaidWeekRange, PaidUnpaidChartData } from '../../domain/OrdersPaidUnpaidModels';
 import OrdersReportDialog from '../../components/OrdersReportDialog';
 import { 
   BarChart3, 
@@ -198,10 +198,26 @@ const ModernSelect: React.FC<ModernSelectProps> = ({
 );
 
 const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
-  initialYear = new Date().getFullYear(),
-  initialStartWeek = 1,
-  initialEndWeek = 10
+  initialYear,
+  initialStartWeek,
+  initialEndWeek
 }) => {
+  // Calcular valores seguros ANTES de pasarlos al hook
+  const currentYear = new Date().getFullYear();
+  const currentWeek = Math.ceil((new Date().getTime() - new Date(currentYear, 0, 1).getTime()) / 604800000);
+  
+  const safeYear = (initialYear && !isNaN(initialYear) && initialYear >= 2000) 
+    ? initialYear 
+    : currentYear;
+  
+  const safeStartWeek = (initialStartWeek && !isNaN(initialStartWeek) && initialStartWeek >= 1 && initialStartWeek <= 53) 
+    ? initialStartWeek 
+    : Math.max(1, currentWeek - 5);
+  
+  const safeEndWeek = (initialEndWeek && !isNaN(initialEndWeek) && initialEndWeek >= 1 && initialEndWeek <= 53) 
+    ? initialEndWeek 
+    : Math.min(53, currentWeek);
+
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
@@ -217,6 +233,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Usar valores seguros en el hook
   const {
     loading,
     error,
@@ -234,7 +251,8 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     setPendingEndWeek,
     loadPaidUnpaidData,
     handleTryAgain,
-  } = usePaidUnpaidData(initialYear, initialStartWeek, initialEndWeek);
+  } = usePaidUnpaidData(safeYear, safeStartWeek, safeEndWeek);
+
 
   // Responsive breakpoints
   const isMobile = windowWidth < 640;
@@ -288,15 +306,15 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     totalPaid: acc.totalPaid + week.paid,
     totalUnpaid: acc.totalUnpaid + week.unpaid,
     avgPaidPercentage: 0,
-    bestWeek: acc.bestWeek?.total > week.total ? acc.bestWeek : week,
-    worstWeek: acc.worstWeek?.total < week.total ? acc.worstWeek : week
+    bestWeek: !acc.bestWeek || (week.total > (acc.bestWeek?.total || 0)) ? week : acc.bestWeek,
+    worstWeek: !acc.worstWeek || (week.total < (acc.worstWeek?.total || Infinity)) ? week : acc.worstWeek
   }), {
     totalOrders: 0,
     totalPaid: 0,
     totalUnpaid: 0,
     avgPaidPercentage: 0,
-    bestWeek: chartData[0],
-    worstWeek: chartData[0]
+    bestWeek: undefined as PaidUnpaidChartData | undefined,
+    worstWeek: undefined as PaidUnpaidChartData | undefined
   });
 
   if (totalStats.totalOrders > 0) {
@@ -331,12 +349,12 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
 
   const paidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
-      ? rawData.orders_by_week?.[String(selectedWeek)]?.filter(o => o.paid) || []
+      ? ((rawData as any)?.data?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => o.paid) || [])
       : [];
 
   const unpaidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
-      ? rawData.orders_by_week?.[String(selectedWeek)]?.filter(o => !o.paid) || []
+      ? ((rawData as any)?.data?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => !o.paid) || [])
       : [];
 
   // Responsive Nivo theme
@@ -573,7 +591,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               color="#22c55e"
             />
             <MetricCard 
-              value={`W${totalStats.bestWeek?.week}`} 
+              value={totalStats.bestWeek?.week ? `W${totalStats.bestWeek.week}` : 'N/A'} 
               label="Peak Week" 
               icon={Trophy}
               color="#FFE67B"
@@ -700,21 +718,30 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
                   <div className="font-bold text-base sm:text-lg" style={{ color: '#0B2863' }}>
-                    {rawData.total_paid + rawData.total_unpaid}
+                    {((rawData as any)?.data?.total_paid || 0) + ((rawData as any)?.data?.total_unpaid || 0)}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">TOTAL</div>
                 </div>
                 <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                  <div className="text-green-600 font-bold text-base sm:text-lg">{rawData.total_paid}</div>
+                  <div className="text-green-600 font-bold text-base sm:text-lg">
+                    {(rawData as any)?.data?.total_paid || 0}
+                  </div>
                   <div className="text-gray-600 text-xs font-medium">PAID</div>
                 </div>
                 <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3">
-                  <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>{rawData.total_unpaid}</div>
+                  <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>
+                    {(rawData as any)?.data?.total_unpaid || 0}
+                  </div>
                   <div className="text-gray-600 text-xs font-medium">UNPAID</div>
                 </div>
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
                   <div className="text-blue-600 font-bold text-base sm:text-lg">
-                    {((rawData.total_paid / (rawData.total_paid + rawData.total_unpaid)) * 100).toFixed(1)}%
+                    {(() => {
+                      const totalPaid = (rawData as any)?.data?.total_paid || 0;
+                      const totalUnpaid = (rawData as any)?.data?.total_unpaid || 0;
+                      const total = totalPaid + totalUnpaid;
+                      return total > 0 ? ((totalPaid / total) * 100).toFixed(1) : '0.0';
+                    })()}%
                   </div>
                   <div className="text-gray-600 text-xs font-medium">RATE</div>
                 </div>
@@ -976,7 +1003,9 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                   
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-3">
-                      <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>W{totalStats.bestWeek?.week}</div>
+                      <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>
+                        {totalStats.bestWeek?.week ? `W${totalStats.bestWeek.week}` : 'N/A'}
+                      </div>
                       <div className="text-gray-600 text-xs font-medium">Peak Week</div>
                     </div>
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">

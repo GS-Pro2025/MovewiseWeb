@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   fetchOrdersPaidUnpaidWeekRange, 
   fetchOrdersPaidUnpaidHistoric, 
@@ -13,33 +13,95 @@ export interface DataMode {
   year: number;
 }
 
+// Helper para validar parámetros
+const isValidWeekParams = (startWeek: number | undefined, endWeek: number | undefined, year: number | undefined): boolean => {
+  if (startWeek === undefined || endWeek === undefined || year === undefined) return false;
+  if (typeof startWeek !== 'number' || typeof endWeek !== 'number' || typeof year !== 'number') return false;
+  if (isNaN(startWeek) || isNaN(endWeek) || isNaN(year)) return false;
+  if (startWeek < 1 || startWeek > 53 || endWeek < 1 || endWeek > 53) return false;
+  if (startWeek > endWeek) return false;
+  if (year < 2000 || year > 2100) return false;
+  return true;
+};
+
+// Helper para calcular semana actual ISO
+const getCurrentISOWeek = (): number => {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const yearStartDayNum = yearStart.getUTCDay() || 7;
+  yearStart.setUTCDate(yearStart.getUTCDate() + 4 - yearStartDayNum);
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+};
+
 export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number, initialEndWeek: number) => {
+  // Calcular defaults seguros
+  const currentYear = new Date().getFullYear();
+  const currentWeek = getCurrentISOWeek();
+  
+  // Función para obtener valor seguro
+  const getSafeYear = (val: number | undefined | null): number => {
+    if (typeof val === 'number' && !isNaN(val) && val >= 2000 && val <= 2100) return val;
+    return currentYear;
+  };
+  
+  const getSafeWeek = (val: number | undefined | null, defaultVal: number): number => {
+    if (typeof val === 'number' && !isNaN(val) && val >= 1 && val <= 53) return val;
+    return Math.max(1, Math.min(53, defaultVal));
+  };
+
+  // Valores iniciales seguros
+  const safeInitialYear = getSafeYear(initialYear);
+  const safeInitialStartWeek = getSafeWeek(initialStartWeek, Math.max(1, currentWeek - 5));
+  const safeInitialEndWeek = getSafeWeek(initialEndWeek, currentWeek);
+
+  // Estados
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [chartData, setChartData] = useState<PaidUnpaidChartData[]>([]);
   const [rawData, setRawData] = useState<OrdersPaidUnpaidWeekRangeResponse | null>(null);
   
-  // Estados para los filtros
-  const [year, setYear] = useState<number>(initialYear);
-  const [startWeek, setStartWeek] = useState<number>(initialStartWeek);
-  const [endWeek, setEndWeek] = useState<number>(initialEndWeek);
-  const [pendingStartWeek, setPendingStartWeek] = useState<number>(startWeek);
-  const [pendingEndWeek, setPendingEndWeek] = useState<number>(endWeek);
+  const [year, setYear] = useState<number>(safeInitialYear);
+  const [startWeek, setStartWeek] = useState<number>(safeInitialStartWeek);
+  const [endWeek, setEndWeek] = useState<number>(safeInitialEndWeek);
+  const [pendingStartWeek, setPendingStartWeek] = useState<number>(safeInitialStartWeek);
+  const [pendingEndWeek, setPendingEndWeek] = useState<number>(safeInitialEndWeek);
   
-  // Nuevo estado para el modo de datos
   const [dataMode, setDataMode] = useState<DataMode>({
     type: 'range',
-    startWeek: initialStartWeek,
-    endWeek: initialEndWeek,
-    year: initialYear
+    startWeek: safeInitialStartWeek,
+    endWeek: safeInitialEndWeek,
+    year: safeInitialYear
   });
 
-  // Actualiza los valores pendientes cuando cambian los definitivos
+  const initialLoadDone = useRef(false);
+  const isLoadingRef = useRef(false);
+
+  // Refs para mantener valores actuales - inicializados con valores seguros
+  const yearRef = useRef<number>(safeInitialYear);
+  const startWeekRef = useRef<number>(safeInitialStartWeek);
+  const endWeekRef = useRef<number>(safeInitialEndWeek);
+
+  // Actualizar refs cuando cambian los valores de estado
+  useEffect(() => {
+    yearRef.current = year;
+  }, [year]);
+
+  useEffect(() => {
+    startWeekRef.current = startWeek;
+  }, [startWeek]);
+
+  useEffect(() => {
+    endWeekRef.current = endWeek;
+  }, [endWeek]);
+
+  // Sincronizar pending values y dataMode
   useEffect(() => {
     setPendingStartWeek(startWeek);
     setPendingEndWeek(endWeek);
     
-    // Actualizar dataMode cuando cambian los valores
     setDataMode({
       type: 'range',
       startWeek,
@@ -48,17 +110,47 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
     });
   }, [startWeek, endWeek, year]);
 
-  const loadPaidUnpaidData = async (mode?: DataMode) => {
-    const currentMode = mode || dataMode;
+  const loadPaidUnpaidData = useCallback(async (mode?: DataMode) => {
+    // Evitar llamadas concurrentes
+    if (isLoadingRef.current) {
+      console.debug('loadPaidUnpaidData: already loading, skipping');
+      return;
+    }
+
+    // Si no se pasa mode, construir uno con los valores actuales de los refs
+    // Asegurarse de que los valores sean válidos
+    const sw = mode?.startWeek ?? startWeekRef.current;
+    const ew = mode?.endWeek ?? endWeekRef.current;
+    const yr = mode?.year ?? yearRef.current;
+
+    const currentMode: DataMode = mode || {
+      type: 'range',
+      startWeek: sw,
+      endWeek: ew,
+      year: yr
+    };
     
+    console.debug('loadPaidUnpaidData called with mode:', currentMode);
+
+    // Validación para modo range
     if (currentMode.type === 'range') {
-      if (!currentMode.startWeek || !currentMode.endWeek || currentMode.startWeek > currentMode.endWeek) {
-        setError('Invalid week range');
+      const validateSW = currentMode.startWeek;
+      const validateEW = currentMode.endWeek;
+      const validateYR = currentMode.year;
+
+      if (!isValidWeekParams(validateSW, validateEW, validateYR)) {
+        console.error('loadPaidUnpaidData: invalid parameters', {
+          startWeek: validateSW,
+          endWeek: validateEW,
+          year: validateYR
+        });
+        setError('Invalid week or year parameters');
         return;
       }
     }
 
     try {
+      isLoadingRef.current = true;
       setLoading(true);
       setError(null);
       
@@ -67,6 +159,7 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
       if (currentMode.type === 'historic') {
         data = await fetchOrdersPaidUnpaidHistoric();
       } else {
+        // Ya validamos arriba, así que sabemos que estos valores son válidos
         data = await fetchOrdersPaidUnpaidWeekRange(
           currentMode.startWeek!, 
           currentMode.endWeek!, 
@@ -79,60 +172,88 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
       setRawData(data);
       setChartData(processedData);
       
-      // Actualizar dataMode si se pasó uno nuevo
       if (mode) {
         setDataMode(mode);
       }
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error loading paid/unpaid data');
+      const errorMessage = err instanceof Error ? err.message : 'Error loading paid/unpaid data';
+      setError(errorMessage);
       console.error('Error loading paid/unpaid data:', err);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
-  };
+  }, []); // Sin dependencias - usa refs
 
-  const switchToHistoricMode = () => {
+  const switchToHistoricMode = useCallback(() => {
     const newMode: DataMode = {
       type: 'historic',
-      year // El año se mantiene por compatibilidad con el estado, pero no se usa en la API
+      year: yearRef.current
     };
     loadPaidUnpaidData(newMode);
-  };
+  }, [loadPaidUnpaidData]);
 
-  const switchToRangeMode = () => {
+  const switchToRangeMode = useCallback(() => {
+    const sw = startWeekRef.current;
+    const ew = endWeekRef.current;
+    const yr = yearRef.current;
+    
+    if (!isValidWeekParams(sw, ew, yr)) {
+      setError('Invalid week parameters for range mode');
+      return;
+    }
     const newMode: DataMode = {
       type: 'range',
-      startWeek,
-      endWeek,
-      year
+      startWeek: sw,
+      endWeek: ew,
+      year: yr
     };
     loadPaidUnpaidData(newMode);
-  };
+  }, [loadPaidUnpaidData]);
 
-  // Effect para cargar datos iniciales
+  // Effect para cargar datos iniciales - solo una vez con valores seguros ya calculados
   useEffect(() => {
-    loadPaidUnpaidData();
-  }, []);
-
-  // Effect para recargar automáticamente cuando cambian los parámetros
-  useEffect(() => {
-    // Solo recargar si no estamos ya cargando y los valores son válidos
-    if (!loading && startWeek >= 1 && endWeek >= 1 && startWeek <= endWeek) {
-      const newMode: DataMode = {
-        type: 'range',
-        startWeek,
-        endWeek,
-        year
-      };
-      loadPaidUnpaidData(newMode);
+    if (!initialLoadDone.current) {
+      // Usar los valores safe que ya calculamos al inicio del hook
+      if (isValidWeekParams(safeInitialStartWeek, safeInitialEndWeek, safeInitialYear)) {
+        initialLoadDone.current = true;
+        
+        const initialMode: DataMode = {
+          type: 'range',
+          startWeek: safeInitialStartWeek,
+          endWeek: safeInitialEndWeek,
+          year: safeInitialYear
+        };
+        
+        console.debug('Initial load with safe params:', initialMode);
+        loadPaidUnpaidData(initialMode);
+      } else {
+        console.error('Initial params are still invalid after safety checks:', {
+          safeInitialStartWeek,
+          safeInitialEndWeek,
+          safeInitialYear
+        });
+      }
     }
-  }, [year, startWeek, endWeek]); // Dependencias para auto-recarga
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
-  const handleTryAgain = () => {
+  const handleTryAgain = useCallback(() => {
     setError(null);
-    loadPaidUnpaidData();
-  };
+    const sw = startWeekRef.current;
+    const ew = endWeekRef.current;
+    const yr = yearRef.current;
+    
+    if (isValidWeekParams(sw, ew, yr)) {
+      loadPaidUnpaidData({
+        type: 'range',
+        startWeek: sw,
+        endWeek: ew,
+        year: yr
+      });
+    }
+  }, [loadPaidUnpaidData]);
 
   return {
     loading,
