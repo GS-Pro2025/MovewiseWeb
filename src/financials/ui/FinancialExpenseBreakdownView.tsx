@@ -5,7 +5,7 @@ import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import { useNavigate } from "react-router-dom";
 import { enqueueSnackbar } from "notistack";
 import FinancialExpenseBreakdownExportDialog from "./FinancialExpenseBreakdownExportDialog";
-import { updateCostAmountApi, deleteCostApi } from "../data/CostRepository";
+import { deleteCostApi } from "../data/CostRepository";
 import { Cost } from "../domain/ModelsCost";
 import CreateCostDialog from "./components/CreateCostDialog";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
@@ -240,57 +240,6 @@ const FinancialExpenseBreakdownView = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  // Handle cost actions - ACTUALIZADO
-  const handleCostAction = async (costId: string, action: 'add' | 'subtract' | 'delete', amount?: number) => {
-    setActionLoading(costId);
-    try {
-      if (action === 'delete') {
-        await deleteCostApi(costId);
-        enqueueSnackbar("Cost deleted successfully", { variant: "success" });
-        await fetchBreakdown(startWeek, currentWeek, year);
-      } else if (amount && amount > 0) {
-        await updateCostAmountApi(costId, action, amount);
-        enqueueSnackbar(`Cost ${action === 'add' ? 'increased' : 'decreased'} successfully`, { variant: "success" });
-
-        setDbCosts(prevCosts =>
-          prevCosts.map(cost =>
-            cost.id_cost === costId
-              ? {
-                  ...cost,
-                  cost: Number((action === "add"
-                    ? Number(cost.cost) + amount
-                    : Number(cost.cost) - amount).toFixed(2)),
-                }
-              : cost
-          )
-        );
-
-        // ACTUALIZADO: Ya no restamos descuentos
-        setSummaryData(prev => {
-          if (!prev) return prev;
-          const dbCostChange = action === "add" ? amount : -amount;
-          const newExpensesTotalCost = Number((prev.expenses.totalCost + dbCostChange).toFixed(2));
-          const newTotalCost = newExpensesTotalCost; // YA NO se restan descuentos
-          const newProfit = Number((prev.income - newTotalCost).toFixed(2));
-          
-          return {
-            ...prev,
-            expenses: {
-              ...prev.expenses,
-              totalCost: newExpensesTotalCost,
-            },
-            totalCost: newTotalCost,
-            profit: newProfit,
-          };
-        });
-      }
-    } catch (err: any) {
-      enqueueSnackbar(err.message || "Error performing action", { variant: "error" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
   // Handle refresh button - SIMPLIFICADO
   const handleRefresh = async () => {
