@@ -31,7 +31,7 @@ export async function createCostApi(data: createCost): Promise<Cost> {
     body: JSON.stringify(data),
   });
   handleAuthError(res);
-  if (!res.ok) throw new Error('Error creating cost');
+  if (!res.ok) throw new Error('Error creating cost - Cost Description may already exist');
   return await res.json();
 }
 

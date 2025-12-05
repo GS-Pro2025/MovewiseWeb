@@ -641,11 +641,45 @@ const FinancialExpenseBreakdownView = () => {
                 
                 {/* Database Fixed Costs - AHORA COMO DROPDOWN */}
                 {fixedDbCosts.length > 0 && (
-                  <CostsTableDropdown 
-                    costs={fixedDbCosts}
-                    totalAmount={fixedDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
-                  />
-                )}
+                <CostsTableDropdown 
+                  costs={fixedDbCosts}
+                  totalAmount={fixedDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
+                  onCostDeleted={(costId) => {
+                    setDbCosts(prevCosts => prevCosts.filter(cost => cost.id_cost !== costId));
+                    setSummaryData(prev => {
+                      if (!prev) return prev;
+                      const deletedCost = fixedDbCosts.find(c => c.id_cost === costId);
+                      if (!deletedCost) return prev;
+                      const deletedAmount = Number(Number(deletedCost.cost).toFixed(2));
+                      const newExpensesTotalCost = Number((prev.expenses.totalCost - deletedAmount).toFixed(2));
+                      const newTotalCost = newExpensesTotalCost;
+                      const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                      return {
+                        ...prev,
+                        expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                        totalCost: newTotalCost,
+                        profit: newProfit,
+                      };
+                    });
+                  }}
+                  onCostCreated={(newCost: Cost) => {
+                    setDbCosts(prevCosts => [...prevCosts, newCost]);
+                    setSummaryData(prev => {
+                      if (!prev) return prev;
+                      const newAmount = Number(Number(newCost.cost).toFixed(2));
+                      const newExpensesTotalCost = Number((prev.expenses.totalCost + newAmount).toFixed(2));
+                      const newTotalCost = newExpensesTotalCost;
+                      const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                      return {
+                        ...prev,
+                        expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                        totalCost: newTotalCost,
+                        profit: newProfit,
+                      };
+                    });
+                  }}
+                />
+              )}
                 
                 {/* Calculated Fixed Costs */}
                 {EXPENSE_TYPES.filter(type => type.type === "fixed").map(type => (
