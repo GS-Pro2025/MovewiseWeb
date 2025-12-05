@@ -4,7 +4,7 @@ import { ResponsiveBar } from '@nivo/bar';
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsivePie } from '@nivo/pie';
 import { usePaidUnpaidData } from '../../hooks/usePaidUnpaidData';
-import { getWeekRange, getAvailableYears } from '../../utils/dateUtils';
+import { getWeekRange } from '../../utils/dateUtils';
 import { OrderPaidUnpaidWeekRange, PaidUnpaidChartData } from '../../domain/OrdersPaidUnpaidModels';
 import OrdersReportDialog from '../../components/OrdersReportDialog';
 import { 
@@ -25,6 +25,8 @@ import {
   FileDown
 } from 'lucide-react';
 import PaidUnpaidExportDialog from './export/PaidUnpaidExportDialog';
+import YearPicker from '../../../components/YearPicker';
+import WeekPicker from '../../../components/WeekPicker';
 
 interface PaidUnpaidWeekRangeChartProps {
   initialYear?: number;
@@ -57,24 +59,7 @@ interface MetricCardProps {
   color?: string;
 }
 
-interface ModernInputProps {
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  disabled?: boolean;
-  className?: string;
-  type?: string;
-  min?: string;
-  max?: string;
-}
 
-interface ModernSelectProps {
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-  className?: string;
-}
 
 // Move components outside to avoid hook order issues
 const ModernButton: React.FC<ModernButtonProps> = ({ 
@@ -160,42 +145,6 @@ const MetricCard: React.FC<MetricCardProps> = ({ value, label, icon: Icon, color
   );
 };
 
-const ModernInput: React.FC<ModernInputProps> = ({ 
-  value, 
-  onChange, 
-  onKeyDown, 
-  disabled, 
-  className = "", 
-  ...props 
-}) => (
-  <input
-    value={value}
-    onChange={onChange}
-    onKeyDown={onKeyDown}
-    disabled={disabled}
-    className={`border-2 rounded-lg px-3 py-2 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${className}`}
-    style={{ borderColor: '#0B2863', color: '#0B2863' }}
-    {...props}
-  />
-);
-
-const ModernSelect: React.FC<ModernSelectProps> = ({ 
-  value, 
-  onChange, 
-  disabled, 
-  children, 
-  className = "" 
-}) => (
-  <select
-    value={value}
-    onChange={onChange}
-    disabled={disabled}
-    className={`border-2 rounded-lg px-3 py-2 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${className}`}
-    style={{ borderColor: '#0B2863', color: '#0B2863' }}
-  >
-    {children}
-  </select>
-);
 
 const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   initialYear,
@@ -242,8 +191,6 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     year,
     startWeek,
     endWeek,
-    pendingStartWeek,
-    pendingEndWeek,
     setYear,
     setStartWeek,
     setEndWeek,
@@ -607,80 +554,53 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
 
         {/* Controls */}
         <ModernCard>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <div>
+          <div className="grid grid-cols-1 lg:flex gap-4 sm:gap-6">
+            {/* Left: pickers — take remaining space on large screens */}
+            <div className="lg:flex-1">
               <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Calendar size={18} />
                 Temporal Controls
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-1">Year</label>
-                  <ModernSelect 
-                    value={year} 
-                    onChange={(e) => setYear(Number(e.target.value))}
+                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">Year</label>
+                  <YearPicker 
+                    year={year} 
+                    onYearSelect={setYear}
                     disabled={loading}
-                  >
-                    {getAvailableYears().map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </ModernSelect>
-                </div>
-                <div>
-                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-1">Start Week</label>
-                  <ModernInput
-                    type="number"
-                    min="1"
-                    max="53"
-                    value={pendingStartWeek}
-                    onChange={(e) => {
-                      const newValue = Number(e.target.value);
-                      setPendingStartWeek(newValue);
-                      // Actualizar automáticamente si el valor es válido
-                      if (newValue >= 1 && newValue <= 53) {
-                        setStartWeek(newValue);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && pendingStartWeek >= 1 && pendingStartWeek <= 53) {
-                        setStartWeek(pendingStartWeek);
-                      }
-                    }}
-                    disabled={loading}
+                    className="w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-1">End Week</label>
-                  <ModernInput
-                    type="number"
-                    min="1"
-                    max="53"
-                    value={pendingEndWeek}
-                    onChange={(e) => {
-                      const newValue = Number(e.target.value);
-                      setPendingEndWeek(newValue);
-                      // Actualizar automáticamente si el valor es válido
-                      if (newValue >= 1 && newValue <= 53) {
-                        setEndWeek(newValue);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && pendingEndWeek >= 1 && pendingEndWeek <= 53) {
-                        setEndWeek(pendingEndWeek);
-                      }
-                    }}
-                    disabled={loading}
+                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">Start Week</label>
+                  <WeekPicker
+                    week={startWeek}
+                    onWeekSelect={setStartWeek}
+                    min={1}
+                    max={53}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">End Week</label>
+                  <WeekPicker
+                    week={endWeek}
+                    onWeekSelect={setEndWeek}
+                    min={1}
+                    max={53}
+                    className="w-full"
                   />
                 </div>
               </div>
             </div>
-            
-            <div>
+
+            {/* Right: Quick presets — reduced width on large screens */}
+            <div className="lg:w-1/3">
               <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Target size={18} />
                 Quick Presets
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
                 {[
                   { weeks: 4, label: isMobile ? '4 weeks' : 'Last 4 weeks' },
                   { weeks: 8, label: isMobile ? '8 weeks' : 'Last 8 weeks' },
@@ -696,10 +616,9 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                       const end = Math.min(53, currentWeek);
                       setStartWeek(start);
                       setEndWeek(end);
-                      setPendingStartWeek(start);
-                      setPendingEndWeek(end);
                     }}
                     size="small"
+                    className="w-full"
                   >
                     {label}
                   </ModernButton>
