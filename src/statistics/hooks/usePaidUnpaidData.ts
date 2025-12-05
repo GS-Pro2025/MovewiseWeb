@@ -239,6 +239,21 @@ export const usePaidUnpaidData = (initialYear: number, initialStartWeek: number,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo ejecutar una vez al montar
 
+  // Effect para recargar datos cuando cambian year, startWeek o endWeek
+  useEffect(() => {
+    if (initialLoadDone.current && !isLoadingRef.current) { 
+      if (isValidWeekParams(startWeek, endWeek, year)) {
+        console.debug('Week/Year changed, reloading data:', { year, startWeek, endWeek });
+        loadPaidUnpaidData({
+          type: 'range',
+          startWeek,
+          endWeek,
+          year
+        });
+      }
+    }
+  }, [startWeek, endWeek, year]);
+
   const handleTryAgain = useCallback(() => {
     setError(null);
     const sw = startWeekRef.current;
