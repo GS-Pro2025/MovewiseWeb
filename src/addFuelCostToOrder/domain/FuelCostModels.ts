@@ -6,6 +6,7 @@ export interface FuelCostRequest {
   fuel_qty: number;
   identifier_1: string;
   distance: number;
+  image?: string;
 }
 
 export interface FuelCostResponse {

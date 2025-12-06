@@ -18,6 +18,7 @@ import {
   Divider,
   Paper,
 } from '@mui/material';
+import { Image, Upload, Check, X } from 'lucide-react';
 import { LocalGasStation, Speed, AttachMoney, Close } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { fetchTrucksByOrder, TruckByOrder } from '../repository/RepositoryTruck';
@@ -39,6 +40,7 @@ interface FuelCostData {
   fuel_qty: number;
   cost_gl: number;
   cost_fuel: number;
+  image?: string | null; 
 }
 
 const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
@@ -60,11 +62,12 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
     fuel_qty: 0,
     cost_gl: 0,
     cost_fuel: 0,
+    image: null,
   });
 
   // Calculate distance when odometers change
   const distance = formData.final_odometer - formData.initial_odometer;
-
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   // Calculate total cost when fuel_qty or cost_gl change
   useEffect(() => {
     const totalCost = formData.fuel_qty * formData.cost_gl;
@@ -95,7 +98,24 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
       setLoadingTrucks(false);
     }
   };
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64String = event.target?.result as string;
+        setFormData(prev => ({ ...prev, image: base64String }));
+        setImagePreview(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image: undefined }));
+  };
+  
   const handleInputChange = (field: keyof FuelCostData, value: number | string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -132,6 +152,7 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
         fuel_qty: formData.fuel_qty,
         identifier_1: `${orderRef}-${Date.now()}`,
         distance: distance,
+        image: formData.image || undefined, // Agregar imagen si existe
       };
 
       await createFuelCost(fuelCostRequest);
@@ -145,7 +166,9 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
         fuel_qty: 0,
         cost_gl: 0,
         cost_fuel: 0,
+        image: null,
       });
+      setImagePreview(null);
 
       onSuccess?.();
       onClose();
@@ -167,7 +190,9 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
         fuel_qty: 0,
         cost_gl: 0,
         cost_fuel: 0,
+        image: null,
       });
+      setImagePreview(null);
       onClose();
     }
   };
@@ -461,6 +486,95 @@ const AddFuelCostDialog: React.FC<AddFuelCostDialogProps> = ({
                     }}
                   />
                 </Box>
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Image Section */}
+              <Box>
+                <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Image size={20} />
+                  Fuel Receipt Image
+                </Typography>
+                
+                {imagePreview ? (
+                  <Paper 
+                    elevation={0}
+                    sx={{ 
+                      p: 3, 
+                      bgcolor: '#f8fafc',
+                      borderRadius: 2,
+                      border: '2px solid #0B2863',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <img 
+                      src={imagePreview} 
+                      alt="Fuel receipt preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: 300, 
+                        borderRadius: 8,
+                        marginBottom: 16,
+                        objectFit: 'contain'
+                      }} 
+                    />
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1 }}>
+                      <Check size={18} color="#0B2863" />
+                      <Typography variant="body2" sx={{ color: '#0B2863', fontWeight: 'bold' }}>
+                        Image selected
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={handleRemoveImage}
+                      startIcon={<X size={16} />}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Remove Image
+                    </Button>
+                  </Paper>
+                ) : (
+                  <Box
+                    sx={{
+                      p: 4,
+                      border: '2px dashed #0B2863',
+                      borderRadius: 2,
+                      bgcolor: '#f0f9ff',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        bgcolor: '#e0f2fe',
+                        borderColor: '#1e3a8a',
+                        transform: 'translateY(-2px)'
+                      },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 2
+                    }}
+                    component="label"
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    <Upload size={48} color="#0B2863" strokeWidth={1.5} />
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography sx={{ color: '#0B2863', fontWeight: 'bold', fontSize: '1rem' }}>
+                        Click to upload or drag and drop
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#6b7280', mt: 1 }}>
+                        PNG, JPG, GIF up to 10MB
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </Box>
           )}
