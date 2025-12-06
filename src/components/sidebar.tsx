@@ -203,7 +203,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
         <button 
           className="hidden md:flex w-7 h-7 bg-[#FE9844] text-white rounded-full justify-center items-center cursor-pointer 
                      transition-all duration-700 ease-in-out absolute -right-1 top-4/5 -translate-y-1/2 hover:scale-110 hover:bg-[#FE9844]/20 
-                     shadow-lg hover:shadow-xl text-sm z-[9999]"
+                     shadow-lg hover:shadow-xl text-sm z-[10]"
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
         >
@@ -286,7 +286,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
               (!isCollapsed || isMobileOpen) && activeDropdown === 1 ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
             }`}>
               <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
-                {/* ✅ CAMBIO: Actualizar rutas del dropdown */}
+                {/*  Actualizar rutas del dropdown */}
                 <DropdownLink icon="fa-calculator" text="Summary Costs" to="/app/summary-cost" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-gas-pump" text="Resume Fuel" to="/app/resume-fuel" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-dollar-sign" text="Extra Cost" to="/app/extra-cost" onClick={closeMobileMenu} />
@@ -320,7 +320,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
               (!isCollapsed || isMobileOpen) && activeDropdown === 2 ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
             }`}>
               <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
-                {/* ✅ CAMBIO: Actualizar rutas del dropdown */}
+                {/* Actualizar rutas del dropdown */}
                 <DropdownLink icon="fa-plus" text="Create Warehouse" to="/app/create-warehouse" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-list" text="Warehouse List" to="/app/warehouse" onClick={closeMobileMenu} />
               </ul>
