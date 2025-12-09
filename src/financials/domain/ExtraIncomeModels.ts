@@ -57,3 +57,20 @@ export interface ExtraIncomeDeleteResponse {
   current_company_id: number;
   data: null;
 }
+
+// Modelo para respuesta de ajuste de valor (add/subtract)
+export interface AdjustExtraIncomeValueRequest {
+  adjustment: number;
+}
+
+export interface AdjustExtraIncomeValueResponse {
+  status: string;
+  messDev: string;
+  messUser: string;
+  current_company_id: number;
+  operation: 'add' | 'subtract';
+  adjustment: number;
+  previous_value: number;
+  new_value: number;
+  data: ExtraIncome;
+}

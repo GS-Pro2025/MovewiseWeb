@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { SummaryCostRepository } from "../data/SummaryCostRepository";
 import { useNavigate } from "react-router-dom";
 import { enqueueSnackbar } from "notistack";
@@ -13,6 +13,8 @@ import { ExtraIncomeItem, OrderSummaryLightTotalsResponse } from "../domain/Mode
 import CostsTableDropdown from './components/CostsTableDropdown';
 import IncomesTableDropdown from './components/IncomesTableDropdown';
 import CreateExtraIncomeDialog from './components/CreateExtraIncomeDialog';
+import YearPicker from "../../components/YearPicker";
+import WeekPicker from "../../components/WeekPicker";
 
 // FORMATO UNIFICADO PARA TODOS LOS NÚMEROS
 const formatCurrency = (amount: number | string): string => {
@@ -49,20 +51,9 @@ const TIMELAPSES = [
   { label: "H2 (Jul-Dec)", startWeek: 27, endWeek: 52 },
 ];
 
-// Cambiar INCOME_TYPES por DISCOUNT_TYPES
 const DISCOUNT_TYPES = [
   { key: "operators_discount", label: "Operators Discount", color: "#22c55e" },
 ];
-
-const getAvailableYears = () => {
-  const currentYear = new Date().getFullYear();
-  const startYear = 2015;
-  const years = [];
-  for (let y = currentYear + 1; y >= startYear; y--) {
-    years.push(y);
-  }
-  return years;
-};
 
 const FinancialExpenseBreakdownView = () => {
   const [loading, setLoading] = useState(false);
@@ -78,8 +69,6 @@ const FinancialExpenseBreakdownView = () => {
     totalExtraIncome?: number // Agregar esto
   } | null>(null);
   const [dbCosts, setDbCosts] = useState<Cost[]>([]);
-  const [showWeekDropdown, setShowWeekDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState<"select" | "input">("select");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateExtraIncomeDialog, setShowCreateExtraIncomeDialog] = useState(false);
@@ -101,18 +90,31 @@ const FinancialExpenseBreakdownView = () => {
     return Math.ceil((now.getTime() - start.getTime()) / 604800000);
   });
   const [startWeek, setStartWeek] = useState<number>(1);
+  const [endWeek, setEndWeek] = useState<number>(() => {
+    const now = new Date();
+    const start = new Date(currentYear, 0, 1);
+    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
+  });
   const [selectedTimelapse, setSelectedTimelapse] = useState<string | null>(null);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Actualizar currentWeek cuando cambie el año
+  // Actualizar currentWeek y endWeek cuando cambie el año
   useEffect(() => {
     const now = new Date();
     const start = new Date(year, 0, 1);
-    setCurrentWeek(Math.ceil((now.getTime() - start.getTime()) / 604800000));
+    const weekNum = Math.ceil((now.getTime() - start.getTime()) / 604800000);
+    setCurrentWeek(weekNum);
+    setEndWeek(weekNum);
     setStartWeek(1);
     setSelectedTimelapse(null);
   }, [year]);
+
+  // Actualizar data cuando cambian startWeek o endWeek
+  useEffect(() => {
+    const adjustedStartWeek = Math.min(startWeek, endWeek);
+    const adjustedEndWeek = Math.max(startWeek, endWeek);
+    fetchBreakdown(adjustedStartWeek, adjustedEndWeek, year);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startWeek, endWeek, year]);
 
   // Fetch breakdown usando el nuevo endpoint de totals CON COSTOS
   const fetchBreakdown = async (fromWeek: number, toWeek: number, selectedYear: number) => {
@@ -234,29 +236,13 @@ const FinancialExpenseBreakdownView = () => {
     }
   };
 
-  // Fetch inicial y cuando cambian los pickers
-  // YA NO NECESITAS fetchDbCosts() separado
-  useEffect(() => {
-    fetchBreakdown(startWeek, currentWeek, year);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startWeek, currentWeek, year]);
-
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowWeekDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   // Handle refresh button - SIMPLIFICADO
   const handleRefresh = async () => {
     setRefreshLoading(true);
     try {
-      await fetchBreakdown(startWeek, currentWeek, year);
+      const adjustedStartWeek = Math.min(startWeek, endWeek);
+      const adjustedEndWeek = Math.max(startWeek, endWeek);
+      await fetchBreakdown(adjustedStartWeek, adjustedEndWeek, year);
       enqueueSnackbar("Data refreshed successfully", { variant: "success" });
     } catch (err: any) {
       enqueueSnackbar("Error refreshing data", { variant: "error" });
@@ -306,35 +292,6 @@ const FinancialExpenseBreakdownView = () => {
     }
   };
 
-  const weeks = Array.from({ length: currentWeek }, (_, i) => i + 1);
-
-  const handleWeekSelect = (selectedWeek: number) => {
-    setStartWeek(selectedWeek);
-    setShowWeekDropdown(false);
-    setSelectedTimelapse(null);
-  };
-
-  const handleWeekKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setShowWeekDropdown(true);
-    } else if (e.key === "Escape") {
-      setShowWeekDropdown(false);
-    } else if (e.key === "Enter") {
-      setShowWeekDropdown(!showWeekDropdown);
-    }
-  };
-
-  const handleWeekInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number(e.target.value);
-    if (value < 1 || value > currentWeek) {
-      enqueueSnackbar(`Week must be between 1 and ${currentWeek}.`, { variant: "error" });
-      return;
-    }
-    setStartWeek(value);
-    setSelectedTimelapse(null);
-  };
-
   // Quick timelapse handler para periodos exactos
   const handleTimelapse = (timelapse: any) => {
     const { startWeek: start, endWeek: end, label } = timelapse;
@@ -345,8 +302,8 @@ const FinancialExpenseBreakdownView = () => {
     }
     
     setStartWeek(start);
+    setEndWeek(end);
     setSelectedTimelapse(label);
-    fetchBreakdown(start, end, year);
   };
 
   // Separar costos de BD por tipo - LÓGICA CORRECTA
@@ -471,19 +428,13 @@ const FinancialExpenseBreakdownView = () => {
           <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
             Year
           </label>
-          <select
-            value={year}
-            onChange={e => setYear(Number(e.target.value))}
-            className="w-full px-4 py-2 border-2 rounded-lg font-medium focus:outline-none focus:ring-2 transition-all"
-            style={{ 
-              borderColor: '#0B2863',
-              color: '#0B2863'
-            }}
-          >
-            {getAvailableYears().map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <YearPicker 
+            year={year}
+            onYearSelect={setYear}
+            min={2015}
+            max={new Date().getFullYear() + 1}
+            className="w-full"
+          />
         </div>
 
         {/* Quick timelapses */}
@@ -504,140 +455,37 @@ const FinancialExpenseBreakdownView = () => {
           ))}
         </div>
 
-        {/* Week Picker - mantener código existente */}
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
-            Select Start Week (Custom Range)
-          </h3>
-          <div
-            className="bg-gradient-to-br from-white/90 to-orange-50/50 backdrop-blur-sm rounded-xl p-4 border-2 shadow-sm hover:shadow-md transition-all duration-300"
-            style={{ borderColor: '#F09F52' }}
-            ref={dropdownRef}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-bold text-gray-700">
-                Week Range
-              </label>
-              <button
-                onClick={() => setViewMode(viewMode === "select" ? "input" : "select")}
-                className="text-xs text-white px-3 py-1 rounded-md font-medium transition-all duration-200 hover:opacity-90"
-                style={{ backgroundColor: '#F09F52' }}
-                title={`Switch to ${viewMode === "select" ? "input" : "dropdown"} view`}
-              >
-                {viewMode === "select" ? "Input" : "Dropdown"}
-              </button>
-            </div>
-            
-            {/* Visual range bar */}
-            <div className="w-full flex items-center gap-3 m-3">
-              <div className="flex-1 h-4 rounded-full relative overflow-hidden">
-                <div
-                  className="absolute top-0 left-0 h-4 rounded-full transition-all duration-300"
-                  style={{
-                    backgroundColor: '#F09F52',
-                    width: `${((currentWeek - startWeek + 1) / currentWeek) * 100}%`,
-                    left: `${((startWeek - 1) / currentWeek) * 100}%`,
-                  }}
-                />
-                <div
-                  className="absolute top-0 left-0 h-5 rounded-full"
-                  style={{
-                    width: "100%",
-                    border: "1px solid #0B2863",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-              <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#0B2863' }}>
-                W{startWeek} → W{currentWeek}
-              </span>
-            </div>
-            
-            {viewMode === "select" ? (
-              <div className="relative">
-                <div
-                  className="w-full px-4 py-2 border-2 rounded-lg font-bold text-center bg-white cursor-pointer flex items-center justify-between shadow-sm hover:shadow-md transition-all"
-                  style={{ borderColor: '#F09F52' }}
-                  onClick={() => setShowWeekDropdown(!showWeekDropdown)}
-                  onKeyDown={handleWeekKeyDown}
-                  tabIndex={0}
-                >
-                  <span style={{ color: '#0B2863' }}>
-                    Week {startWeek}
-                  </span>
-                  <svg
-                    className={`w-5 h-5 transition-transform duration-200 ${showWeekDropdown ? "rotate-180" : ""}`}
-                    style={{ color: '#F09F52' }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-                {showWeekDropdown && (
-                  <div 
-                    className="absolute mt-2 bg-white border-2 rounded-lg shadow-2xl w-full z-50"
-                    style={{ borderColor: '#F09F52' }}
-                  >
-                    <div className="p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-semibold text-gray-600">
-                          Select start week (1-{currentWeek}):
-                        </span>
-                        <button
-                          onClick={() => setShowWeekDropdown(false)}
-                          className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
-                        {weeks.map((weekNum) => (
-                          <button
-                            key={weekNum}
-                            onClick={() => handleWeekSelect(weekNum)}
-                            className="p-2 text-sm rounded-lg border-2 transition-all duration-200 font-semibold hover:scale-105"
-                            style={{
-                              backgroundColor: startWeek === weekNum ? '#F09F52' : '#f9f9f9',
-                              color: startWeek === weekNum ? '#fff' : '#333',
-                              borderColor: startWeek === weekNum ? '#F09F52' : '#e0e0e0',
-                            }}
-                            title={`Select start week ${weekNum}`}
-                          >
-                            {weekNum}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="relative">
-                <input
-                  type="number"
-                  min="1"
-                  max={currentWeek}
-                  value={startWeek}
-                  onChange={handleWeekInputChange}
-                  className="w-full px-4 py-2 border-2 rounded-lg font-bold text-center bg-white shadow-sm focus:outline-none focus:ring-2 transition-all"
-                  style={{ borderColor: '#F09F52' }}
-                  placeholder={`1-${currentWeek}`}
-                  disabled={loading}
-                />
-                <div className="absolute -bottom-6 left-0 right-0 text-xs text-gray-500 text-center">
-                  Press Enter to confirm
-                </div>
-              </div>
-            )}
+        {/* Week Range Picker */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
+              Start Week
+            </label>
+            <WeekPicker
+              week={startWeek}
+              onWeekSelect={(week) => {
+                setStartWeek(week);
+                setSelectedTimelapse(null);
+              }}
+              min={1}
+              max={currentWeek}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2863' }}>
+              End Week
+            </label>
+            <WeekPicker
+              week={endWeek}
+              onWeekSelect={(week) => {
+                setEndWeek(week);
+                setSelectedTimelapse(null);
+              }}
+              min={1}
+              max={52}
+              className="w-full"
+            />
           </div>
         </div>
       </div>
@@ -653,7 +501,7 @@ const FinancialExpenseBreakdownView = () => {
       ) : summaryData ? (
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-2xl font-semibold mb-4" style={{ color: '#0B2863' }}>
-            Financial Breakdown - Week {startWeek} to {currentWeek}, {year}
+            Financial Breakdown - Week {Math.min(startWeek, endWeek)} to {Math.max(startWeek, endWeek)}, {year}
           </h2>
           
           {/* PROFIT SUMMARY - UPDATED */}
@@ -1094,8 +942,8 @@ const FinancialExpenseBreakdownView = () => {
         expenses={summaryData?.expenses || {}}
         income={Number(summaryData?.income || 0)}
         profit={Number(summaryData?.profit || 0)}
-        startWeek={startWeek}
-        endWeek={currentWeek}
+        startWeek={Math.min(startWeek, endWeek)}
+        endWeek={Math.max(startWeek, endWeek)}
         year={year}
       />
 

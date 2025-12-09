@@ -5,6 +5,7 @@ import {
   ExtraIncomeListResponse,
   ExtraIncomeResponse,
   ExtraIncomeDeleteResponse,
+  AdjustExtraIncomeValueResponse,
 } from '../domain/ExtraIncomeModels';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -228,4 +229,36 @@ export async function getTotalExtraIncomes(options: {
     console.error('Error calculating total extra incomes:', error);
     return 0;
   }
+}
+
+/**
+ * Ajusta el valor de un ingreso extra (suma o resta)
+ * @param id - ID del ingreso extra
+ * @param mode - 'add' para sumar o 'subtract' para restar
+ * @param adjustment - cantidad a ajustar
+ */
+export async function adjustExtraIncomeValue(
+  id: number,
+  mode: 'add' | 'subtract',
+  adjustment: number
+): Promise<AdjustExtraIncomeValueResponse> {
+  const headers = getAuthHeaders();
+
+  const url = `${BASE_URL_API}${ENDPOINT}${id}/adjust-value/?mode=${mode}`;
+  
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ adjustment }),
+  });
+
+  handleAuthError(response);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.messUser || error.messDev || `Error adjusting extra income value`);
+  }
+
+  const responseData = await response.json();
+  return responseData;
 }

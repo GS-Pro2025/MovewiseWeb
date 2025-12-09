@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ExtraIncomeItem } from '../../domain/ModelsSummaryLight';
 import { deleteExtraIncome, updateExtraIncome } from '../../data/ExtraIncomeRepository';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import EditExtraIncomeDialog from './EditExtraIncomeDialog';
 import { enqueueSnackbar } from 'notistack';
 
 interface IncomesTableDropdownProps {
@@ -51,6 +52,10 @@ const IncomesTableDropdown: React.FC<IncomesTableDropdownProps> = ({
     open: false,
     income: null
   });
+  const [editModal, setEditModal] = useState<{ open: boolean; income: ExtraIncomeItem | null }>({
+    open: false,
+    income: null
+  });
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const ITEMS_PER_PAGE = 10;
@@ -70,6 +75,11 @@ const IncomesTableDropdown: React.FC<IncomesTableDropdownProps> = ({
   const handleDeleteClick = (e: React.MouseEvent, income: ExtraIncomeItem) => {
     e.stopPropagation();
     setDeleteModal({ open: true, income });
+  };
+
+  const handleEditClick = (e: React.MouseEvent, income: ExtraIncomeItem) => {
+    e.stopPropagation();
+    setEditModal({ open: true, income });
   };
 
   const handleDeleteConfirm = async () => {
@@ -208,23 +218,32 @@ const IncomesTableDropdown: React.FC<IncomesTableDropdownProps> = ({
                             </button>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={(e) => handleDeleteClick(e, income)}
-                              disabled={actionLoading === income.id}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 mx-auto"
-                            >
-                              {actionLoading === income.id ? (
-                                <>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={(e) => handleEditClick(e, income)}
+                                disabled={actionLoading === income.id}
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                {actionLoading === income.id ? (
                                   <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                                  Deleting...
-                                </>
-                              ) : (
-                                <>
+                                ) : (
+                                  <i className="fas fa-edit text-xs"></i>
+                                )}
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteClick(e, income)}
+                                disabled={actionLoading === income.id}
+                                className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                {actionLoading === income.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                                  </>
+                                ) : (
                                   <i className="fas fa-trash text-xs"></i>
-                                  Delete
-                                </>
-                              )}
-                            </button>
+                                )}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -306,6 +325,17 @@ const IncomesTableDropdown: React.FC<IncomesTableDropdownProps> = ({
         onConfirm={handleDeleteConfirm}
         costDescription={`Extra Income: ${deleteModal.income?.description || ""}`}
         loading={actionLoading === deleteModal.income?.id}
+      />
+
+      {/* Edit Income Modal */}
+      <EditExtraIncomeDialog
+        open={editModal.open}
+        income={editModal.income}
+        onClose={() => setEditModal({ open: false, income: null })}
+        onSuccess={(updatedIncome) => {
+          onIncomeUpdated?.(updatedIncome);
+          setEditModal({ open: false, income: null });
+        }}
       />
     </>
   );
