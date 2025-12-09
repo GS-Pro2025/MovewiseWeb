@@ -68,5 +68,19 @@ export async function deleteCostApi(id_cost: string): Promise<void> {
     headers,
   });
   handleAuthError(res);
-  if (!res.ok) throw new Error('Error deleting cost');
+  
+  // 200 OK - Costo eliminado (desactivado)
+  if (res.status === 200) {
+    return;
+  }
+
+  // 204 No Content - Fallback si cambian el backend
+  if (res.status === 204) {
+    return;
+  }
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || 'Error deleting cost');
+  }
 }
