@@ -9,8 +9,10 @@ import { deleteCostApi } from "../data/CostRepository";
 import { Cost } from "../domain/ModelsCost";
 import CreateCostDialog from "./components/CreateCostDialog";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
-import { OrderSummaryLightTotalsResponse } from "../domain/ModelsSummaryLight";
+import { ExtraIncomeItem, OrderSummaryLightTotalsResponse } from "../domain/ModelsSummaryLight";
 import CostsTableDropdown from './components/CostsTableDropdown';
+import IncomesTableDropdown from './components/IncomesTableDropdown';
+import CreateExtraIncomeDialog from './components/CreateExtraIncomeDialog';
 
 // FORMATO UNIFICADO PARA TODOS LOS NÚMEROS
 const formatCurrency = (amount: number | string): string => {
@@ -71,13 +73,16 @@ const FinancialExpenseBreakdownView = () => {
     income: number,
     totalCost: number,
     profit: number,
-    totalCostFromTable?: number // AGREGAR
+    totalCostFromTable?: number,
+    extraIncomes?: ExtraIncomeItem[], // Agregar esto
+    totalExtraIncome?: number // Agregar esto
   } | null>(null);
   const [dbCosts, setDbCosts] = useState<Cost[]>([]);
   const [showWeekDropdown, setShowWeekDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<"select" | "input">("select");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreateExtraIncomeDialog, setShowCreateExtraIncomeDialog] = useState(false);
   console.log(showCreateDialog);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; cost: Cost | null }>({
@@ -145,15 +150,15 @@ const FinancialExpenseBreakdownView = () => {
       expenses.driverSalaries = Number(Number(data.driverSalaries || 0).toFixed(2));
       expenses.otherSalaries = Number(Number(data.otherSalaries || 0).toFixed(2));
 
-      // ACTUALIZAR dbCosts - MAPEAR other_transaction como FIXED
+      // ACTUALIZAR dbCosts - PRESERVAR tipo original para separación correcta
       const costsFromBackend = (data.costs || []).map((cost: any) => ({
         id_cost: cost.id_cost,
         description: cost.description || 'Undefined',
         cost: cost.cost,
-        type: cost.type === 'other_transaction' ? 'FIXED' : cost.type,
+        type: cost.type, // Preservar tipo original exacto
         date: cost.date,
         update: cost.date,
-        is_active: true
+        is_active: true,
       }));
       
       console.log('Costs mapped from backend:', costsFromBackend);
@@ -184,7 +189,11 @@ const FinancialExpenseBreakdownView = () => {
 
       // Discounts breakdown - SOLO PARA MOSTRAR, NO SE USAN EN CÁLCULOS
       discounts.operators_discount = Number(Number(data.operators_discount || 0).toFixed(2));
+      const extraIncomes = (data.extraIncomes || []) as ExtraIncomeItem[];
+      const totalExtraIncome = Number(Number(data.totalExtraIncome || 0).toFixed(2));
 
+      console.log('Extra Incomes:', extraIncomes);
+      console.log('Total Extra Income:', totalExtraIncome);
       // Income - YA INCLUYE operators_discount sumado por el backend
       const income = Number(Number(data.rentingCost || 0).toFixed(2));
 
@@ -206,9 +215,11 @@ const FinancialExpenseBreakdownView = () => {
         expenses, 
         discounts,
         income,
-        totalCost, // Ya no se restan descuentos aquí
+        totalCost,
         profit,
-        totalCostFromTable
+        totalCostFromTable,
+        extraIncomes,
+        totalExtraIncome
       });
 
       console.log('Total costs from DB table:', data.totalCostFromTable);
@@ -338,17 +349,28 @@ const FinancialExpenseBreakdownView = () => {
     fetchBreakdown(start, end, year);
   };
 
-  // Separar costos de BD por tipo - ACTUALIZADO
-  // TODOS los costos de other_transaction ahora son FIXED
+  // Separar costos de BD por tipo - LÓGICA CORRECTA
+  // other_transaction → REGISTERED COSTS (nueva sección)
+  // FIXED → FIXED COSTS
+  // VARIABLE → VARIABLE COSTS
+  // Otros → FIXED COSTS (default)
+  
+  const otherTransactionCosts = dbCosts.filter(cost => 
+    cost.type.toLowerCase() === 'other_transaction'
+  );
+  
   const fixedDbCosts = dbCosts.filter(cost => {
-    const costType = cost.type.toUpperCase();
-    return costType === 'FIXED'; // Solo FIXED (ya mapeados desde other_transaction)
+    const costType = cost.type.toLowerCase();
+    return costType === 'fixed' || (costType !== 'variable' && costType !== 'other_transaction');
   });
   
-  const variableDbCosts = dbCosts.filter(cost => cost.type.toUpperCase() === 'VARIABLE');
+  const variableDbCosts = dbCosts.filter(cost => 
+    cost.type.toLowerCase() === 'variable'
+  );
 
   console.log('=== COSTS BREAKDOWN ===');
   console.log('Total DB Costs:', dbCosts.length);
+  console.log('Other Transaction Costs:', otherTransactionCosts.length);
   console.log('Fixed DB Costs:', fixedDbCosts.length);
   console.log('Variable DB Costs:', variableDbCosts.length);
   console.log('Sample costs:', dbCosts.slice(0, 3).map(c => ({ 
@@ -375,6 +397,10 @@ const FinancialExpenseBreakdownView = () => {
         .filter(type => type.type === 'variable')
         .reduce((sum, type) => sum + (summaryData.expenses[type.key] || 0), 0);
       return Number((dbVariableTotal + calculatedVariableTotal).toFixed(2));
+    }
+    
+    if (categoryType === 'other_transaction') {
+      return otherTransactionCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0);
     }
     
     // Los descuentos ahora son solo informativos
@@ -428,6 +454,13 @@ const FinancialExpenseBreakdownView = () => {
             >
               <i className="fas fa-plus"></i>
               Create Cost
+            </button>
+            <button
+              onClick={() => setShowCreateExtraIncomeDialog(true)}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-semibold flex items-center gap-2"
+            >
+              <i className="fas fa-plus"></i>
+              Create Income
             </button>
           </div>
         </div>
@@ -622,6 +655,26 @@ const FinancialExpenseBreakdownView = () => {
             Financial Breakdown - Week {startWeek} to {currentWeek}, {year}
           </h2>
           
+          {/* PROFIT SUMMARY - UPDATED */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <div className="text-sm opacity-90">Total Income</div>
+                <div className="text-2xl font-bold">{formatCurrency(summaryData?.income || 0)}</div>
+              </div>
+              <div>
+                <div className="text-sm opacity-90">Total Costs</div>
+                <div className="text-2xl font-bold">-{formatCurrency(summaryData?.totalCost || 0)}</div>
+              </div>
+              <div className="border-l border-white border-opacity-30">
+                <div className="text-sm opacity-90">Net Profit</div>
+                <div className={`text-2xl font-bold ${Number(summaryData?.profit || 0) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                  {formatCurrency(summaryData?.profit || 0)}
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <div className="overflow-x-auto rounded-xl">
             <table className="w-full">
               <thead>
@@ -638,11 +691,73 @@ const FinancialExpenseBreakdownView = () => {
                     FIXED COSTS
                   </td>
                 </tr>
-                
+                {/* Database Other Transaction Costs - DROPDOWN */}
+                {otherTransactionCosts.length > 0 && (
+                  <CostsTableDropdown 
+                    costs={otherTransactionCosts}
+                    title="Database Transactions"
+                    totalAmount={otherTransactionCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
+                    onCostDeleted={(costId) => {
+                      setDbCosts(prevCosts => prevCosts.filter(cost => cost.id_cost !== costId));
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const deletedCost = otherTransactionCosts.find(c => c.id_cost === costId);
+                        if (!deletedCost) return prev;
+                        const deletedAmount = Number(Number(deletedCost.cost).toFixed(2));
+                        const newExpensesTotalCost = Number((prev.expenses.totalCost - deletedAmount).toFixed(2));
+                        const newTotalCost = newExpensesTotalCost;
+                        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                        return {
+                          ...prev,
+                          expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                          totalCost: newTotalCost,
+                          profit: newProfit,
+                        };
+                      });
+                    }}
+                    onCostCreated={(newCost: Cost) => {
+                      setDbCosts(prevCosts => [...prevCosts, newCost]);
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const newAmount = Number(Number(newCost.cost).toFixed(2));
+                        const newExpensesTotalCost = Number((prev.expenses.totalCost + newAmount).toFixed(2));
+                        const newTotalCost = newExpensesTotalCost;
+                        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                        return {
+                          ...prev,
+                          expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                          totalCost: newTotalCost,
+                          profit: newProfit,
+                        };
+                      });
+                    }}
+                    onCostUpdated={(updatedCost: Cost) => {
+                      setDbCosts(prevCosts => 
+                        prevCosts.map(cost => cost.id_cost === updatedCost.id_cost ? updatedCost : cost)
+                      );
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const oldCost = otherTransactionCosts.find(c => c.id_cost === updatedCost.id_cost);
+                        if (!oldCost) return prev;
+                        const costDifference = Number((updatedCost.cost - oldCost.cost).toFixed(2));
+                        const newExpensesTotalCost = Number((prev.expenses.totalCost + costDifference).toFixed(2));
+                        const newTotalCost = newExpensesTotalCost;
+                        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                        return {
+                          ...prev,
+                          expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                          totalCost: newTotalCost,
+                          profit: newProfit,
+                        };
+                      });
+                    }}
+                  />
+                )}
                 {/* Database Fixed Costs - AHORA COMO DROPDOWN */}
                 {fixedDbCosts.length > 0 && (
                 <CostsTableDropdown 
                   costs={fixedDbCosts}
+                  title="Fixed Costs from Database"
                   totalAmount={fixedDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
                   onCostDeleted={(costId) => {
                     setDbCosts(prevCosts => prevCosts.filter(cost => cost.id_cost !== costId));
@@ -668,6 +783,26 @@ const FinancialExpenseBreakdownView = () => {
                       if (!prev) return prev;
                       const newAmount = Number(Number(newCost.cost).toFixed(2));
                       const newExpensesTotalCost = Number((prev.expenses.totalCost + newAmount).toFixed(2));
+                      const newTotalCost = newExpensesTotalCost;
+                      const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                      return {
+                        ...prev,
+                        expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                        totalCost: newTotalCost,
+                        profit: newProfit,
+                      };
+                    });
+                  }}
+                  onCostUpdated={(updatedCost: Cost) => {
+                    setDbCosts(prevCosts => 
+                      prevCosts.map(cost => cost.id_cost === updatedCost.id_cost ? updatedCost : cost)
+                    );
+                    setSummaryData(prev => {
+                      if (!prev) return prev;
+                      const oldCost = fixedDbCosts.find(c => c.id_cost === updatedCost.id_cost);
+                      if (!oldCost) return prev;
+                      const costDifference = Number((updatedCost.cost - oldCost.cost).toFixed(2));
+                      const newExpensesTotalCost = Number((prev.expenses.totalCost + costDifference).toFixed(2));
                       const newTotalCost = newExpensesTotalCost;
                       const newProfit = Number((prev.income - newTotalCost).toFixed(2));
                       return {
@@ -723,7 +858,62 @@ const FinancialExpenseBreakdownView = () => {
                 {variableDbCosts.length > 0 && (
                   <CostsTableDropdown 
                     costs={variableDbCosts}
+                    title="Variable Costs from Database"
                     totalAmount={variableDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
+                    onCostDeleted={(costId) => {
+                      setDbCosts(prevCosts => prevCosts.filter(cost => cost.id_cost !== costId));
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const deletedCost = variableDbCosts.find(c => c.id_cost === costId);
+                        if (!deletedCost) return prev;
+                        const deletedAmount = Number(Number(deletedCost.cost).toFixed(2));
+                        const newExpensesTotalCost = Number((prev.expenses.totalCost - deletedAmount).toFixed(2));
+                        const newTotalCost = newExpensesTotalCost;
+                        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                        return {
+                          ...prev,
+                          expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                          totalCost: newTotalCost,
+                          profit: newProfit,
+                        };
+                      });
+                    }}
+                    onCostCreated={(newCost: Cost) => {
+                      setDbCosts(prevCosts => [...prevCosts, newCost]);
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const newAmount = Number(Number(newCost.cost).toFixed(2));
+                        const newExpensesTotalCost = Number((prev.expenses.totalCost + newAmount).toFixed(2));
+                        const newTotalCost = newExpensesTotalCost;
+                        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                        return {
+                          ...prev,
+                          expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                          totalCost: newTotalCost,
+                          profit: newProfit,
+                        };
+                      });
+                    }}
+                    onCostUpdated={(updatedCost: Cost) => {
+                      setDbCosts(prevCosts => 
+                        prevCosts.map(cost => cost.id_cost === updatedCost.id_cost ? updatedCost : cost)
+                      );
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const oldCost = variableDbCosts.find(c => c.id_cost === updatedCost.id_cost);
+                        if (!oldCost) return prev;
+                        const costDifference = Number((updatedCost.cost - oldCost.cost).toFixed(2));
+                        const newExpensesTotalCost = Number((prev.expenses.totalCost + costDifference).toFixed(2));
+                        const newTotalCost = newExpensesTotalCost;
+                        const newProfit = Number((prev.income - newTotalCost).toFixed(2));
+                        return {
+                          ...prev,
+                          expenses: { ...prev.expenses, totalCost: newExpensesTotalCost },
+                          totalCost: newTotalCost,
+                          profit: newProfit,
+                        };
+                      });
+                    }}
                   />
                 )}
                 
@@ -758,37 +948,73 @@ const FinancialExpenseBreakdownView = () => {
                   </td>
                 </tr>
 
-                {/* Discounts Section - AHORA SOLO INFORMATIVO */}
-                <tr className="bg-green-100">
+                
+
+                {/* INCOMES Section */}
+                <tr className="bg-emerald-100">
                   <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#000000ff' }}>
-                    DISCOUNTS
+                    INCOMES
                   </td>
                 </tr>
-                
-                {DISCOUNT_TYPES.map(type => (
-                  <tr key={type.key} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3 pl-12 text-gray-700">
-                      {type.label}
-                      <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
-                        INFORMATIONAL
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-right font-medium" style={{ color: type.color }}>
-                      {formatCurrency(summaryData.discounts[type.key] || 0)}
-                    </td>
-                    <td className="px-6 py-3 text-center text-gray-400 text-sm">
-                      No actions
+
+                {/* Operators Discount y Extra Incomes como Dropdown */}
+                {(summaryData?.totalExtraIncome ?? 0) > 0 || (summaryData?.discounts.operators_discount ?? 0) > 0 ? (
+                  <IncomesTableDropdown
+                    operatorsDiscount={summaryData?.discounts.operators_discount || 0}
+                    extraIncomes={summaryData?.extraIncomes || []}
+                    totalIncome={(summaryData?.discounts.operators_discount || 0) + (summaryData?.totalExtraIncome || 0)}
+                    onIncomeDeleted={(incomeId) => {
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const updatedIncomes = prev.extraIncomes?.filter(inc => inc.id !== incomeId) || [];
+                        const newTotalExtraIncome = updatedIncomes.reduce((sum, inc) => sum + inc.value, 0);
+                        const newTotalIncome = (prev.discounts.operators_discount || 0) + newTotalExtraIncome;
+                        const newProfit = Number((newTotalIncome - prev.totalCost).toFixed(2));
+                        
+                        return {
+                          ...prev,
+                          extraIncomes: updatedIncomes,
+                          totalExtraIncome: newTotalExtraIncome,
+                          income: newTotalIncome,
+                          profit: newProfit
+                        };
+                      });
+                    }}
+                    onIncomeUpdated={(updatedIncome) => {
+                      setSummaryData(prev => {
+                        if (!prev) return prev;
+                        const updatedIncomes = prev.extraIncomes?.map(inc => 
+                          inc.id === updatedIncome.id ? updatedIncome : inc
+                        ) || [];
+                        const newTotalExtraIncome = updatedIncomes.reduce((sum, inc) => sum + inc.value, 0);
+                        const newTotalIncome = (prev.discounts.operators_discount || 0) + newTotalExtraIncome;
+                        const newProfit = Number((newTotalIncome - prev.totalCost).toFixed(2));
+                        
+                        return {
+                          ...prev,
+                          extraIncomes: updatedIncomes,
+                          totalExtraIncome: newTotalExtraIncome,
+                          income: newTotalIncome,
+                          profit: newProfit
+                        };
+                      });
+                    }}
+                  />
+                ) : (
+                  <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
+                      <p className="text-sm">No incomes recorded for this period</p>
                     </td>
                   </tr>
-                ))}
-                
-                {/* Discounts Subtotal - AHORA SOLO INFORMATIVO */}
-                <tr className="bg-green-50 border-b-2 border-green-200">
-                  <td className="px-6 py-3 pl-8 font-bold text-gray-800">
-                    Discounts Total (Informational)
+                )}
+
+                {/* Incomes Subtotal */}
+                <tr className="bg-emerald-50 border-b-2 border-emerald-200">
+                  <td className="px-6 py-3 pl-8 font-bold text-gray-700">
+                    Total Incomes
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
-                    {formatCurrency(calculateCategorySubtotal('discounts'))}
+                    {formatCurrency((summaryData?.discounts.operators_discount || 0) + (summaryData?.totalExtraIncome || 0))}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     -
@@ -898,6 +1124,41 @@ const FinancialExpenseBreakdownView = () => {
           });
           
           enqueueSnackbar("Cost created successfully", { variant: "success" });
+        }}
+      />
+
+      <CreateExtraIncomeDialog
+        open={showCreateExtraIncomeDialog}
+        onClose={() => setShowCreateExtraIncomeDialog(false)}
+        onSuccess={(newIncome) => {
+          setSummaryData(prev => {
+            if (!prev) return prev;
+            
+            const incomeAsItem: ExtraIncomeItem = {
+              id: newIncome.id,
+              value: newIncome.value,
+              description: newIncome.description,
+              type: newIncome.type,
+              date: newIncome.date,
+              is_active: newIncome.is_active,
+              updated_at: newIncome.updated_at,
+            };
+            
+            const updatedIncomes = [...(prev.extraIncomes || []), incomeAsItem];
+            const newTotalExtraIncome = updatedIncomes.reduce((sum, inc) => sum + inc.value, 0);
+            const newTotalIncome = (prev.discounts.operators_discount || 0) + newTotalExtraIncome;
+            const newProfit = Number((newTotalIncome - prev.totalCost).toFixed(2));
+            
+            return {
+              ...prev,
+              extraIncomes: updatedIncomes,
+              totalExtraIncome: newTotalExtraIncome,
+              income: newTotalIncome,
+              profit: newProfit
+            };
+          });
+          
+          enqueueSnackbar("Extra income created successfully", { variant: "success" });
         }}
       />
 

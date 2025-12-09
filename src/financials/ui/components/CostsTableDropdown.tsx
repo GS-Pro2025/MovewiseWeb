@@ -3,14 +3,17 @@ import { useState } from 'react';
 import { Cost } from '../../domain/ModelsCost';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import CreateCostDialog from './CreateCostDialog';
+import EditCostDialog from './EditCostDialog';
 import { deleteCostApi } from '../../data/CostRepository';
 import { enqueueSnackbar } from 'notistack';
 
 interface CostsTableDropdownProps {
   costs: Cost[];
   totalAmount: number;
+  title?: string;
   onCostDeleted?: (costId: string) => void;
   onCostCreated?: (newCost: Cost) => void;
+  onCostUpdated?: (updatedCost: Cost) => void;
 }
 
 const formatCurrency = (amount: number | string): string => {
@@ -41,12 +44,15 @@ const formatDate = (dateString: string): string => {
 const CostsTableDropdown: React.FC<CostsTableDropdownProps> = ({ 
   costs, 
   totalAmount,
+  title = "Costs from Database Table",
   onCostDeleted,
-  onCostCreated
+  onCostCreated,
+  onCostUpdated
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editCost, setEditCost] = useState<Cost | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; cost: Cost | null }>({
     open: false,
     cost: null
@@ -105,7 +111,7 @@ const CostsTableDropdown: React.FC<CostsTableDropdownProps> = ({
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <span>Costs from Database Table</span>
+            <span>{title}</span>
             <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">
               {costs.length} ITEMS
             </span>
@@ -192,23 +198,35 @@ const CostsTableDropdown: React.FC<CostsTableDropdownProps> = ({
                             {formatDate(cost.date)}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={(e) => handleDeleteClick(e, cost)}
-                              disabled={actionLoading === cost.id_cost}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 mx-auto"
-                            >
-                              {actionLoading === cost.id_cost ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                                  Deleting...
-                                </>
-                              ) : (
-                                <>
-                                  <i className="fas fa-trash text-xs"></i>
-                                  Delete
-                                </>
-                              )}
-                            </button>
+                            <div className="flex items-center gap-2 justify-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditCost(cost);
+                                }}
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                <i className="fas fa-edit text-xs"></i>
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteClick(e, cost)}
+                                disabled={actionLoading === cost.id_cost}
+                                className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                              >
+                                {actionLoading === cost.id_cost ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-trash text-xs"></i>
+                                    Delete
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -268,6 +286,16 @@ const CostsTableDropdown: React.FC<CostsTableDropdownProps> = ({
         onClose={() => setShowCreateDialog(false)}
         onSuccess={(newCost: Cost) => {
           onCostCreated?.(newCost);
+        }}
+      />
+
+      <EditCostDialog
+        open={!!editCost}
+        cost={editCost}
+        onClose={() => setEditCost(null)}
+        onSuccess={(updatedCost: Cost) => {
+          onCostUpdated?.(updatedCost);
+          setEditCost(null);
         }}
       />
 
