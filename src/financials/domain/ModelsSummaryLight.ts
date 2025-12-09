@@ -1,10 +1,19 @@
-
 export interface CostFromTable {
   id_cost: string;
   description: string;
   cost: number;
-  type: 'FIXED' | 'VARIABLE';
+  type: 'FIXED' | 'VARIABLE' | 'other_transaction';
   date: string;
+}
+
+export interface ExtraIncomeItem {
+  id: number;
+  value: number;
+  description: string;
+  type: string;
+  date: string;
+  is_active: boolean;
+  updated_at: string;
 }
 
 export interface OrderSummaryTotalsData {
@@ -22,6 +31,8 @@ export interface OrderSummaryTotalsData {
   total_orders: number;
   customer_factories: number[];
   net_profit: number;
+  extraIncomes?: ExtraIncomeItem[];
+  totalExtraIncome?: number;
 }
 
 export interface OrderSummaryLightTotalsResponse {
@@ -39,6 +50,8 @@ export interface OrderSummaryLightTotalsResponse {
   totalCost?: number;
   total_orders?: number;
   net_profit?: number;
+  extraIncomes?: ExtraIncomeItem[];
+  totalExtraIncome?: number;
   
   // O envuelto en estructura completa
   status?: string;
