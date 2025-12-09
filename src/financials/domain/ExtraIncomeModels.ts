@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Types para el tipo de ingreso extra
-export type ExtraIncomeType = 'BONUS' | 'COMMISSION' | 'INCENTIVE' | 'OTHER';
-
 // Modelo para crear ingreso extra
 export interface CreateExtraIncomeRequest {
   value: number;
   description: string;
-  type: ExtraIncomeType;
+  type: string;
   date: string; // formato: YYYY-MM-DD
 }
 
@@ -15,7 +12,7 @@ export interface CreateExtraIncomeRequest {
 export interface UpdateExtraIncomeRequest {
   value?: number;
   description?: string;
-  type?: ExtraIncomeType;
+  type?: string;
   date?: string;
   is_active?: boolean;
 }
@@ -25,7 +22,7 @@ export interface ExtraIncome {
   id: number;
   value: number;
   description: string;
-  type: ExtraIncomeType;
+  type: string;
   date: string;
   is_active: boolean;
   updated_at: string;

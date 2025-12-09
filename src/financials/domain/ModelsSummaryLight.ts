@@ -10,7 +10,7 @@ export interface ExtraIncomeItem {
   id: number;
   value: number;
   description: string;
-  type: 'BONUS' | 'COMMISSION' | 'INCENTIVE' | 'OTHER';
+  type: string;
   date: string;
   is_active: boolean;
   updated_at: string;

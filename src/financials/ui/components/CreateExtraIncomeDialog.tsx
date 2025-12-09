@@ -1,17 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Box,
-  MenuItem,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
+import React, { useState } from 'react';
 import { CreateExtraIncomeRequest, ExtraIncome } from '../../domain/ExtraIncomeModels';
 import { createExtraIncome } from '../../data/ExtraIncomeRepository';
 import { enqueueSnackbar } from 'notistack';
@@ -22,64 +10,89 @@ interface CreateExtraIncomeDialogProps {
   onSuccess: (newIncome: ExtraIncome) => void;
 }
 
-const INCOME_TYPES = [
-  { value: 'BONUS', label: 'Bonus' },
-  { value: 'COMMISSION', label: 'Commission' },
-  { value: 'INCENTIVE', label: 'Incentive' },
-  { value: 'OTHER', label: 'Other' },
-];
-
 const CreateExtraIncomeDialog: React.FC<CreateExtraIncomeDialogProps> = ({ 
   open, 
   onClose, 
   onSuccess 
 }) => {
-  const [formData, setFormData] = useState<CreateExtraIncomeRequest>({
+  const [formData, setFormData] = useState<Omit<CreateExtraIncomeRequest, 'type'> & { type?: 'CREATED' }>({
     value: 0,
     description: '',
-    type: 'BONUS',
+    type: 'CREATED',
     date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: any }>) => {
-    const { name, value } = e.target as any;
-    setError(null);
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'value' ? parseFloat(value) || 0 : value,
-    }));
-  };
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setFormData({
+        value: 0,
+        description: '',
+        type: 'CREATED',
+        date: new Date().toISOString().split('T')[0],
+      });
+      setErrors({});
+    }
+  }, [open]);
 
-  const handleSubmit = async () => {
-    // Validations
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
     if (!formData.description.trim()) {
-      setError('Description is required');
-      return;
+      newErrors.description = 'Description is required';
     }
 
     if (formData.value <= 0) {
-      setError('Value must be greater than 0');
-      return;
+      newErrors.value = 'Amount must be greater than 0';
     }
 
     if (!formData.date) {
-      setError('Date is required');
+      newErrors.date = 'Date is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: field === 'value' ? Number(value) : value,
+    }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    setError(null);
-
     try {
-      const response = await createExtraIncome(formData);
+      const requestData: CreateExtraIncomeRequest = {
+        value: formData.value,
+        description: formData.description,
+        type: 'CREATED',
+        date: formData.date,
+      };
+      
+      const response = await createExtraIncome(requestData);
       enqueueSnackbar('Extra income created successfully', { variant: 'success' });
       onSuccess(response.data);
       handleClose();
     } catch (err: any) {
       const errorMessage = err.message || 'Error creating extra income';
-      setError(errorMessage);
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setLoading(false);
@@ -90,195 +103,178 @@ const CreateExtraIncomeDialog: React.FC<CreateExtraIncomeDialogProps> = ({
     setFormData({
       value: 0,
       description: '',
-      type: 'BONUS',
+      type: 'CREATED',
       date: new Date().toISOString().split('T')[0],
     });
-    setError(null);
+    setErrors({});
     onClose();
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 'bold', color: '#0B2863' }}>
-        Create New Extra Income
-      </DialogTitle>
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{
+        background: "rgba(30, 41, 59, 0.55)", // azul oscuro translúcido
+        backdropFilter: "blur(6px)",           // desenfoque
+        WebkitBackdropFilter: "blur(6px)",     // soporte Safari
+        transition: "background 0.3s"
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all">
+        {/* Header */}
+        <div 
+          className="px-6 py-4 border-b border-gray-200 rounded-t-2xl"
+          style={{ backgroundColor: '#22c55e' }}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <i className="fas fa-plus-circle"></i>
+              Create New Income
+            </h2>
+            <button
+              onClick={handleClose}
+              disabled={loading}
+              className="text-white hover:text-gray-300 transition-colors disabled:opacity-50"
+            >
+              <i className="fas fa-times text-xl"></i>
+            </button>
+          </div>
+        </div>
 
-      <DialogContent sx={{ pt: 3 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Description Field */}
+          <div>
+            <label 
+              htmlFor="description" 
+              className="block text-sm font-semibold mb-2"
+              style={{ color: '#0B2863' }}
+            >
+              Description *
+            </label>
+            <input
+              id="description"
+              type="text"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none focus:ring-2 transition-all ${
+                errors.description 
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
+                  : 'border-gray-300 focus:border-green-500 focus:ring-green-200'
+              }`}
+              placeholder="e.g., Bonus por excelencia"
+              disabled={loading}
+              autoFocus
+            />
+            {errors.description && (
+              <p className="text-red-600 text-sm mt-1">{errors.description}</p>
+            )}
+          </div>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* Description */}
-          <TextField
-            label="Description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            fullWidth
-            placeholder="e.g., Bonus por excelencia"
-            disabled={loading}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: '#0B2863',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#0B2863',
-                },
-              },
-              '& .MuiInputBase-input': {
-                color: '#0B2863',
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: '#999',
-                opacity: 0.7,
-              },
-            }}
-          />
+          {/* Amount Field */}
+          <div>
+            <label 
+              htmlFor="value" 
+              className="block text-sm font-semibold mb-2"
+              style={{ color: '#0B2863' }}
+            >
+              Amount *
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-3 text-gray-500 font-medium">$</span>
+              <input
+                id="value"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.value}
+                onChange={(e) => handleInputChange('value', Number(e.target.value))}
+                className={`w-full pl-8 pr-4 py-3 border-2 rounded-lg font-medium focus:outline-none focus:ring-2 transition-all ${
+                  errors.value 
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
+                    : 'border-gray-300 focus:border-green-500 focus:ring-green-200'
+                }`}
+                placeholder="0.00"
+                disabled={loading}
+              />
+            </div>
+            {errors.value && (
+              <p className="text-red-600 text-sm mt-1">{errors.value}</p>
+            )}
+          </div>
 
-          {/* Value */}
-          <TextField
-            label="Amount"
-            name="value"
-            type="number"
-            value={formData.value || ''}
-            onChange={handleInputChange}
-            fullWidth
-            inputProps={{ step: '0.01', min: '0' }}
-            disabled={loading}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: '#0B2863',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#0B2863',
-                },
-              },
-              '& .MuiInputBase-input': {
-                color: '#0B2863',
-              },
-            }}
-          />
-
-          {/* Type */}
-          <TextField
-            select
-            label="Type"
-            name="type"
-            value={formData.type}
-            onChange={handleInputChange}
-            fullWidth
-            disabled={loading}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: '#0B2863',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#0B2863',
-                },
-              },
-              '& .MuiInputBase-input': {
-                color: '#0B2863',
-              },
-            }}
-          >
-            {INCOME_TYPES.map(option => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Date */}
-          <TextField
-            label="Date"
-            name="date"
-            type="date"
-            value={formData.date}
-            onChange={handleInputChange}
-            fullWidth
-            disabled={loading}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: '#0B2863',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#0B2863',
-                },
-              },
-              '& .MuiInputBase-input': {
-                color: '#0B2863',
-              },
-            }}
-          />
+          {/* Date Field */}
+          <div>
+            <label 
+              htmlFor="date" 
+              className="block text-sm font-semibold mb-2"
+              style={{ color: '#0B2863' }}
+            >
+              Date *
+            </label>
+            <input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => handleInputChange('date', e.target.value)}
+              className={`w-full px-4 py-3 border-2 rounded-lg font-medium focus:outline-none focus:ring-2 transition-all ${
+                errors.date 
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
+                  : 'border-gray-300 focus:border-green-500 focus:ring-green-200'
+              }`}
+              disabled={loading}
+            />
+            {errors.date && (
+              <p className="text-red-600 text-sm mt-1">{errors.date}</p>
+            )}
+          </div>
 
           {/* Preview */}
           {formData.value > 0 && (
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: '#e8f5e9',
-                borderRadius: 1,
-                border: '1px solid #4caf50',
-                mt: 1,
-              }}
-            >
-              <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>
-                Preview:
-              </div>
-              <div style={{ fontWeight: 'bold', color: '#22c55e' }}>
+            <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+              <div className="text-xs text-gray-600 mb-2">Preview:</div>
+              <div className="text-lg font-bold" style={{ color: '#22c55e' }}>
                 ${formData.value.toFixed(2)} - {formData.description || 'Untitled'}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.5rem' }}>
-                {formData.type} • {formData.date}
+              <div className="text-xs text-gray-500 mt-2">
+                {formData.date}
               </div>
-            </Box>
+            </div>
           )}
-        </Box>
-      </DialogContent>
 
-      <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button 
-          onClick={handleClose}
-          disabled={loading}
-          sx={{ color: '#666' }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={!formData.description.trim() || formData.value <= 0 || loading}
-          sx={{
-            backgroundColor: '#22c55e',
-            '&:hover': {
-              backgroundColor: '#16a34a',
-            },
-            '&:disabled': {
-              backgroundColor: '#ccc',
-            }
-          }}
-        >
-          {loading ? (
-            <>
-              <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
-              Creating...
-            </>
-          ) : (
-            'Create Income'
-          )}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={loading}
+              className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !formData.description.trim() || formData.value <= 0}
+              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-save"></i>
+                  Create Income
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 

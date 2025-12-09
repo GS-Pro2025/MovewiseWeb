@@ -385,10 +385,11 @@ const FinancialExpenseBreakdownView = () => {
     
     if (categoryType === 'fixed') {
       const dbFixedTotal = fixedDbCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0);
+      const dbOtherTransactionTotal = otherTransactionCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0);
       const calculatedFixedTotal = EXPENSE_TYPES
         .filter(type => type.type === 'fixed')
         .reduce((sum, type) => sum + (summaryData.expenses[type.key] || 0), 0);
-      return Number((dbFixedTotal + calculatedFixedTotal).toFixed(2));
+      return Number((dbFixedTotal + dbOtherTransactionTotal + calculatedFixedTotal).toFixed(2));
     }
     
     if (categoryType === 'variable') {
@@ -695,7 +696,7 @@ const FinancialExpenseBreakdownView = () => {
                 {otherTransactionCosts.length > 0 && (
                   <CostsTableDropdown 
                     costs={otherTransactionCosts}
-                    title="Database Transactions"
+                    title="Database Other Transactions"
                     totalAmount={otherTransactionCosts.reduce((sum, cost) => sum + Number(Number(cost.cost).toFixed(2)), 0)}
                     onCostDeleted={(costId) => {
                       setDbCosts(prevCosts => prevCosts.filter(cost => cost.id_cost !== costId));
@@ -958,7 +959,7 @@ const FinancialExpenseBreakdownView = () => {
                 </tr>
 
                 {/* Operators Discount y Extra Incomes como Dropdown */}
-                {(summaryData?.totalExtraIncome ?? 0) > 0 || (summaryData?.discounts.operators_discount ?? 0) > 0 ? (
+                {summaryData?.extraIncomes && summaryData.extraIncomes.length > 0 ? (
                   <IncomesTableDropdown
                     operatorsDiscount={summaryData?.discounts.operators_discount || 0}
                     extraIncomes={summaryData?.extraIncomes || []}
