@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { enqueueSnackbar } from 'notistack';
 import { OrdersPaidUnpaidWeekRangeResponse } from '../../../domain/OrdersPaidUnpaidModels';
 import { ExportDialogMode } from './PaidUnpaidExportDialog';
@@ -51,86 +52,154 @@ export class PaidUnpaidExportUtils {
    */
   static prepareExportData(data: OrdersPaidUnpaidWeekRangeResponse | null): ExportData[] {
     if (!data) {
-      console.warn('No data available');
+      console.warn('prepareExportData: No data provided');
+      enqueueSnackbar('No data available to export. Please check your selection.', { variant: 'warning' });
       return [];
     }
+
+    // Log detallado para debugging
+    console.log('prepareExportData - Raw data structure:', {
+      hasData: !!data,
+      dataKeys: Object.keys(data || {}),
+      totalPaid: data?.total_paid,
+      totalUnpaid: data?.total_unpaid,
+      hasPaidOrders: !!data?.paid_orders,
+      hasUnpaidOrders: !!data?.unpaid_orders,
+      hasOrdersByWeek: !!data?.orders_by_week,
+      paidOrdersLength: Array.isArray(data?.paid_orders) ? data.paid_orders.length : 'not array',
+      unpaidOrdersLength: Array.isArray(data?.unpaid_orders) ? data.unpaid_orders.length : 'not array',
+      ordersByWeekKeys: data?.orders_by_week ? Object.keys(data.orders_by_week) : 'no object',
+      mode: (data as any)?.mode
+    });
 
     const exportData: ExportData[] = [];
     
     try {
-      // Modo histórico: usa paid_orders y unpaid_orders
-      if (data.paid_orders || data.unpaid_orders) {
+      // FORMATO 1: Modo histórico con paid_orders y unpaid_orders
+      if ((data?.paid_orders && Array.isArray(data.paid_orders) && data.paid_orders.length > 0) ||
+          (data?.unpaid_orders && Array.isArray(data.unpaid_orders) && data.unpaid_orders.length > 0)) {
+        
+        console.log('Using HISTORIC format (paid_orders/unpaid_orders)');
+        
         // Procesar órdenes pagadas
         if (data.paid_orders && Array.isArray(data.paid_orders)) {
-          data.paid_orders.forEach(order => {
-            exportData.push({
-              'Order Ref': order.key_ref || 'N/A',
-              'Client': order.client_name || 'Unknown Client',
-              'Factory': order.customer_factory || 'Unknown Factory',
-              'Date': order.date || 'N/A',
-              'Payment Status': 'Paid',
-              'Income': order.income || 0,
-              'Expense': order.expense || 0,
-              'Weight': order.weight || 0,
-              'State': order.state_usa || 'N/A'
-            });
+          console.log(`Processing ${data.paid_orders.length} paid orders`);
+          data.paid_orders.forEach((order, idx) => {
+            try {
+              exportData.push({
+                'Order Ref': order.key_ref || 'N/A',
+                'Client': order.client_name || 'Unknown Client',
+                'Factory': order.customer_factory || 'Unknown Factory',
+                'Date': order.date || 'N/A',
+                'Payment Status': 'Paid',
+                'Income': typeof order.income === 'number' ? order.income : 0,
+                'Expense': typeof order.expense === 'number' ? order.expense : 0,
+                'Weight': typeof order.weight === 'number' ? order.weight : 0,
+                'State': order.state_usa || 'N/A'
+              });
+            } catch (err) {
+              console.warn(`Error processing paid order ${idx}:`, err, order);
+            }
           });
         }
 
         // Procesar órdenes no pagadas
         if (data.unpaid_orders && Array.isArray(data.unpaid_orders)) {
-          data.unpaid_orders.forEach(order => {
-            exportData.push({
-              'Order Ref': order.key_ref || 'N/A',
-              'Client': order.client_name || 'Unknown Client',
-              'Factory': order.customer_factory || 'Unknown Factory',
-              'Date': order.date || 'N/A',
-              'Payment Status': 'Unpaid',
-              'Income': order.income || 0,
-              'Expense': order.expense || 0,
-              'Weight': order.weight || 0,
-              'State': order.state_usa || 'N/A'
-            });
+          console.log(`Processing ${data.unpaid_orders.length} unpaid orders`);
+          data.unpaid_orders.forEach((order, idx) => {
+            try {
+              exportData.push({
+                'Order Ref': order.key_ref || 'N/A',
+                'Client': order.client_name || 'Unknown Client',
+                'Factory': order.customer_factory || 'Unknown Factory',
+                'Date': order.date || 'N/A',
+                'Payment Status': 'Unpaid',
+                'Income': typeof order.income === 'number' ? order.income : 0,
+                'Expense': typeof order.expense === 'number' ? order.expense : 0,
+                'Weight': typeof order.weight === 'number' ? order.weight : 0,
+                'State': order.state_usa || 'N/A'
+              });
+            } catch (err) {
+              console.warn(`Error processing unpaid order ${idx}:`, err, order);
+            }
           });
         }
       }
-      // Modo por rangos: usa orders_by_week
-      else if (data.orders_by_week && typeof data.orders_by_week === 'object') {
-        console.log('Using range format (orders_by_week)');
+      // FORMATO 2: Modo por rangos con orders_by_week
+      else if (data?.orders_by_week && typeof data.orders_by_week === 'object') {
+        console.log('Using WEEK_RANGE format (orders_by_week)');
+        
+        const weekKeys = Object.keys(data.orders_by_week);
+        console.log(`Found ${weekKeys.length} weeks with data:`, weekKeys);
         
         Object.entries(data.orders_by_week).forEach(([week, orders]) => {
           if (!Array.isArray(orders)) {
-            console.warn(`Orders for week ${week} is not an array:`, orders);
+            console.warn(`Week ${week}: orders is not an array:`, typeof orders, orders);
             return;
           }
 
-          orders.forEach(order => {
-            exportData.push({
-              'Order Ref': order.key_ref || 'N/A',
-              'Client': order.client_name || 'Unknown Client',
-              'Factory': order.customer_factory || 'Unknown Factory',
-              'Date': order.date || 'N/A',
-              'Payment Status': order.paid ? 'Paid' : 'Unpaid',
-              'Income': order.income || 0,
-              'Expense': order.expense || 0,
-              'Weight': order.weight || 0,
-              'State': order.state_usa || 'N/A'
-            });
+          console.log(`  Week ${week}: ${orders.length} orders`);
+          
+          orders.forEach((order, idx) => {
+            try {
+              exportData.push({
+                'Order Ref': order.key_ref || 'N/A',
+                'Client': order.client_name || 'Unknown Client',
+                'Factory': order.customer_factory || 'Unknown Factory',
+                'Date': order.date || 'N/A',
+                'Payment Status': order.paid ? 'Paid' : 'Unpaid',
+                'Income': typeof order.income === 'number' ? order.income : 0,
+                'Expense': typeof order.expense === 'number' ? order.expense : 0,
+                'Weight': typeof order.weight === 'number' ? order.weight : 0,
+                'State': order.state_usa || 'N/A'
+              });
+            } catch (err) {
+              console.warn(`Error processing order ${idx} from week ${week}:`, err, order);
+            }
           });
         });
-      } else {
-        console.warn('No valid data structure found. Expected orders_by_week or paid_orders/unpaid_orders');
+      }
+      // Si no hay datos en ningún formato
+      else {
+        console.error('prepareExportData: No valid data structure found', {
+          hasPaidOrders: !!data?.paid_orders,
+          hasUnpaidOrders: !!data?.unpaid_orders,
+          hasOrdersByWeek: !!data?.orders_by_week,
+          totalPaid: data?.total_paid,
+          totalUnpaid: data?.total_unpaid
+        });
+        
+        // Mensaje de error más específico basado en lo que tenemos
+        if (data?.total_paid === 0 && data?.total_unpaid === 0) {
+          enqueueSnackbar('No payment records found for this period', { variant: 'info' });
+        } else {
+          enqueueSnackbar('Unable to process data. Please try again.', { variant: 'error' });
+        }
         return [];
       }
 
-      // Ordenar por fecha
+      // Validación final
+      if (exportData.length === 0) {
+        console.warn('prepareExportData: No data was extracted despite valid structure');
+        enqueueSnackbar('No orders found to export for this period', { variant: 'info' });
+        return [];
+      }
+
+      console.log(` prepareExportData: Successfully prepared ${exportData.length} orders for export`);
+
+      // Ordenar por fecha (más reciente primero)
       return exportData.sort((a, b) => {
-        const dateA = new Date(a.Date);
-        const dateB = new Date(b.Date);
-        return dateB.getTime() - dateA.getTime(); // Más reciente primero
+        try {
+          const dateA = new Date(a.Date).getTime();
+          const dateB = new Date(b.Date).getTime();
+          return dateB - dateA;
+        } catch {
+          return 0;
+        }
       });
     } catch (error) {
-      console.error('Error preparing export data:', error);
+      console.error('Error preparing export data:', error, 'Raw data:', data);
+      enqueueSnackbar('Error preparing export data: ' + (error instanceof Error ? error.message : 'Unknown error'), { variant: 'error' });
       return [];
     }
   }
@@ -163,9 +232,12 @@ export class PaidUnpaidExportUtils {
       const exportData = this.prepareExportData(data);
 
       if (exportData.length === 0) {
-        enqueueSnackbar('No data available to export', { variant: 'warning' });
+        // El mensaje de error ya fue mostrado por prepareExportData
+        console.warn('exportToExcel: No data to export');
         return;
       }
+
+      console.log(` exportToExcel: Exporting ${exportData.length} records`);
 
       // Calcular totales de forma segura
       const totalPaid = data?.total_paid || 0;
@@ -194,7 +266,6 @@ export class PaidUnpaidExportUtils {
       XLSX.utils.book_append_sheet(wb, ws, 'Payment Analytics');
 
       // Mejorar el estilo visual del Excel
-      // Ajustar ancho de columnas y aplicar estilos
       const colWidths = [
         { wch: 20 },  // Order Ref
         { wch: 25 },  // Client
@@ -208,8 +279,7 @@ export class PaidUnpaidExportUtils {
       ];
       ws['!cols'] = colWidths;
 
-      // Aplicar estilos visuales mejorados (solo si la librería soporta)
-      // Nota: El soporte de estilos en XLSX depende del visor, pero se puede mejorar el color de fondo y fuente
+      // Aplicar estilos visuales mejorados
       if (ws['!ref']) {
         const range = XLSX.utils.decode_range(ws['!ref']);
         // Header
@@ -267,9 +337,10 @@ export class PaidUnpaidExportUtils {
       // Descargar archivo
       XLSX.writeFile(wb, fileName);
 
-      enqueueSnackbar('Excel file downloaded successfully! 📊', { variant: 'success' });
+      enqueueSnackbar(' Excel file downloaded successfully!', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar('Error exporting to Excel ❌', { variant: 'error' });
+      console.error('exportToExcel error:', error);
+      enqueueSnackbar(' Error exporting to Excel: ' + (error instanceof Error ? error.message : 'Unknown error'), { variant: 'error' });
       throw error;
     }
   }
@@ -307,10 +378,10 @@ export class PaidUnpaidExportUtils {
       reportWindow.document.close();
       reportWindow.focus();
       
-      enqueueSnackbar('Report opened in new tab! Use browser print to save as PDF 🖨️', { variant: 'success' });
+      enqueueSnackbar('Report opened in new tab! Use browser print to save as PDF', { variant: 'success' });
     } catch (error) {
       console.error('PDF report error:', error);
-      enqueueSnackbar('Error opening report ❌', { variant: 'error' });
+      enqueueSnackbar('Error opening report ', { variant: 'error' });
       throw error;
     }
   }
