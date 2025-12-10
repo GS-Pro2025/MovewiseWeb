@@ -600,8 +600,22 @@ export async function fetchOrdersPaidUnpaidWeekRange(
       throw new Error(`Error fetching paid/unpaid orders week range: ${response.statusText}`);
     }
 
-    const data: OrdersPaidUnpaidWeekRangeResponse = await response.json();
-    return data;
+    const responseData = await response.json();
+    
+    // Extraer los datos del objeto 'data' si existe, si no, usar la respuesta directa
+    const actualData: OrdersPaidUnpaidWeekRangeResponse = responseData.data || responseData;
+    
+    console.debug('fetchOrdersPaidUnpaidWeekRange response:', {
+      hasData: !!actualData,
+      totalPaid: actualData?.total_paid,
+      totalUnpaid: actualData?.total_unpaid,
+      hasOrdersByWeek: !!actualData?.orders_by_week,
+      ordersByWeekKeys: actualData?.orders_by_week ? Object.keys(actualData.orders_by_week) : [],
+      hasPaidOrders: !!actualData?.paid_orders,
+      hasUnpaidOrders: !!actualData?.unpaid_orders
+    });
+    
+    return actualData;
   } catch (error) {
     console.error('Error fetching paid/unpaid orders week range:', error);
     throw new Error(
@@ -829,8 +843,22 @@ export async function fetchOrdersPaidUnpaidHistoric(): Promise<OrdersPaidUnpaidW
       throw new Error(`Error fetching historic paid/unpaid orders: ${response.statusText}`);
     }
 
-    const data: OrdersPaidUnpaidWeekRangeResponse = await response.json();
-    return data;
+    const responseData = await response.json();
+    
+    // Extraer los datos del objeto 'data' si existe, si no, usar la respuesta directa
+    const actualData: OrdersPaidUnpaidWeekRangeResponse = responseData.data || responseData;
+    
+    console.debug('fetchOrdersPaidUnpaidHistoric response:', {
+      hasData: !!actualData,
+      totalPaid: actualData?.total_paid,
+      totalUnpaid: actualData?.total_unpaid,
+      hasPaidOrders: !!actualData?.paid_orders,
+      hasUnpaidOrders: !!actualData?.unpaid_orders,
+      paidOrdersCount: Array.isArray(actualData?.paid_orders) ? actualData.paid_orders.length : 0,
+      unpaidOrdersCount: Array.isArray(actualData?.unpaid_orders) ? actualData.unpaid_orders.length : 0
+    });
+    
+    return actualData;
   } catch (error) {
     console.error('Error fetching historic paid/unpaid orders:', error);
     throw new Error(
