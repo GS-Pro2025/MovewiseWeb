@@ -806,8 +806,9 @@ const FinancialExpenseBreakdownView = () => {
                   </td>
                 </tr>
 
-                {/* Operators Discount y Extra Incomes como Dropdown */}
+                {/* Verificar si hay extraIncomes */}
                 {summaryData?.extraIncomes && summaryData.extraIncomes.length > 0 ? (
+                  // Si hay extraIncomes, mostrar el dropdown completo
                   <IncomesTableDropdown
                     operatorsDiscount={summaryData?.discounts.operators_discount || 0}
                     extraIncomes={summaryData?.extraIncomes || []}
@@ -850,17 +851,46 @@ const FinancialExpenseBreakdownView = () => {
                     }}
                   />
                 ) : (
-                  <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td colSpan={3} className="px-6 py-3 text-center text-gray-500">
-                      <p className="text-sm">No incomes recorded for this period</p>
-                    </td>
-                  </tr>
+                  // Si NO hay extraIncomes, mostrar solo el operators discount con explicación clara
+                  <>
+                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-3 pl-12 font-semibold text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <i className="fas fa-info-circle text-emerald-600"></i>
+                          <span>Operators Discount (Only Income Source)</span>
+                          <span className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">
+                            AUTOMATIC
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 pl-6">
+                          No additional extra incomes registered for this period
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 text-right font-semibold" style={{ color: '#22c55e' }}>
+                        {formatCurrency(summaryData?.discounts.operators_discount || 0)}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <div className="text-xs text-gray-400">
+                          Auto-calculated
+                        </div>
+                      </td>
+                    </tr>
+                  </>
                 )}
 
                 {/* Incomes Subtotal */}
                 <tr className="bg-emerald-50 border-b-2 border-emerald-200">
                   <td className="px-6 py-3 pl-8 font-bold text-gray-700">
                     Total Incomes
+                    {summaryData?.extraIncomes && summaryData.extraIncomes.length > 0 ? (
+                      <span className="text-xs text-gray-500 font-normal ml-2">
+                        (Operators Discount + {summaryData.extraIncomes.length} Extra Income{summaryData.extraIncomes.length !== 1 ? 's' : ''})
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-500 font-normal ml-2">
+                        (Operators Discount Only)
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
                     {formatCurrency((summaryData?.discounts.operators_discount || 0) + (summaryData?.totalExtraIncome || 0))}
