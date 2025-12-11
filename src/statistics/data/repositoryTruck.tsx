@@ -6,7 +6,9 @@ import {
   TruckByWeekResponse, 
   TruckByWeekData,
   TrucksListResponse,
-  Truck
+  Truck,
+  WeeklyFuelSummaryItem,
+  WeeklyFuelSummaryResponse
 } from '../domain/TruckModels';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -336,5 +338,69 @@ export async function updateTruck(
   } catch (error) {
     console.error('Error updating truck:', error);
     throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+// Nueva función mejorada que devuelve datos por semana
+export async function fetchTruckWeeklyData(
+  truckId: number,
+  year: number,
+  week?: number
+): Promise<WeeklyFuelSummaryItem[]> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    let url = `${BASE_URL_API}/costfuels/weekly-summary/${truckId}/?year=${year}`;
+    
+    // Agregar week si se proporciona
+    if (week) {
+      url += `&week=${week}`;
+    }
+    
+    console.log('Fetching truck weekly data from URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error fetching truck weekly data: ${response.statusText}`);
+    }
+
+    const apiResponse: WeeklyFuelSummaryResponse = await response.json();
+    
+    if (apiResponse.status !== 'success') {
+      throw new Error(apiResponse.messDev || 'Error en la respuesta del servidor');
+    }
+
+    console.log('Truck weekly data retrieved:', {
+      truckId: apiResponse.truck_id,
+      year: apiResponse.year,
+      itemsCount: apiResponse.data?.length || 0,
+      data: apiResponse.data
+    });
+
+    return apiResponse.data || [];
+  } catch (error) {
+    console.error('Error fetching truck weekly data:', error);
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : 'Error desconocido al obtener los datos semanales del truck'
+    );
   }
 }

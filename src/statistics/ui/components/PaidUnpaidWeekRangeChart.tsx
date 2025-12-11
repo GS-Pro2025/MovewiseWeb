@@ -296,12 +296,12 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
 
   const paidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
-      ? ((rawData as any)?.data?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => o.paid) || [])
+      ? ((rawData as any)?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => o.paid) || [])
       : [];
 
   const unpaidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
-      ? ((rawData as any)?.data?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => !o.paid) || [])
+      ? ((rawData as any)?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => !o.paid) || [])
       : [];
 
   // Responsive Nivo theme
@@ -637,27 +637,27 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
                   <div className="font-bold text-base sm:text-lg" style={{ color: '#0B2863' }}>
-                    {((rawData as any)?.data?.total_paid || 0) + ((rawData as any)?.data?.total_unpaid || 0)}
+                    {(rawData?.total_paid || 0) + (rawData?.total_unpaid || 0)}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">TOTAL</div>
                 </div>
                 <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3">
                   <div className="text-green-600 font-bold text-base sm:text-lg">
-                    {(rawData as any)?.data?.total_paid || 0}
+                    {rawData?.total_paid || 0}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">PAID</div>
                 </div>
                 <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3">
                   <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>
-                    {(rawData as any)?.data?.total_unpaid || 0}
+                    {rawData?.total_unpaid || 0}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">UNPAID</div>
                 </div>
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
                   <div className="text-blue-600 font-bold text-base sm:text-lg">
                     {(() => {
-                      const totalPaid = (rawData as any)?.data?.total_paid || 0;
-                      const totalUnpaid = (rawData as any)?.data?.total_unpaid || 0;
+                      const totalPaid = rawData?.total_paid || 0;
+                      const totalUnpaid = rawData?.total_unpaid || 0;
                       const total = totalPaid + totalUnpaid;
                       return total > 0 ? ((totalPaid / total) * 100).toFixed(1) : '0.0';
                     })()}%
