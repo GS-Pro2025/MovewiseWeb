@@ -33,10 +33,25 @@ function handleAuthError(response: Response) {
 export async function createFuelCost(data: FuelCostRequest): Promise<FuelCostApiResponse> {
   const headers = getAuthHeaders();
   
+  // Asegurar que orders sea un array
+  const ordersArray = Array.isArray(data.order) ? data.order : [data.order];
+  
+  const fuelCostPayload = {
+    orders: ordersArray,
+    truck: data.truck,
+    cost_fuel: data.cost_fuel,
+    cost_gl: data.cost_gl,
+    fuel_qty: data.fuel_qty,
+    distance: data.distance,
+    ...(data.image && { image: data.image }),
+  };
+
+  console.log('Sending fuel cost payload:', fuelCostPayload);
+  
   const response = await fetch(`${BASE_URL_API}/costfuels/`, {
     method: 'POST',
     headers,
-    body: JSON.stringify(data),
+    body: JSON.stringify(fuelCostPayload),
   });
 
   handleAuthError(response);

@@ -152,7 +152,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
 
   const handleLogout = () => {
     Cookies.remove('authToken'); 
-    // ✅ CAMBIO: Redirigir a la landing page principal en lugar de /login
+    //  CAMBIO: Redirigir a la landing page principal en lugar de /login
     window.location.href = '/'; 
   };
 

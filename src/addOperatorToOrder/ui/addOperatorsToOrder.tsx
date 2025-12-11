@@ -5,6 +5,8 @@ import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
 import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button, TextField } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import { Fuel } from 'lucide-react';
+import AddFuelCostDialog from '../../addFuelCostToOrder/ui/AddFuelCostDialog';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
 import { CreateAssignmentData } from '../domain/AssignModels';
@@ -35,6 +37,7 @@ const AddOperatorsToOrder: React.FC = () => {
   const navigate = useNavigate();
 
   const [truckModalOpen, setTruckModalOpen] = useState(false);
+  const [fuelCostDialogOpen, setFuelCostDialogOpen] = useState(false);
 
   const [detailOpen, setDetailOpen] = useState(false);
   // Filtrado de operadores asignados
@@ -232,16 +235,26 @@ const onDragEnd = (result: DropResult) => {
           Asignar operadores a la orden
         </Typography>
       </Box>
-        {/* Botón OK */}
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<CheckIcon />}
-          sx={{ ml: 'auto' }}
-          onClick={handleOk}
-        >
-          OK
-        </Button>
+        {/* Botones de acción */}
+        <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
+          <Button
+            variant="contained"
+            color="info"
+            startIcon={<Fuel size={20} style={{ marginRight: 8 }} />}
+            onClick={() => setFuelCostDialogOpen(true)}
+            sx={{ textTransform: 'none' }}
+          >
+            Add Fuel Cost
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<CheckIcon />}
+            onClick={handleOk}
+          >
+            OK
+          </Button>
+        </Box>
     <DragDropContext onDragEnd={onDragEnd}>
       <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
         {/* Operadores asignados */}
@@ -443,6 +456,16 @@ const onDragEnd = (result: DropResult) => {
       onClose={() => setDetailOpen(false)}
       operator={selectedOperator}
       truckPlate={null}
+    />
+    <AddFuelCostDialog
+      open={fuelCostDialogOpen}
+      onClose={() => setFuelCostDialogOpen(false)}
+      orderKey={orderKey || ''}
+      orderRef={orderKey || ''}
+      onSuccess={() => {
+        enqueueSnackbar('Fuel cost added successfully!', { variant: 'success' });
+        setFuelCostDialogOpen(false);
+      }}
     />
     </>
   );

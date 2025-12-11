@@ -177,3 +177,24 @@ export interface TruckStatsFilters {
   weekStart?: number;
   weekEnd?: number;
 }
+
+// NUEVO: Modelo para la respuesta de weekly summary mejorada
+export interface WeeklyFuelSummaryItem {
+  week: number;
+  year: number;
+  total_cost_fuel: number;
+  total_cost_gl: number;
+  total_fuel_qty: number;
+  total_distance: number;
+  records_count: number;
+}
+
+export interface WeeklyFuelSummaryResponse {
+  status: string;
+  messDev: string;
+  messUser: string;
+  current_company_id: number;
+  truck_id: number;
+  year: number;
+  data: WeeklyFuelSummaryItem[];
+}
