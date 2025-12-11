@@ -392,7 +392,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                         <CardContent>
                           <Typography variant="subtitle2" color="success.main" sx={{ mb: 1, display: 'flex', alignItems: 'center', fontWeight: 600 }}>
                             <CheckCircle size={18} style={{ marginRight: 8 }} />
-                            ✅ Updated Orders ({summary.totalUpdated}):
+                             Updated Orders ({summary.totalUpdated}):
                           </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             {summary.allUpdatedOrders.map((order, idx) => (
@@ -478,7 +478,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
                     {result.success && result.data && (
                       <Box sx={{ ml: 3 }}>
                         <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
-                          ✅ {result.data.total_updated || 0} orders updated
+                           {result.data.total_updated || 0} orders updated
                         </Typography>
                         {(result.data.total_not_found || 0) > 0 && (
                           <Typography variant="caption" color="warning.main" sx={{ display: 'block', fontWeight: 600 }}>
@@ -552,7 +552,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
 
             <div className="flex gap-2 mt-3">
               <PrimaryButton onClick={onClose}>
-                ✅ Done
+                 Done
               </PrimaryButton>
               
               {/* Botón para ver detalles detallados - solo si hay resultados */}

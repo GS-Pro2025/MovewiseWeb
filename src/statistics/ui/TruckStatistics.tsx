@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchTrucksList, fetchTruckWeeklySummary } from '../data/repositoryTruck';
+import { fetchTrucksList, fetchTruckWeeklyData } from '../data/repositoryTruck';
 import { Truck } from '../domain/TruckModels';
 import { CreateTruckDialog } from './components/CreateTruckDialog';
 import { TruckContextMenu } from './components/TruckContextMenu';
 import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
+import YearPicker from "../../components/YearPicker";
 import WeekPicker from "../../components/WeekPicker";
 interface TruckWeeklyStats {
   truckId: number;
@@ -127,15 +128,19 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
       // 2. Obtener datos semanales de cada truck en paralelo
       const truckStatsPromises = allTrucks.map(async (truck) => {
         try {
-          const truckData = await fetchTruckWeeklySummary(truck.id_truck, year);
+          // Pasar el week al repositorio
+          const weeklyData = await fetchTruckWeeklyData(truck.id_truck, year, week);
           
-          // Buscar datos de la semana específica
-          const weekData = truckData.weekly_data.find(w => w.week_number === week);
+          console.log(`Truck ${truck.id_truck} weekly data:`, weeklyData);
+          
+          // Buscar datos de la semana específica en el array
+          const weekData = weeklyData.find(w => w.week === week);
           
           if (weekData) {
             // Truck activo en esta semana
+            const totalCost = weekData.total_cost_fuel + weekData.total_cost_gl;
             const costPerKm = weekData.total_distance > 0 
-              ? weekData.total_cost / weekData.total_distance 
+              ? totalCost / weekData.total_distance 
               : 0;
 
             return {
@@ -143,10 +148,10 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
               truckName: truck.name,
               truckNumber: truck.number_truck,
               truckType: truck.type,
-              totalCost: weekData.total_cost,
-              totalFuel: weekData.total_fuel_qty,
-              totalDistance: weekData.total_distance,
-              ordersCount: weekData.orders.length,
+              totalCost: Number(totalCost.toFixed(2)),
+              totalFuel: Number(weekData.total_fuel_qty.toFixed(2)),
+              totalDistance: Number(weekData.total_distance.toFixed(2)),
+              ordersCount: weekData.records_count,
               isActive: true,
               costPerKm: Number(costPerKm.toFixed(4)),
               efficiency: getEfficiencyLevel(costPerKm)
@@ -214,11 +219,11 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
         averageCostPerVehicle: Number(averageCostPerVehicle.toFixed(2)),
         averageCostPerKm: Number(averageCostPerKm.toFixed(4)),
         utilizationRate: Number(utilizationRate.toFixed(1)),
-        trucksData: allTruckStats.sort((a, b) => b.totalCost - a.totalCost) // Ordenar por costo descendente
+        trucksData: allTruckStats.sort((a, b) => b.totalCost - a.totalCost)
       };
 
       setWeeklyStats(overview);
-      console.log('Weekly truck stats loaded:', overview);
+      console.log(' Weekly truck stats loaded:', overview);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading truck statistics');
@@ -254,16 +259,6 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
 
   const handleYearChange = (year: number) => {
     setSelectedYear(year);
-  };
-
-  // Función para obtener años disponibles
-  const getAvailableYears = (): number[] => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = currentYear - 2; i <= currentYear + 1; i++) {
-      years.push(i);
-    }
-    return years;
   };
 
   // Función para formatear moneda
@@ -312,7 +307,6 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
   };
 
   const weekRange = getWeekRange(selectedYear, selectedWeek);
-  const availableYears = getAvailableYears();
 
   if (error) {
     return (
@@ -355,33 +349,24 @@ const TruckStatistics: React.FC<TruckStatisticsProps> = ({
               Add Truck
             </button>
 
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Year:</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => handleYearChange(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              >
-                {availableYears.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+            {/* Year Picker */}
+            <div style={{ minWidth: 140 }}>
+              <YearPicker
+                year={selectedYear}
+                onYearSelect={handleYearChange}
+                min={2020}
+                max={new Date().getFullYear() + 1}
+              />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Week:</label>
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'relative', overflow: 'visible', minWidth: 120 }}>
-                  <WeekPicker
-                    week={selectedWeek}
-                    onWeekSelect={(w) => handleWeekChange(w)}
-                    min={1}
-                    max={53}
-                    className=""
-                  />
-                </div>
-              </div>
+
+            {/* Week Picker */}
+            <div style={{ minWidth: 140 }}>
+              <WeekPicker
+                week={selectedWeek}
+                onWeekSelect={handleWeekChange}
+                min={1}
+                max={53}
+              />
             </div>
 
             <button

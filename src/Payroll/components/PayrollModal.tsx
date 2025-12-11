@@ -489,7 +489,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       await createPayment(payload);
       setIsPaid(true);
       toast.success('Payment saved successfully! 🎉');
-      if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: '✅' });
+      if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: '' });
     } catch (e: any) {
       setError(e.message || 'Payment failed');
       toast.error('Payment failed. Please try again.');

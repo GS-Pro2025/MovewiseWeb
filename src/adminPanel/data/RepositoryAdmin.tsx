@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CompanyUsersResponse } from "../domain/AdminDomain";
 import Cookies from "js-cookie";
@@ -7,21 +8,21 @@ const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
   const token = Cookies.get('authToken');
   
-  // 🔍 Debug temporal
-  console.log('🚀 Environment debug:');
+  //  Debug temporal
+  console.log(' Environment debug:');
   console.log('VITE_URL_BASE:', import.meta.env.VITE_URL_BASE);
   console.log('BASE_URL_API:', BASE_URL_API);
   console.log('Token exists:', !!token);
   console.log('Token preview:', token ? token.substring(0, 50) + '...' : 'No token');
   
   if (!token) {
-    console.log('❌ No token found, redirecting to login');
+    console.log(' No token found, redirecting to login');
     window.location.href = '/login';
     throw new Error('No hay token de autenticación');
   }
 
   const url = `${BASE_URL_API}/users/company/`;
-  console.log('📡 Final URL:', url);
+  console.log(' Final URL:', url);
   
   const response = await fetch(url, {
     method: "GET",
@@ -31,19 +32,19 @@ export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
     },
   });
 
-  console.log('🌐 Response status:', response.status);
-  console.log('🌐 Response headers:', Object.fromEntries(response.headers.entries()));
+  console.log(' Response status:', response.status);
+  console.log(' Response headers:', Object.fromEntries(response.headers.entries()));
 
-  // ✅ Solo manejar 403 en funciones GET como en repositoryOrders
+  //  Solo manejar 403 en funciones GET como en repositoryOrders
   if (response.status === 403) {
-    console.log('🔒 403 Forbidden - removing token and redirecting');
+    console.log(' 403 Forbidden - removing token and redirecting');
     
-    // 🔍 Debug: intentar ver la respuesta de error
+    //  Debug: intentar ver la respuesta de error
     try {
       const errorResponse = await response.text();
-      console.log('❌ 403 Error response:', errorResponse);
+      console.log(' 403 Error response:', errorResponse);
     } catch (e) {
-      console.log('❌ Could not read error response');
+      console.log(' Could not read error response');
     }
     
     Cookies.remove('authToken');
@@ -53,12 +54,12 @@ export async function getCompanyUsers(): Promise<CompanyUsersResponse> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.log('❌ Non-OK response:', response.status, errorText);
+    console.log(' Non-OK response:', response.status, errorText);
     throw new Error(`Error fetching data: ${response.statusText}`);
   }
 
   const data = await response.json();
-  console.log('✅ Success response:', data);
+  console.log(' Success response:', data);
   return data;
 }
 
@@ -80,7 +81,7 @@ export async function requestDeactivation(personId: number): Promise<{ success: 
 
     const data = await response.json();
 
-    // ✅ NO redirigir al login automáticamente en POST/PATCH como en repositoryOrders
+    //  NO redirigir al login automáticamente en POST/PATCH como en repositoryOrders
     if (!response.ok) {
       return { success: false, errorMessage: data.messDev || 'Error requesting deactivation' };
     }
