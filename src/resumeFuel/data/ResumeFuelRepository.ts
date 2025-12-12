@@ -9,6 +9,7 @@ export interface ResumeFuelParams {
     startWeek?: number;
     endWeek?: number;
     year?: number;
+    search?: string;
 }
 
 export interface ResumeFuelRepositoryInterface {
@@ -19,7 +20,7 @@ export class ResumeFuelRepository implements ResumeFuelRepositoryInterface {
     private baseUrl: string = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
     async getResumeFuel(params: ResumeFuelParams): Promise<PaginatedOrderResult> {
-        // Construir query params
+        // Build query params
         const queryParams = new URLSearchParams();
         
         if (params.page !== undefined) queryParams.append('page', params.page.toString());
@@ -29,6 +30,7 @@ export class ResumeFuelRepository implements ResumeFuelRepositoryInterface {
         if (params.numberWeek !== undefined) queryParams.append('number_week', params.numberWeek.toString());
         if (params.startWeek !== undefined) queryParams.append('start_week', params.startWeek.toString());
         if (params.endWeek !== undefined) queryParams.append('end_week', params.endWeek.toString());
+        if (params.search !== undefined) queryParams.append('search', params.search);
 
         try {
             const response = await fetchWithAuth(
@@ -39,21 +41,21 @@ export class ResumeFuelRepository implements ResumeFuelRepositoryInterface {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Normalizar respuesta: backend devuelve { status, ..., data: { count, results, ... } }
+            // Normalize response: backend returns { status, ..., data: { count, results, ... } }
             const body = await response.json().catch(() => null);
             if (!body) throw new Error('Empty response body from orders-with-costFuel');
             
-            // Si viene envuelto en "data", devolver data (paginado)
+            // If wrapped in "data", return data (paginated)
             if (body.data && (body.data.results || body.data.count !== undefined)) {
                 return body.data as PaginatedOrderResult;
             }
 
-            // Si la API ya devolvió el paginado en la raíz
+            // If the API already returned the paginated data at root level
             if (body.results || body.count !== undefined) {
                 return body as PaginatedOrderResult;
             }
 
-            // Forma inesperada: lanzar para detectar en front durante desarrollo
+            // Unexpected format: throw to detect during development
             throw new Error('Unexpected response shape from orders-with-costFuel');
         } catch (error) {
             console.error('Error in getResumeFuel:', error);
