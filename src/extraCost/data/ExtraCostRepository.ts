@@ -9,6 +9,7 @@ export interface ExtraCostParams {
     startWeek?: number;
     endWeek?: number;
     year?: number;
+    search?: string;
 }
 
 export interface ExtraCostRepositoryInterface {
@@ -37,6 +38,7 @@ export class ExtraCostRepository implements ExtraCostRepositoryInterface {
         if (params.startWeek !== undefined) queryParams.append('start_week', params.startWeek.toString());
         if (params.endWeek !== undefined) queryParams.append('end_week', params.endWeek.toString());
         if (params.year !== undefined) queryParams.append('year', params.year.toString());
+        if (params.search !== undefined) queryParams.append('search', params.search);
 
         try {
             const response = await fetch(`${this.baseUrl}/workcost-with-orders/?${queryParams.toString()}`, {

@@ -114,16 +114,37 @@ const SortIcon: React.FC<{ column: Column; sortConfig: SortConfig }> = ({ column
 export const SummaryCostDataTable: React.FC<{
   data: PaginatedOrderSummaryResult | null;
   loading: boolean;
+  searchTerm?: string;
+  page?: number;
+  rowsPerPage?: number;
+  onPageChange?: (newPage: number) => void;
+  onRowsPerPageChange?: (newRowsPerPage: number) => void;
   onContextMenu?: (e: React.MouseEvent, row: OrderSummary) => void;
   onActionsMenuClick?: (e: React.MouseEvent, row: OrderSummary) => void;
-}> = ({ data, loading, onContextMenu, onActionsMenuClick }) => {
+}> = ({ data, loading, searchTerm = '', page = 0, rowsPerPage = 25, onPageChange, onRowsPerPageChange, onContextMenu, onActionsMenuClick }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const orders = useMemo(() => data?.results ?? [], [data?.results]);
-  const sortedData = useMemo(() => sortData(orders, sortConfig), [orders, sortConfig]);
+  
+  // Filter data based on search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return orders;
+    const lowerSearch = searchTerm.toLowerCase();
+    return orders.filter(order => 
+      (order.key_ref?.toLowerCase().includes(lowerSearch)) ||
+      (order.client?.toLowerCase().includes(lowerSearch)) ||
+      (order.state?.toLowerCase().includes(lowerSearch)) ||
+      (order.status?.toLowerCase().includes(lowerSearch)) ||
+      (String(order.summary?.expense ?? 0).includes(lowerSearch)) ||
+      (String(order.summary?.totalCost ?? 0).includes(lowerSearch)) ||
+      (String(order.summary?.rentingCost ?? order.income ?? 0).includes(lowerSearch))
+    );
+  }, [orders, searchTerm]);
+  
+  const sortedData = useMemo(() => sortData(filteredData, sortConfig), [filteredData, sortConfig]);
 
   const handleExpandClick = useCallback((rowId: string) => {
     setExpandedRows(prev => {

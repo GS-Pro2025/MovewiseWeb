@@ -205,9 +205,14 @@ const csvConfig = mkConfig({
 export const ResumeFuelTable: React.FC<{
   data: PaginatedOrderResult | null;
   isLoading: boolean;
+  searchTerm?: string;
+  page?: number;
+  rowsPerPage?: number;
+  onPageChange?: (newPage: number) => void;
+  onRowsPerPageChange?: (newRowsPerPage: number) => void;
   onContextMenu?: (e: React.MouseEvent, row: Order) => void;
   onActionsMenuClick?: (e: React.MouseEvent, row: Order) => void;
-}> = ({ data, isLoading, onContextMenu, onActionsMenuClick }) => {
+}> = ({ data, isLoading, searchTerm = '', page = 0, rowsPerPage = 25, onPageChange, onRowsPerPageChange, onContextMenu, onActionsMenuClick }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
@@ -216,6 +221,28 @@ export const ResumeFuelTable: React.FC<{
 
   const orders = useMemo(() => data?.results ?? [], [data?.results]);
   const sortedData = useMemo(() => sortData(orders, sortConfig), [orders, sortConfig]);
+
+  // Filter data based on search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return sortedData;
+    
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return sortedData.filter(order => {
+      return (
+        order.key_ref?.toLowerCase().includes(lowerSearchTerm) ||
+        order.person?.first_name?.toLowerCase().includes(lowerSearchTerm) ||
+        order.person?.last_name?.toLowerCase().includes(lowerSearchTerm) ||
+        order.state_usa?.toLowerCase().includes(lowerSearchTerm) ||
+        order.status?.toLowerCase().includes(lowerSearchTerm) ||
+        order.distance?.toString().includes(lowerSearchTerm) ||
+        order.fuelCost?.some(fuel => 
+          fuel.cost_gl?.toString().includes(lowerSearchTerm) ||
+          fuel.fuel_qty?.toString().includes(lowerSearchTerm) ||
+          fuel.cost_fuel?.toString().includes(lowerSearchTerm)
+        )
+      );
+    });
+  }, [sortedData, searchTerm]);
 
   const handleExpandClick = useCallback((rowId: string) => {
     setExpandedRows(prev => {
@@ -255,12 +282,12 @@ export const ResumeFuelTable: React.FC<{
   }, []);
 
   const handleSelectAll = useCallback((selectAll: boolean) => {
-    if (selectAll) setSelectedRows(new Set(sortedData.map(r => r.key)));
+    if (selectAll) setSelectedRows(new Set(filteredData.map(r => r.key)));
     else setSelectedRows(new Set());
-  }, [sortedData]);
+  }, [filteredData]);
 
   const isSelected = useCallback((rowId: string) => selectedRows.has(rowId), [selectedRows]);
-  const isAllSelected = sortedData.length > 0 && selectedRows.size === sortedData.length;
+  const isAllSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
 
   const handleExportData = useCallback(() => {
     if (!data?.results || data.results.length === 0) return;
@@ -377,11 +404,11 @@ export const ResumeFuelTable: React.FC<{
             <tbody>
               {isLoading ? (
                 <tr><td colSpan={columns.length + 1} className="text-center py-10"><div className="flex flex-col items-center space-y-3"><LoadingSpinner /><span className="text-gray-500 text-sm">Loading fuel data...</span></div></td></tr>
-              ) : sortedData.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <tr><td colSpan={columns.length + 1} className="text-center py-12"><div className="flex flex-col items-center justify-center space-y-3"><div className="mb-2"><Inbox size={64} style={{ color: '#0B2863', opacity: 0.6 }} /></div><div className="text-center"><h3 className="text-lg font-bold mb-1" style={{ color: '#0B2863' }}>No Fuel Data Found</h3><p className="text-gray-500 text-sm">Try adjusting your filters</p></div></div></td></tr>
               ) : (
                 <>
-                  {sortedData.map((row, rowIndex) => {
+                  {filteredData.map((row, rowIndex) => {
                     const rowId = row.key;
                     const isRowSelected = isSelected(rowId);
                     const isExpanded = expandedRows.has(rowId);
@@ -567,8 +594,87 @@ export const ResumeFuelTable: React.FC<{
 
         <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
           <div className="flex items-center space-x-3"><span className="text-xs text-gray-700">Total: {data?.count ?? 0} orders | Selected: {selectedRows.size}</span></div>
-          <div className="flex items-center space-x-3"><span className="text-xs text-gray-700">Showing {sortedData.length} results</span></div>
+          <div className="flex items-center space-x-3"><span className="text-xs text-gray-700">Showing {filteredData.length} results</span></div>
         </div>
+
+        {/* Pagination controls */}
+        {data && data.count > 0 && (
+          <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => onPageChange?.(Math.max(0, page - 1))}
+                disabled={page === 0}
+                className="px-4 py-2 border rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  borderColor: page === 0 ? '#d1d5db' : '#0B2863',
+                  color: page === 0 ? '#d1d5db' : '#0B2863',
+                  backgroundColor: page === 0 ? '#f3f4f6' : 'transparent',
+                  cursor: page === 0 ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  if (page !== 0) {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F09F52';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (page !== 0) {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#0B2863';
+                  }
+                }}
+              >
+                ← Previous
+              </button>
+
+              <span className="text-sm font-medium" style={{ color: '#0B2863', minWidth: '100px', textAlign: 'center' }}>
+                Page {page + 1}
+              </span>
+
+              <button
+                onClick={() => onPageChange?.(Math.min(Math.ceil((data?.count || 0) / rowsPerPage) - 1, page + 1))}
+                disabled={page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1}
+                className="px-4 py-2 border rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  borderColor: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? '#d1d5db' : '#0B2863',
+                  color: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? '#d1d5db' : '#0B2863',
+                  backgroundColor: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? '#f3f4f6' : 'transparent',
+                  cursor: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  if (page < Math.ceil((data?.count || 0) / rowsPerPage) - 1) {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F09F52';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#fff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (page < Math.ceil((data?.count || 0) / rowsPerPage) - 1) {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#0B2863';
+                  }
+                }}
+              >
+                Next →
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium" style={{ color: '#0B2863' }}>
+                Records per page:
+              </label>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => onRowsPerPageChange?.(Number(e.target.value))}
+                className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
+                style={{ borderColor: '#0B2863', '--tw-ring-color': '#0B2863' } as any}
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Image Preview Modal */}
