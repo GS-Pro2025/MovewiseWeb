@@ -95,6 +95,7 @@ const columns: Column[] = [
 interface ExtraCostDataTableProps {
   data: ExtraCostResponse | null;
   loading: boolean;
+  searchTerm?: string;
   onFinishOrder?: (orderId: string) => void;
   onContextMenu?: (event: React.MouseEvent, row: ExtraCost) => void;
   onActionsMenuClick?: (event: React.MouseEvent, row: ExtraCost) => void;
@@ -199,6 +200,7 @@ const SortIcon: React.FC<{ column: Column; sortConfig: SortConfig }> = ({ column
 export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
   data,
   loading,
+  searchTerm = '',
   onFinishOrder,
   onContextMenu,
   onActionsMenuClick
@@ -209,7 +211,26 @@ export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const extraCosts = data?.results || [];
-  const sortedData = useMemo(() => sortData(extraCosts, sortConfig), [extraCosts, sortConfig]);
+  
+  // Filter data based on search term
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return extraCosts;
+    
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return extraCosts.filter(cost => {
+      return (
+        cost.order.key_ref.toLowerCase().includes(lowerSearchTerm) ||
+        cost.order.person?.first_name?.toLowerCase().includes(lowerSearchTerm) ||
+        cost.order.person?.last_name?.toLowerCase().includes(lowerSearchTerm) ||
+        cost.name?.toLowerCase().includes(lowerSearchTerm) ||
+        cost.type?.toLowerCase().includes(lowerSearchTerm) ||
+        cost.order.state_usa?.toLowerCase().includes(lowerSearchTerm) ||
+        cost.cost?.toString().includes(lowerSearchTerm)
+      );
+    });
+  }, [extraCosts, searchTerm]);
+  
+  const sortedData = useMemo(() => sortData(filteredData, sortConfig), [filteredData, sortConfig]);
 
   const handleExpandClick = useCallback((rowId: string) => {
     setExpandedRows(prev => {

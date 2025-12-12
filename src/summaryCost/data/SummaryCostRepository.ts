@@ -10,6 +10,7 @@ export interface SummaryCostParams {
     endWeek?: number;
     year?: number;
     onlyPaid?: boolean;
+    search?: string;
 }
 
 export interface SummaryCostRepositoryInterface {
@@ -38,6 +39,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
         if (params.numberWeek !== undefined) queryParams.append('number_week', params.numberWeek.toString());
         if (params.startWeek !== undefined) queryParams.append('start_week', params.startWeek.toString());
         if (params.endWeek !== undefined) queryParams.append('end_week', params.endWeek.toString());
+        if (params.search !== undefined) queryParams.append('search', params.search);
 
         // Always set only_paid to false as requested by backend contract
         queryParams.append('only_paid', String(params.onlyPaid === true));
