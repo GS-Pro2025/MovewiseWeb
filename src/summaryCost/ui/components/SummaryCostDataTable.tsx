@@ -126,7 +126,7 @@ export const SummaryCostDataTable: React.FC<{
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-
+  console.log('Page:', page, 'RowsPerPage:', rowsPerPage, 'onPageChange:', onPageChange, 'onRowsPerPageChange:', onRowsPerPageChange);
   const orders = useMemo(() => data?.results ?? [], [data?.results]);
   
   // Filter data based on search term
