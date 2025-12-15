@@ -1,5 +1,5 @@
 // components/FinancialTable.tsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -15,7 +15,9 @@ import {
   CardContent,
   useMediaQuery,
   useTheme,
-  Chip
+  Chip,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -42,6 +44,8 @@ const columns = [
   { key: 'key_ref' as keyof SuperOrder, label: 'Reference', sortable: true },
   { key: 'client' as keyof SuperOrder, label: 'Client', sortable: true },
   { key: 'expense' as keyof SuperOrder, label: 'Expense', sortable: true },
+  { key: 'fuelCost' as keyof SuperOrder, label: 'Fuel Cost', sortable: true },
+  { key: 'bonus' as keyof SuperOrder, label: 'Bonus', sortable: true },
   { key: 'otherSalaries' as keyof SuperOrder, label: 'Operator Salaries', sortable: true },
   { key: 'workCost' as keyof SuperOrder, label: 'Work Cost', sortable: true },
   { key: 'driverSalaries' as keyof SuperOrder, label: 'Driver Salaries', sortable: true },
@@ -83,6 +87,26 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Estado para el menú contextual
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    row: SuperOrder | null;
+  } | null>(null);
+
+  const handleContextMenu = (event: React.MouseEvent, row: SuperOrder) => {
+    event.preventDefault();
+    setContextMenu({
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+      row,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
 
   const ProfitChip = ({ profit }: { profit: number }) => (
     <span
@@ -195,7 +219,6 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
 
   // Mobile Card Component
   const MobileOrderCard = ({ superOrder, index }: { superOrder: SuperOrder, index: number }) => {
-    const totalDiscount = superOrder.expense + superOrder.driverSalaries + superOrder.otherSalaries + superOrder.fuelCost;
     
     return (
       <Card 
@@ -259,14 +282,28 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
           </div>
 
           {/* Grid actualizado con nuevos campos */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fef2f2', borderColor: '#ef4444' }}>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fef2f2', borderColor: '#000000' }}>
               <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Expense</Typography>
-              <Typography variant="body2" className="!font-bold" style={{ color: '#ef4444' }}>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#000000' }}>
                 ${superOrder.expense.toLocaleString()}
               </Typography>
             </div>
             
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fef2f2', borderColor: '#000000' }}>
+              <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Fuel Cost</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#000000' }}>
+                ${superOrder.fuelCost.toLocaleString()}
+              </Typography>
+            </div>
+            
+            <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fef2f2', borderColor: '#000000' }}>
+              <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Bonus</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color: '#000000' }}>
+                ${superOrder.bonus.toLocaleString()}
+              </Typography>
+            </div>
+
             <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#f0fdf4', borderColor: '#22c55e' }}>
               <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Driver Salaries</Typography>
               <Typography variant="body2" className="!font-bold" style={{ color: '#22c55e' }}>
@@ -284,7 +321,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
             <div className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: '#fefce8', borderColor: '#f59e0b' }}>
               <Typography variant="caption" className="!block !text-gray-600 !font-semibold">Total Discount</Typography>
               <Typography variant="body2" className="!font-bold" style={{ color: '#f59e0b' }}>
-                ${totalDiscount.toLocaleString()}
+                ${superOrder.totalCost.toLocaleString()}
               </Typography>
             </div>
           </div>
@@ -349,6 +386,11 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                   <Users size={16} className="mx-auto mb-1" style={{ color: '#0B2863' }} />
                   <Typography variant="caption" className="!block !font-semibold">Operators</Typography>
                   <Typography variant="caption" className="!block">${superOrder.otherSalaries.toLocaleString()}</Typography>
+                </div>
+                <div className="text-center p-2 rounded border" style={{ backgroundColor: '#f5f3ff' }}>
+                  <Users size={16} className="mx-auto mb-1" style={{ color: '#8b5cf6' }} />
+                  <Typography variant="caption" className="!block !font-semibold">Bonus</Typography>
+                  <Typography variant="caption" className="!block">${superOrder.bonus.toLocaleString()}</Typography>
                 </div>
               </div>
               
@@ -460,6 +502,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                         style={{
                           backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc'
                         }}
+                        onContextMenu={(e) => handleContextMenu(e, superOrder)}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = '#e0f2fe';
                         }}
@@ -517,40 +560,54 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
 
                         {/* 3. Expense */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <Typography variant="body2" className="font-semibold" style={{ color: '#ef4444' }}>
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>
                             ${superOrder.expense.toLocaleString()}
                           </Typography>
                         </TableCell>
 
-                        {/* 4. Operator Salaries */}
+                        {/* 4. Fuel Cost */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <Typography variant="body2" className="font-semibold" style={{ color: '#0B2863' }}>
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>
+                            ${superOrder.fuelCost.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 5. Bonus */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>
+                            ${superOrder.bonus.toLocaleString()}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 6. Operator Salaries */}
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>
                             ${superOrder.otherSalaries.toLocaleString()}
                           </Typography>
                         </TableCell>
 
-                        {/* 5. Work Cost */}
+                        {/* 7. Work Cost */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <Typography variant="body2" className="font-semibold" style={{ color: '#0B2863' }}>
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>
                             ${superOrder.workCost.toLocaleString()}
                           </Typography>
                         </TableCell>
 
-                        {/* 6. Driver Salaries */}
+                        {/* 8. Driver Salaries */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>
+                          <Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>
                             ${superOrder.driverSalaries.toLocaleString()}
                           </Typography>
                         </TableCell>
 
-                        {/* 7. Total Discount (calculado) */}
+                        {/* 9. Total Discount */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
-                          <Typography variant="body2" className="font-bold" style={{ color: '#f59e0b' }}>
-                            ${(superOrder.expense + superOrder.driverSalaries + superOrder.otherSalaries + superOrder.fuelCost).toLocaleString()}
+                          <Typography variant="body2" className="font-bold" style={{ color: '#000000' }}>
+                            ${superOrder.totalCost.toLocaleString()}
                           </Typography>
                         </TableCell>
 
-                        {/* 8. Total Income */}
+                        {/* 10. Total Income */}
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>
                             ${superOrder.totalIncome.toLocaleString()}
@@ -600,7 +657,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       {/* Expanded Row Details */}
                       <TableRow>
                         <TableCell 
-                          colSpan={isTablet ? 7 : 12} // Aumentar colSpan por la nueva columna
+                          colSpan={isTablet ? 8 : 12}
                           className="!p-0 !border-none"
                           style={{ backgroundColor: '#f8fafc' }}
                         >
@@ -633,15 +690,15 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                                     <div className="text-center p-4 rounded-xl border-2" 
                                          style={{ 
                                            backgroundColor: '#fef2f2', 
-                                           borderColor: '#ef4444' 
+                                           borderColor: '#000000' 
                                          }}>
                                       <div className="flex items-center justify-center mb-2">
-                                        <TrendingUp size={20} style={{ color: '#ef4444' }} />
+                                        <TrendingUp size={20} style={{ color: '#000000' }} />
                                       </div>
                                       <Typography variant="caption" className="!text-gray-600 !font-semibold !block !mb-1">
                                         Expense
                                       </Typography>
-                                      <Typography variant={isTablet ? "body2" : "h6"} className="!font-bold" style={{ color: '#ef4444' }}>
+                                      <Typography variant={isTablet ? "body2" : "h6"} className="!font-bold" style={{ color: '#000000' }}>
                                         ${superOrder.expense.toLocaleString()}
                                       </Typography>
                                     </div>
@@ -771,47 +828,61 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
 
                     {/* 3. Expense Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#ef4444' }}>
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
                         ${data.reduce((sum, order) => sum + order.expense, 0).toLocaleString()}
                       </Typography>
                     </TableCell>
 
-                    {/* 4. Operator Salaries Total */}
+                    {/* 4. Fuel Cost Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#0B2863' }}>
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
+                        ${data.reduce((sum, order) => sum + order.fuelCost, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 5. Bonus Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
+                        ${data.reduce((sum, order) => sum + order.bonus, 0).toLocaleString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 6. Operator Salaries Total */}
+                    <TableCell className="!py-4 !px-4 !border-b-0">
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
                         ${data.reduce((sum, order) => sum + order.otherSalaries, 0).toLocaleString()}
                       </Typography>
                     </TableCell>
 
-                    {/* 5. Work Cost Total */}
+                    {/* 7. Work Cost Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#0B2863' }}>
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
                         ${data.reduce((sum, order) => sum + order.workCost, 0).toLocaleString()}
                       </Typography>
                     </TableCell>
 
-                    {/* 6. Driver Salaries Total */}
+                    {/* 8. Driver Salaries Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
                         ${data.reduce((sum, order) => sum + order.driverSalaries, 0).toLocaleString()}
                       </Typography>
                     </TableCell>
 
-                    {/* 7. Total Discount Total */}
+                    {/* 9. Total Discount Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#f59e0b' }}>
-                        ${data.reduce((sum, order) => sum + (order.expense + order.driverSalaries + order.otherSalaries + order.fuelCost), 0).toLocaleString()}
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>
+                        ${data.reduce((sum, order) => sum + order.totalCost, 0).toLocaleString()}
                       </Typography>
                     </TableCell>
 
-                    {/* 8. Total Income Total */}
+                    {/* 10. Total Income Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
                       <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>
                         ${data.reduce((sum, order) => sum + order.totalIncome, 0).toLocaleString()}
                       </Typography>
                     </TableCell>
 
-                    {/* 9. Profit Total */}
+                    {/* 11. Profit Total */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
                       {(() => {
                         const totalProfit = data.reduce((sum, order) => sum + order.totalProfit, 0);
@@ -829,7 +900,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       })()}
                     </TableCell>
 
-                    {/* 10. Status - Summary */}
+                    {/* 11. Status - Summary */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
                       <div className="flex flex-col gap-1">
                         <Typography variant="caption" className="!font-semibold" style={{ color: '#22c55e' }}>
@@ -841,7 +912,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       </div>
                     </TableCell>
 
-                    {/* 11. Actions - Empty */}
+                    {/* 12. Actions - Empty */}
                     <TableCell className="!py-4 !px-4 !border-b-0">
                       {/* Empty cell for actions */}
                     </TableCell>
@@ -881,6 +952,78 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
         </div>
       )}
       
+      {/* Context Menu */}
+      <Menu
+        open={!!contextMenu}
+        onClose={handleCloseContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <MenuItem
+          onClick={() => {
+            if (contextMenu?.row && onAddIncome) {
+              onAddIncome(contextMenu.row);
+            }
+            handleCloseContextMenu();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(11, 40, 99, 0.1)'
+            }
+          }}
+        >
+          <TrendingUp size={18} style={{ color: '#0B2863' }} />
+          <span>Add Income</span>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (contextMenu?.row && onAddExpense) {
+              onAddExpense(contextMenu.row);
+            }
+            handleCloseContextMenu();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(11, 40, 99, 0.1)'
+            }
+          }}
+        >
+          <TrendingDown size={18} style={{ color: '#0B2863' }} />
+          <span>Add Expense</span>
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            if (contextMenu?.row && onViewDetails) {
+              onViewDetails(contextMenu.row);
+            }
+            handleCloseContextMenu();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(11, 40, 99, 0.1)'
+            }
+          }}
+        >
+          <Eye size={18} style={{ color: '#0B2863' }} />
+          <span>View Details</span>
+        </MenuItem>
+      </Menu>
+
       {/* Table Footer Info */}
       <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} mt-4 px-4 text-sm`} style={{ color: '#0B2863' }}>
         <span className="font-medium">

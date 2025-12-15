@@ -327,10 +327,31 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     if (!operatorData.assignmentIds || operatorData.assignmentIds.length === 0) return;
     setCancelLoading(true);
     try {
-      await cancelPayments(operatorData.assignmentIds.map(Number));
-      toast.success('Payment cancelled successfully! 🎉');
-      setIsPaid(false);
-      if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: null });
+      const result = await cancelPayments(operatorData.assignmentIds.map(Number));
+      
+      // Check if cancellation was successful
+      if (result.status === 'success') {
+        const {  errors, summary } = result.data;
+        
+        // Show success message with summary
+        if (summary.total_errors === 0) {
+          toast.success(`Payment cancelled successfully! Processed: ${summary.total_processed}`);
+        } else {
+          toast.warning(
+            `Cancellation completed with ${summary.total_errors} error(s). ${summary.total_cancelled} payment(s) cancelled.`
+          );
+          
+          // Log errors for debugging
+          if (errors.length > 0) {
+            console.warn('Cancellation errors:', errors);
+          }
+        }
+        
+        setIsPaid(false);
+        if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: null });
+      } else {
+        toast.error(result.messUser || 'Error cancelling payment');
+      }
     } catch (e: any) {
       toast.error(e.message || 'Error cancelling payment');
     } finally {
@@ -475,16 +496,27 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const dailyBonusTotal = calculateDailyBonusTotal();
+      // Convert daily bonuses to new format: array of { date, bonus, assign_ids }
+      const dailyBonusesArray = days
+        .map(({ key }) => {
+          const assignsForDay = assignmentsByDay?.[key] || [];
+          const bonusAmount = dailyBonuses[key] || 0;
+          
+          return {
+            date: weekDates[key] || '', // Use actual date from weekDates
+            bonus: bonusAmount,
+            assign_ids: assignsForDay.map(a => Number(a.id)),
+          };
+        })
+        .filter(item => item.assign_ids.length > 0); // Only include days with assignments
+
       const payload = {
-        id_assigns: operatorData.assignmentIds as number[],
         value: grandTotal,
-        bonus: dailyBonusTotal, // solo daily bonuses
-        expense: expense, 
         status: 'paid',
         date_start: periodStart,
         date_end: periodEnd,
-        daily_bonuses: dailyBonuses,
+        expense: expense || 0,
+        daily_bonuses: dailyBonusesArray,
       };
       await createPayment(payload);
       setIsPaid(true);

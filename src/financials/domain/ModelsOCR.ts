@@ -9,6 +9,7 @@ export interface SuperOrder {
   workCost: number;
   driverSalaries: number;
   otherSalaries: number;
+  bonus: number;
   totalIncome: number;
   totalCost: number;
   totalProfit: number;
