@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { Typography, } from "@mui/material";
+import { Typography, Menu, MenuItem, Divider } from "@mui/material";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import PaymentDialog from "../../Home/ui/PaymentDialog";
 import { updateOrder } from "../data/SummaryCostRepository";
@@ -7,6 +8,7 @@ import { enqueueSnackbar } from "notistack";
 import { UpdatePaymentData } from "../domain/ModelOrderUpdate";
 import PaymentIcon from "@mui/icons-material/AttachMoney";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import { TrendingUp, TrendingDown, Eye } from "lucide-react";
 
 interface OrdersByKeyRefTableProps {
   orders: OrderSummary[];
@@ -18,6 +20,11 @@ interface OrdersByKeyRefTableProps {
 const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: OrdersByKeyRefTableProps) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    order: OrderSummary | null;
+  } | null>(null);
 
   const handlePayClick = (order: OrderSummary) => {
     setSelectedOrder(order);
@@ -36,6 +43,19 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
     enqueueSnackbar('Payment registered', { variant: 'success' });
     setPaymentDialogOpen(false);
     if (onOrderPaid) onOrderPaid();
+  };
+
+  const handleContextMenu = (event: React.MouseEvent, order: OrderSummary) => {
+    event.preventDefault();
+    setContextMenu({
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+      order,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
   };
 
   const ViewOperatorsButton = ({ orderId }: { orderId: string }) => (
@@ -140,6 +160,12 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
                   Total Cost
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
+                  Fuel Cost
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
+                  Bonus
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
                   Status
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
@@ -153,10 +179,11 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
               {orders.map((order, index) => (
                 <tr 
                   key={order.key}
-                  className="transition-colors duration-200 border-b border-gray-200"
+                  className="transition-colors duration-200 border-b border-gray-200 cursor-context-menu"
                   style={{
                     backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc'
                   }}
+                  onContextMenu={(e) => handleContextMenu(e as any, order)}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#e0f2fe';
                   }}
@@ -222,9 +249,31 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
                     <Typography 
                       variant="body2" 
                       className="!font-bold"
-                      style={{ color: '#ef4444' }}
+                      style={{ color: '#000000' }}
                     >
                       ${order.summary?.totalCost?.toLocaleString() || 0}
+                    </Typography>
+                  </td>
+
+                  {/* Fuel Cost */}
+                  <td className="px-4 py-3">
+                    <Typography 
+                      variant="body2" 
+                      className="!font-bold"
+                      style={{ color: '#000000' }}
+                    >
+                      ${order.summary?.fuelCost?.toLocaleString() || 0}
+                    </Typography>
+                  </td>
+
+                  {/* Bonus */}
+                  <td className="px-4 py-3">
+                    <Typography 
+                      variant="body2" 
+                      className="!font-bold"
+                      style={{ color: '#000000' }}
+                    >
+                      ${order.summary?.bonus?.toLocaleString() || 0}
                     </Typography>
                   </td>
 
@@ -292,6 +341,80 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
           </Typography>
         </div>
       </div>
+
+      {/* Context Menu */}
+      <Menu
+        open={!!contextMenu}
+        onClose={handleCloseContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <MenuItem
+          onClick={() => {
+            if (contextMenu?.order) {
+              setSelectedOrder(contextMenu.order);
+              setPaymentDialogOpen(true);
+            }
+            handleCloseContextMenu();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(11, 40, 99, 0.1)'
+            }
+          }}
+        >
+          <TrendingUp size={18} style={{ color: '#0B2863' }} />
+          <span>Add Income</span>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (contextMenu?.order) {
+              setSelectedOrder(contextMenu.order);
+              setPaymentDialogOpen(true);
+            }
+            handleCloseContextMenu();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(11, 40, 99, 0.1)'
+            }
+          }}
+        >
+          <TrendingDown size={18} style={{ color: '#0B2863' }} />
+          <span>Add Expense</span>
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            if (contextMenu?.order) {
+              onViewOperators(contextMenu.order.key);
+            }
+            handleCloseContextMenu();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(11, 40, 99, 0.1)'
+            }
+          }}
+        >
+          <Eye size={18} style={{ color: '#0B2863' }} />
+          <span>View Operators</span>
+        </MenuItem>
+      </Menu>
 
       {/* Payment Dialog */}
       <PaymentDialog
