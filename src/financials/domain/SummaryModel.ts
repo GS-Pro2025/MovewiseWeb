@@ -5,5 +5,6 @@ export interface Summary {
     workCost: number;
     driverSalaries: number;
     otherSalaries: number;
+    bonus: number;
     totalCost: number;
 }

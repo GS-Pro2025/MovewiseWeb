@@ -104,6 +104,7 @@ const FinancialView = () => {
           client: item.client,
           expense: 0,
           fuelCost: 0,
+          bonus: 0,
           workCost: 0,
           driverSalaries: 0,
           otherSalaries: 0,
@@ -115,6 +116,7 @@ const FinancialView = () => {
       superOrder.totalCost += item.summary?.totalCost ?? 0;
       superOrder.expense += item.summary?.expense ?? 0;
       superOrder.fuelCost += item.summary?.fuelCost ?? 0;
+      superOrder.bonus += item.summary?.bonus ?? 0;
       superOrder.workCost += item.summary?.workCost ?? 0;
       superOrder.driverSalaries += item.summary?.driverSalaries ?? 0;
       superOrder.otherSalaries += item.summary?.otherSalaries ?? 0;

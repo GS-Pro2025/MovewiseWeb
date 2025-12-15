@@ -77,19 +77,27 @@ export async function payrollService(
   return (await res.json()) as ApiResponse;
 }
 
+// Daily bonus distribution
+export interface DailyBonusItem {
+  date: string;
+  bonus: number;
+  assign_ids: number[];
+}
+
 // Payload for creating a payment
 export interface CreatePaymentPayload {
-  id_assigns: number[];
   value: number;
-  bonus: number;
   status: string;
   date_start: string;
   date_end: string;
+  date_payment?: string;
+  expense?: number;
+  daily_bonuses: DailyBonusItem[];
 }
 
 /**
  * POST /assign/create-payment/
- * @param payload  — Payment details including assignment IDs, amounts, and dates.
+ * @param payload  — Payment details with daily bonuses distributed to individual assignments.
  * @returns        — Parsed JSON response.
  */
 export async function createPayment(
@@ -134,7 +142,20 @@ export async function getPaymentById(
   return (await res.json()) as PaymentData;
 }
 
-export async function cancelPayments(assign_ids: number[]): Promise<{ status: string; message: string }> {
+export async function cancelPayments(assign_ids: number[]): Promise<{
+  status: string;
+  messDev: string;
+  messUser: string;
+  data: {
+    cancelled: number[];
+    errors: Array<{ assign_id: number; error: string }>;
+    summary: {
+      total_processed: number;
+      total_cancelled: number;
+      total_errors: number;
+    };
+  };
+}> {
   const url = `${API_BASE}/assign/cancel-payments/`;
   const res: Response = await fetchWithAuth(url, {
     method: "POST",
