@@ -376,7 +376,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                       <Pagination
                         count={pagination.totalPages}
                         page={pagination.page}
-                        onChange={(event, page) => {
+                        onChange={( page) => {
                           if (selectedTruck) {
                             loadCostFuels(selectedTruck.id_truck, page);
                           }
