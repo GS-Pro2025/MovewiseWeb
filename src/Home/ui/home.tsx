@@ -726,7 +726,7 @@ const OrdersTable: React.FC = () => {
           orderRef={orderToDeleteAbsolute?.key_ref}
           orderDate={orderToDeleteAbsolute?.dateReference}
           title="Delete Order Permanently"
-          description="This will permanently delete the order. This action cannot be undone."
+          description="This will permanently delete the order and all associated data including operator assignments, payments, and costs. This action cannot be undone."
           confirmText="Delete"
           icon={<DeleteIcon color="error" />}
         />
