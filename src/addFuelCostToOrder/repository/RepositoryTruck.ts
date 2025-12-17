@@ -46,3 +46,18 @@ export async function fetchTrucksByOrder(orderKey: string): Promise<TrucksByOrde
   if (!res.ok) throw new Error('Error fetching trucks by order');
   return await res.json();
 }
+
+/**
+ * Obtiene todos los camiones activos de la empresa
+ */
+export async function fetchActiveTrucks(): Promise<TruckByOrder[]> {
+  const headers = getAuthHeaders();
+  const res = await fetch(`${BASE_URL_API}/trucks/?page=1&page_size=100`, {
+    method: 'GET',
+    headers,
+  });
+  handleAuthError(res);
+  if (!res.ok) throw new Error('Error fetching active trucks');
+  const response = await res.json();
+  return response.results?.data || [];
+}

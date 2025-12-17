@@ -17,7 +17,7 @@ import FinishOrderDialog from './FinishOrderDialog';
 import PaymentDialog from './PaymentDialog';
 import DeleteOrderDialog from './deleteOrderDialog';
 import CalendarDialog from './calendarDialog';
-import AddFuelCostDialog from '../../addFuelCostToOrder/ui/AddFuelCostDialog';
+import AssignOrderToCostFuelDialog from '../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog';
 
 // Services
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
@@ -189,7 +189,7 @@ const OrdersTable: React.FC = () => {
   const [orderToDeleteAbsolute, setOrderToDeleteAbsolute] = useState<NormalizedTableData | null>(null);
   const [dispatchTicketDialogOpen, setDispatchTicketDialogOpen] = useState(false);
   const [dispatchTicketUrl, setDispatchTicketUrl] = useState<string | null>(null);
-  const [addFuelCostDialogOpen, setAddFuelCostDialogOpen] = useState(false);
+  const [assignOrderToCostFuelDialogOpen, setAssignOrderToCostFuelDialogOpen] = useState(false);
   const [selectedOrderForFuel, setSelectedOrderForFuel] = useState<NormalizedTableData | null>(null);
 
   // Context menu - agregar estado para diferenciar el origen
@@ -530,7 +530,7 @@ const OrdersTable: React.FC = () => {
 
   const handleAddFuelCost = (order: NormalizedTableData) => {
     setSelectedOrderForFuel(order);
-    setAddFuelCostDialogOpen(true);
+    setAssignOrderToCostFuelDialogOpen(true);
   };
 
   // Export handlers
@@ -753,17 +753,17 @@ const OrdersTable: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Fuel Cost Dialog */}
-      <AddFuelCostDialog
-        open={addFuelCostDialogOpen}
+      {/* Assign Order to Fuel Cost Dialog */}
+      <AssignOrderToCostFuelDialog
+        open={assignOrderToCostFuelDialogOpen}
         onClose={() => {
-          setAddFuelCostDialogOpen(false);
+          setAssignOrderToCostFuelDialogOpen(false);
           setSelectedOrderForFuel(null);
         }}
         orderKey={selectedOrderForFuel?.id || ''}
         orderRef={selectedOrderForFuel?.key_ref || ''}
         onSuccess={() => {
-          // Opcionalmente recargar datos
+          // Recargar datos después de asignar la orden
           loadData();
         }}
       />
