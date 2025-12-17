@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useCallback } from 'react';
-import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, Fuel, MapPin } from 'lucide-react';
-import { Order, PaginatedOrderResult } from '../../domain/OrderModel';
+import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, MapPin, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { WeeklyFuelDataResponse, CostFuelWithOrders } from '../../domain/CostFuelWithOrders';
 import { generateCsv, download, mkConfig } from 'export-to-csv';
 
 interface Column {
@@ -10,8 +10,7 @@ interface Column {
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
   sortable?: boolean;
-  copyable?: boolean;
-  format?: (value: any, row?: Order) => React.ReactNode;
+  format?: (value: any, row?: CostFuelWithOrders) => React.ReactNode;
 }
 
 interface SortConfig {
@@ -23,7 +22,7 @@ interface SortConfig {
 const ImagePreviewModal: React.FC<{ 
   imageUrl: string; 
   onClose: () => void;
-  fuelData?: { cost_gl: number; fuel_qty: number; cost_fuel: number };
+  fuelData?: { cost_gl: number; fuel_qty: number; cost_fuel: number; date: string };
 }> = ({ imageUrl, onClose, fuelData }) => {
   return (
     <div 
@@ -43,6 +42,7 @@ const ImagePreviewModal: React.FC<{
               {fuelData && (
                 <p className="text-sm text-blue-100">
                   ${fuelData.cost_gl.toFixed(2)}/gl • {fuelData.fuel_qty.toFixed(1)}gl • Total: ${fuelData.cost_fuel.toFixed(2)}
+                  {fuelData.date && ` • ${new Date(fuelData.date).toLocaleDateString()}`}
                 </p>
               )}
             </div>
@@ -77,47 +77,68 @@ const ImagePreviewModal: React.FC<{
 };
 
 const columns: Column[] = [
-  { id: 'expand', label: '', minWidth: 40, align: 'center', sortable: false },
-  { id: 'actions', label: 'Actions', minWidth: 90, align: 'center', sortable: false },
-  { id: 'key_ref', label: 'Reference', minWidth: 140, sortable: true, copyable: true },
+  { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
   { id: 'date', label: 'Date', minWidth: 110, sortable: true },
-  { id: 'state_usa', label: 'Location', minWidth: 180, sortable: true },
-  { id: 'status', label: 'Status', minWidth: 100, sortable: true },
-  { id: 'person', label: 'Driver', minWidth: 160, sortable: true,
-    format: (_v, row) => {
-      return <span className="text-sm">{row?.person?.first_name} {row?.person?.last_name}</span>;
-    }
+  { id: 'truck', label: 'Truck', minWidth: 160, sortable: true,
+    format: (_v, row) => (
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center flex-shrink-0">
+          <TruckIcon size={14} className="text-white" />
+        </div>
+        <div>
+          <div className="font-semibold text-xs" style={{ color: '#0B2863' }}>
+            {row?.truck?.number_truck || 'N/A'}
+          </div>
+          <div className="text-xs text-gray-500">{row?.truck?.type}</div>
+        </div>
+      </div>
+    )
   },
-  { id: 'distance', label: 'Distance (mi)', minWidth: 120, sortable: true, align: 'right',
-    format: (value) => {
-      return <span className="text-sm">{value?.toLocaleString('en-US') || 0}</span>;
-    }
+  { id: 'cost_gl', label: 'Cost/Gallon', minWidth: 110, sortable: true, align: 'right',
+    format: (value) => (
+      <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>
+        ${(value || 0).toFixed(2)}
+      </span>
+    )
   },
-  { id: 'weight', label: 'Weight (lb)', minWidth: 120, sortable: true, align: 'right',
-    format: (value) => {
-      const weightValue = typeof value === 'string' ? parseFloat(value) : value;
-      return <span className="text-sm">{(weightValue || 0).toLocaleString('en-US')}</span>;
-    }
+  { id: 'fuel_qty', label: 'Fuel Qty', minWidth: 100, sortable: true, align: 'right',
+    format: (value) => (
+      <span className="text-sm">{(value || 0).toFixed(1)} gl</span>
+    )
   },
-  { id: 'fuelCost', label: 'Cost/Gallon', minWidth: 120, sortable: true, align: 'right',
-    format: (_v, row) => {
-      const fuelCost = row?.fuelCost?.[0];
-      const cost = fuelCost?.cost_gl || 0;
-      return <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>${cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
-    }
+  { id: 'distance', label: 'Distance', minWidth: 100, sortable: true, align: 'right',
+    format: (value) => (
+      <span className="text-sm flex items-center justify-end gap-1">
+        <MapPin size={12} className="text-gray-500" />
+        {(value || 0).toLocaleString()} mi
+      </span>
+    )
   },
-  { id: 'fuel_qty', label: 'Fuel Qty (gl)', minWidth: 120, sortable: true, align: 'right',
-    format: (_v, row) => {
-      const fuelCost = row?.fuelCost?.[0];
-      const qty = fuelCost?.fuel_qty || 0;
-      return <span className="text-sm">{qty.toLocaleString('en-US')} gl</span>;
-    }
+  { id: 'cost_fuel', label: 'Total Cost', minWidth: 120, sortable: true, align: 'right',
+    format: (value) => (
+      <span className="font-bold text-sm" style={{ color: '#0B2863' }}>
+        ${(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </span>
+    )
   },
-  { id: 'total_fuel_cost', label: 'Total Fuel Cost', minWidth: 140, sortable: true, align: 'right',
-    format: (_v, row) => {
-      const totalCost = row?.fuelCost?.reduce((acc, cost) => acc + (cost.cost_fuel || 0), 0) || 0;
-      return <span className="font-bold text-sm" style={{ color: '#0B2863' }}>${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
-    }
+  { id: 'orders_count', label: 'Orders', minWidth: 80, sortable: true, align: 'center',
+    format: (value) => (
+      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100" style={{ color: '#0B2863' }}>
+        {value || 0}
+      </span>
+    )
+  },
+  { id: 'image_url', label: 'Receipt', minWidth: 80, align: 'center', sortable: false,
+    format: (value) => (
+      value ? (
+        <span className="inline-flex items-center text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded">
+          <ImageIcon size={12} className="mr-1" />
+          Yes
+        </span>
+      ) : (
+        <span className="text-xs text-gray-400">No</span>
+      )
+    )
   },
 ];
 
@@ -129,7 +150,7 @@ const getNestedValue = (obj: any, path: string): any => {
   return path.split('.').reduce((current, key) => current?.[key], obj);
 };
 
-const sortData = (data: Order[], sortConfig: SortConfig): Order[] => {
+const sortData = (data: CostFuelWithOrders[], sortConfig: SortConfig): CostFuelWithOrders[] => {
   if (!sortConfig.key || !sortConfig.direction) return data;
 
   return [...data].sort((a, b) => {
@@ -137,33 +158,22 @@ const sortData = (data: Order[], sortConfig: SortConfig): Order[] => {
     let bValue: any;
 
     switch (sortConfig.key) {
-      case 'key_ref':
-        aValue = a.key_ref; bValue = b.key_ref; break;
+      case 'id_fuel':
+        aValue = a.id_fuel; bValue = b.id_fuel; break;
       case 'date':
         aValue = new Date(a.date).getTime(); bValue = new Date(b.date).getTime(); break;
-      case 'state_usa':
-        aValue = a.state_usa; bValue = b.state_usa; break;
-      case 'status':
-        aValue = a.status; bValue = b.status; break;
-      case 'person':
-        aValue = `${a.person?.first_name} ${a.person?.last_name}`;
-        bValue = `${b.person?.first_name} ${b.person?.last_name}`;
-        break;
-      case 'distance':
-        aValue = a.distance || 0; bValue = b.distance || 0; break;
-      case 'weight':
-        aValue = typeof a.weight === 'string' ? parseFloat(a.weight) || 0 : a.weight || 0;
-        bValue = typeof b.weight === 'string' ? parseFloat(b.weight) || 0 : b.weight || 0;
-        break;
-      case 'fuelCost':
-        aValue = a.fuelCost?.[0]?.cost_gl || 0; bValue = b.fuelCost?.[0]?.cost_gl || 0; break;
+      case 'truck':
+        aValue = a.truck?.number_truck || ''; bValue = b.truck?.number_truck || ''; break;
+      case 'cost_gl':
+        aValue = a.cost_gl; bValue = b.cost_gl; break;
       case 'fuel_qty':
-        aValue = a.fuelCost?.[0]?.fuel_qty || 0; bValue = b.fuelCost?.[0]?.fuel_qty || 0;
-        break;
-      case 'total_fuel_cost':
-        aValue = a.fuelCost?.reduce((acc, cost) => acc + (cost.cost_fuel || 0), 0) || 0;
-        bValue = b.fuelCost?.reduce((acc, cost) => acc + (cost.cost_fuel || 0), 0) || 0;
-        break;
+        aValue = a.fuel_qty; bValue = b.fuel_qty; break;
+      case 'distance':
+        aValue = a.distance; bValue = b.distance; break;
+      case 'cost_fuel':
+        aValue = a.cost_fuel; bValue = b.cost_fuel; break;
+      case 'orders_count':
+        aValue = a.orders_count; bValue = b.orders_count; break;
       default:
         aValue = getNestedValue(a, sortConfig.key || '');
         bValue = getNestedValue(b, sortConfig.key || '');
@@ -203,48 +213,23 @@ const csvConfig = mkConfig({
 });
 
 export const ResumeFuelTable: React.FC<{
-  data: PaginatedOrderResult | null;
+  data: WeeklyFuelDataResponse | null;
   isLoading: boolean;
-  searchTerm?: string;
-  page?: number;
-  rowsPerPage?: number;
-  onPageChange?: (newPage: number) => void;
-  onRowsPerPageChange?: (newRowsPerPage: number) => void;
-  onContextMenu?: (e: React.MouseEvent, row: Order) => void;
-  onActionsMenuClick?: (e: React.MouseEvent, row: Order) => void;
-}> = ({ data, isLoading, searchTerm = '', page = 0, rowsPerPage = 25, onPageChange, onRowsPerPageChange, onContextMenu, onActionsMenuClick }) => {
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+}> = ({ data, isLoading }) => {
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
-  const [copiedRef, setCopiedRef] = useState<string | null>(null);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [previewImage, setPreviewImage] = useState<{ url: string; fuelData?: any } | null>(null);
 
-  const orders = useMemo(() => data?.results ?? [], [data?.results]);
-  const sortedData = useMemo(() => sortData(orders, sortConfig), [orders, sortConfig]);
+  // Extraer todos los cost_fuels de todas las semanas
+  const allCostFuels = useMemo(() => {
+    if (!data?.data) return [];
+    return data.data.flatMap(weekData => weekData.cost_fuels);
+  }, [data]);
 
-  // Filter data based on search term
-  const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return sortedData;
-    
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return sortedData.filter(order => {
-      return (
-        order.key_ref?.toLowerCase().includes(lowerSearchTerm) ||
-        order.person?.first_name?.toLowerCase().includes(lowerSearchTerm) ||
-        order.person?.last_name?.toLowerCase().includes(lowerSearchTerm) ||
-        order.state_usa?.toLowerCase().includes(lowerSearchTerm) ||
-        order.status?.toLowerCase().includes(lowerSearchTerm) ||
-        order.distance?.toString().includes(lowerSearchTerm) ||
-        order.fuelCost?.some(fuel => 
-          fuel.cost_gl?.toString().includes(lowerSearchTerm) ||
-          fuel.fuel_qty?.toString().includes(lowerSearchTerm) ||
-          fuel.cost_fuel?.toString().includes(lowerSearchTerm)
-        )
-      );
-    });
-  }, [sortedData, searchTerm]);
+  const sortedData = useMemo(() => sortData(allCostFuels, sortConfig), [allCostFuels, sortConfig]);
 
-  const handleExpandClick = useCallback((rowId: string) => {
+  const handleExpandClick = useCallback((rowId: number) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
       if (newSet.has(rowId)) newSet.delete(rowId); else newSet.add(rowId);
@@ -264,16 +249,7 @@ export const ResumeFuelTable: React.FC<{
     });
   }, []);
 
-  const handleCopyToClipboard = useCallback(async (e: React.MouseEvent, value: string, rowId: string) => {
-    e.preventDefault(); e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopiedRef(rowId);
-      setTimeout(() => setCopiedRef(null), 1500);
-    } catch { /* ignore */ }
-  }, []);
-
-  const handleRowSelect = useCallback((rowId: string) => {
+  const handleRowSelect = useCallback((rowId: number) => {
     setSelectedRows(prev => {
       const newSet = new Set(prev);
       if (newSet.has(rowId)) newSet.delete(rowId); else newSet.add(rowId);
@@ -282,73 +258,106 @@ export const ResumeFuelTable: React.FC<{
   }, []);
 
   const handleSelectAll = useCallback((selectAll: boolean) => {
-    if (selectAll) setSelectedRows(new Set(filteredData.map(r => r.key)));
+    if (selectAll) setSelectedRows(new Set(sortedData.map(r => r.id_fuel)));
     else setSelectedRows(new Set());
-  }, [filteredData]);
+  }, [sortedData]);
 
-  const isSelected = useCallback((rowId: string) => selectedRows.has(rowId), [selectedRows]);
-  const isAllSelected = filteredData.length > 0 && selectedRows.size === filteredData.length;
+  const isSelected = useCallback((rowId: number) => selectedRows.has(rowId), [selectedRows]);
+  const isAllSelected = sortedData.length > 0 && selectedRows.size === sortedData.length;
 
   const handleExportData = useCallback(() => {
-    if (!data?.results || data.results.length === 0) return;
-    const rowData = data.results.map(order => {
-      const fuelCostData = order.fuelCost?.[0] || {};
-      return {
-        key: order.key,
-        referencia: order.key_ref,
-        fecha: order.date,
-        ubicacion: order.state_usa,
-        estado: order.status,
-        conductor: `${order.person?.first_name || ''} ${order.person?.last_name || ''}`,
-        distancia: order.distance || 0,
-        peso: order.weight || 0,
-        trabajo: order.job_name,
-        costo_por_galon: fuelCostData.cost_gl || 0,
-        cantidad_combustible: fuelCostData.fuel_qty || 0,
-        distancia_recorrida: fuelCostData.distance || 0,
-        numero_camion: fuelCostData.truck?.number_truck || '',
-        tipo_camion: fuelCostData.truck?.type || '',
-        categoria: fuelCostData.truck?.category || '',
-        costo_combustible_total: order.fuelCost?.reduce((acc, cost) => acc + (cost.cost_fuel || 0), 0) || 0
-      };
+    if (!sortedData || sortedData.length === 0) return;
+    const rowData = sortedData.flatMap(costFuel => {
+      if (costFuel.order_cost_fuels.length === 0) {
+        return [{
+          fuel_id: costFuel.id_fuel,
+          fecha: costFuel.date,
+          camion: costFuel.truck?.number_truck || '',
+          tipo_camion: costFuel.truck?.type || '',
+          categoria: costFuel.truck?.category || '',
+          costo_galon: costFuel.cost_gl,
+          cantidad_combustible: costFuel.fuel_qty,
+          distancia: costFuel.distance,
+          costo_total: costFuel.cost_fuel,
+          tiene_recibo: costFuel.image_url ? 'Sí' : 'No',
+          orden_ref: '',
+          cliente: '',
+          ubicacion_orden: '',
+          fecha_orden: '',
+        }];
+      }
+      return costFuel.order_cost_fuels.map(order => ({
+        fuel_id: costFuel.id_fuel,
+        fecha: costFuel.date,
+        camion: costFuel.truck?.number_truck || '',
+        tipo_camion: costFuel.truck?.type || '',
+        categoria: costFuel.truck?.category || '',
+        costo_galon: costFuel.cost_gl,
+        cantidad_combustible: costFuel.fuel_qty,
+        distancia: costFuel.distance,
+        costo_total: costFuel.cost_fuel,
+        tiene_recibo: costFuel.image_url ? 'Sí' : 'No',
+        orden_ref: order.order_key_ref,
+        cliente: order.client_name,
+        ubicacion_orden: order.order_location || '',
+        fecha_orden: order.order_date,
+        costo_distribuido: order.cost_fuel_distributed,
+        combustible_distribuido: order.fuel_qty_distributed,
+        distancia_distribuida: order.distance_distributed,
+      }));
     });
     const csv = generateCsv(csvConfig)(rowData);
     download(csvConfig)(csv);
-  }, [data]);
+  }, [sortedData]);
 
   const handleExportSelected = useCallback(() => {
-    const selectedOrders = sortedData.filter(order => selectedRows.has(order.key));
-    const rowData = selectedOrders.map(order => {
-      const fuelCostData = order.fuelCost?.[0] || {};
-      return {
-        key: order.key,
-        referencia: order.key_ref,
-        fecha: order.date,
-        ubicacion: order.state_usa,
-        estado: order.status,
-        conductor: `${order.person?.first_name} ${order.person?.last_name}`,
-        distancia: order.distance,
-        peso: order.weight,
-        trabajo: order.job_name,
-        costo_por_galon: fuelCostData.cost_gl,
-        cantidad_combustible: fuelCostData.fuel_qty,
-        distancia_recorrida: fuelCostData.distance,
-        numero_camion: fuelCostData.truck?.number_truck,
-        tipo_camion: fuelCostData.truck?.type,
-        categoria: fuelCostData.truck?.category,
-        costo_combustible_total: order.fuelCost?.reduce((acc, cost) => acc + (cost.cost_fuel || 0), 0) || 0
-      };
+    const selectedCostFuels = sortedData.filter(cf => selectedRows.has(cf.id_fuel));
+    const rowData = selectedCostFuels.flatMap(costFuel => {
+      if (costFuel.order_cost_fuels.length === 0) {
+        return [{
+          fuel_id: costFuel.id_fuel,
+          fecha: costFuel.date,
+          camion: costFuel.truck?.number_truck || '',
+          tipo_camion: costFuel.truck?.type || '',
+          categoria: costFuel.truck?.category || '',
+          costo_galon: costFuel.cost_gl,
+          cantidad_combustible: costFuel.fuel_qty,
+          distancia: costFuel.distance,
+          costo_total: costFuel.cost_fuel,
+          tiene_recibo: costFuel.image_url ? 'Sí' : 'No',
+          orden_ref: '',
+          cliente: '',
+          ubicacion_orden: '',
+          fecha_orden: '',
+        }];
+      }
+      return costFuel.order_cost_fuels.map(order => ({
+        fuel_id: costFuel.id_fuel,
+        fecha: costFuel.date,
+        camion: costFuel.truck?.number_truck || '',
+        tipo_camion: costFuel.truck?.type || '',
+        categoria: costFuel.truck?.category || '',
+        costo_galon: costFuel.cost_gl,
+        cantidad_combustible: costFuel.fuel_qty,
+        distancia: costFuel.distance,
+        costo_total: costFuel.cost_fuel,
+        tiene_recibo: costFuel.image_url ? 'Sí' : 'No',
+        orden_ref: order.order_key_ref,
+        cliente: order.client_name,
+        ubicacion_orden: order.order_location || '',
+        fecha_orden: order.order_date,
+        costo_distribuido: order.cost_fuel_distributed,
+        combustible_distribuido: order.fuel_qty_distributed,
+        distancia_distribuida: order.distance_distributed,
+      }));
     });
     const csv = generateCsv(csvConfig)(rowData);
     download(csvConfig)(csv);
   }, [sortedData, selectedRows]);
 
-  const getColumnValue = (row: Order, columnId: string): any => {
+  const getColumnValue = (row: CostFuelWithOrders, columnId: string): any => {
     switch (columnId) {
-      case 'person': return `${row.person?.first_name} ${row.person?.last_name}`;
-      case 'fuelCost': return row.fuelCost?.[0]?.cost_gl || 0;
-      case 'fuel_qty': return row.fuelCost?.[0]?.fuel_qty || 0;
-      case 'total_fuel_cost': return row.fuelCost?.reduce((acc, cost) => acc + (cost.cost_fuel || 0), 0) || 0;
+      case 'truck': return row.truck?.number_truck || '';
       default: return getNestedValue(row, columnId);
     }
   };
@@ -359,20 +368,20 @@ export const ResumeFuelTable: React.FC<{
         {/* Toolbar */}
         <div className="bg-white border-b px-4 py-3" style={{ borderColor: '#0B2863' }}>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-lg font-semibold" style={{ color: '#0B2863' }}>Fuel Resume</h2>
+            <h2 className="text-lg font-semibold" style={{ color: '#0B2863' }}>Fuel Cost Records</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExportData}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-sm"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: '#0B2863', color: 'white' }}
-                disabled={!data?.results || data.results.length === 0}
+                disabled={!sortedData || sortedData.length === 0}
               >
                 <Download size={14} className="inline mr-1" />
                 Export All
               </button>
               <button
                 onClick={handleExportSelected}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-sm border"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-sm border disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ borderColor: '#0B2863', color: '#0B2863' }}
                 disabled={selectedRows.size === 0}
               >
@@ -388,10 +397,21 @@ export const ResumeFuelTable: React.FC<{
             <thead className="sticky top-0 z-10 text-white" style={{ backgroundColor: '#0B2863' }}>
               <tr>
                 <th className="px-3 py-2 text-left">
-                  <input type="checkbox" className="rounded border-2 border-white w-3.5 h-3.5" checked={isAllSelected} onChange={(e) => handleSelectAll(e.target.checked)} disabled={sortedData.length === 0} />
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-2 border-white w-3.5 h-3.5" 
+                    checked={isAllSelected} 
+                    onChange={(e) => handleSelectAll(e.target.checked)} 
+                    disabled={sortedData.length === 0} 
+                  />
                 </th>
                 {columns.map((column, index) => (
-                  <th key={`hdr-${column.id}-${index}`} className={`px-3 py-2 text-${column.align || 'left'} font-bold text-xs whitespace-nowrap ${column.sortable ? 'cursor-pointer hover:bg-blue-800 transition-colors duration-200' : ''}`} style={{ minWidth: column.minWidth }} onClick={() => column.sortable && handleSort(column.id)}>
+                  <th 
+                    key={`hdr-${column.id}-${index}`} 
+                    className={`px-3 py-2 text-${column.align || 'left'} font-bold text-xs whitespace-nowrap ${column.sortable ? 'cursor-pointer hover:bg-blue-800 transition-colors duration-200' : ''}`} 
+                    style={{ minWidth: column.minWidth }} 
+                    onClick={() => column.sortable && handleSort(column.id)}
+                  >
                     <div className="flex items-center gap-1.5">
                       <span>{column.label}</span>
                       <SortIcon column={column} sortConfig={sortConfig} />
@@ -403,20 +423,49 @@ export const ResumeFuelTable: React.FC<{
 
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={columns.length + 1} className="text-center py-10"><div className="flex flex-col items-center space-y-3"><LoadingSpinner /><span className="text-gray-500 text-sm">Loading fuel data...</span></div></td></tr>
-              ) : filteredData.length === 0 ? (
-                <tr><td colSpan={columns.length + 1} className="text-center py-12"><div className="flex flex-col items-center justify-center space-y-3"><div className="mb-2"><Inbox size={64} style={{ color: '#0B2863', opacity: 0.6 }} /></div><div className="text-center"><h3 className="text-lg font-bold mb-1" style={{ color: '#0B2863' }}>No Fuel Data Found</h3><p className="text-gray-500 text-sm">Try adjusting your filters</p></div></div></td></tr>
+                <tr>
+                  <td colSpan={columns.length + 1} className="text-center py-10">
+                    <div className="flex flex-col items-center space-y-3">
+                      <LoadingSpinner />
+                      <span className="text-gray-500 text-sm">Loading fuel data...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : sortedData.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length + 1} className="text-center py-12">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="mb-2">
+                        <Inbox size={64} style={{ color: '#0B2863', opacity: 0.6 }} />
+                      </div>
+                      <div className="text-center">
+                        <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2863' }}>No Fuel Data Found</h3>
+                        <p className="text-gray-500 text-sm">Try selecting a different week or year</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 <>
-                  {filteredData.map((row, rowIndex) => {
-                    const rowId = row.key;
+                  {sortedData.map((row, rowIndex) => {
+                    const rowId = row.id_fuel;
                     const isRowSelected = isSelected(rowId);
                     const isExpanded = expandedRows.has(rowId);
                     return (
                       <React.Fragment key={rowId}>
-                        <tr className={`transition-all duration-200 hover:shadow-sm cursor-pointer ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isRowSelected ? 'ring-1 ring-blue-200' : ''}`} style={{ backgroundColor: isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined }} onContextMenu={(e) => onContextMenu?.(e, row)}>
+                        <tr 
+                          className={`transition-all duration-200 hover:shadow-sm cursor-pointer ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isRowSelected ? 'ring-1 ring-blue-200' : ''}`} 
+                          style={{ backgroundColor: isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined }}
+                        >
                           <td className="px-3 py-2">
-                            <input type="checkbox" className="rounded border-2 w-3.5 h-3.5" style={{ borderColor: '#0B2863' }} checked={isRowSelected} onChange={() => handleRowSelect(rowId)} onClick={(e) => e.stopPropagation()} />
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-2 w-3.5 h-3.5" 
+                              style={{ borderColor: '#0B2863' }} 
+                              checked={isRowSelected} 
+                              onChange={() => handleRowSelect(rowId)} 
+                              onClick={(e) => e.stopPropagation()} 
+                            />
                           </td>
 
                           {columns.map((column) => {
@@ -424,159 +473,104 @@ export const ResumeFuelTable: React.FC<{
                             if (column.id === 'expand') {
                               return (
                                 <td key={`${rowId}-${column.id}`} className="px-3 py-2 text-center" style={{ minWidth: column.minWidth }}>
-                                  <button onClick={() => handleExpandClick(rowId)} className="text-gray-600 hover:text-blue-700 transition-colors p-1 rounded hover:bg-blue-50">
-                                    <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
+                                  <button 
+                                    onClick={() => handleExpandClick(rowId)} 
+                                    className="text-gray-600 hover:text-blue-700 transition-colors p-1 rounded hover:bg-blue-50"
+                                    title={`${isExpanded ? 'Hide' : 'Show'} ${row.orders_count} order(s)`}
+                                  >
+                                    {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                                   </button>
-                                </td>
-                              );
-                            }
-                            if (column.id === 'actions') {
-                              return (
-                                <td key={`${rowId}-${column.id}`} className="px-3 py-2 text-center" style={{ minWidth: column.minWidth }}>
-                                  <button onClick={(e) => onActionsMenuClick?.(e, row)} className="text-gray-600 hover:text-blue-700 transition-colors p-1 rounded hover:bg-blue-50">
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                    </svg>
-                                  </button>
-                                </td>
-                              );
-                            }
-                            if (column.id === 'key_ref' && column.copyable) {
-                              return (
-                                <td key={`${rowId}-${column.id}`} className="px-3 py-2" style={{ minWidth: column.minWidth }}>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium" style={{ color: '#0B2863' }}>{value}</span>
-                                    <button onClick={(e) => handleCopyToClipboard(e, value, rowId)} className={`text-gray-400 hover:text-blue-600 transition-colors p-1 rounded ${copiedRef === rowId ? 'text-green-600' : ''}`} title="Copy to clipboard">
-                                      {copiedRef === rowId ? (
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                      ) : (
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                      )}
-                                    </button>
-                                  </div>
                                 </td>
                               );
                             }
                             return (
-                              <td key={`${rowId}-${column.id}`} className={`px-3 py-2 text-${column.align || 'left'}`} style={{ minWidth: column.minWidth }}>
+                              <td 
+                                key={`${rowId}-${column.id}`} 
+                                className={`px-3 py-2 text-${column.align || 'left'}`} 
+                                style={{ minWidth: column.minWidth }}
+                              >
                                 {column.format ? column.format(value, row) : value}
                               </td>
                             );
                           })}
                         </tr>
 
+                        {/* Expanded row showing related orders */}
                         {isExpanded && (
                           <tr>
-                            <td colSpan={columns.length + 1} className="px-3 py-3 bg-gradient-to-r from-blue-50 to-indigo-50">
-                              <div className="p-4">
-                                <h4 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2863' }}>
-                                  <Fuel size={16} />
-                                  Fuel Cost Details ({row.fuelCost?.length || 0} entries)
-                                </h4>
+                            <td colSpan={columns.length + 1} className="px-0 py-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+                              <div className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-bold text-base flex items-center gap-2" style={{ color: '#0B2863' }}>
+                                    <Package size={18} />
+                                    Related Orders ({row.orders_count})
+                                  </h4>
+                                  {row.image_url && (
+                                    <button
+                                      onClick={() => setPreviewImage({ 
+                                        url: row.image_url!, 
+                                        fuelData: { 
+                                          cost_gl: row.cost_gl, 
+                                          fuel_qty: row.fuel_qty, 
+                                          cost_fuel: row.cost_fuel,
+                                          date: row.date
+                                        }
+                                      })}
+                                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
+                                    >
+                                      <Eye size={16} />
+                                      View Receipt
+                                    </button>
+                                  )}
+                                </div>
                                 
-                                {row.fuelCost && row.fuelCost.length > 0 ? (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {row.fuelCost.map((fuel, index) => (
-                                      <div 
-                                        key={fuel.id_fuel} 
-                                        className="bg-white rounded-lg border-2 shadow-sm hover:shadow-md transition-all duration-200"
-                                        style={{ borderColor: '#0B2863' }}
-                                      >
-                                        
-                                        {/* Card Body */}
-                                        <div className="p-3">
-                                          {/* Badge de entrada */}
-                                          <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                                              FuelCost #{index + 1}
-                                            </span>
-                                            {fuel.image_url ? (
-                                              <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded flex items-center gap-1">
-                                                <ImageIcon size={12} />
-                                                Has Receipt
+                                {row.order_cost_fuels && row.order_cost_fuels.length > 0 ? (
+                                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                    <table className="w-full">
+                                      <thead className="bg-gray-100">
+                                        <tr>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Order Ref</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Client</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Location</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Order Date</th>
+                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Cost Distributed</th>
+                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Fuel Distributed</th>
+                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Distance</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {row.order_cost_fuels.map((order, idx) => (
+                                          <tr key={order.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                            <td className="px-4 py-3">
+                                              <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>
+                                                {order.order_key_ref}
                                               </span>
-                                            ) : (
-                                              <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                                                No Receipt
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-700">{order.client_name}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">{order.order_location || 'N/A'}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                              {new Date(order.order_date).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                              <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>
+                                                ${order.cost_fuel_distributed.toFixed(2)}
                                               </span>
-                                            )}
-                                          </div>
-
-                                          {/* Truck info */}
-                                          <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
-                                              <TruckIcon size={16} className="text-white" />
-                                            </div>
-                                            <div className="flex-1">
-                                              <div className="font-bold text-sm" style={{ color: '#0B2863' }}>
-                                                {fuel.truck?.number_truck || 'N/A'}
-                                              </div>
-                                              <div className="text-xs text-gray-600">
-                                                {fuel.truck?.type} • {fuel.truck?.category}
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          {/* Fuel details grid */}
-                                          <div className="grid grid-cols-2 gap-2 mb-2">
-                                            <div className="bg-gray-50 p-2 rounded">
-                                              <div className="text-xs text-gray-600 mb-1">Cost/Gallon</div>
-                                              <div className="font-bold text-sm" style={{ color: '#0B2863' }}>
-                                                ${fuel.cost_gl.toFixed(2)}
-                                              </div>
-                                            </div>
-                                            <div className="bg-gray-50 p-2 rounded">
-                                              <div className="text-xs text-gray-600 mb-1">Quantity</div>
-                                              <div className="font-bold text-sm" style={{ color: '#0B2863' }}>
-                                                {fuel.fuel_qty.toFixed(1)} gl
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          <div className="grid grid-cols-2 gap-2">
-                                            <div className="bg-gray-50 p-2 rounded">
-                                              <div className="text-xs text-gray-600 mb-1 flex items-center gap-1">
-                                                <MapPin size={10} />
-                                                Distance
-                                              </div>
-                                              <div className="font-bold text-sm" style={{ color: '#0B2863' }}>
-                                                {fuel.distance || 0} mi
-                                              </div>
-                                            </div>
-                                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-2 rounded border border-blue-200">
-                                              <div className="text-xs text-blue-700 mb-1 font-semibold">Total Cost</div>
-                                              <div className="font-bold text-lg text-blue-700">
-                                                ${fuel.cost_fuel.toFixed(2)}
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          {/* View image button if exists */}
-                                          {fuel.image_url && (
-                                            <button
-                                              onClick={() => setPreviewImage({ 
-                                                url: fuel.image_url!, 
-                                                fuelData: { cost_gl: fuel.cost_gl, fuel_qty: fuel.fuel_qty, cost_fuel: fuel.cost_fuel }
-                                              })}
-                                              className="mt-3 w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 text-xs font-semibold transition-colors"
-                                            >
-                                              <Eye size={14} />
-                                              View Receipt
-                                            </button>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-sm text-gray-700">
+                                              {order.fuel_qty_distributed.toFixed(1)} gl
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-sm text-gray-700">
+                                              {order.distance_distributed.toLocaleString()} mi
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
                                   </div>
                                 ) : (
-                                  <div className="text-center py-6 text-gray-500 text-sm">
-                                    No fuel cost data available
+                                  <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                                    <Package size={48} className="mx-auto mb-2 text-gray-400" />
+                                    <p className="text-gray-500 text-sm">No orders associated with this fuel cost</p>
                                   </div>
                                 )}
                               </div>
@@ -592,89 +586,19 @@ export const ResumeFuelTable: React.FC<{
           </table>
         </div>
 
+        {/* Footer */}
         <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
-          <div className="flex items-center space-x-3"><span className="text-xs text-gray-700">Total: {data?.count ?? 0} orders | Selected: {selectedRows.size}</span></div>
-          <div className="flex items-center space-x-3"><span className="text-xs text-gray-700">Showing {filteredData.length} results</span></div>
-        </div>
-
-        {/* Pagination controls */}
-        {data && data.count > 0 && (
-          <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => onPageChange?.(Math.max(0, page - 1))}
-                disabled={page === 0}
-                className="px-4 py-2 border rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  borderColor: page === 0 ? '#d1d5db' : '#0B2863',
-                  color: page === 0 ? '#d1d5db' : '#0B2863',
-                  backgroundColor: page === 0 ? '#f3f4f6' : 'transparent',
-                  cursor: page === 0 ? 'not-allowed' : 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  if (page !== 0) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F09F52';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#fff';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (page !== 0) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#0B2863';
-                  }
-                }}
-              >
-                ← Previous
-              </button>
-
-              <span className="text-sm font-medium" style={{ color: '#0B2863', minWidth: '100px', textAlign: 'center' }}>
-                Page {page + 1}
-              </span>
-
-              <button
-                onClick={() => onPageChange?.(Math.min(Math.ceil((data?.count || 0) / rowsPerPage) - 1, page + 1))}
-                disabled={page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1}
-                className="px-4 py-2 border rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  borderColor: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? '#d1d5db' : '#0B2863',
-                  color: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? '#d1d5db' : '#0B2863',
-                  backgroundColor: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? '#f3f4f6' : 'transparent',
-                  cursor: page >= Math.ceil((data?.count || 0) / rowsPerPage) - 1 ? 'not-allowed' : 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  if (page < Math.ceil((data?.count || 0) / rowsPerPage) - 1) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F09F52';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#fff';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (page < Math.ceil((data?.count || 0) / rowsPerPage) - 1) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#0B2863';
-                  }
-                }}
-              >
-                Next →
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium" style={{ color: '#0B2863' }}>
-                Records per page:
-              </label>
-              <select
-                value={rowsPerPage}
-                onChange={(e) => onRowsPerPageChange?.(Number(e.target.value))}
-                className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
-                style={{ borderColor: '#0B2863', '--tw-ring-color': '#0B2863' } as any}
-              >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
+          <div className="flex items-center space-x-3">
+            <span className="text-xs text-gray-700">
+              Total: {sortedData.length} fuel records | Selected: {selectedRows.size}
+            </span>
           </div>
-        )}
+          <div className="flex items-center space-x-3">
+            <span className="text-xs text-gray-700">
+              Showing {sortedData.length} results
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Image Preview Modal */}
