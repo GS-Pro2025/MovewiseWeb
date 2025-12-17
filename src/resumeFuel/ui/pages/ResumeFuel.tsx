@@ -4,12 +4,15 @@ import { ResumeFuelService } from '../../data/ResumeFuelServices';
 import { WeeklyFuelDataResponse } from '../../domain/CostFuelWithOrders';
 import YearPicker from '../../../components/YearPicker';
 import WeekPicker from '../../../components/WeekPicker';
+import CreateCostFuelDialog from '../../../addFuelCostToOrder/ui/CreateCostFuelDialog';
+import { Plus } from 'lucide-react';
 
 const ResumeFuel: React.FC = () => {
   const [resumeFuel, setResumeFuel] = useState<WeeklyFuelDataResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentWeek, setCurrentWeek] = useState<number>(1);
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
+  const [createDialogOpen, setCreateDialogOpen] = useState<boolean>(false);
   
   const resumeFuelServices = new ResumeFuelService();
 
@@ -65,6 +68,15 @@ const ResumeFuel: React.FC = () => {
       {/* Week/Year selector */}
       <div className="mb-6 bg-white rounded-xl p-4 shadow-md border" style={{ borderColor: '#0B2863' }}>
         <div className="flex items-center gap-4 flex-wrap justify-between">
+          {/* Create Button */}
+          <button
+            onClick={() => setCreateDialogOpen(true)}
+            className="px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2"
+            style={{ backgroundColor: '#0B2863', color: 'white' }}
+          >
+            <Plus size={18} />
+            Create Fuel Cost
+          </button>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Filter by:</span>
@@ -138,6 +150,16 @@ const ResumeFuel: React.FC = () => {
       <ResumeFuelTable 
         data={resumeFuel} 
         isLoading={isLoading}
+      />
+
+      {/* Create Fuel Cost Dialog */}
+      <CreateCostFuelDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => {
+          setCreateDialogOpen(false);
+          fetchResumeFuel(currentWeek, currentYear);
+        }}
       />
     </div>
   )

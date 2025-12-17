@@ -78,7 +78,6 @@ const ImagePreviewModal: React.FC<{
 
 const columns: Column[] = [
   { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
-  { id: 'id_fuel', label: 'Fuel ID', minWidth: 80, sortable: true, align: 'center' },
   { id: 'date', label: 'Date', minWidth: 110, sortable: true },
   { id: 'truck', label: 'Truck', minWidth: 160, sortable: true,
     format: (_v, row) => (

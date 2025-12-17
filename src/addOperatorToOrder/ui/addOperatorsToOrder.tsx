@@ -6,7 +6,7 @@ import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/
 import { IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, List, ListItem, ListItemText, Button, TextField } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { Fuel } from 'lucide-react';
-import AddFuelCostDialog from '../../addFuelCostToOrder/ui/AddFuelCostDialog';
+import AssignOrderToCostFuelDialog from '../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
 import { CreateAssignmentData } from '../domain/AssignModels';
@@ -457,13 +457,13 @@ const onDragEnd = (result: DropResult) => {
       operator={selectedOperator}
       truckPlate={null}
     />
-    <AddFuelCostDialog
+    <AssignOrderToCostFuelDialog
       open={fuelCostDialogOpen}
       onClose={() => setFuelCostDialogOpen(false)}
       orderKey={orderKey || ''}
       orderRef={orderKey || ''}
       onSuccess={() => {
-        enqueueSnackbar('Fuel cost added successfully!', { variant: 'success' });
+        enqueueSnackbar('Order assigned to fuel cost successfully! ⛽', { variant: 'success' });
         setFuelCostDialogOpen(false);
       }}
     />
