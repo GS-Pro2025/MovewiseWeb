@@ -1,6 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy, MoreVertical } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
+import CostFuelsTable from './CostFuelsTable';
+import { AssignOrderToCostFuelRepository } from '../../addFuelCostToOrder/repository/AssignOrderToCostFuelRepository';
+import type { CostFuelByOrderData } from '../../addFuelCostToOrder/domain/AssignOrderToCostFuelModels';
 import type { TableData } from '../domain/TableData';
 
 interface Column {
@@ -160,6 +163,8 @@ interface DataTableProps {
   onFinishOrder: (orderId: string) => void;
   onContextMenu: (event: React.MouseEvent, row: TableData) => void;
   onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void;
+  onAddFuelCost?: (row: TableData) => void;
+  refreshCostFuelsTrigger?: string | null;
 }
 
 const LoadingSpinner = () => (
@@ -220,25 +225,56 @@ export const DataTable: React.FC<DataTableProps> = ({
   onSelectAll,
   onFinishOrder,
   onContextMenu,
-  onActionsMenuClick
+  onActionsMenuClick,
+  onAddFuelCost,
+  refreshCostFuelsTrigger
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
+  const [costFuelsByOrder, setCostFuelsByOrder] = useState<Record<string, CostFuelByOrderData[]>>({});
 
   const sortedData = useMemo(() => sortData(data, sortConfig), [data, sortConfig]);
 
-  const handleExpandClick = useCallback((rowId: string) => {
+  const fetchCostFuelsForOrder = useCallback(async (orderKey: string) => {
+    try {
+      const response = await AssignOrderToCostFuelRepository.getCostFuelsByOrder(orderKey);
+      if (response.status === 'success' && response.data) {
+        setCostFuelsByOrder(prev => ({
+          ...prev,
+          [orderKey]: response.data
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching cost fuels for order:', error);
+      // Set empty array on error to avoid re-fetching
+      setCostFuelsByOrder(prev => ({
+        ...prev,
+        [orderKey]: []
+      }));
+    }
+  }, []);
+
+  // Effect para refrescar costFuels cuando se dispara el trigger
+  useEffect(() => {
+    if (refreshCostFuelsTrigger) {
+      fetchCostFuelsForOrder(refreshCostFuelsTrigger);
+    }
+  }, [refreshCostFuelsTrigger, fetchCostFuelsForOrder]);
+
+  const handleExpandClick = useCallback(async (rowId: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
       if (newSet.has(rowId)) {
         newSet.delete(rowId);
       } else {
         newSet.add(rowId);
+        // Fetch cost fuels when expanding
+        fetchCostFuelsForOrder(rowId);
       }
       return newSet;
     });
-  }, []);
+  }, [fetchCostFuelsForOrder]);
 
   const handleSort = useCallback((columnId: keyof TableData) => {
     const column = columns.find(col => col.id === columnId);
@@ -487,10 +523,18 @@ export const DataTable: React.FC<DataTableProps> = ({
                         <tr>
                           <td colSpan={columns.length + 1} className="px-0 py-0">
                             <div className="px-4 py-3 bg-gray-50">
-                              <OperatorsTable 
-                                operators={row.operators || []}
-                                orderKey={row.id} 
-                              />
+                              <div className="flex gap-4 flex-wrap">
+                                <OperatorsTable 
+                                  operators={row.operators || []}
+                                  orderKey={row.id} 
+                                />
+                                <CostFuelsTable 
+                                  costFuels={costFuelsByOrder[row.id] || []}
+                                  onAddFuelCost={onAddFuelCost ? () => {
+                                    onAddFuelCost(row);
+                                  } : undefined}
+                                />
+                              </div>
                             </div>
                           </td>
                         </tr>
