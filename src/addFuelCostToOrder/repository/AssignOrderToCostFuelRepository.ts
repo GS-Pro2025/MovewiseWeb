@@ -3,6 +3,7 @@ import Cookies from 'js-cookie';
 import {
   AssignOrderToCostFuelRequest,
   RecentCostFuelByTruckResponse,
+  CostFuelsByOrderResponse,
 } from '../domain/AssignOrderToCostFuelModels';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
@@ -139,6 +140,32 @@ export class AssignOrderToCostFuelRepository {
 
     return response.json();
   }
+  /**
+   * Obtiene todos los CostFuels asociados a una orden específica
+   * @param orderKey UUID de la orden
+   * @returns Respuesta con lista de CostFuels asociados a la orden
+   */
+  static async getCostFuelsByOrder(orderKey: string): Promise<CostFuelsByOrderResponse> {
+    const headers = getAuthHeaders();
+
+    const response = await fetch(
+      `${BASE_URL_API}/costfuels/by-order/${orderKey}/`,
+      {
+        method: 'GET',
+        headers,
+      }
+    );
+
+    handleAuthError(response);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.messUser || error.messDev || 'Error al obtener los CostFuels de la orden');
+    }
+
+    return response.json();
+  }
 }
 
 export default AssignOrderToCostFuelRepository;
+

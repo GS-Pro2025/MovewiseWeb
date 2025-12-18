@@ -128,3 +128,28 @@ export interface OrderCostFuelRecentDetail {
   assigned_date: string | null;
   created_at: string;
 }
+
+// Models para endpoint de CostFuels por orden
+export interface CostFuelsByOrderResponse {
+  status: string;
+  messDev: string;
+  messUser: string;
+  current_company_id: number;
+  data: CostFuelByOrderData[];
+}
+
+export interface CostFuelByOrderData {
+  id_fuel: number;
+  truck: number;
+  cost_fuel: number;
+  cost_gl: number;
+  fuel_qty: number;
+  distance: number;
+  date: string;
+  image: string | null;
+  image_url: string | null;
+  orders_count: number;
+  created_at: string;
+  updated_at: string;
+  order_cost_fuels?: OrderCostFuelDetail[];
+}

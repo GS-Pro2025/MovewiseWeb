@@ -207,6 +207,7 @@ const OrdersTable: React.FC = () => {
   const [globalSearch, setGlobalSearch] = useState<string>('');
   const [isGlobalSearchActive, setIsGlobalSearchActive] = useState<boolean>(false);
   const [globalSearchLoading, setGlobalSearchLoading] = useState<boolean>(false);
+  const [refreshCostFuelsTrigger, setRefreshCostFuelsTrigger] = useState<string | null>(null);
 
   // Load data function
   const loadData = useCallback(async (searchTerm?: string) => {
@@ -533,6 +534,12 @@ const OrdersTable: React.FC = () => {
     setAssignOrderToCostFuelDialogOpen(true);
   };
 
+  const handleRefreshCostFuels = (orderId: string) => {
+    setRefreshCostFuelsTrigger(orderId);
+    // Reset trigger después de un tiempo
+    setTimeout(() => setRefreshCostFuelsTrigger(null), 100);
+  };
+
   // Export handlers
   const handleExportExcel = (data: NormalizedTableData[], filename: string) => {
     // Convert to original TableData format for export
@@ -606,7 +613,9 @@ const OrdersTable: React.FC = () => {
         onSelectAll={handleSelectAll}
         onFinishOrder={handleFinishOrder}
         onContextMenu={handleContextMenu}
-        onActionsMenuClick={handleActionsMenuClick} // Nueva prop
+        onActionsMenuClick={handleActionsMenuClick}
+        onAddFuelCost={handleAddFuelCost}
+        refreshCostFuelsTrigger={refreshCostFuelsTrigger}
       />
 
       {/* Context Menu */}
@@ -763,8 +772,10 @@ const OrdersTable: React.FC = () => {
         orderKey={selectedOrderForFuel?.id || ''}
         orderRef={selectedOrderForFuel?.key_ref || ''}
         onSuccess={() => {
-          // Recargar datos después de asignar la orden
-          loadData();
+          // Refrescar solo los costFuels de esta orden específica
+          if (selectedOrderForFuel) {
+            handleRefreshCostFuels(selectedOrderForFuel.id);
+          }
         }}
       />
     </Box>
