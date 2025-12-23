@@ -34,7 +34,7 @@ const getWeekRange = (year: number, week: number): { start: string; end: string 
   };
 };
 
-const StatementsTable: React.FC = () => {
+const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[]) => void }> = ({ onVerifyRecords }) => {
   // State
   const [data, setData] = useState<StatementRecord[]>([]);
   const [filteredData, setFilteredData] = useState<StatementRecord[]>([]);
@@ -54,10 +54,8 @@ const StatementsTable: React.FC = () => {
   
   const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
   
-  // Filters
-  const [stateFilter, setStateFilter] = useState<string>('');
-  const [shipperFilter, setShipperFilter] = useState<string>('');
-  const [companyFilter, setCompanyFilter] = useState<string>('');
+  // Search filter
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Hooks
   const { enqueueSnackbar } = useSnackbar();
@@ -98,30 +96,20 @@ const StatementsTable: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Filter data based on local filters
+  // Filter data based on search query
   useEffect(() => {
     let filtered = [...data];
     
-    if (stateFilter) {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter((item) => 
-        item.state && item.state.toLowerCase().includes(stateFilter.toLowerCase())
-      );
-    }
-    
-    if (shipperFilter) {
-      filtered = filtered.filter((item) => 
-        item.shipper_name && item.shipper_name.toLowerCase().includes(shipperFilter.toLowerCase())
-      );
-    }
-    
-    if (companyFilter) {
-      filtered = filtered.filter((item) => 
-        item.company && item.company.toLowerCase().includes(companyFilter.toLowerCase())
+        (item.keyref && item.keyref.toLowerCase().includes(query)) ||
+        (item.shipper_name && item.shipper_name.toLowerCase().includes(query))
       );
     }
     
     setFilteredData(filtered);
-  }, [data, stateFilter, shipperFilter, companyFilter]);
+  }, [data, searchQuery]);
 
   // Event handlers
   const handlePageChange = (newPage: number) => {
@@ -171,14 +159,10 @@ const StatementsTable: React.FC = () => {
         week={week}
         year={year}
         weekRange={weekRange}
-        stateFilter={stateFilter}
-        shipperFilter={shipperFilter}
-        companyFilter={companyFilter}
+        searchQuery={searchQuery}
         onWeekChange={setWeek}
         onYearChange={setYear}
-        onStateFilterChange={setStateFilter}
-        onShipperFilterChange={setShipperFilter}
-        onCompanyFilterChange={setCompanyFilter}
+        onSearchQueryChange={setSearchQuery}
         weekSummary={weekSummary}
         totalRecords={totalRows}
       />
@@ -190,6 +174,7 @@ const StatementsTable: React.FC = () => {
         onExportExcel={handleExportExcel}
         onExportPDF={handleExportPDF}
         onRefresh={loadData}
+        onVerifyRecords={onVerifyRecords}
       />
 
       {/* Data Table */}

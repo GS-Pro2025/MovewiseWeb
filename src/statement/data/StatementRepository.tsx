@@ -98,7 +98,124 @@ export async function updateStatementState(
   }
 }
 
+/**
+ * Verify Statement Records by checking if they have matching Orders
+ * POST {{BASE_URL_API}}/statements/verify/
+ * Note: company_id is automatically extracted from JWT token
+ */
+export async function verifyStatementRecords(
+  statementRecordIds: number[]
+): Promise<any> {
+  const url = `${BASE_URL_API}/statements/verify/`;
+
+  try {
+    const res = await fetchWithAuth(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        statement_record_ids: statementRecordIds,
+      }),
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      throw new Error('Session expired');
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Failed to verify statements: ${res.status} ${res.statusText} ${txt}`);
+    }
+
+    const payload = await res.json().catch(() => null);
+    return payload;
+  } catch (error) {
+    console.error('Error verifying statements:', error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Bulk update Statement Record states
+ * POST {{BASE_URL_API}}/statements/bulk-update-state/
+ */
+export async function bulkUpdateStatementStates(
+  updates: Array<{ statement_record_id: number; new_state: string }>
+): Promise<any> {
+  const url = `${BASE_URL_API}/statements/bulk-update-state/`;
+
+  try {
+    const res = await fetchWithAuth(url, {
+      method: 'POST',
+      body: JSON.stringify({ updates }),
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      throw new Error('Session expired');
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Failed to update states: ${res.status} ${res.statusText} ${txt}`);
+    }
+
+    const payload = await res.json().catch(() => null);
+    return payload;
+  } catch (error) {
+    console.error('Error updating statement states:', error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * Apply Statement amounts to Orders
+ * POST {{BASE_URL_API}}/statements/apply-to-orders/
+ * Note: company_id is automatically extracted from JWT token
+ */
+export async function applyStatementToOrders(
+  statementRecordId: number,
+  action: 'auto' | 'overwrite' | 'add',
+  orderIds?: string[]
+): Promise<any> {
+  const url = `${BASE_URL_API}/statements/apply-to-orders/`;
+
+  try {
+    const body: any = {
+      statement_record_id: statementRecordId,
+      action: action,
+    };
+
+    if (orderIds && orderIds.length > 0) {
+      body.order_ids = orderIds;
+    }
+
+    const res = await fetchWithAuth(url, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      throw new Error('Session expired');
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Failed to apply statement to orders: ${res.status} ${res.statusText} ${txt}`);
+    }
+
+    const payload = await res.json().catch(() => null);
+    return payload;
+  } catch (error) {
+    console.error('Error applying statement to orders:', error);
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
 export default {
   fetchStatementsByWeek,
   updateStatementState,
+  verifyStatementRecords,
+  bulkUpdateStatementStates,
+  applyStatementToOrders,
 };

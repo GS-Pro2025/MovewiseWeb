@@ -7,14 +7,10 @@ interface StatementFiltersProps {
   week: number;
   year: number;
   weekRange: { start: string; end: string };
-  stateFilter: string;
-  shipperFilter: string;
-  companyFilter: string;
+  searchQuery: string;
   onWeekChange: (week: number) => void;
   onYearChange: (year: number) => void;
-  onStateFilterChange: (state: string) => void;
-  onShipperFilterChange: (shipper: string) => void;
-  onCompanyFilterChange: (company: string) => void;
+  onSearchQueryChange: (query: string) => void;
   weekSummary: WeekSummary | null;
   totalRecords: number;
 }
@@ -32,14 +28,10 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
   week,
   year,
   weekRange,
-  stateFilter,
-  shipperFilter,
-  companyFilter,
+  searchQuery,
   onWeekChange,
   onYearChange,
-  onStateFilterChange,
-  onShipperFilterChange,
-  onCompanyFilterChange,
+  onSearchQueryChange,
   weekSummary,
   totalRecords
 }) => {
@@ -138,72 +130,33 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
 
       <div className="border-t my-3" style={{ borderColor: COLORS.primary }}></div>
 
-      {/* Filters */}
+      {/* Search Bar */}
       <div className="flex items-center gap-2 mb-2">
         <Filter size={14} className="flex-shrink-0" style={{ color: COLORS.primary }} />
-        <h4 className="text-xs sm:text-sm font-bold" style={{ color: COLORS.primary }}>Filters</h4>
+        <h4 className="text-xs sm:text-sm font-bold" style={{ color: COLORS.primary }}>Search</h4>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-        <div className="w-full">
-          <label className="block text-xs font-bold mb-1 truncate" style={{ color: COLORS.primary }}>
-            Filter by State
-          </label>
-          <input
-            type="text"
-            value={stateFilter}
-            onChange={(e) => onStateFilterChange(e.target.value)}
-            placeholder="Enter state..."
-            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{ borderColor: COLORS.primary }}
-            onFocus={(e) => {
-              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-            }}
-            onBlur={(e) => {
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
-        
-        <div className="w-full">
-          <label className="block text-xs font-bold mb-1 truncate" style={{ color: COLORS.primary }}>
-            Filter by Shipper
-          </label>
-          <input
-            type="text"
-            value={shipperFilter}
-            onChange={(e) => onShipperFilterChange(e.target.value)}
-            placeholder="Enter shipper name..."
-            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{ borderColor: COLORS.primary }}
-            onFocus={(e) => {
-              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-            }}
-            onBlur={(e) => {
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
-        
-        <div className="w-full">
-          <label className="block text-xs font-bold mb-1 truncate" style={{ color: COLORS.primary }}>
-            Filter by Company
-          </label>
-          <input
-            type="text"
-            value={companyFilter}
-            onChange={(e) => onCompanyFilterChange(e.target.value)}
-            placeholder="Enter company name..."
-            className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{ borderColor: COLORS.primary }}
-            onFocus={(e) => {
-              e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-            }}
-            onBlur={(e) => {
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
+      <div className="w-full mb-3">
+        <label className="block text-xs font-bold mb-1" style={{ color: COLORS.primary }}>
+          Search by Key Ref or Shipper
+        </label>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
+          placeholder="Enter key ref or shipper name..."
+          className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
+          style={{ borderColor: COLORS.primary }}
+          onFocus={(e) => {
+            e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+          }}
+          onBlur={(e) => {
+            e.target.style.boxShadow = 'none';
+          }}
+        />
+        <p className="text-xs mt-1" style={{ color: COLORS.gray }}>
+          Type to search across key references and shipper names
+        </p>
       </div>
 
       <div className="border-t my-3" style={{ borderColor: COLORS.primary }}></div>

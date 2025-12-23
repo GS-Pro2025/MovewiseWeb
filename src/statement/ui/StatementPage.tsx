@@ -4,7 +4,12 @@ import { Box, Container, Typography } from '@mui/material';
 import StatementsTable from './StatementsList';
 import OCRUploadDialog from '../../financials/ui/OCRUploadDialog';
 import DocaiResultDialog from '../../financials/ui/DocaiResultDialog';
+import VerificationResultsDialog from './VerificationResultsDialog';
+import BulkUpdateDialog from './BulkUpdateDialog';
+import ApplyToOrdersDialog from './ApplyToOrdersDialog';
 import { processDocaiStatement, ProcessMode, DocaiProcessResult } from '../../financials/data/repositoryDOCAI';
+import { verifyStatementRecords, bulkUpdateStatementStates, applyStatementToOrders } from '../data/StatementRepository';
+import { VerifyStatementRecordsResponse, BulkUpdateStatementResponse, StatementRecord, VerificationItem, ApplyToOrdersResponse } from '../domain/StatementModels';
 import { useSnackbar } from 'notistack';
 
 // Helper: devuelve número de semana ISO (1..53)
@@ -27,6 +32,22 @@ const StatementPage: React.FC = () => {
   const [ocrStep, setOcrStep] = useState<string>('Setting data');
   const [docaiDialogOpen, setDocaiDialogOpen] = useState(false);
   const [docaiDialogResult, setDocaiDialogResult] = useState<any>(null);
+
+  // Verification & Update states
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  const [verificationData, setVerificationData] = useState<VerifyStatementRecordsResponse | null>(null);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  
+  const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
+  const [bulkUpdateData, setBulkUpdateData] = useState<BulkUpdateStatementResponse | null>(null);
+  const [bulkUpdateLoading, setBulkUpdateLoading] = useState(false);
+  const [pendingUpdates, setPendingUpdates] = useState<Array<{ statement_record_id: number; new_state: string }>>([]);
+
+  // Apply to Orders states
+  const [applyToOrdersDialogOpen, setApplyToOrdersDialogOpen] = useState(false);
+  const [currentVerification, setCurrentVerification] = useState<VerificationItem | null>(null);
+  const [applyToOrdersLoading, setApplyToOrdersLoading] = useState(false);
+  const [applyToOrdersResult, setApplyToOrdersResult] = useState<ApplyToOrdersResponse | null>(null);
 
   // Handler to start processing OCR files (keeps behavior consistent with FinancialView)
   const handleOcrUpload = async (processMode: ProcessMode = 'full_process', targetWeek?: number, targetYear?: number) => {
@@ -119,6 +140,108 @@ const StatementPage: React.FC = () => {
     setOcrResults([]);
   };
 
+  // Verification Handler
+  const handleVerifyRecords = async (selectedRecords: StatementRecord[]) => {
+    if (selectedRecords.length === 0) {
+      enqueueSnackbar('Please select at least one record to verify', { variant: 'warning' });
+      return;
+    }
+
+    setVerificationLoading(true);
+    try {
+      const recordIds = selectedRecords.map(r => r.id);
+      // Company ID is automatically extracted from JWT token
+      const result = await verifyStatementRecords(recordIds);
+      setVerificationData(result);
+      setVerificationDialogOpen(true);
+      
+      // Show warning if some IDs were not found
+      if (result.warning) {
+        enqueueSnackbar(`${result.warning} - Missing IDs: ${result.missing_ids?.join(', ')}`, { variant: 'warning' });
+      }
+      
+      enqueueSnackbar(`Verified ${result.total_records} records`, { variant: 'success' });
+    } catch (error: any) {
+      enqueueSnackbar(`Verification failed: ${error.message}`, { variant: 'error' });
+      console.error('Verification error:', error);
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  // Handle Apply Changes from Verification Dialog
+  const handleApplyChanges = (updates: Array<{ statement_record_id: number; new_state: string }>) => {
+    setPendingUpdates(updates);
+    setVerificationDialogOpen(false);
+    setBulkUpdateDialogOpen(true);
+    setBulkUpdateData(null); // Clear previous results
+  };
+
+  // Handle Bulk Update Confirmation
+  const handleConfirmBulkUpdate = async () => {
+    if (pendingUpdates.length === 0) {
+      enqueueSnackbar('No updates to apply', { variant: 'warning' });
+      return;
+    }
+
+    setBulkUpdateLoading(true);
+    try {
+      const result = await bulkUpdateStatementStates(pendingUpdates);
+      setBulkUpdateData(result);
+      enqueueSnackbar(
+        `Updated ${result.successful_updates}/${result.total_updates} records`,
+        { variant: result.failed_updates === 0 ? 'success' : 'warning' }
+      );
+    } catch (error: any) {
+      enqueueSnackbar(`Update failed: ${error.message}`, { variant: 'error' });
+      console.error('Update error:', error);
+    } finally {
+      setBulkUpdateLoading(false);
+      setPendingUpdates([]);
+    }
+  };
+
+  const handleBulkUpdateClose = () => {
+    setBulkUpdateDialogOpen(false);
+    setBulkUpdateData(null);
+    setPendingUpdates([]);
+  };
+
+  // Apply to Orders Handlers
+  const handleApplyToOrders = (verification: VerificationItem) => {
+    setCurrentVerification(verification);
+    setApplyToOrdersResult(null);
+    setApplyToOrdersDialogOpen(true);
+  };
+
+  const handleConfirmApplyToOrders = async (action: 'auto' | 'overwrite' | 'add') => {
+    if (!currentVerification) return;
+
+    setApplyToOrdersLoading(true);
+    try {
+      const result = await applyStatementToOrders(
+        currentVerification.statement_record_id,
+        action
+      );
+      setApplyToOrdersResult(result);
+      enqueueSnackbar(
+        `Applied to ${result.orders_updated} order(s), ${result.orders_skipped} skipped`,
+        { variant: result.orders_failed > 0 ? 'warning' : 'success' }
+      );
+    } catch (error: any) {
+      enqueueSnackbar(`Failed to apply: ${error.message}`, { variant: 'error' });
+      console.error('Apply to orders error:', error);
+    } finally {
+      setApplyToOrdersLoading(false);
+    }
+  };
+
+  const handleApplyToOrdersClose = () => {
+    setApplyToOrdersDialogOpen(false);
+    setCurrentVerification(null);
+    setApplyToOrdersResult(null);
+  };
+
   return (
     <Container maxWidth={false} sx={{ py: 3 }}>
       <Box sx={{
@@ -152,7 +275,7 @@ const StatementPage: React.FC = () => {
           </div>
         </div>
 
-        <StatementsTable />
+        <StatementsTable onVerifyRecords={handleVerifyRecords} />
 
         {/* OCR dialogs reused from financials */}
         <OCRUploadDialog
@@ -175,6 +298,39 @@ const StatementPage: React.FC = () => {
           open={docaiDialogOpen}
           onClose={handleDocaiDialogClose}
           result={docaiDialogResult}
+        />
+
+        {/* Verification Dialog */}
+        <VerificationResultsDialog
+          open={verificationDialogOpen}
+          onClose={() => {
+            setVerificationDialogOpen(false);
+            setVerificationData(null);
+          }}
+          onApplyChanges={handleApplyChanges}
+          onApplyToOrders={handleApplyToOrders}
+          verificationData={verificationData}
+          loading={verificationLoading}
+        />
+
+        {/* Bulk Update Dialog */}
+        <BulkUpdateDialog
+          open={bulkUpdateDialogOpen}
+          onClose={handleBulkUpdateClose}
+          onConfirm={handleConfirmBulkUpdate}
+          updateData={bulkUpdateData}
+          loading={bulkUpdateLoading}
+          isProcessing={bulkUpdateLoading}
+        />
+
+        {/* Apply to Orders Dialog */}
+        <ApplyToOrdersDialog
+          open={applyToOrdersDialogOpen}
+          onClose={handleApplyToOrdersClose}
+          onApply={handleConfirmApplyToOrders}
+          verification={currentVerification}
+          loading={applyToOrdersLoading}
+          applyResult={applyToOrdersResult}
         />
       </Box>
     </Container>
