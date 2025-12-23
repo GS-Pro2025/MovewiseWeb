@@ -4,8 +4,9 @@ import {
   Button,
   Typography,
   Chip,
+  Tooltip,
 } from '@mui/material';
-import { FileSpreadsheet, FileText, RefreshCw } from 'lucide-react';
+import { FileSpreadsheet, FileText, RefreshCw, CheckCircle } from 'lucide-react';
 import { StatementRecord } from '../domain/StatementModels';
 
 interface StatementToolbarProps {
@@ -14,6 +15,7 @@ interface StatementToolbarProps {
   onExportExcel: (data: StatementRecord[], filename: string) => void;
   onExportPDF: (data: StatementRecord[], filename: string) => void;
   onRefresh: () => void;
+  onVerifyRecords?: (records: StatementRecord[]) => void;
 }
 
 export const StatementToolbar: React.FC<StatementToolbarProps> = ({
@@ -21,7 +23,8 @@ export const StatementToolbar: React.FC<StatementToolbarProps> = ({
   selectedRows,
   onExportExcel,
   onExportPDF,
-  onRefresh
+  onRefresh,
+  onVerifyRecords
 }) => {
   const handleExportExcel = () => {
     const exportData = selectedRows.length > 0 ? selectedRows : data;
@@ -33,6 +36,13 @@ export const StatementToolbar: React.FC<StatementToolbarProps> = ({
     const exportData = selectedRows.length > 0 ? selectedRows : data;
     const filename = `statements_export_${new Date().toISOString().split('T')[0]}.pdf`;
     onExportPDF(exportData, filename);
+  };
+
+  const handleVerify = () => {
+    if (onVerifyRecords && selectedRows.length > 0) {
+      // Company ID is automatically extracted from JWT token
+      onVerifyRecords(selectedRows);
+    }
   };
 
   return (
@@ -68,6 +78,27 @@ export const StatementToolbar: React.FC<StatementToolbarProps> = ({
       </Box>
 
       <Box sx={{ display: 'flex', gap: 1 }}>
+        {onVerifyRecords && (
+          <Tooltip
+            title={selectedRows.length === 0 ? 'Please select at least one statement record to verify' : 'Verify selected records against existing orders'}
+            arrow
+            placement="top"
+          >
+            <span>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<CheckCircle size={16} />}
+                onClick={handleVerify}
+                disabled={selectedRows.length === 0}
+                sx={{ minWidth: '140px', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' }}
+              >
+                Verify Records
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+        
         <Button
           variant="outlined"
           size="small"
