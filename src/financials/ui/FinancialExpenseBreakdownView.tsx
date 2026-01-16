@@ -125,12 +125,14 @@ const FinancialExpenseBreakdownView = () => {
   useEffect(() => {
     const newMaxWeeks = getMaxWeeksInYear(year);
     setMaxWeeks(newMaxWeeks);
-    
+  
     const currentWeekInYear = getCurrentWeekInYear(year);
-    setEndWeek(prev => Math.min(prev, newMaxWeeks));
+    setEndWeek(Math.min(currentWeekInYear, newMaxWeeks));
+  
     setStartWeek(1);
     setSelectedTimelapse(null);
   }, [year, currentYear]);
+  
 
   // Actualizar data cuando cambian startWeek o endWeek
   useEffect(() => {
