@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { processDocaiStatement, ProcessMode } from "../data/repositoryDOCAI";
@@ -10,6 +9,7 @@ import { enqueueSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
 import { OCRResult, SuperOrder } from "../domain/ModelsOCR";
 import { BarChart3 } from "lucide-react";
+import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 
 // Imported Components
 import FinancialSummaryCards from "./FinancialSummaryCards";
@@ -42,8 +42,6 @@ const FinancialView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page] = useState(0);
-  const [rowCount, setRowCount] = useState(0);
-  console.log("rowCount", rowCount);
 
   // Week and year controls
   const [week, setWeek] = useState<number>(() => {
@@ -135,7 +133,7 @@ const FinancialView = () => {
     try {
       const result = await repository.getSummaryCost(pageNumber, week, year);
       setData(result.results);
-      setRowCount(result.count);
+      // Removido rowCount ya que no se usa
     } catch (err: any) {
       setError(err.message || "Error loading data");
     } finally {
@@ -488,57 +486,30 @@ const FinancialView = () => {
   };
 
   return (
-    <Box 
-      p={{ xs: 1, sm: 2, md: 3 }} 
-      sx={{ 
-        backgroundColor: '#f8fafc', 
-        minHeight: '100vh',
-        width: '100%',
-        overflowX: 'hidden'
-      }}
-    >
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
       {/* Header */}
-      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+      <div className="mb-4 sm:mb-6 md:mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
           <BarChart3 
-            size={window.innerWidth < 768 ? 32 : 40} 
-            style={{ color: '#667eea' }}
+            size={32} 
+            className="sm:w-10 sm:h-10 text-purple-600"
           />
-          <Typography 
-            variant={window.innerWidth < 768 ? "h5" : "h4"} 
-            gutterBottom 
-            sx={{ 
-              fontWeight: 700, 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent',
-              margin: 0,
-              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
-            }}
-          >
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent m-0">
             Financial Summary
-          </Typography>
+          </h1>
         </div>
-        <Typography 
-          variant="body1" 
-          color="textSecondary"
-          sx={{
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            px: { xs: 1, sm: 0 }
-          }}
-        >
+        <p className="text-gray-600 text-sm sm:text-base px-1 sm:px-0">
           Track your financial performance with detailed insights and analytics
-        </Typography>
-      </Box>
+        </p>
+      </div>
 
       {/* Summary Cards - Responsive */}
-      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+      <div className="mb-4 sm:mb-6 md:mb-8">
         <FinancialSummaryCards summary={totalSummary} />
-      </Box>
+      </div>
 
       {/* Controls - Responsive */}
-      <Box sx={{ mb: { xs: 2, md: 4 } }}>
+      <div className="mb-4 sm:mb-6 md:mb-8">
         <FinancialControls
           week={week}
           onWeekChange={handleWeekChange}
@@ -558,30 +529,17 @@ const FinancialView = () => {
           loading={loading}
           onViewExpenseBreakdown={() => navigate("/app/financial-expense-breakdown")}
         />
-      </Box>
+      </div>
 
       {/* Main Content - Responsive */}
       {loading ? (
-        <Box 
-          display="flex" 
-          justifyContent="center" 
-          alignItems="center" 
-          minHeight={{ xs: 200, md: 400 }}
-          px={{ xs: 2, sm: 0 }}
-        >
-          <CircularProgress size={window.innerWidth < 768 ? 40 : 60} sx={{ color: '#667eea' }} />
-        </Box>
+        <div className="flex justify-center items-center min-h-48 sm:min-h-64 md:min-h-80 px-2 sm:px-0">
+          <LoaderSpinner  />
+        </div>
       ) : error ? (
-        <Alert 
-          severity="error" 
-          sx={{ 
-            borderRadius: 4,
-            mx: { xs: 1, sm: 0 },
-            fontSize: { xs: '0.875rem', sm: '1rem' }
-          }}
-        >
+        <div className="bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 sm:px-6 sm:py-4 rounded-lg text-sm sm:text-base">
           {error}
-        </Alert>
+        </div>
       ) : (
         <FinancialTable
           data={currentExportData}
@@ -650,7 +608,7 @@ const FinancialView = () => {
         }}
         onConfirm={handleConfirmAddAmount}
       />
-    </Box>
+    </div>
   );
 };
 

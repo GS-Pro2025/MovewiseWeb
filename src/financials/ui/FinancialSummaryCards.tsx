@@ -1,14 +1,12 @@
 // components/FinancialSummaryCards.tsx
 import React from 'react';
 import { Typography } from '@mui/material';
-import { 
-  DollarSign, 
-  TrendingDown, 
-  TrendingUp, 
+import {
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
   TrendingDown as Loss,
   FileText,
-  CheckCircle,
-  Clock
 } from 'lucide-react';
 
 interface FinancialSummary {
@@ -25,177 +23,80 @@ interface FinancialSummaryCardsProps {
 
 const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ summary }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {/* Total Income Card */}
-      <div 
-        className="rounded-2xl shadow-lg border-2 transform hover:scale-105 transition-all duration-300"
-        style={{ 
-          background: 'linear-gradient(135deg, #0B2863 0%, #1e40af 100%)',
-          borderColor: '#0B2863'
-        }}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <DollarSign size={32} style={{ color: '#FFE67B' }} />
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(255, 230, 123, 0.2)' }}
-            >
-              <DollarSign size={20} style={{ color: '#FFE67B' }} />
-            </div>
-          </div>
-          <Typography variant="h6" className="!text-white !font-semibold !mb-2">
-            Total Income
-          </Typography>
-          <Typography variant="h3" className="!text-white !font-bold">
-            ${summary.totalIncome.toLocaleString()}
-          </Typography>
-          <div className="mt-3 text-sm opacity-90 text-white">
-            Revenue generated
-          </div>
-        </div>
-      </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
 
-      {/* Total Cost Card */}
-      <div 
-        className="rounded-2xl shadow-lg border-2 transform hover:scale-105 transition-all duration-300"
-        style={{ 
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          borderColor: '#ef4444'
-        }}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <TrendingDown size={32} style={{ color: 'white' }} />
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            >
-              <TrendingDown size={20} style={{ color: 'white' }} />
-            </div>
-          </div>
-          <Typography variant="h6" className="!text-white !font-semibold !mb-2">
-            Total Cost
-          </Typography>
-          <Typography variant="h3" className="!text-white !font-bold">
-            ${summary.totalCost.toLocaleString()}
-          </Typography>
-          <div className="mt-3 text-sm opacity-90 text-white">
-            Total expenses
-          </div>
-        </div>
-      </div>
+      {/* Income */}
+      <MiniCard
+        label="Income"
+        value={`$${summary.totalIncome.toLocaleString()}`}
+        color="text-blue-700"
+        icon={<DollarSign size={16} />}
+      />
 
-      {/* Net Profit Card */}
-      <div 
-        className="rounded-2xl shadow-lg border-2 transform hover:scale-105 transition-all duration-300"
-        style={{ 
-          background: summary.totalProfit >= 0 
-            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-            : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          borderColor: summary.totalProfit >= 0 ? '#22c55e' : '#ef4444'
-        }}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            {summary.totalProfit >= 0 ? (
-              <TrendingUp size={32} style={{ color: 'white' }} />
-            ) : (
-              <Loss size={32} style={{ color: 'white' }} />
-            )}
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            >
-              {summary.totalProfit >= 0 ? (
-                <TrendingUp size={20} style={{ color: 'white' }} />
-              ) : (
-                <Loss size={20} style={{ color: 'white' }} />
-              )}
-            </div>
-          </div>
-          <Typography variant="h6" className="!text-white !font-semibold !mb-2">
-            Net Profit
-          </Typography>
-          <Typography variant="h3" className="!text-white !font-bold">
-            ${summary.totalProfit.toLocaleString()}
-          </Typography>
-          <div className="mt-3 text-sm opacity-90 text-white">
-            {summary.totalProfit >= 0 ? 'Profit margin' : 'Loss amount'}
-          </div>
-        </div>
-      </div>
+      {/* Cost */}
+      <MiniCard
+        label="Cost"
+        value={`$${summary.totalCost.toLocaleString()}`}
+        color="text-red-600"
+        icon={<TrendingDown size={16} />}
+      />
 
-      {/* Orders Status Card */}
-      <div 
-        className="rounded-2xl shadow-lg border-2 transform hover:scale-105 transition-all duration-300"
-        style={{ 
-          background: 'linear-gradient(135deg, #FFE67B 0%, #fbbf24 100%)',
-          borderColor: '#FFE67B'
-        }}
-      >
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <FileText size={32} style={{ color: '#0B2863' }} />
-            <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(11, 40, 99, 0.1)' }}
-            >
-              <FileText size={20} style={{ color: '#0B2863' }} />
-            </div>
-          </div>
-          <Typography 
-            variant="h6" 
-            className="!font-semibold !mb-4"
-            style={{ color: '#0B2863' }}
-          >
-            Orders Status
-          </Typography>
-          
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span 
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white bg-green-500 gap-1"
-              >
-                <CheckCircle size={16} />
-                {summary.paidOrders} Paid
-              </span>
-              <span className="text-lg font-bold" style={{ color: '#0B2863' }}>
-                {summary.paidOrders}
-              </span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span 
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border-2 gap-1"
-                style={{ 
-                  color: '#0B2863',
-                  borderColor: '#0B2863',
-                  backgroundColor: 'rgba(11, 40, 99, 0.1)'
-                }}
-              >
-                <Clock size={16} />
-                {summary.unpaidOrders} Unpaid
-              </span>
-              <span className="text-lg font-bold" style={{ color: '#0B2863' }}>
-                {summary.unpaidOrders}
-              </span>
-            </div>
-          </div>
-          
-          <div className="mt-4 pt-3 border-t" style={{ borderColor: 'rgba(11, 40, 99, 0.2)' }}>
-            <Typography 
-              variant="caption" 
-              className="!font-medium"
-              style={{ color: '#0B2863' }}
-            >
-              Total: {summary.paidOrders + summary.unpaidOrders} orders
-            </Typography>
-          </div>
-        </div>
-      </div>
+      {/* Profit */}
+      <MiniCard
+        label="Profit"
+        value={`$${summary.totalProfit.toLocaleString()}`}
+        color={summary.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}
+        icon={summary.totalProfit >= 0 ? <TrendingUp size={16} /> : <Loss size={16} />}
+      />
+
+      {/* Paid Orders */}
+      <MiniCard
+        label="Paid"
+        value={summary.paidOrders}
+        color="text-green-700"
+        icon={<FileText size={16} />}
+      />
+
+      {/* Unpaid Orders */}
+      <MiniCard
+        label="Unpaid"
+        value={summary.unpaidOrders}
+        color="text-gray-600"
+        icon={<FileText size={16} />}
+      />
     </div>
   );
 };
+
+interface MiniCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const MiniCard: React.FC<MiniCardProps> = ({ label, value, icon, color }) => (
+  <div className="border rounded-lg px-3 py-2 flex items-center justify-between">
+    <div>
+      <Typography
+        variant="caption"
+        className="!text-xs !font-medium text-gray-500 uppercase"
+      >
+        {label}
+      </Typography>
+
+      <Typography
+        variant="body1"
+        className={`!font-semibold ${color}`}
+      >
+        {value}
+      </Typography>
+    </div>
+
+    <div className={`${color} opacity-80`}>
+      {icon}
+    </div>
+  </div>
+);
 
 export default FinancialSummaryCards;

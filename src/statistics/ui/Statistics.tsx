@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import StatsComparisonCard from "./components/StatsComparisonCard";
+import { useState, useEffect, useCallback } from "react";
 import TruckStatistics from "./TruckStatistics";
-import PaymentStatusChart from "./components/PaymentStatusChart";
+import PaymentStatusChart from "./components/WeeklyFinancialSummary";
 import PaidUnpaidWeekRangeChart from "./components/PaidUnpaidWeekRangeChart";
 import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import {
@@ -10,28 +9,22 @@ import {
   fetchClientStatsWithComparison,
   fetchOrdersBasicDataList,
 } from "../data/repositoryStatistics";
-import { OrdersCountStats } from "../domain/OrdersCountModel";
 import { PaymentStatusComparison } from "../domain/PaymentStatusModels";
-import { ClientStatsComparison } from "../domain/OrdersWithClientModels";
-import { OrdersBasicDataResponse } from "../domain/BasicOrdersDataModels";
 import PayrollStatistics from "./PayrollStatistics";
-import { useNavigate } from "react-router-dom";
 import HistoricalAnalysis from "./HistoricalAnalysis";
-import FinancialView from "../../financials/ui/FinancialView"; 
-import IncomeCalculator from './components/IncomeCalculator';
+import FinancialView from "../../financials/ui/FinancialView";
+import IncomeCalculator from "./components/IncomeCalculator";
 import FinancialExpenseBreakdownView from "../../financials/ui/FinancialExpenseBreakdownView";
 import { useTranslation } from "react-i18next";
-import WeekPicker from "../../components/WeekPicker";
 
 interface StatItem {
   label: string;
   value: string | number;
   change: number;
   icon: string;
-  color: "blue" | "green" | "orange" | "red";
+  color: "blue" | "green" | "orange" | "red" | "purple";
 }
 
-// Service to get available years from 2015 to current year + 1
 const getAvailableYearsFromService = (): number[] => {
   const currentYear = new Date().getFullYear();
   const startYear = 2015;
@@ -42,16 +35,14 @@ const getAvailableYearsFromService = (): number[] => {
     years.push(i);
   }
 
-  return years; // Most recent first
+  return years;
 };
 
 const Statistics = () => {
   const { i18n } = useTranslation();
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const [activeSection, setActiveSection] = useState<
     "overview" | "trucks" | "payroll" | "historical" | "financials" | "expenseBreakdown"
@@ -66,85 +57,38 @@ const Statistics = () => {
     return new Date().getFullYear();
   });
 
-  // Mobile menu ref (week dropdown handled by WeekPicker)
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-  // Available years from service
   const [availableYears, setAvailableYears] = useState<number[]>([]);
-
   const [statsData, setStatsData] = useState<StatItem[]>([]);
 
-  const [ordersCountStats, setOrdersCountStats] =
-    useState<OrdersCountStats | null>(null);
-  const [paymentStatusData, setPaymentStatusData] =
-    useState<PaymentStatusComparison>({
-      currentStats: {
-        totalOrders: 0,
-        paidOrders: 0,
-        unpaidOrders: 0,
-        paidPercentage: 0,
-        unpaidPercentage: 0,
-        totalIncome: 0,
-        paidIncome: 0,
-        unpaidIncome: 0,
-      },
-      previousStats: {
-        totalOrders: 0,
-        paidOrders: 0,
-        unpaidOrders: 0,
-        paidPercentage: 0,
-        unpaidPercentage: 0,
-        totalIncome: 0,
-        paidIncome: 0,
-        unpaidIncome: 0,
-      },
-      changes: {
-        totalOrdersChange: 0,
-        paidOrdersChange: 0,
-        unpaidOrdersChange: 0,
-        paidPercentageChange: 0,
-      },
-    });
-
-  const [clientStats, setClientStats] = useState<ClientStatsComparison>({
+  const [paymentStatusData, setPaymentStatusData] = useState<PaymentStatusComparison>({
     currentStats: {
-      totalClients: 0,
-      activeClients: 0,
-      totalFactories: 0,
-      activeFactories: 0,
-      topClients: [],
-      topFactories: [],
       totalOrders: 0,
-      averageOrdersPerClient: 0,
-      averageOrdersPerFactory: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+      paidPercentage: 0,
+      unpaidPercentage: 0,
+      totalIncome: 0,
+      paidIncome: 0,
+      unpaidIncome: 0,
     },
     previousStats: {
-      totalClients: 0,
-      activeClients: 0,
-      totalFactories: 0,
-      activeFactories: 0,
-      topClients: [],
-      topFactories: [],
       totalOrders: 0,
-      averageOrdersPerClient: 0,
-      averageOrdersPerFactory: 0,
+      paidOrders: 0,
+      unpaidOrders: 0,
+      paidPercentage: 0,
+      unpaidPercentage: 0,
+      totalIncome: 0,
+      paidIncome: 0,
+      unpaidIncome: 0,
     },
     changes: {
-      totalClientsChange: 0,
-      activeClientsChange: 0,
-      totalFactoriesChange: 0,
       totalOrdersChange: 0,
+      paidOrdersChange: 0,
+      unpaidOrdersChange: 0,
+      paidPercentageChange: 0,
     },
   });
 
-  const [basicOrdersData, setBasicOrdersData] =
-    useState<OrdersBasicDataResponse | null>(null);
-
-  console.log("Orders Count Stats:", ordersCountStats);
-  console.log("ClientStats", clientStats);
-  console.log("basicOrdersData", basicOrdersData);
-
-  // Load available years on component mount
   useEffect(() => {
     try {
       const years = getAvailableYearsFromService();
@@ -154,122 +98,8 @@ const Statistics = () => {
     }
   }, []);
 
-  // Custom scrollbar styles
-  useEffect(() => {
-    const styleId = "statistics-custom-styles";
-
-    // Remove existing style if it exists
-    const existingStyle = document.getElementById(styleId);
-    if (existingStyle) {
-      existingStyle.remove();
-    }
-
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.textContent = `
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 10px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #a0aec0;
-      }
-      
-      .week-dropdown-container {
-        z-index: 40 !important;
-        position: relative;
-      }
-      
-      .week-dropdown {
-        z-index: 41 !important;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-      }
-
-      /* Mobile menu animation */
-      .mobile-menu-enter {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      
-      .mobile-menu-enter-active {
-        opacity: 1;
-        transform: translateY(0);
-        transition: opacity 200ms, transform 200ms;
-      }
-      
-      .mobile-menu-exit {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      
-      .mobile-menu-exit-active {
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: opacity 200ms, transform 200ms;
-      }
-
-      /* Responsive grid for stats */
-      @media (max-width: 640px) {
-        .stats-grid {
-          grid-template-columns: 1fr !important;
-        }
-      }
-
-      @media (min-width: 641px) and (max-width: 1024px) {
-        .stats-grid {
-          grid-template-columns: repeat(2, 1fr) !important;
-        }
-      }
-
-      /* Responsive week dropdown */
-      @media (max-width: 640px) {
-        .week-dropdown {
-          left: -50px;
-          right: -50px;
-          width: auto;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      const styleToRemove = document.getElementById(styleId);
-      if (styleToRemove) {
-        styleToRemove.remove();
-      }
-    };
-  }, []);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(event.target as Node)
-      ) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   function getWeekOfYear(date: Date): number {
-    const d = new Date(
-      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-    );
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getFullYear(), 0, 4));
@@ -282,9 +112,7 @@ const Statistics = () => {
     (year: number, week: number): { start: string; end: string } => {
       const firstDayOfYear = new Date(year, 0, 1);
       const daysOffset = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
-      const startDate = new Date(
-        firstDayOfYear.getTime() + daysOffset * 86400000
-      );
+      const startDate = new Date(firstDayOfYear.getTime() + daysOffset * 86400000);
       const endDate = new Date(startDate.getTime() + 6 * 86400000);
 
       return {
@@ -303,49 +131,29 @@ const Statistics = () => {
         setLoading(true);
         setError(null);
 
-        const weekRange = getWeekRange(year, week);
-        console.log(
-          "Loading statistics for week:",
-          week,
-          "year:",
-          year,
-          "range:",
-          weekRange
-        );
+        const { currentStats, comparison } = await fetchOrdersCountWithComparison(year, week);
 
-        const { currentStats, comparison } =
-          await fetchOrdersCountWithComparison(year, week);
-        setOrdersCountStats(currentStats);
+        await fetchOrdersBasicDataList(year, week);
 
-        const basicData = await fetchOrdersBasicDataList(year, week);
-        setBasicOrdersData(basicData);
-
-        const paymentComparison = await fetchPaymentStatusWithComparison(
-          year,
-          week
-        );
+        const paymentComparison = await fetchPaymentStatusWithComparison(year, week);
         setPaymentStatusData(paymentComparison);
 
-        const clientComparison = await fetchClientStatsWithComparison(
-          year,
-          week
-        );
-        setClientStats(clientComparison);
+        const clientComparison = await fetchClientStatsWithComparison(year, week);
 
         const realStatsData: StatItem[] = [
           {
-            label: "Total Orders (Week)",
+            label: "Total Orders",
             value: currentStats.totalOrders,
             change: comparison.totalOrdersChange,
             icon: "fa-box",
-            color: "green",
+            color: "blue",
           },
           {
             label: "Avg Orders/Day",
-            value: currentStats.averagePerDay,
+            value: currentStats.averagePerDay.toFixed(1),
             change: comparison.averagePerDayChange,
             icon: "fa-chart-line",
-            color: "blue",
+            color: "green",
           },
           {
             label: "Peak Day Orders",
@@ -355,21 +163,21 @@ const Statistics = () => {
             color: "orange",
           },
           {
-            label: "Active Days (Week)",
+            label: "Active Days",
             value: currentStats.daysWithOrders,
             change: comparison.activeDaysChange,
             icon: "fa-calendar-check",
-            color: "orange",
+            color: "purple",
           },
           {
-            label: "Unique Clients",
-            value: clientComparison.currentStats.totalClients,
-            change: clientComparison.changes.totalClientsChange,
+            label: "Active Clients",
+            value: clientComparison.currentStats.activeClients,
+            change: clientComparison.changes.activeClientsChange,
             icon: "fa-users",
             color: "blue",
           },
           {
-            label: "Customer Factories",
+            label: "Factories",
             value: clientComparison.currentStats.totalFactories,
             change: clientComparison.changes.totalFactoriesChange,
             icon: "fa-industry",
@@ -379,39 +187,35 @@ const Statistics = () => {
 
         setStatsData(realStatsData);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Error loading statistics"
-        );
+        setError(err instanceof Error ? err.message : "Error loading statistics");
         console.error("Error loading statistics:", err);
       } finally {
         setLoading(false);
       }
     },
-    [getWeekRange, activeSection]
+    [activeSection]
   );
-
-  const handleOrderCardClick = () => {
-    navigate(`/order-breakdown?year=${selectedYear}&week=${selectedWeek}`);
-  };
 
   useEffect(() => {
     loadStatistics(selectedWeek, selectedYear);
   }, [selectedWeek, selectedYear, loadStatistics]);
-
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const year = Number(e.target.value);
     setSelectedYear(year);
   };
 
+  const handleWeekChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const week = Number(e.target.value);
+    setSelectedWeek(week);
+  };
+
   const handleTabClick = (section: typeof activeSection) => {
     setActiveSection(section);
-    setIsMobileMenuOpen(false); // Close mobile menu when tab is selected
   };
 
   const weekRange = getWeekRange(selectedYear, selectedWeek);
 
-  // Styled Components
   const TabButton = ({
     active,
     onClick,
@@ -423,90 +227,65 @@ const Statistics = () => {
     icon: string;
     children: string;
   }) => {
-    const shortText = children.split(' ')[0];
-    
     return (
       <button
         onClick={onClick}
-        className={`px-3 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 text-sm sm:text-base ${
-          active ? "text-white shadow-lg" : "hover:shadow-md"
+        className={`px-3 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm ${
+          active ? "bg-blue-900 text-white shadow-md" : "bg-gray-100 text-blue-900 hover:bg-gray-200"
         }`}
-        style={{
-          backgroundColor: active ? "#0B2863" : "transparent",
-          color: active ? "#ffffff" : "#0B2863",
-        }}
-        onMouseEnter={(e) => {
-          if (!active) {
-            e.currentTarget.style.backgroundColor = "rgba(11, 40, 99, 0.1)";
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!active) {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }
-        }}
       >
-        <i className={`fas ${icon} text-xs sm:text-sm`}></i>
+        <i className={`fas ${icon} text-xs`}></i>
         <span className="hidden sm:inline">{children}</span>
-        <span className="sm:hidden">
-          {shortText}
-        </span>
+        <span className="sm:hidden">{children.split(" ")[0]}</span>
       </button>
     );
   };
 
-  const RefreshButton = () => (
-    <button
-      onClick={() => loadStatistics(selectedWeek, selectedYear)}
-      disabled={loading}
-      className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 border-2 hover:shadow-md disabled:opacity-50 text-sm"
-      style={{
-        color: "#0B2863",
-        borderColor: "#0B2863",
-        backgroundColor: "transparent",
-      }}
-      onMouseEnter={(e) => {
-        if (!loading) {
-          e.currentTarget.style.backgroundColor = "#0B2863";
-          e.currentTarget.style.color = "#ffffff";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!loading) {
-          e.currentTarget.style.backgroundColor = "transparent";
-          e.currentTarget.style.color = "#0B2863";
-        }
-      }}
-    >
-      <i className={`fas fa-sync-alt ${loading ? "animate-spin" : ""}`}></i>
-      <span className="hidden sm:inline">Refresh</span>
-    </button>
-  );
+  const StatCard = ({ stat }: { stat: StatItem }) => {
+    const colorMap = {
+      blue: { bg: "bg-blue-100", text: "text-blue-600", icon: "text-blue-600" },
+      green: { bg: "bg-green-100", text: "text-green-600", icon: "text-green-600" },
+      orange: { bg: "bg-orange-100", text: "text-orange-600", icon: "text-orange-600" },
+      red: { bg: "bg-red-100", text: "text-red-600", icon: "text-red-600" },
+      purple: { bg: "bg-purple-100", text: "text-purple-600", icon: "text-purple-600" },
+    };
+
+    const colors = colorMap[stat.color];
+
+    return (
+      <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer">
+        <div className="flex items-center justify-between mb-2">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center ${colors.bg}`}>
+            <i className={`fas ${stat.icon} ${colors.icon} text-sm`}></i>
+          </div>
+          {stat.change !== undefined && (
+            <span
+              className={`text-xs font-bold px-2 py-1 rounded ${
+                stat.change >= 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              }`}
+            >
+              {stat.change >= 0 ? "↑" : "↓"} {Math.abs(stat.change).toFixed(1)}%
+            </span>
+          )}
+        </div>
+        <div className="text-xl font-bold text-gray-800 mb-1">{stat.value}</div>
+        <div className="text-xs text-gray-600">{stat.label}</div>
+      </div>
+    );
+  };
 
   if (error && activeSection === "overview") {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: "#f8fafc" }}
-      >
-        <div
-          className="text-center p-6 sm:p-8 rounded-2xl border-2 shadow-lg max-w-md w-full"
-          style={{
-            backgroundColor: "#ffffff",
-            borderColor: "#ef4444",
-          }}
-        >
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <div className="text-center p-6 rounded-xl border-2 shadow-lg max-w-md w-full bg-white border-red-500">
           <div className="text-red-500 mb-4">
-            <i className="fas fa-exclamation-triangle text-4xl sm:text-5xl"></i>
+            <i className="fas fa-exclamation-triangle text-4xl"></i>
           </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-3" style={{ color: "#0B2863" }}>
-            Error Loading Statistics
-          </h3>
-          <p className="text-gray-600 mb-6 text-sm sm:text-base">{error}</p>
+          <h3 className="text-lg font-bold mb-3 text-blue-900">Error Loading Statistics</h3>
+          <p className="text-gray-600 mb-6 text-sm">{error}</p>
           <button
             onClick={() => loadStatistics(selectedWeek, selectedYear)}
-            className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm sm:text-base"
-            style={{ backgroundColor: "#0B2863" }}
+            className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-200 hover:shadow-lg bg-blue-900"
           >
             Try Again
           </button>
@@ -516,298 +295,130 @@ const Statistics = () => {
   }
 
   return (
-    <div key={i18n.language} className="notranslate min-h-screen p-3 sm:p-6">
-      <div className="max-w-full mx-auto space-y-6 sm:space-y-8">
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3" style={{ color: "#0B2863" }}>
-            Statistics Dashboard
-          </h1>
-          <p className="text-sm sm:text-lg text-gray-600 px-4">
-            Monitor your business performance and key metrics
-          </p>
-        </div>
-
-        {/* Navigation Card */}
-        <div
-          className="rounded-2xl shadow-lg p-4 sm:p-6 border-2 week-dropdown-container relative"
-          style={{
-            backgroundColor: "#ffffff",
-            borderColor: "#0B2863",
-          }}
-        >
-          {/* Animated border */}
-          <div
-            className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
-            style={{
-              background: "linear-gradient(90deg, #2563eb, #9333ea, #2563eb)",
-              backgroundSize: "200% 100%",
-              animation: "gradient 3s ease-in-out infinite",
-            }}
-          ></div>
-
-          <div className="flex flex-col space-y-4 sm:space-y-6">
-            {/* Navigation Tabs */}
-            <div className="flex flex-col space-y-4">
-              {/* Mobile menu button */}
-              <div className="flex items-center justify-between lg:hidden">
-                <span className="text-lg font-semibold" style={{ color: "#0B2863" }}>
-                  {activeSection === "overview" && "Business Overview"}
-                  {activeSection === "trucks" && "Vehicle Logistics"}
-                  {activeSection === "payroll" && "Payroll Analytics"}
-                  {activeSection === "historical" && "Historical Analysis"}
-                  {activeSection === "financials" && "Financials"}
-                  {activeSection === "expenseBreakdown" && "Expense Breakdown"}
-                </span>
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2 rounded-lg border-2 transition-all duration-200"
-                  style={{
-                    borderColor: "#0B2863",
-                    color: "#0B2863"
-                  }}
-                >
-                  <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-                </button>
+    <div key={i18n.language} className="notranslate min-h-screen bg-gray-50 p-3 sm:p-4">
+      <div className="max-w-7xl mx-auto space-y-4">
+        {/* Compact Header */}
+        <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-2 border-blue-900">
+          <div className="flex flex-col gap-3">
+            {/* Title and Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-blue-900">Statistics Dashboard</h1>
+                <p className="text-xs text-gray-600 mt-1">
+                  {weekRange.start} → {weekRange.end}
+                </p>
               </div>
 
-              {/* Desktop navigation */}
-              <div className="hidden lg:flex flex-wrap gap-2">
-                <TabButton
-                  active={activeSection === "overview"}
-                  onClick={() => handleTabClick("overview")}
-                  icon="fa-chart-line"
-                >
-                  Business Overview
-                </TabButton>
-                <TabButton
-                  active={activeSection === "trucks"}
-                  onClick={() => handleTabClick("trucks")}
-                  icon="fa-truck"
-                >
-                  Vehicle Logistics
-                </TabButton>
-                <TabButton
-                  active={activeSection === "payroll"}
-                  onClick={() => handleTabClick("payroll")}
-                  icon="fa-users"
-                >
-                  Payroll Analytics
-                </TabButton>
-                <TabButton
-                  active={activeSection === "historical"}
-                  onClick={() => handleTabClick("historical")}
-                  icon="fa-history"
-                >
-                  Historical Analysis
-                </TabButton>
-                <TabButton
-                  active={activeSection === "financials"}
-                  onClick={() => handleTabClick("financials")}
-                  icon="fa-coins"
-                >
-                  Financials
-                </TabButton>
-                <TabButton
-                  active={activeSection === "expenseBreakdown"}
-                  onClick={() => handleTabClick("expenseBreakdown")}
-                  icon="fa-file-invoice-dollar"
-                >
-                  Expense Breakdown
-                </TabButton>
-              </div>
-
-              {/* Mobile navigation menu */}
-              {isMobileMenuOpen && (
-                <div 
-                  ref={mobileMenuRef}
-                  className="lg:hidden bg-white border-2 border-gray-200 rounded-xl p-4 shadow-lg space-y-2"
-                >
-                  <TabButton
-                    active={activeSection === "overview"}
-                    onClick={() => handleTabClick("overview")}
-                    icon="fa-chart-line"
-                  >
-                    Business Overview
-                  </TabButton>
-                  <TabButton
-                    active={activeSection === "trucks"}
-                    onClick={() => handleTabClick("trucks")}
-                    icon="fa-truck"
-                  >
-                    Vehicle Logistics
-                  </TabButton>
-                  <TabButton
-                    active={activeSection === "payroll"}
-                    onClick={() => handleTabClick("payroll")}
-                    icon="fa-users"
-                  >
-                    Payroll Analytics
-                  </TabButton>
-                  <TabButton
-                    active={activeSection === "historical"}
-                    onClick={() => handleTabClick("historical")}
-                    icon="fa-history"
-                  >
-                    Historical Analysis
-                  </TabButton>
-                  <TabButton
-                    active={activeSection === "financials"}
-                    onClick={() => handleTabClick("financials")}
-                    icon="fa-coins"
-                  >
-                    Financials
-                  </TabButton>
-                  <TabButton
-                    active={activeSection === "expenseBreakdown"}
-                    onClick={() => handleTabClick("expenseBreakdown")}
-                    icon="fa-file-invoice-dollar"
-                  >
-                    Expense Breakdown
-                  </TabButton>
-                </div>
-              )}
-            </div>
-
-            {/* Period Info & Refresh (overview only) */}
-            {activeSection === "overview" && (
-              <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 sm:gap-4">
-                <div
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg border-2 text-sm sm:text-base"
-                  style={{
-                    backgroundColor: "#FFE67B",
-                    borderColor: "#0B2863",
-                    color: "#0B2863",
-                  }}
-                >
-                  <i className="fas fa-calendar-alt"></i>
-                  <span className="font-semibold">
-                    <span className="hidden sm:inline">{weekRange.start} → {weekRange.end}</span>
-                    <span className="sm:hidden">W{selectedWeek} {selectedYear}</span>
-                  </span>
-                </div>
-                <div
-                  className="hidden sm:flex items-center gap-2 text-sm"
-                  style={{ color: "#0B2863" }}
-                >
-                  <i className="fas fa-chart-line"></i>
-                  <span className="font-medium">vs Previous Week</span>
-                </div>
-                <RefreshButton />
-              </div>
-            )}
-          </div>
-
-          {/* Enhanced Filters (overview only) */}
-          {activeSection === "overview" && (
-            <div
-              className="flex flex-col xl:flex-row items-start gap-4 sm:gap-6 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t"
-              style={{ borderColor: "rgba(11, 40, 99, 0.2)" }}
-            >
-              {/* Year Select Dropdown */}
-              <div className="w-full sm:w-auto sm:min-w-[180px]">
-                <div className="bg-gradient-to-br from-white/90 to-blue-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-blue-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">
-                    Year
-                  </label>
+              {activeSection === "overview" && (
+                <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={selectedYear}
                     onChange={handleYearChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 font-semibold text-center bg-white shadow-sm text-blue-700 hover:border-blue-300 cursor-pointer text-sm sm:text-base"
                     disabled={loading}
+                    className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm bg-white font-semibold hover:border-blue-500 focus:border-blue-500 transition-all"
                   >
                     {availableYears.map((year) => (
-                      <option key={year} value={year} className="font-semibold">
+                      <option key={year} value={year}>
                         {year}
                       </option>
                     ))}
                   </select>
-                  <div className="mt-2 text-xs text-gray-500 text-center">
-                    {availableYears.length > 0 && (
-                      <>Range: 2015-{availableYears[0]}</>
-                    )}
-                  </div>
-                </div>
-              </div>
 
-              {/* Enhanced Week Selector */}
-              <div className="w-full sm:w-auto sm:min-w-[200px]">
-                <div
-                  className="bg-gradient-to-br from-white/90 to-green-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-green-100 shadow-sm hover:shadow-md transition-all duration-300"
-                >
-                  <div style={{ position: 'relative' }}>
-                    <div style={{ position: 'relative', overflow: 'visible', minWidth: 200 }}>
-                      <WeekPicker
-                        week={selectedWeek}
-                        onWeekSelect={(w) => setSelectedWeek(w)}
-                        min={1}
-                        max={53}
-                        className=""
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  <select
+                    value={selectedWeek}
+                    onChange={handleWeekChange}
+                    disabled={loading}
+                    className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm bg-white font-semibold hover:border-blue-500 focus:border-blue-500 transition-all"
+                  >
+                    {Array.from({ length: 53 }, (_, i) => i + 1).map((week) => (
+                      <option key={week} value={week}>
+                        W{week}
+                      </option>
+                    ))}
+                  </select>
 
-              {/* Quick Date Info */}
-              <div className="w-full xl:flex-1 xl:min-w-[300px]">
-                <div className="bg-gradient-to-br from-white/90 to-amber-50/50 backdrop-blur-sm rounded-xl p-3 sm:p-4 border-2 border-amber-100 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-amber-100 p-2 rounded-full">
-                        <span className="text-amber-700 text-base sm:text-lg">📅</span>
-                      </div>
-                      <div>
-                        <div className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">
-                          Selected Period
-                        </div>
-                        <div className="text-amber-700 font-semibold text-sm sm:text-lg">
-                          <span className="hidden sm:inline">{weekRange.start} → {weekRange.end}</span>
-                          <span className="sm:hidden">Week {selectedWeek}, {selectedYear}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className="hidden sm:flex items-center gap-2 text-xs sm:text-sm px-3 py-2 rounded-lg bg-amber-100 border border-amber-200"
-                      style={{ color: "#0B2863" }}
-                    >
-                      <i className="fas fa-chart-line"></i>
-                      <span className="font-medium">vs Previous Week</span>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => loadStatistics(selectedWeek, selectedYear)}
+                    disabled={loading}
+                    className="px-3 py-2 bg-blue-900 text-white rounded-lg text-sm hover:bg-blue-800 transition-all disabled:opacity-50 font-semibold"
+                  >
+                    <i className={`fas fa-sync-alt ${loading ? "animate-spin" : ""}`}></i>
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+
+            {/* Navigation Tabs */}
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+              <TabButton
+                active={activeSection === "overview"}
+                onClick={() => handleTabClick("overview")}
+                icon="fa-chart-line"
+              >
+                Business Overview
+              </TabButton>
+              <TabButton
+                active={activeSection === "trucks"}
+                onClick={() => handleTabClick("trucks")}
+                icon="fa-truck"
+              >
+                Vehicle Logistics
+              </TabButton>
+              <TabButton
+                active={activeSection === "payroll"}
+                onClick={() => handleTabClick("payroll")}
+                icon="fa-users"
+              >
+                Payroll Analytics
+              </TabButton>
+              <TabButton
+                active={activeSection === "historical"}
+                onClick={() => handleTabClick("historical")}
+                icon="fa-history"
+              >
+                Historical Analysis
+              </TabButton>
+              <TabButton
+                active={activeSection === "financials"}
+                onClick={() => handleTabClick("financials")}
+                icon="fa-coins"
+              >
+                Financials
+              </TabButton>
+              <TabButton
+                active={activeSection === "expenseBreakdown"}
+                onClick={() => handleTabClick("expenseBreakdown")}
+                icon="fa-file-invoice-dollar"
+              >
+                Expense Breakdown
+              </TabButton>
+            </div>
+          </div>
         </div>
 
         {/* Content based on active section */}
         {activeSection === "overview" && (
           <>
-            {/* Loading State with LoadingSpinner */}
+            {/* Loading State */}
             {loading && (
-              <div
-                className="flex items-center justify-center py-12 sm:py-16 rounded-2xl border-2"
-                style={{
-                  backgroundColor: "#ffffff",
-                  borderColor: "#0B2863",
-                }}
-              >
+              <div className="flex items-center justify-center py-12 bg-white rounded-xl border-2 border-blue-900">
                 <div className="flex flex-col items-center gap-4">
                   <LoaderSpinner />
-                  <span
-                    className="text-base sm:text-lg font-semibold"
-                    style={{ color: "#0B2863" }}
-                  >
-                    Loading statistics...
-                  </span>
+                  <span className="text-base font-semibold text-blue-900">Loading statistics...</span>
                 </div>
               </div>
             )}
 
             {/* Main Content */}
             {!loading && (
-              <div className="space-y-6 sm:space-y-8">
+              <div className="space-y-4">
+                {/* Compact Stats Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {statsData.map((stat, index) => (
+                    <StatCard key={index} stat={stat} />
+                  ))}
+                </div>
+
                 {/* Payment Status Chart */}
                 <div className="w-full">
                   <PaymentStatusChart
@@ -817,21 +428,12 @@ const Statistics = () => {
                     loading={loading}
                   />
                 </div>
-                
-                {/* Stats Comparison Card */}
-                <div className="w-full">
-                  <StatsComparisonCard
-                    title="Business Metrics"
-                    stats={statsData}
-                    onStatClick={handleOrderCardClick}
-                  />
-                </div>
-                
-                {/* Income Calculator*/}
+
+                {/* Income Calculator */}
                 <div className="w-full">
                   <IncomeCalculator />
                 </div>
-                
+
                 {/* Paid/Unpaid Week Range Chart */}
                 <div className="w-full overflow-x-auto">
                   {selectedYear >= 2000 && selectedWeek >= 1 && selectedWeek <= 53 && (
@@ -850,10 +452,7 @@ const Statistics = () => {
         {/* Other sections */}
         {activeSection === "trucks" && (
           <div className="w-full">
-            <TruckStatistics
-              initialWeek={selectedWeek}
-              initialYear={selectedYear}
-            />
+            <TruckStatistics initialWeek={selectedWeek} initialYear={selectedYear} />
           </div>
         )}
 
@@ -870,80 +469,17 @@ const Statistics = () => {
         )}
 
         {activeSection === "financials" && (
-          <div className="w-full rounded-2xl shadow-lg p-4 sm:p-6 border-2 overflow-x-auto" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
+          <div className="w-full bg-white rounded-xl shadow-sm p-4 border-2 border-blue-900">
             <FinancialView />
           </div>
         )}
 
         {activeSection === "expenseBreakdown" && (
-          <div className="w-full rounded-2xl shadow-lg p-4 sm:p-6 border-2" style={{ backgroundColor: "#ffffff", borderColor: "#0B2863" }}>
+          <div className="w-full bg-white rounded-xl shadow-sm p-4 border-2 border-blue-900">
             <FinancialExpenseBreakdownView />
           </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes gradient {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        /* Responsive utilities */utilities */
-        @media (max-width: 640px) {width: 640px) {
-          .mobile-nav-button {          .mobile-nav-button {
-            min-width: 44px;
-            min-height: 44px;
-          }
-          
-          .week-dropdown {
-            position: fixed !important;
-            left: 1rem !important;
-            right: 1rem !important;ortant;
-            width: auto !important;portant;
-            z-index: 50 !important;
-          }
-          
-          .week-dropdown .grid {
-            grid-template-columns: repeat(6, 1fr) !important;
-          }
-        }
-
-        @media (min-width: 641px) and (max-width: 1024px) { 641px) and (max-width: 1024px) {
-          .week-dropdown .grid { .grid {
-            grid-template-columns: repeat(8, 1fr) !important;
-          }
-        }
-
-        /* Improved touch targets for mobile */
-        @media (max-width: 768px) { 768px) {
-          button {
-            min-height: 44px;: 44px;
-          }
-          
-          select, input {lect, input {
-            min-height: 44px;n-height: 44px;
-          }          }
-        }
-
-        /* Custom scrollbar for mobile */ustom scrollbar for mobile */
-        @media (max-width: 640px) {
-          .custom-scrollbar::-webkit-scrollbar {ar::-webkit-scrollbar {
-            width: 8px; 8px;
-            height: 8px;
-          }
-        }
-
-        /* Prevent horizontal scroll on mobile */ horizontal scroll on mobile */
-        @media (max-width: 640px) {(max-width: 640px) {
-          html, body {
-            overflow-x: hidden;
-          }
-        }
-      `}</style>
     </div>
   );
 };

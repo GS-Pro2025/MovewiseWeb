@@ -29,8 +29,7 @@ const formatCurrency = (amount: number | string): string => {
   }).format(num);
 };
 
-
-// Costos fijos y variables con etiquetas - ACTUALIZADO
+// Costos fijos y variables con etiquetas
 const EXPENSE_TYPES = [
   { key: "expense", label: "Expense", type: "variable", color: "#F09F52", calculated: true },
   { key: "fuelCost", label: "Fuel Costs", type: "variable", color: "#F09F52", calculated: true },
@@ -55,6 +54,22 @@ const DISCOUNT_TYPES = [
   { key: "operators_discount", label: "Operators Discount", color: "#22c55e" },
 ];
 
+// Función para calcular el número máximo de semanas en un año
+const getMaxWeeksInYear = (year: number): number => {
+  const d = new Date(year, 11, 31);
+  const weekNum = getWeekNumber(d);
+  return weekNum === 1 ? 52 : weekNum;
+};
+
+// Función para obtener el número de semana ISO
+const getWeekNumber = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+};
+
 const FinancialExpenseBreakdownView = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,14 +80,13 @@ const FinancialExpenseBreakdownView = () => {
     totalCost: number,
     profit: number,
     totalCostFromTable?: number,
-    extraIncomes?: ExtraIncomeItem[], // Agregar esto
-    totalExtraIncome?: number // Agregar esto
+    extraIncomes?: ExtraIncomeItem[],
+    totalExtraIncome?: number
   } | null>(null);
   const [dbCosts, setDbCosts] = useState<Cost[]>([]);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateExtraIncomeDialog, setShowCreateExtraIncomeDialog] = useState(false);
-  console.log(showCreateDialog);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; cost: Cost | null }>({
     open: false,
@@ -84,29 +98,41 @@ const FinancialExpenseBreakdownView = () => {
 
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState<number>(currentYear);
-  const [currentWeek, setCurrentWeek] = useState<number>(() => {
+  const [maxWeeks, setMaxWeeks] = useState<number>(getMaxWeeksInYear(currentYear));
+  
+  // Función para calcular la semana actual en el año seleccionado
+  const getCurrentWeekInYear = (selectedYear: number): number => {
     const now = new Date();
-    const start = new Date(year, 0, 1);
-    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
-  });
+    // Si el año seleccionado es mayor al actual, devolver la última semana del año
+    if (selectedYear > currentYear) {
+      return getMaxWeeksInYear(selectedYear);
+    }
+    // Si es el año actual, calcular la semana actual
+    if (selectedYear === currentYear) {
+      const start = new Date(selectedYear, 0, 1);
+      const weekNum = Math.ceil((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      return Math.min(weekNum, getMaxWeeksInYear(selectedYear));
+    }
+    // Si es un año pasado, devolver la última semana de ese año
+    return getMaxWeeksInYear(selectedYear);
+  };
+
   const [startWeek, setStartWeek] = useState<number>(1);
-  const [endWeek, setEndWeek] = useState<number>(() => {
-    const now = new Date();
-    const start = new Date(currentYear, 0, 1);
-    return Math.ceil((now.getTime() - start.getTime()) / 604800000);
-  });
+  const [endWeek, setEndWeek] = useState<number>(() => getCurrentWeekInYear(currentYear));
   const [selectedTimelapse, setSelectedTimelapse] = useState<string | null>(null);
 
-  // Actualizar currentWeek y endWeek cuando cambie el año
+  // Actualizar maxWeeks, currentWeek y endWeek cuando cambie el año
   useEffect(() => {
-    const now = new Date();
-    const start = new Date(year, 0, 1);
-    const weekNum = Math.ceil((now.getTime() - start.getTime()) / 604800000);
-    setCurrentWeek(weekNum);
-    setEndWeek(weekNum);
+    const newMaxWeeks = getMaxWeeksInYear(year);
+    setMaxWeeks(newMaxWeeks);
+  
+    const currentWeekInYear = getCurrentWeekInYear(year);
+    setEndWeek(Math.min(currentWeekInYear, newMaxWeeks));
+  
     setStartWeek(1);
     setSelectedTimelapse(null);
-  }, [year]);
+  }, [year, currentYear]);
+  
 
   // Actualizar data cuando cambian startWeek o endWeek
   useEffect(() => {
@@ -121,9 +147,14 @@ const FinancialExpenseBreakdownView = () => {
     setLoading(true);
     setError(null);
     try {
-      const result: OrderSummaryLightTotalsResponse = await repository.getSummaryCostRangeTotals(fromWeek, toWeek, selectedYear, true);
+      const result: OrderSummaryLightTotalsResponse = await repository.getSummaryCostRangeTotals(
+        fromWeek, 
+        toWeek, 
+        selectedYear, 
+        true
+      );
 
-      console.log('Full API Response:', result);
+      console.log('API Response for Financial Breakdown:', result);
 
       const expenses: Record<string, number> = {};
       const discounts: Record<string, number> = {};
@@ -139,10 +170,6 @@ const FinancialExpenseBreakdownView = () => {
       });
 
       const data = result.data || result;
-      
-      console.log('Extracted data:', data);
-      console.log('Costs from backend:', data.costs);
-      console.log('Total cost from table:', data.totalCostFromTable);
       
       // Expenses - FORMATO UNIFICADO
       expenses.expense = Number(Number(data.expense || 0).toFixed(2));
@@ -163,9 +190,6 @@ const FinancialExpenseBreakdownView = () => {
         is_active: true,
       }));
       
-      console.log('Costs mapped from backend:', costsFromBackend);
-      console.log('Number of costs:', costsFromBackend.length);
-      
       setDbCosts(costsFromBackend);
 
       // El backend ya suma totalCostFromTable en totalCost
@@ -173,29 +197,11 @@ const FinancialExpenseBreakdownView = () => {
       
       const totalCostFromTable = Number(Number(data.totalCostFromTable || 0).toFixed(2));
 
-      console.log('=== VERIFICACIÓN DE COSTOS ===');
-      console.log('Expense:', expenses.expense);
-      console.log('Fuel Cost:', expenses.fuelCost);
-      console.log('Work Cost:', expenses.workCost);
-      console.log('Bonus:', expenses.bonus);
-      console.log('Driver Salaries:', expenses.driverSalaries);
-      console.log('Other Salaries:', expenses.otherSalaries);
-      console.log('DB Costs (from table):', totalCostFromTable);
-      console.log('Total Cost (backend calculated):', expenses.totalCost);
-      
-      const manualSum = expenses.expense + expenses.fuelCost + expenses.workCost + 
-                       expenses.bonus + expenses.driverSalaries + expenses.otherSalaries + 
-                       totalCostFromTable;
-      console.log('Manual Sum:', Number(manualSum.toFixed(2)));
-      console.log('Difference:', Number((expenses.totalCost - manualSum).toFixed(2)));
-
       // Discounts breakdown - SOLO PARA MOSTRAR, NO SE USAN EN CÁLCULOS
       discounts.operators_discount = Number(Number(data.operators_discount || 0).toFixed(2));
       const extraIncomes = (data.extraIncomes || []) as ExtraIncomeItem[];
       const totalExtraIncome = Number(Number(data.totalExtraIncome || 0).toFixed(2));
 
-      console.log('Extra Incomes:', extraIncomes);
-      console.log('Total Extra Income:', totalExtraIncome);
       // Income - YA INCLUYE operators_discount sumado por el backend
       const income = Number(Number(data.rentingCost || 0).toFixed(2));
 
@@ -205,13 +211,6 @@ const FinancialExpenseBreakdownView = () => {
 
       // El profit viene directamente del backend (ya calculado correctamente)
       const profit = Number(Number(data.net_profit).toFixed(2));
-
-      console.log('=== VERIFICACIÓN DE PROFIT ===');
-      console.log('Income (includes operators_discount):', income);
-      console.log('Operators Discount (for display only):', discounts.operators_discount);
-      console.log('Total Cost:', totalCost);
-      console.log('Net Profit (backend):', profit);
-      console.log('Verification: Income - Total Cost =', Number((income - totalCost).toFixed(2)));
 
       setSummaryData({ 
         expenses, 
@@ -223,10 +222,6 @@ const FinancialExpenseBreakdownView = () => {
         extraIncomes,
         totalExtraIncome
       });
-
-      console.log('Total costs from DB table:', data.totalCostFromTable);
-      console.log('Final totalCost:', totalCost);
-      console.log('Number of costs from DB:', costsFromBackend.length);
       
     } catch (err: any) {
       console.error('Error in fetchBreakdown:', err);
@@ -296,22 +291,21 @@ const FinancialExpenseBreakdownView = () => {
   const handleTimelapse = (timelapse: any) => {
     const { startWeek: start, endWeek: end, label } = timelapse;
     
-    if (start > currentWeek) {
-      enqueueSnackbar(`Selected period starts after current week ${currentWeek}. No data available yet.`, { variant: "error" });
+    const currentWeekInYear = getCurrentWeekInYear(year);
+    if (start > currentWeekInYear) {
+      enqueueSnackbar(
+        `Selected period starts after current week ${currentWeekInYear}. No data available yet.`, 
+        { variant: "error" }
+      );
       return;
     }
     
     setStartWeek(start);
-    setEndWeek(end);
+    setEndWeek(Math.min(end, maxWeeks));
     setSelectedTimelapse(label);
   };
 
   // Separar costos de BD por tipo - LÓGICA CORRECTA
-  // other_transaction → REGISTERED COSTS (nueva sección)
-  // FIXED → FIXED COSTS
-  // VARIABLE → VARIABLE COSTS
-  // Otros → FIXED COSTS (default)
-  
   const otherTransactionCosts = dbCosts.filter(cost => 
     cost.type.toLowerCase() === 'other_transaction'
   );
@@ -324,17 +318,6 @@ const FinancialExpenseBreakdownView = () => {
   const variableDbCosts = dbCosts.filter(cost => 
     cost.type.toLowerCase() === 'variable'
   );
-
-  console.log('=== COSTS BREAKDOWN ===');
-  console.log('Total DB Costs:', dbCosts.length);
-  console.log('Other Transaction Costs:', otherTransactionCosts.length);
-  console.log('Fixed DB Costs:', fixedDbCosts.length);
-  console.log('Variable DB Costs:', variableDbCosts.length);
-  console.log('Sample costs:', dbCosts.slice(0, 3).map(c => ({ 
-    type: c.type, 
-    cost: c.cost, 
-    description: c.description 
-  })));
 
   // Función para calcular subtotales por categoría - ACTUALIZADO
   const calculateCategorySubtotal = (categoryType: string): number => {
@@ -430,7 +413,14 @@ const FinancialExpenseBreakdownView = () => {
           </label>
           <YearPicker 
             year={year}
-            onYearSelect={setYear}
+            onYearSelect={(newYear) => {
+              setYear(newYear);
+              const newMaxWeeks = getMaxWeeksInYear(newYear);
+              setMaxWeeks(newMaxWeeks);
+              setEndWeek(getCurrentWeekInYear(newYear));
+              setStartWeek(1);
+              setSelectedTimelapse(null);
+            }}
             min={2015}
             max={new Date().getFullYear() + 1}
             className="w-full"
@@ -468,7 +458,7 @@ const FinancialExpenseBreakdownView = () => {
                 setSelectedTimelapse(null);
               }}
               min={1}
-              max={currentWeek}
+              max={maxWeeks}
               className="w-full"
             />
           </div>
@@ -483,7 +473,7 @@ const FinancialExpenseBreakdownView = () => {
                 setSelectedTimelapse(null);
               }}
               min={1}
-              max={52}
+              max={maxWeeks}
               className="w-full"
             />
           </div>
@@ -796,8 +786,6 @@ const FinancialExpenseBreakdownView = () => {
                     -
                   </td>
                 </tr>
-
-                
 
                 {/* INCOMES Section */}
                 <tr className="bg-emerald-100">

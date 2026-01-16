@@ -98,16 +98,18 @@ const YearPicker: React.FC<YearPickerProps> = ({
   return (
     <div className={className}>
       <div ref={dropdownRef} className="relative w-full">
+      <label className="block text-xs font-bold text-[#0B2863] mb-1">
+          <div className="flex items-center gap-1.5">
+            <Calendar size={14} />
+            Year
+          </div>
+        </label>
         <div
-          className={`rounded-lg p-2 border-2 shadow-sm flex items-center justify-between gap-2 w-full transition-all duration-200 ${
+          className={`rounded-lg p-2  flex items-center justify-between gap-2 w-full transition-all duration-200 bg-white ${
             disabled 
               ? 'cursor-not-allowed bg-gray-100 opacity-50' 
               : 'cursor-pointer hover:shadow-md'
           }`}
-          style={{
-            background: disabled ? '#f1f5f9' : `linear-gradient(180deg, ${SURFACE}, #f6f8fb)`,
-            borderColor: PRIMARY
-          }}
           onClick={() => !disabled && setShowDropdown(!showDropdown)}
           onKeyDown={handleKeyDown}
           tabIndex={disabled ? -1 : 0}
@@ -116,14 +118,6 @@ const YearPicker: React.FC<YearPickerProps> = ({
           role="button"
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div
-              className="p-1.5 rounded-md flex items-center justify-center flex-shrink-0"
-              style={{ background: ACCENT, borderRadius: 6 }}
-              aria-hidden
-            >
-              <Calendar size={14} color={PRIMARY} />
-            </div>
-
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <button
                 onClick={prevYear}
