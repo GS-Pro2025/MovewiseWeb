@@ -25,22 +25,21 @@ function getDaysInMonth(year: number, month: number) {
   return days;
 }
 
-// Define los 5 estados de azul según el número de órdenes
-const blueShades = [
-  "#e3f2fd", // 0 ordenes
-  "#90caf9", // 1-2 ordenes
-  "#42a5f5", // 3-4 ordenes
-  "#1976d2", // 5-7 ordenes
-  "#0d47a1", // 8+ ordenes
+const thermalShades = [
+  "#ffffff", // 0 órdenes (azul frío)
+  "#43a047", // 1-2 órdenes (verde)
+  "#fdd835", // 3-4 órdenes (amarillo)
+  "#fb8c00", // 5-7 órdenes (naranja)
+  "#e53935", // 8+ órdenes (rojo caliente)
 ];
 
 // Devuelve el color según el número de órdenes
 function getDayColor(orderCount: number) {
-  if (orderCount === 0) return blueShades[0];
-  if (orderCount <= 2) return blueShades[1];
-  if (orderCount <= 4) return blueShades[2];
-  if (orderCount <= 7) return blueShades[3];
-  return blueShades[4];
+  if (orderCount === 0) return thermalShades[0];
+  if (orderCount <= 2) return thermalShades[1];
+  if (orderCount <= 4) return thermalShades[2];
+  if (orderCount <= 7) return thermalShades[3];
+  return thermalShades[4];
 }
 
 interface OrdersCalendarDialogProps {
@@ -174,7 +173,7 @@ const OrdersCalendarDialog: React.FC<OrdersCalendarDialogProps> = ({
                 Click a day to see its orders. The more blue, the more orders.
               </Typography>
               <Box display="flex" alignItems="center" gap={1} mt={1}>
-                {blueShades.map((color) => (
+                {thermalShades.map((color) => (
                   <Box
                     key={color}
                     sx={{

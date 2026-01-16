@@ -190,7 +190,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
       onClick={onClick}
       disabled={disabled}
       className={`flex-1 min-h-[50px] px-6 py-3 rounded-xl text-white font-semibold text-sm 
-        bg-gradient-to-br from-indigo-500 to-purple-600 
+        bg-[#0B2863]
         shadow-lg hover:shadow-xl transition-all duration-300 
         hover:-translate-y-1 disabled:opacity-60 disabled:cursor-not-allowed 
         disabled:transform-none flex items-center justify-center gap-2`}
@@ -214,7 +214,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
       onClick={onClick}
       disabled={disabled}
       style={style}
-      className={`px-6 py-3 rounded-xl border-2 border-indigo-500 text-indigo-500 
+      className={`px-6 py-3 rounded-xl border-2 border-[#0B2863]
         font-semibold text-sm bg-transparent hover:bg-indigo-50 
         shadow-md hover:shadow-lg transition-all duration-300 
         hover:-translate-y-1 disabled:opacity-60 disabled:cursor-not-allowed 
@@ -257,7 +257,7 @@ const OCRUploadDialog: React.FC<OCRUploadDialogProps> = ({
         }}
         onClick={e => e.stopPropagation()}
       >
-        <Typography variant="h5" mb={3} sx={{ fontWeight: 600, color: '#667eea', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="h5" mb={3} sx={{ fontWeight: 600, color: '#0B2863', display: 'flex', alignItems: 'center', gap: 1 }}>
           <Upload size={24} />
           Upload Statement PDFs (OCR)
         </Typography>

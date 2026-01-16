@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Calendar, ChevronDown, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface WeekPickerProps {
   week: number;
@@ -10,18 +16,26 @@ interface WeekPickerProps {
 }
 
 const PRIMARY = "#0B2863";
-const ACCENT = "#FFE67B";
 const SURFACE = "#ffffff";
 
-const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, max = 53, className }) => {
+const WeekPicker: React.FC<WeekPickerProps> = ({
+  week,
+  onWeekSelect,
+  min = 1,
+  max = 52,
+  className,
+}) => {
   const [showDropdown, setShowDropdown] = useState(false);
-  const [viewMode, setViewMode] = useState<'select' | 'input'>('select');
+  const [viewMode, setViewMode] = useState<"select" | "input">("select");
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [inputValue, setInputValue] = useState<string>(week.toString());
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
@@ -36,12 +50,12 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
   const weeks = Array.from({ length: max - min + 1 }, (_, i) => i + min);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       setShowDropdown(true);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setShowDropdown(false);
-    } else if (e.key === 'Enter') {
+    } else if (e.key === "Enter") {
       setShowDropdown(!showDropdown);
     }
   };
@@ -73,12 +87,14 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
   return (
     <div className={className}>
       <div ref={dropdownRef} className="relative w-full">
+        <label className="block text-xs font-bold text-[#0B2863] mb-1">
+          <div className="flex items-center gap-1.5">
+            <Calendar size={14} />
+            Week
+          </div>
+        </label>
         <div
-          className="rounded-lg p-2 border-2 shadow-sm flex items-center justify-between gap-2 cursor-pointer w-full"
-          style={{
-            background: `linear-gradient(180deg, ${SURFACE}, #f6f8fb)`,
-            borderColor: PRIMARY
-          }}
+          className="rounded-lg p-2  flex items-center justify-between gap-2 cursor-pointer w-full bg-white"
           onClick={() => setShowDropdown(!showDropdown)}
           onKeyDown={handleKeyDown}
           tabIndex={0}
@@ -87,13 +103,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
           role="button"
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div
-              className="p-1.5 rounded-md flex items-center justify-center flex-shrink-0"
-              style={{ background: ACCENT, borderRadius: 6 }}
-              aria-hidden
-            >
-              <Calendar size={14} color={PRIMARY} />
-            </div>
+
 
             <div className="flex items-center gap-1.5 flex-1 min-w-0">
               <button
@@ -103,23 +113,26 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
                 disabled={week <= min}
                 className="flex-shrink-0"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   width: 24,
                   height: 24,
                   borderRadius: 4,
                   border: `1px solid ${PRIMARY}`,
-                  background: week <= min ? '#f1f5f9' : SURFACE,
+                  background: week <= min ? "#f1f5f9" : SURFACE,
                   color: PRIMARY,
-                  cursor: week <= min ? 'not-allowed' : 'pointer'
+                  cursor: week <= min ? "not-allowed" : "pointer",
                 }}
               >
                 <ChevronLeft size={12} />
               </button>
 
               <div className="text-left flex-1 min-w-0">
-                <div className="text-xs font-bold truncate" style={{ color: PRIMARY }}>
+                <div
+                  className="text-xs font-bold truncate"
+                  style={{ color: PRIMARY }}
+                >
                   Week {week}
                 </div>
               </div>
@@ -131,16 +144,16 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
                 disabled={week >= max}
                 className="flex-shrink-0"
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   width: 24,
                   height: 24,
                   borderRadius: 4,
                   border: `1px solid ${PRIMARY}`,
-                  background: week >= max ? '#f1f5f9' : SURFACE,
+                  background: week >= max ? "#f1f5f9" : SURFACE,
                   color: PRIMARY,
-                  cursor: week >= max ? 'not-allowed' : 'pointer'
+                  cursor: week >= max ? "not-allowed" : "pointer",
                 }}
               >
                 <ChevronRight size={12} />
@@ -150,29 +163,41 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
 
           <div className="flex items-center gap-1 flex-shrink-0">
             <button
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setViewMode(viewMode === 'select' ? 'input' : 'select'); 
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMode(viewMode === "select" ? "input" : "select");
               }}
               className="text-xs px-1.5 py-0.5 rounded border flex-shrink-0"
-              style={{ borderColor: '#e6edf7', background: SURFACE, color: PRIMARY }}
-              title={viewMode === 'select' ? 'Switch to input' : 'Switch to dropdown'}
+              style={{
+                borderColor: "#e6edf7",
+                background: SURFACE,
+                color: PRIMARY,
+              }}
+              title={
+                viewMode === "select" ? "Switch to input" : "Switch to dropdown"
+              }
               aria-label="Toggle week input mode"
             >
-              {viewMode === 'select' ? '⌨️' : '▼'}
+              {viewMode === "select" ? "⌨️" : "▼"}
             </button>
 
-            <span className="p-0.5 rounded flex-shrink-0" title="Open week selector" aria-hidden>
-              <ChevronDown 
-                size={14} 
-                color={PRIMARY} 
-                className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} 
+            <span
+              className="p-0.5 rounded flex-shrink-0"
+              title="Open week selector"
+              aria-hidden
+            >
+              <ChevronDown
+                size={14}
+                color={PRIMARY}
+                className={`transition-transform ${
+                  showDropdown ? "rotate-180" : ""
+                }`}
               />
             </span>
           </div>
         </div>
 
-        {showDropdown && viewMode === 'select' && (
+        {showDropdown && viewMode === "select" && (
           <div
             className="absolute z-50 left-0 right-0 mt-2 rounded-lg shadow-lg max-w-full"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}
@@ -192,38 +217,57 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
               </div>
 
               <div className="flex gap-1.5 mb-2 flex-wrap">
-                <button 
-                  onClick={() => { onWeekSelect(min); setShowDropdown(false); }} 
-                  className="px-2 py-1 text-xs rounded font-medium" 
-                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                <button
+                  onClick={() => {
+                    onWeekSelect(min);
+                    setShowDropdown(false);
+                  }}
+                  className="px-2 py-1 text-xs rounded font-medium"
+                  style={{ background: "#f1f5f9", color: PRIMARY }}
                 >
                   First
                 </button>
-                <button 
-                  onClick={() => { onWeekSelect(Math.max(min, Math.floor((max - min + 1) * 0.25) + min)); setShowDropdown(false); }} 
-                  className="px-2 py-1 text-xs rounded font-medium" 
-                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                <button
+                  onClick={() => {
+                    onWeekSelect(
+                      Math.max(min, Math.floor((max - min + 1) * 0.25) + min)
+                    );
+                    setShowDropdown(false);
+                  }}
+                  className="px-2 py-1 text-xs rounded font-medium"
+                  style={{ background: "#f1f5f9", color: PRIMARY }}
                 >
                   Q1
                 </button>
-                <button 
-                  onClick={() => { onWeekSelect(Math.floor((min + max) / 2)); setShowDropdown(false); }} 
-                  className="px-2 py-1 text-xs rounded font-medium" 
-                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                <button
+                  onClick={() => {
+                    onWeekSelect(Math.floor((min + max) / 2));
+                    setShowDropdown(false);
+                  }}
+                  className="px-2 py-1 text-xs rounded font-medium"
+                  style={{ background: "#f1f5f9", color: PRIMARY }}
                 >
                   Mid
                 </button>
-                <button 
-                  onClick={() => { onWeekSelect(Math.max(min, Math.floor((max - min + 1) * 0.75) + min)); setShowDropdown(false); }} 
-                  className="px-2 py-1 text-xs rounded font-medium" 
-                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                <button
+                  onClick={() => {
+                    onWeekSelect(
+                      Math.max(min, Math.floor((max - min + 1) * 0.75) + min)
+                    );
+                    setShowDropdown(false);
+                  }}
+                  className="px-2 py-1 text-xs rounded font-medium"
+                  style={{ background: "#f1f5f9", color: PRIMARY }}
                 >
                   Q3
                 </button>
-                <button 
-                  onClick={() => { onWeekSelect(max); setShowDropdown(false); }} 
-                  className="px-2 py-1 text-xs rounded font-medium" 
-                  style={{ background: '#f1f5f9', color: PRIMARY }}
+                <button
+                  onClick={() => {
+                    onWeekSelect(max);
+                    setShowDropdown(false);
+                  }}
+                  className="px-2 py-1 text-xs rounded font-medium"
+                  style={{ background: "#f1f5f9", color: PRIMARY }}
                 >
                   Last
                 </button>
@@ -233,12 +277,15 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
                 {weeks.map((w) => (
                   <button
                     key={w}
-                    onClick={() => { onWeekSelect(w); setShowDropdown(false); }}
+                    onClick={() => {
+                      onWeekSelect(w);
+                      setShowDropdown(false);
+                    }}
                     className="p-1.5 text-xs rounded font-semibold text-center transition-all duration-200 hover:shadow-sm"
                     style={{
-                      background: w === week ? PRIMARY : '#f8fafc',
-                      color: w === week ? '#fff' : PRIMARY,
-                      border: `1px solid ${w === week ? '#08305a' : '#e6edf7'}`
+                      background: w === week ? PRIMARY : "#f8fafc",
+                      color: w === week ? "#fff" : PRIMARY,
+                      border: `1px solid ${w === week ? "#08305a" : "#e6edf7"}`,
                     }}
                     title={`Select week ${w}`}
                   >
@@ -250,9 +297,9 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
           </div>
         )}
 
-        {showDropdown && viewMode === 'input' && (
-          <div 
-            className="absolute z-50 left-0 right-0 mt-2 p-3 rounded-lg shadow-lg" 
+        {showDropdown && viewMode === "input" && (
+          <div
+            className="absolute z-50 left-0 right-0 mt-2 p-3 rounded-lg shadow-lg"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}
           >
             <div className="flex flex-col gap-2">
@@ -262,32 +309,44 @@ const WeekPicker: React.FC<WeekPickerProps> = ({ week, onWeekSelect, min = 1, ma
                 pattern="[0-9]*"
                 value={inputValue}
                 onChange={(e) => {
-                  const raw = e.target.value.replace(/\D/g, '');
+                  const raw = e.target.value.replace(/\D/g, "");
                   const truncated = raw.slice(0, 2);
                   setInputValue(truncated);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     commitInput();
                     setShowDropdown(false);
-                  } else if (e.key === 'Escape') {
+                  } else if (e.key === "Escape") {
                     setInputValue(week.toString());
                     setShowDropdown(false);
                   }
                 }}
-                onBlur={() => { commitInput(); setShowDropdown(false); }}
+                onBlur={() => {
+                  commitInput();
+                  setShowDropdown(false);
+                }}
                 className="w-full px-3 py-2 rounded-md border text-sm font-bold"
-                style={{ borderColor: PRIMARY, textAlign: 'center', color: PRIMARY }}
+                style={{
+                  borderColor: PRIMARY,
+                  textAlign: "center",
+                  color: PRIMARY,
+                }}
                 placeholder={`${min}-${max}`}
                 aria-label="Enter week number"
                 autoFocus
               />
-              <div className="flex justify-between text-xs" style={{ color: PRIMARY }}>
+              <div
+                className="flex justify-between text-xs"
+                style={{ color: PRIMARY }}
+              >
                 <div className="flex items-center gap-1">
                   <Calendar size={12} color={PRIMARY} />
                   <span>Press Enter</span>
                 </div>
-                <div className="text-right">Valid: {min}-{max}</div>
+                <div className="text-right">
+                  Valid: {min}-{max}
+                </div>
               </div>
             </div>
           </div>

@@ -142,6 +142,9 @@ const OrdersTable: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedRows, setSelectedRows] = useState<NormalizedTableData[]>([]);
   
+  // NUEVO: Estado para year
+  const [year, setYear] = useState<number>(() => new Date().getFullYear());
+  
   const [week, setWeek] = useState<number>(() => {
     const now = new Date();
     return getWeekOfYear(now);
@@ -150,8 +153,8 @@ const OrdersTable: React.FC = () => {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 100 });
   const [totalRows, setTotalRows] = useState(0);
   
-  const currentYear = new Date().getFullYear();
-  const weekRange = useMemo(() => getWeekRange(currentYear, week), [currentYear, week]);
+  // ACTUALIZADO: Usar year en lugar de currentYear
+  const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
   
   // Filters
   const [weekdayFilter, setWeekdayFilter] = useState<string>('');
@@ -209,7 +212,7 @@ const OrdersTable: React.FC = () => {
   const [globalSearchLoading, setGlobalSearchLoading] = useState<boolean>(false);
   const [refreshCostFuelsTrigger, setRefreshCostFuelsTrigger] = useState<string | null>(null);
 
-  // Load data function
+  // Load data function - ACTUALIZADO para usar year
   const loadData = useCallback(async (searchTerm?: string) => {
     try {
       setLoading(true);
@@ -217,10 +220,10 @@ const OrdersTable: React.FC = () => {
       // Si hay searchTerm, es búsqueda global, si no, usar filtros normales
       const response = await fetchOrdersReport(
         pagination.pageIndex + 1,
-        searchTerm ? 1 : week, // Si hay búsqueda, mandar week dummy
-        searchTerm ? 2025 : currentYear, // Si hay búsqueda, mandar year dummy
+        searchTerm ? 1 : week,
+        searchTerm ? 2025 : year, // ACTUALIZADO: usar year
         pagination.pageSize,
-        searchTerm // Solo se usa si hay searchTerm
+        searchTerm
       );
       
       const mappedData: NormalizedTableData[] = response.results.map((item) => {
@@ -272,15 +275,14 @@ const OrdersTable: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination, week, currentYear, isGlobalSearchActive]); // Agregar isGlobalSearchActive como dependencia
+  }, [pagination, week, year, isGlobalSearchActive]); // ACTUALIZADO: agregar year
 
   // Función separada para búsqueda global
   const handleGlobalSearch = useCallback(async () => {
     if (!globalSearch.trim()) {
-      // Si no hay término de búsqueda, volver a datos normales
       setIsGlobalSearchActive(false);
       setGlobalSearchLoading(false);
-      await loadData(); // Cargar datos normales sin búsqueda
+      await loadData();
       return;
     }
 
@@ -288,7 +290,6 @@ const OrdersTable: React.FC = () => {
       setGlobalSearchLoading(true);
       setIsGlobalSearchActive(true);
       
-      // Reset pagination cuando se hace búsqueda global
       setPagination({ pageIndex: 0, pageSize: 100 });
       
       await loadData(globalSearch.trim());
@@ -307,19 +308,17 @@ const OrdersTable: React.FC = () => {
     setIsGlobalSearchActive(false);
     setGlobalSearchLoading(false);
     
-    // Reset pagination cuando se limpia búsqueda
     setPagination({ pageIndex: 0, pageSize: 100 });
     
-    await loadData(); // Recargar datos normales
+    await loadData();
   }, [loadData]);
 
-  // Effects - Mejorar la lógica
+  // Effects - ACTUALIZADO para usar year
   useEffect(() => {
-    // Solo cargar datos automáticamente si NO hay búsqueda global activa
     if (!isGlobalSearchActive) {
       loadData();
     }
-  }, [pagination, week, currentYear]); // Remover loadData de las dependencias para evitar loops
+  }, [pagination, week, year]); // ACTUALIZADO: usar year
 
   useEffect(() => {
     if (!isGlobalSearchActive) {
@@ -336,7 +335,7 @@ const OrdersTable: React.FC = () => {
       if (weekdayFilter) {
         filtered = filtered.filter((item) => item.weekday === weekdayFilter);
       }
-      if (locationString) { // locationFilter -> locationString
+      if (locationString) {
         filtered = filtered.filter((item) => {
           const itemLocation = [item.country, item.state, item.city].filter(Boolean).join(", ");
           return itemLocation.toLowerCase().includes(locationString.toLowerCase());
@@ -344,7 +343,7 @@ const OrdersTable: React.FC = () => {
       }
       setFilteredData(filtered);
     }
-  }, [data, week, weekdayFilter, locationString, isGlobalSearchActive]); // locationFilter -> locationString
+  }, [data, week, weekdayFilter, locationString, isGlobalSearchActive]);
 
   // Cargar países al iniciar
   useEffect(() => {
@@ -399,6 +398,12 @@ const OrdersTable: React.FC = () => {
     setPagination({ pageIndex: 0, pageSize: newRowsPerPage });
   };
 
+  // NUEVO: Handler para year
+  const handleYearChange = useCallback((newYear: number) => {
+    setYear(newYear);
+    setPagination({ pageIndex: 0, pageSize: 100 }); // Reset pagination
+  }, []);
+
   const handleRowSelect = (row: NormalizedTableData) => {
     setSelectedRows(prev => {
       const isSelected = prev.some(selected => selected.id === row.id);
@@ -427,12 +432,10 @@ const OrdersTable: React.FC = () => {
     });
   };
 
-  // Nueva función para manejar el botón de tres puntos
   const handleActionsMenuClick = (event: React.MouseEvent, row: NormalizedTableData) => {
     event.preventDefault();
     event.stopPropagation();
     
-    // Usar las coordenadas del botón para posicionar el menú
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     setContextMenu({
       mouseX: rect.right,
@@ -536,35 +539,34 @@ const OrdersTable: React.FC = () => {
 
   const handleRefreshCostFuels = (orderId: string) => {
     setRefreshCostFuelsTrigger(orderId);
-    // Reset trigger después de un tiempo
     setTimeout(() => setRefreshCostFuelsTrigger(null), 100);
   };
 
   // Export handlers
   const handleExportExcel = (data: NormalizedTableData[], filename: string) => {
-    // Convert to original TableData format for export
     const exportData = data.map(item => ({ ...item } as TableData));
     exportToExcel(exportData, filename);
   };
 
   const handleExportPDF = (data: NormalizedTableData[], filename: string) => {
-    // Convert to original TableData format for export
     const exportData = data.map(item => ({ ...item } as TableData));
     exportToPDF(exportData, filename);
   };
 
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
-      {/* Filters with Statistics */}
+      {/* Filters with Statistics - ACTUALIZADO */}
       <TableFilters
+        year={year}
         week={week}
         weekdayFilter={weekdayFilter}
-        locationFilter={""} // MANTENER para compatibilidad pero no se usa
-        locations={[]} // MANTENER para compatibilidad pero no se usa
+        locationFilter={""}
+        locations={[]}
         weekRange={weekRange}
+        onYearChange={handleYearChange}
         onWeekChange={setWeek}
         onWeekdayChange={setWeekdayFilter}
-        onLocationChange={() => {}} // MANTENER para compatibilidad pero no se usa
+        onLocationChange={() => {}}
         onCalendarOpen={() => setCalendarOpen(true)}
         data={data}
         filteredData={filteredData}
@@ -574,7 +576,6 @@ const OrdersTable: React.FC = () => {
         onGlobalSearchClear={handleClearGlobalSearch} 
         globalSearchLoading={globalSearchLoading}
         isGlobalSearchActive={isGlobalSearchActive}
-        // AGREGAR estas nuevas props:
         locationString={locationString}
         country={country}
         setCountry={setCountry}
@@ -772,7 +773,6 @@ const OrdersTable: React.FC = () => {
         orderKey={selectedOrderForFuel?.id || ''}
         orderRef={selectedOrderForFuel?.key_ref || ''}
         onSuccess={() => {
-          // Refrescar solo los costFuels de esta orden específica
           if (selectedOrderForFuel) {
             handleRefreshCostFuels(selectedOrderForFuel.id);
           }

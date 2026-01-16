@@ -48,6 +48,19 @@ const columns: Column[] = [
   { id: 'key_ref', label: 'Reference', minWidth: 90, sortable: true, copyable: true },
   { id: 'firstName', label: 'First Name', minWidth: 90, sortable: true },
   { id: 'lastName', label: 'Last Name', minWidth: 90, sortable: true },
+  { id: 'company', label: 'Company', minWidth: 110, sortable: true },
+  { id: 'job', label: 'Job', minWidth: 110, sortable: true },
+  { 
+    id: 'weight', 
+    label: 'Weight', 
+    minWidth: 90,
+    sortable: true,
+    format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
+  },
+  { id: 'dateReference', label: 'Date', minWidth: 110, sortable: true },
+  { id: 'state', label: 'Location', minWidth: 90, sortable: true },
+  { id: 'weekday', label: 'Weekday', minWidth: 90, sortable: true },
+  { id: 'city', label: 'Address', minWidth: 90, sortable: true },
   { id: 'email', label: 'Email', minWidth: 110, sortable: true },
   { 
     id: 'phone', 
@@ -59,19 +72,24 @@ const columns: Column[] = [
       return phone ? phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : 'N/A';
     }
   },
-  { id: 'company', label: 'Company', minWidth: 110, sortable: true },
-  { id: 'city', label: 'City', minWidth: 90, sortable: true },
-  { id: 'state', label: 'Location', minWidth: 90, sortable: true },
-  { id: 'weekday', label: 'Weekday', minWidth: 90, sortable: true },
-  { id: 'dateReference', label: 'Date', minWidth: 110, sortable: true },
-  { id: 'job', label: 'Job', minWidth: 110, sortable: true },
   { 
-    id: 'weight', 
-    label: 'Weight', 
-    minWidth: 90,
+    id: 'payStatus', 
+    label: 'Pay Status', 
+    minWidth: 100,
     sortable: true,
-    format: (value: string | number | null | undefined | unknown) => String(value || 'N/A')
+    format: (value: string | number | null | undefined | unknown) => {
+      const status = Number(value || 0);
+      return (
+        <span className={`px-2 py-0.5 rounded-full text-xs font-bold text-white`} style={{ 
+          backgroundColor: status === 0 ? '#ef4444' : '#22c55e' 
+        }}>
+          {status === 0 ? 'Unpaid' : 'Paid'}
+        </span>
+      );
+    }
   },
+
+
   { 
     id: 'truckType', 
     label: 'Truck Type', 
@@ -117,23 +135,6 @@ const columns: Column[] = [
     format: (value: string | number | null | undefined | unknown) => {
       const num = Number(value || 0);
       return `${num.toLocaleString('en-US')}`;
-    }
-  },
-  { id: 'week', label: 'Week', minWidth: 70, sortable: true },
-  { 
-    id: 'payStatus', 
-    label: 'Pay Status', 
-    minWidth: 100,
-    sortable: true,
-    format: (value: string | number | null | undefined | unknown) => {
-      const status = Number(value || 0);
-      return (
-        <span className={`px-2 py-0.5 rounded-full text-xs font-bold text-white`} style={{ 
-          backgroundColor: status === 0 ? '#ef4444' : '#22c55e' 
-        }}>
-          {status === 0 ? 'Unpaid' : 'Paid'}
-        </span>
-      );
     }
   },
   { 

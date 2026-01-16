@@ -18,16 +18,19 @@ import {
   ArrowRight
 } from 'lucide-react';
 import WeekPicker from '../../components/WeekPicker';
+import YearPicker from '../../components/YearPicker';
 
 import type { TableData } from '../domain/TableData';
 
 interface TableFiltersProps {
   week: number;
+  year: number;
   weekdayFilter: string;
   locationFilter: string;
   locations: string[];
   weekRange: { start: string; end: string };
   onWeekChange: (week: number) => void;
+  onYearChange: (year: number) => void;
   onWeekdayChange: (weekday: string) => void;
   onLocationChange: (location: string) => void;
   onCalendarOpen: () => void;
@@ -74,10 +77,12 @@ type LocationOption = { country: string } | { name: string } | string;
 
 export const TableFilters: React.FC<TableFiltersProps> = ({
   week,
+  year,
   weekdayFilter,
   locationFilter,
   weekRange,
   onWeekChange,
+  onYearChange,
   onWeekdayChange,
   onCalendarOpen,
   data = [],
@@ -217,151 +222,38 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 
   return (
     <div>
-      {/* Statistics Panel - Más compacto */}
-      <div className="rounded-xl shadow-md border p-3 mb-3" style={{ borderColor: COLORS.primary }}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h4 className="text-base font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
-              <BarChart3 size={18} />
-              {isGlobalSearchActive ? 'Global Search Results' : `Week ${week} Statistics`}
-            </h4>
-            <p className="text-xs text-gray-600">
-              {isGlobalSearchActive 
-                ? `Results for "${globalSearch}"`
-                : `${weekRange.start} → ${weekRange.end}`
-              }
-            </p>
-          </div>
+      {/* Statistics Panel - Solo Progress Bar */}
+      <div className="rounded-xl shadow-md border p-3 mb-2" style={{ borderColor: COLORS.primary }}>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
+            <BarChart3 size={16} />
+            {isGlobalSearchActive ? 'Global Search Results' : `Week ${week} Statistics`}
+          </h4>
+          <span className="text-xs text-gray-600">
+            {isGlobalSearchActive 
+              ? `Results for "${globalSearch}"`
+              : `${weekRange.start} → ${weekRange.end}`
+            }
+          </span>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
-          {/* Total Orders */}
-          <div 
-            className="rounded-lg p-2 border shadow-sm transition-all duration-200 hover:shadow-md"
-            style={{ borderColor: COLORS.primary }}
-          >
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: COLORS.primary }}
-              >
-                <ClipboardList size={14} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-lg font-bold truncate" style={{ color: COLORS.primary }}>
-                  {weeklyStats.totalOrders.toLocaleString()}
-                </div>
-                <div className="text-xs font-semibold text-gray-600 truncate">
-                  {isGlobalSearchActive ? 'Total Found' : 'Total'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Finished Orders */}
-          <div 
-            className="rounded-lg p-2 border shadow-sm transition-all duration-200 hover:shadow-md"
-            style={{ borderColor: COLORS.primary }}
-          >
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: COLORS.success }}
-              >
-                <CheckCircle size={14} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1">
-                  <div className="text-lg font-bold truncate" style={{ color: COLORS.success }}>
-                    {weeklyStats.finishedOrders.toLocaleString()}
-                  </div>
-                  {weeklyStats.totalOrders > 0 && (
-                    <div className="text-xs text-gray-500">
-                      ({Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}%)
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs font-semibold text-gray-600 truncate">
-                  Finished
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pending Orders */}
-          <div 
-            className="rounded-lg p-2 border shadow-sm transition-all duration-200 hover:shadow-md"
-            style={{ borderColor: COLORS.primary }}
-          >
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: COLORS.secondary }}
-              >
-                <Clock size={14} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1">
-                  <div className="text-lg font-bold truncate" style={{ color: COLORS.secondary }}>
-                    {weeklyStats.pendingOrders.toLocaleString()}
-                  </div>
-                  {weeklyStats.totalOrders > 0 && (
-                    <div className="text-xs text-gray-500">
-                      ({Math.round((weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100)}%)
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs font-semibold text-gray-600 truncate">
-                  Pending
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Inactive Orders */}
-          <div 
-            className="rounded-lg p-2 border shadow-sm transition-all duration-200 hover:shadow-md"
-            style={{ borderColor: COLORS.primary }}
-          >
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: COLORS.error }}
-              >
-                <XCircle size={14} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1">
-                  <div className="text-lg font-bold truncate" style={{ color: COLORS.error }}>
-                    {weeklyStats.inactiveOrders.toLocaleString()}
-                  </div>
-                  {weeklyStats.totalOrders > 0 && (
-                    <div className="text-xs text-gray-500">
-                      ({Math.round((weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100)}%)
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs font-semibold text-gray-600 truncate">
-                  Inactive
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress Bar - Más compacto */}
         {weeklyStats.totalOrders > 0 && (
-          <div className="mt-3 p-2 rounded-lg border shadow-sm" style={{ borderColor: COLORS.primary }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold flex items-center gap-1" style={{ color: COLORS.primary }}>
-                <Target size={14} />
-                {isGlobalSearchActive ? 'Results Progress' : `Week ${week} Progress`}
-              </span>
-              <span className="text-xs font-semibold" style={{ color: COLORS.success }}>
-                {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
+          <div className="p-3 rounded-lg border shadow-sm" style={{ borderColor: COLORS.primary }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-bold flex items-center gap-1" style={{ color: COLORS.primary }}>
+                  <Target size={14} />
+                  {isGlobalSearchActive ? 'Results Progress' : `Week ${week} Progress`}
+                </span>
+                <span className="text-xs font-semibold" style={{ color: COLORS.success }}>
+                  {Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}% Complete
+                </span>
+              </div>
+              <span className="text-xs font-bold" style={{ color: COLORS.primary }}>
+                Total: {weeklyStats.totalOrders.toLocaleString()}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div className="h-full flex">
                 <div 
                   className="transition-all duration-500"
@@ -386,27 +278,27 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 ></div>
               </div>
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span className="flex items-center gap-1">
-                <CheckCircle size={10} />
-                {weeklyStats.finishedOrders}
+            <div className="flex justify-between text-xs font-semibold mt-2">
+              <span className="flex items-center gap-1" style={{ color: COLORS.success }}>
+                <CheckCircle size={12} />
+                Finished: {weeklyStats.finishedOrders} ({Math.round((weeklyStats.finishedOrders / weeklyStats.totalOrders) * 100)}%)
               </span>
-              <span className="flex items-center gap-1">
-                <Clock size={10} />
-                {weeklyStats.pendingOrders}
+              <span className="flex items-center gap-1" style={{ color: COLORS.secondary }}>
+                <Clock size={12} />
+                Pending: {weeklyStats.pendingOrders} ({Math.round((weeklyStats.pendingOrders / weeklyStats.totalOrders) * 100)}%)
               </span>
-              <span className="flex items-center gap-1">
-                <XCircle size={10} />
-                {weeklyStats.inactiveOrders}
+              <span className="flex items-center gap-1" style={{ color: COLORS.error }}>
+                <XCircle size={12} />
+                Inactive: {weeklyStats.inactiveOrders} ({Math.round((weeklyStats.inactiveOrders / weeklyStats.totalOrders) * 100)}%)
               </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Main Filter Card - Más compacto */}
+      {/* Main Filter Card */}
       <div className="rounded-xl shadow-md border p-3 mb-3 week-dropdown-container" style={{ borderColor: COLORS.primary }} ref={dropdownRef}>
-        {/* Header - Más compacto */}
+        {/* Header */}
         <div className="flex items-center space-x-2 mb-3">
           <div 
             className="p-1.5 rounded-lg"
@@ -414,21 +306,19 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           >
             <ClipboardList size={16} style={{ color: COLORS.secondary }} />
           </div>
-          <h2 className="text-base font-bold" style={{ color: COLORS.primary }}>
+          <h2 className="text-sm font-bold" style={{ color: COLORS.primary }}>
             FILTERS & SEARCH
           </h2>
         </div>
 
-        {/* Global Search Section - Más compacto */}
-        <div className="mb-4">
-          <div 
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 border shadow-sm"
-            style={{ borderColor: COLORS.primary }}
-          >
+        {/* Filters Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-3">
+          {/* Global Search */}
+          <div className="lg:col-span-2 relative">
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold" style={{ color: COLORS.primary }}>
                 <div className="flex items-center gap-1.5">
-                  <Globe size={14} />
+                  <Globe size={12} />
                   Global Search
                 </div>
               </label>
@@ -443,11 +333,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 </button>
               )}
             </div>
-            
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <Search 
-                  size={14} 
+                  size={12} 
                   className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10"
                   style={{ color: COLORS.primary }}
                 />
@@ -456,8 +345,8 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   value={globalSearch}
                   onChange={(e) => onGlobalSearchChange(e.target.value)}
                   onKeyPress={handleGlobalSearchKeyPress}
-                  placeholder="Search by order ref, person name, job, or location..."
-                  className="w-full pl-8 pr-3 py-2 border rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                  placeholder="Search order, name, job, location..."
+                  className="w-full pl-7 pr-2 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   style={{ 
                     borderColor: COLORS.primary,
                     backgroundColor: 'white',
@@ -476,7 +365,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               <button
                 onClick={onGlobalSearchSubmit}
                 disabled={globalSearchLoading || !globalSearch.trim()}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1 ${
                   globalSearchLoading || !globalSearch.trim()
                     ? 'cursor-not-allowed'
                     : 'text-white hover:shadow-md'
@@ -488,27 +377,33 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               >
                 {globalSearchLoading ? (
                   <>
-                    <Search size={14} className="animate-spin" />
-                    Searching...
+                    <Search size={12} className="animate-spin" />
                   </>
                 ) : (
                   <>
-                    <Search size={14} />
-                    Search
+                    <Search size={12} />
                   </>
                 )}
               </button>
             </div>
-
-            <div className="mt-2 text-xs text-gray-600">
-              <strong>Tip:</strong> Enter order ref, name, job, or location
-            </div>
           </div>
-        </div>
 
-        {/* Regular Filters - Más compacto */}
-        {!isGlobalSearchActive && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          {!isGlobalSearchActive && (
+            <>
+            {/* Year Input Card */}
+            <div className="relative">
+              <YearPicker
+                year={year}
+                onYearSelect={onYearChange}
+                min={2015}
+                max={new Date().getFullYear() + 2}
+              />
+              <div 
+                className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                style={{ backgroundColor: year ? COLORS.success : COLORS.error }}
+              ></div>
+            </div>
+
             {/* Week Input Card */}
             <div className="relative">
               <WeekPicker
@@ -523,7 +418,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               ></div>
             </div>
 
-            {/* Weekday Select Card - Estilo consistente con Autocomplete */}
+            {/* Weekday Select Card */}
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-xs font-bold" style={{ color: COLORS.primary }}>
@@ -666,83 +561,73 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             </div>
 
             {/* Calendar Button Card */}
-            <div className="flex flex-col justify-between">
-              <label className="block text-xs font-bold mb-2" style={{ color: COLORS.primary }}>
-                <div className="flex items-center gap-1.5">
-                  <BarChart3 size={14} />
-                  Quick Actions
-                </div>
-              </label>
+            <div className="flex flex-col justify-end">
               <button
                 onClick={onCalendarOpen}
-                className="w-full px-3 py-2 border rounded-lg text-xs font-bold transition-all duration-200 hover:shadow-md flex items-center justify-center space-x-1.5"
+                className="w-full px-3 py-1.5 border rounded-lg text-xs font-bold transition-all duration-200 hover:shadow-md flex items-center justify-center space-x-1.5"
                 style={{ 
                   borderColor: COLORS.secondary,
                   backgroundColor: COLORS.secondary,
                   color: 'white'
                 }}
               >
-                <Calendar size={16} />
-                <span>Calendar View</span>
+                <Calendar size={14} />
+                <span>Calendar</span>
               </button>
             </div>
+            </>
+          )}
           </div>
-        )}
 
-        {/* Period Display Section - Más compacto */}
+        {/* Period Display Section - Compacto */}
         {!isGlobalSearchActive && (
           <div 
-            className="mt-3 rounded-lg p-3 border"
+            className="rounded-lg p-2 border flex items-center justify-between"
             style={{ borderColor: COLORS.primary }}
           >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="flex items-center space-x-2">
-                <div 
-                  className="p-1.5 rounded-lg"
-                  style={{ backgroundColor: COLORS.primary }}
-                >
-                  <Calendar size={14} className="text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm" style={{ color: COLORS.primary }}>
-                    Current Period
-                  </h3>
-                  <p className="text-xs text-gray-600">Active date range</p>
-                </div>
+            <div className="flex items-center space-x-2">
+              <div 
+                className="p-1 rounded-lg"
+                style={{ backgroundColor: COLORS.primary }}
+              >
+                <Calendar size={12} className="text-white" />
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <div 
-                  className="px-3 py-1.5 rounded-lg border font-bold text-xs shadow-sm"
-                  style={{ 
-                    borderColor: COLORS.secondary,
-                    color: COLORS.primary
-                  }}
-                >
-                  {weekRange.start}
-                </div>
-                <ArrowRight 
-                  size={16} 
-                  style={{ color: COLORS.primary }}
-                />
-                <div 
-                  className="px-3 py-1.5 rounded-lg border font-bold text-xs shadow-sm"
-                  style={{ 
-                    borderColor: COLORS.secondary,
-                    color: COLORS.primary
-                  }}
-                >
-                  {weekRange.end}
-                </div>
+              <span className="font-bold text-xs" style={{ color: COLORS.primary }}>
+                Year {year} - Week {week}
+              </span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <div 
+                className="px-2 py-1 rounded-lg border font-bold text-xs"
+                style={{ 
+                  borderColor: COLORS.secondary,
+                  color: COLORS.primary
+                }}
+              >
+                {weekRange.start}
+              </div>
+              <ArrowRight 
+                size={12} 
+                style={{ color: COLORS.primary }}
+              />
+              <div 
+                className="px-2 py-1 rounded-lg border font-bold text-xs"
+                style={{ 
+                  borderColor: COLORS.secondary,
+                  color: COLORS.primary
+                }}
+              >
+                {weekRange.end}
               </div>
             </div>
           </div>
         )}
 
-        {/* Active Search Indicator - Más compacto */}
+        {/* Active Search Indicator */}
         {isGlobalSearchActive && (
           <div 
-            className="mt-4 rounded-lg p-3 border"
+            className="mt-3 rounded-lg p-2 border"
             style={{ 
               borderColor: COLORS.primary,
               background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
@@ -751,21 +636,21 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div 
-                  className="p-1.5 rounded-lg"
+                  className="p-1 rounded-lg"
                   style={{ backgroundColor: COLORS.primary }}
                 >
-                  <Globe size={14} className="text-white" />
+                  <Globe size={12} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm" style={{ color: COLORS.primary }}>
+                  <h3 className="font-bold text-xs" style={{ color: COLORS.primary }}>
                     Global Search Results
                   </h3>
-                  <p className="text-xs text-gray-600">Results for "{globalSearch}"</p>
+                  <p className="text-xs text-gray-600">"{globalSearch}"</p>
                 </div>
               </div>
               
               <div 
-                className="px-3 py-1.5 rounded-lg border font-bold text-xs shadow-sm"
+                className="px-2 py-1 rounded-lg border font-bold text-xs"
                 style={{ 
                   borderColor: COLORS.primary,
                   backgroundColor: COLORS.primary,
@@ -778,11 +663,11 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
           </div>
         )}
 
-        {/* Active Filters Summary - Más compacto */}
-        <div className="mt-3">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-bold flex items-center gap-1.5" style={{ color: COLORS.primary }}>
-              <Filter size={14} />
+        {/* Active Filters Summary */}
+        <div className="mt-2">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="text-xs font-bold flex items-center gap-1" style={{ color: COLORS.primary }}>
+              <Filter size={12} />
               Active Filters
             </h4>
             <span className="text-xs text-gray-500">
@@ -811,7 +696,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                 style={{ borderColor: COLORS.primary }}
               >
                 <Calendar size={10} />
-                Week {week}
+                Year {year} - Week {week}
               </div>
             )}
             {weekdayFilter && (

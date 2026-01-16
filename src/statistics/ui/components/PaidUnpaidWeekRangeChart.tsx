@@ -1,28 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from 'react';
-import { ResponsiveBar } from '@nivo/bar';
-import { ResponsiveLine } from '@nivo/line';
-import { ResponsivePie } from '@nivo/pie';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import * as echarts from 'echarts';
 import { usePaidUnpaidData } from '../../hooks/usePaidUnpaidData';
 import { getWeekRange } from '../../utils/dateUtils';
-import { OrderPaidUnpaidWeekRange, PaidUnpaidChartData } from '../../domain/OrdersPaidUnpaidModels';
+import { OrderPaidUnpaidWeekRange } from '../../domain/OrdersPaidUnpaidModels';
 import OrdersReportDialog from '../../components/OrdersReportDialog';
 import { 
   BarChart3, 
-  TrendingUp, 
   Calendar, 
   RefreshCw, 
   Package, 
   CheckCircle, 
-  Trophy, 
-  Database,
+  Trophy,
   AlertTriangle,
   RotateCcw,
-  PieChart,
-  LineChart,
   Target,
   Activity,
-  FileDown
+  FileDown,
+  TrendingUp
 } from 'lucide-react';
 import PaidUnpaidExportDialog from './export/PaidUnpaidExportDialog';
 import YearPicker from '../../../components/YearPicker';
@@ -34,7 +29,6 @@ interface PaidUnpaidWeekRangeChartProps {
   initialEndWeek?: number;
 }
 
-// Define types for component props
 type ButtonSize = 'small' | 'default' | 'large';
 type ButtonVariant = 'primary' | 'secondary';
 
@@ -57,11 +51,9 @@ interface MetricCardProps {
   label: string;
   icon: React.ComponentType<{ size?: number; color?: string }>;
   color?: string;
+  trend?: number;
 }
 
-
-
-// Move components outside to avoid hook order issues
 const ModernButton: React.FC<ModernButtonProps> = ({ 
   children, 
   onClick, 
@@ -115,74 +107,94 @@ const ModernCard: React.FC<ModernCardProps> = ({ children, className = "" }) => 
   </div>
 );
 
-const MetricCard: React.FC<MetricCardProps> = ({ value, label, icon: Icon, color = "#0B2863" }) => {
+const MetricCard: React.FC<MetricCardProps> = ({ value, label, icon: Icon, color = "#0B2863", trend }) => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
+    const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const isMobile = windowWidth < 640;
-  const isTablet = windowWidth >= 640 && windowWidth < 1024;
 
   return (
     <ModernCard className="hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
       <div className="flex items-center justify-between">
-        <div>
-          <div className="text-xl sm:text-2xl font-bold" style={{ color }}>{value}</div>
+        <div className="flex-1">
+          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color }}>{value}</div>
           <div className="text-xs sm:text-sm text-gray-600 font-medium">{label}</div>
+          {trend !== undefined && (
+            <div className={`text-xs font-bold mt-1 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
+            </div>
+          )}
         </div>
-        <div className="text-2xl sm:text-3xl opacity-70">
-          <Icon size={isMobile ? 20 : isTablet ? 24 : 28} color={color} />
+        <div className="text-3xl opacity-70">
+          <Icon size={isMobile ? 24 : 32} color={color} />
         </div>
       </div>
     </ModernCard>
   );
 };
 
-
 const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   initialYear,
   initialStartWeek,
   initialEndWeek
 }) => {
-  // Calcular valores seguros ANTES de pasarlos al hook
   const currentYear = new Date().getFullYear();
   const currentWeek = Math.ceil((new Date().getTime() - new Date(currentYear, 0, 1).getTime()) / 604800000);
   
-  const safeYear = (initialYear && !isNaN(initialYear) && initialYear >= 2000) 
-    ? initialYear 
-    : currentYear;
-  
-  const safeStartWeek = (initialStartWeek && !isNaN(initialStartWeek) && initialStartWeek >= 1 && initialStartWeek <= 53) 
-    ? initialStartWeek 
-    : Math.max(1, currentWeek - 5);
-  
-  const safeEndWeek = (initialEndWeek && !isNaN(initialEndWeek) && initialEndWeek >= 1 && initialEndWeek <= 53) 
-    ? initialEndWeek 
-    : Math.min(53, currentWeek);
+  const safeYear = (initialYear && !isNaN(initialYear) && initialYear >= 2000) ? initialYear : currentYear;
+  const safeStartWeek = (initialStartWeek && !isNaN(initialStartWeek) && initialStartWeek >= 1 && initialStartWeek <= 53) ? initialStartWeek : Math.max(1, currentWeek - 5);
+  const safeEndWeek = (initialEndWeek && !isNaN(initialEndWeek) && initialEndWeek >= 1 && initialEndWeek <= 53) ? initialEndWeek : Math.min(53, currentWeek);
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [chartReady, setChartReady] = useState(false);
+  
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<echarts.ECharts | null>(null);
+
+  // Callback ref para asegurar que el div existe
+  const chartContainerRef = useCallback((node: HTMLDivElement | null) => {
+    // Limpiar instancia anterior si existe
+    if (chartInstance.current) {
+      chartInstance.current.dispose();
+      chartInstance.current = null;
+      setChartReady(false);
+    }
+
+    if (node !== null) {
+      chartRef.current = node;
+      console.log('Chart container ref set');
+      
+      // Inicializar ECharts cuando el nodo está disponible
+      try {
+        // Limpiar cualquier contenido previo del nodo
+        node.innerHTML = '';
+        
+        chartInstance.current = echarts.init(node, null, {
+          renderer: 'canvas',
+          useDirtyRect: false
+        });
+        setChartReady(true);
+        console.log('ECharts initialized successfully');
+      } catch (error) {
+        console.error('Error initializing ECharts:', error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
+    const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Usar valores seguros en el hook
   const {
     loading,
     error,
@@ -200,52 +212,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     handleTryAgain,
   } = usePaidUnpaidData(safeYear, safeStartWeek, safeEndWeek);
 
-
-  // Responsive breakpoints
   const isMobile = windowWidth < 640;
-  const isTablet = windowWidth >= 640 && windowWidth < 1024;
-  const isDesktop = windowWidth >= 1024;
-
-  // Transform data for Nivo charts
-  const nivoBarData = chartData.map(week => ({
-    week: `W${week.week}`,
-    'Paid': week.paid,
-    'Unpaid': week.unpaid,
-    weekNumber: week.week,
-    paidPercentage: week.paidPercentage,
-    unpaidPercentage: week.unpaidPercentage,
-    total: week.total
-  }));
-
-  const nivoLineData = [
-    {
-      id: 'Paid',
-      color: '#22c55e',
-      data: chartData.map(week => ({
-        x: `W${week.week}`,
-        y: week.paid,
-        weekNumber: week.week
-      }))
-    },
-    {
-      id: 'Unpaid',
-      color: '#F09F52',
-      data: chartData.map(week => ({
-        x: `W${week.week}`,
-        y: week.unpaid,
-        weekNumber: week.week
-      }))
-    },
-    {
-      id: 'Total',
-      color: '#0B2863',
-      data: chartData.map(week => ({
-        x: `W${week.week}`,
-        y: week.total,
-        weekNumber: week.week
-      }))
-    }
-  ];
 
   // Calculate statistics
   const totalStats = chartData.reduce((acc, week) => ({
@@ -254,45 +221,338 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
     totalUnpaid: acc.totalUnpaid + week.unpaid,
     avgPaidPercentage: 0,
     bestWeek: !acc.bestWeek || (week.total > (acc.bestWeek?.total || 0)) ? week : acc.bestWeek,
-    worstWeek: !acc.worstWeek || (week.total < (acc.worstWeek?.total || Infinity)) ? week : acc.worstWeek
   }), {
     totalOrders: 0,
     totalPaid: 0,
     totalUnpaid: 0,
     avgPaidPercentage: 0,
-    bestWeek: undefined as PaidUnpaidChartData | undefined,
-    worstWeek: undefined as PaidUnpaidChartData | undefined
+    bestWeek: undefined as any,
   });
 
   if (totalStats.totalOrders > 0) {
     totalStats.avgPaidPercentage = (totalStats.totalPaid / totalStats.totalOrders) * 100;
   }
 
-  const nivoPieData = [
-    {
-      id: 'Paid',
-      label: 'Paid Orders',
-      value: totalStats.totalPaid,
-      color: '#22c55e'
-    },
-    {
-      id: 'Unpaid',
-      label: 'Unpaid Orders',
-      value: totalStats.totalUnpaid,
-      color: '#F09F52'
-    }
-  ];
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.dispose();
+        chartInstance.current = null;
+      }
+    };
+  }, []);
 
-  // Event handlers
-  const handleChartClick = (data: any) => {
-    if (data?.data?.weekNumber) {
-      setSelectedWeek(data.data.weekNumber);
-      setShowDialog(true);
-    } else if (data?.weekNumber) {
-      setSelectedWeek(data.weekNumber);
-      setShowDialog(true);
+  // Actualizar gráfico cuando cambian los datos
+  useEffect(() => {
+    console.log('Chart update triggered', {
+      hasInstance: !!chartInstance.current,
+      chartReady,
+      loading,
+      dataLength: chartData.length,
+      year,
+      startWeek,
+      endWeek
+    });
+
+    if (!chartInstance.current || !chartReady) {
+      console.log('Chart not ready yet');
+      return;
     }
-  };
+
+    if (loading) {
+      console.log('Still loading...');
+      return;
+    }
+
+    if (chartData.length === 0) {
+      console.log('No data to display, clearing chart');
+      chartInstance.current.clear();
+      return;
+    }
+
+    console.log('Updating chart with data:', chartData.length, 'weeks');
+
+    const weeks = chartData.map(w => `W${w.week}`);
+    const paidData = chartData.map(w => w.paid);
+    const unpaidData = chartData.map(w => w.unpaid);
+    const totalData = chartData.map(w => w.total);
+
+    console.log('Chart data prepared:', { weeks: weeks.length, paidData, unpaidData, totalData });
+
+    const option: echarts.EChartsOption = {
+      title: {
+        text: 'Payment Trends',
+        left: 'center',
+        textStyle: {
+          color: '#0B2863',
+          fontSize: isMobile ? 16 : 20,
+          fontWeight: 'bold'
+        }
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+          shadowStyle: {
+            color: 'rgba(11, 40, 99, 0.1)'
+          }
+        },
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
+        borderColor: '#0B2863',
+        borderWidth: 2,
+        textStyle: {
+          color: '#0B2863',
+          fontSize: isMobile ? 11 : 13
+        },
+        padding: isMobile ? 8 : 12,
+        formatter: (params: any) => {
+          if (!Array.isArray(params) || params.length === 0) return '';
+          const dataIndex = params[0].dataIndex;
+          if (dataIndex === undefined || dataIndex >= chartData.length) return '';
+          
+          const weekNum = chartData[dataIndex].week;
+          const range = getWeekRange(year, weekNum);
+          let result = `<div style="font-weight: bold; margin-bottom: 8px; font-size: ${isMobile ? '13px' : '15px'}">Week ${weekNum}</div>`;
+          result += `<div style="color: #6B7280; font-size: ${isMobile ? '11px' : '12px'}; margin-bottom: 8px">${range.start} → ${range.end}</div>`;
+          
+          params.forEach((item: any) => {
+            const color = item.color || '#0B2863';
+            const value = item.value !== undefined ? item.value : 0;
+            result += `<div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0;">
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${color}; margin-right: 8px;"></span>
+              <span style="flex: 1;">${item.seriesName}:</span>
+              <span style="font-weight: bold; margin-left: 12px;">${value}</span>
+            </div>`;
+          });
+          return result;
+        }
+      },
+      legend: {
+        data: ['Paid', 'Unpaid', 'Total'],
+        top: isMobile ? 35 : 40,
+        textStyle: {
+          color: '#374151',
+          fontSize: isMobile ? 11 : 13,
+          fontWeight: 600
+        },
+        itemGap: isMobile ? 15 : 20
+      },
+      grid: {
+        left: isMobile ? '12%' : '8%',
+        right: isMobile ? '8%' : '5%',
+        top: isMobile ? 80 : 90,
+        bottom: isMobile ? 80 : 70,
+        containLabel: true
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          show: true,
+          xAxisIndex: [0],
+          start: 0,
+          end: 100,
+          height: isMobile ? 20 : 25,
+          bottom: isMobile ? 35 : 25,
+          borderColor: '#0B2863',
+          fillerColor: 'rgba(11, 40, 99, 0.15)',
+          handleStyle: {
+            color: '#0B2863',
+            borderColor: '#0B2863'
+          },
+          dataBackground: {
+            lineStyle: {
+              color: '#0B2863'
+            },
+            areaStyle: {
+              color: 'rgba(11, 40, 99, 0.2)'
+            }
+          },
+          selectedDataBackground: {
+            lineStyle: {
+              color: '#0B2863'
+            },
+            areaStyle: {
+              color: 'rgba(11, 40, 99, 0.3)'
+            }
+          },
+          textStyle: {
+            fontSize: isMobile ? 10 : 11
+          }
+        },
+        {
+          type: 'inside',
+          xAxisIndex: [0],
+          start: 0,
+          end: 100
+        }
+      ],
+      xAxis: {
+        type: 'category',
+        data: weeks,
+        axisLabel: {
+          rotate: isMobile ? 45 : 0,
+          color: '#374151',
+          fontSize: isMobile ? 10 : 12,
+          fontWeight: 600
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#0B2863',
+            width: 2
+          }
+        },
+        axisTick: {
+          lineStyle: {
+            color: '#0B2863'
+          }
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Orders',
+        nameTextStyle: {
+          color: '#0B2863',
+          fontSize: isMobile ? 11 : 13,
+          fontWeight: 'bold'
+        },
+        axisLabel: {
+          color: '#374151',
+          fontSize: isMobile ? 10 : 12
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#0B2863',
+            width: 2
+          }
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#E5E7EB',
+            type: 'dashed'
+          }
+        }
+      },
+      series: [
+        {
+          name: 'Paid',
+          type: 'bar',
+          stack: 'orders',
+          data: paidData,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#34D399' },
+              { offset: 1, color: '#10B981' }
+            ]),
+            borderRadius: [0, 0, 4, 4]
+          },
+          emphasis: {
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#10B981' },
+                { offset: 1, color: '#059669' }
+              ])
+            }
+          },
+          barWidth: isMobile ? '60%' : '50%'
+        },
+        {
+          name: 'Unpaid',
+          type: 'bar',
+          stack: 'orders',
+          data: unpaidData,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#FBBF24' },
+              { offset: 1, color: '#F59E0B' }
+            ]),
+            borderRadius: [4, 4, 0, 0]
+          },
+          emphasis: {
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#F59E0B' },
+                { offset: 1, color: '#D97706' }
+              ])
+            }
+          }
+        },
+        {
+          name: 'Total',
+          type: 'line',
+          data: totalData,
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: isMobile ? 6 : 8,
+          lineStyle: {
+            color: '#0B2863',
+            width: isMobile ? 3 : 4,
+            shadowColor: 'rgba(11, 40, 99, 0.3)',
+            shadowBlur: 10,
+            shadowOffsetY: 3
+          },
+          itemStyle: {
+            color: '#0B2863',
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          emphasis: {
+            scale: true,
+            itemStyle: {
+              color: '#FFE67B',
+              borderColor: '#0B2863',
+              borderWidth: 3
+            }
+          },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(11, 40, 99, 0.2)' },
+              { offset: 1, color: 'rgba(11, 40, 99, 0.02)' }
+            ])
+          }
+        }
+      ],
+      animation: true,
+      animationDuration: 800,
+      animationEasing: 'cubicOut'
+    };
+
+    try {
+      chartInstance.current.setOption(option, true);
+      console.log('Chart option set successfully');
+      
+      // Configurar eventos de clic
+      chartInstance.current.off('click');
+      chartInstance.current.on('click', (params: any) => {
+        if (params.componentType === 'series' && params.dataIndex !== undefined) {
+          const weekNum = chartData[params.dataIndex].week;
+          setSelectedWeek(weekNum);
+          setShowDialog(true);
+        }
+      });
+
+      // Forzar resize después de actualizar
+      setTimeout(() => {
+        if (chartInstance.current) {
+          chartInstance.current.resize();
+          console.log('Chart resized');
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error setting chart option:', error);
+    }
+
+  }, [chartData, loading, year, isMobile, chartReady]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      chartInstance.current?.resize();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const paidOrders: OrderPaidUnpaidWeekRange[] =
     selectedWeek && rawData
@@ -304,133 +564,23 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
       ? ((rawData as any)?.orders_by_week?.[String(selectedWeek)]?.filter((o: any) => !o.paid) || [])
       : [];
 
-  // Responsive Nivo theme
-  const responsiveTheme = {
-    background: 'transparent',
-    text: {
-      fontSize: isMobile ? 10 : isTablet ? 11 : 12,
-      fill: '#0B2863',
-      fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-    },
-    axis: {
-      domain: {
-        line: {
-          stroke: '#0B2863',
-          strokeWidth: isMobile ? 1 : 2
-        }
-      },
-      legend: {
-        text: {
-          fontSize: isMobile ? 11 : isTablet ? 12 : 13,
-          fill: '#0B2863',
-          fontWeight: 600,
-          fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-        }
-      },
-      ticks: {
-        line: {
-          stroke: '#0B2863',
-          strokeWidth: 1
-        },
-        text: {
-          fontSize: isMobile ? 9 : isTablet ? 10 : 11,
-          fill: '#374151',
-          fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-        }
-      }
-    },
-    grid: {
-      line: {
-        stroke: '#e5e7eb',
-        strokeWidth: 1
-      }
-    },
-    legends: {
-      text: {
-        fontSize: isMobile ? 10 : isTablet ? 11 : 12,
-        fill: '#374151',
-        fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-      }
-    },
-    tooltip: {
-      container: {
-        background: 'rgba(255, 255, 255, 0.98)',
-        color: '#0B2863',
-        fontSize: isMobile ? 11 : 12,
-        borderRadius: '12px',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        border: '3px solid #0B2863',
-        fontFamily: '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-      }
-    }
-  };
-
-  // Responsive chart margins
-  const getChartMargins = () => {
-    if (isMobile) {
-      return { top: 20, right: 40, bottom: 50, left: 40 };
-    } else if (isTablet) {
-      return { top: 30, right: 80, bottom: 50, left: 50 };
-    } else {
-      return { top: 50, right: 130, bottom: 50, left: 60 };
-    }
-  };
-
-  // Custom responsive tooltips
-  const ModernBarTooltip = ({ id, value, data }: any) => {
-    const range = getWeekRange(year, data.weekNumber);
-    return (
-      <div className="bg-white border-2 rounded-xl p-3 sm:p-4 shadow-xl max-w-[200px] sm:max-w-none" style={{ borderColor: '#0B2863' }}>
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0B2863' }}></div>
-          <span className="font-bold text-base sm:text-lg" style={{ color: '#0B2863' }}>
-            {data.week}
-          </span>
-        </div>
-        <div className="text-gray-600 text-xs mb-3 font-medium">
-          <span className="hidden sm:inline">{range.start} → {range.end}</span>
-          <span className="sm:hidden">{range.start.split('-').slice(1).join('/')}</span>
-        </div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-gray-700 text-xs sm:text-sm font-medium">{id}:</span>
-          <span className="font-bold text-base sm:text-lg" style={{ color: id === 'Paid' ? '#22c55e' : '#F09F52' }}>
-            {value}
-          </span>
-        </div>
-        <div className="text-xs text-gray-500 text-center mt-3 bg-gray-50 px-2 py-1 rounded">
-          <span className="hidden sm:inline">Click for details</span>
-          <span className="sm:hidden">Tap for details</span>
-        </div>
-      </div>
-    );
-  };
-
-  const ModernLineTooltip = ({ point }: any) => {
-    const range = getWeekRange(year, point.data.weekNumber);
-    return (
-      <div className="bg-white border-2 rounded-xl p-3 sm:p-4 shadow-xl max-w-[200px] sm:max-w-none" style={{ borderColor: '#0B2863' }}>
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: point.color }}></div>
-          <span className="font-bold text-base sm:text-lg" style={{ color: '#0B2863' }}>
-            {point.data.x}
-          </span>
-        </div>
-        <div className="text-gray-600 text-xs mb-3 font-medium">
-          <span className="hidden sm:inline">{range.start} → {range.end}</span>
-          <span className="sm:hidden">{range.start.split('-').slice(1).join('/')}</span>
-        </div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-gray-700 text-xs sm:text-sm font-medium">{point.serieId}:</span>
-          <span className="font-bold text-lg sm:text-xl" style={{ color: point.color }}>
-            {point.data.y}
-          </span>
-        </div>
-        <div className="text-xs text-gray-500 text-center mt-3 bg-gray-50 px-2 py-1 rounded">
-          <span className="hidden sm:inline">Click for details</span>
-          <span className="sm:hidden">Tap for details</span>
-        </div>
-      </div>
-    );
+  const handlePresetClick = (weeks: number) => {
+    const currentWeek = Math.ceil((new Date().getTime() - new Date(year, 0, 1).getTime()) / 604800000);
+    const start = Math.max(1, currentWeek - weeks);
+    const end = Math.min(53, currentWeek);
+    
+    console.log('Preset clicked:', { weeks, start, end, currentWeek });
+    
+    setStartWeek(start);
+    setEndWeek(end);
+    setPendingStartWeek(start);
+    setPendingEndWeek(end);
+    
+    // Esperar a que el estado se actualice antes de recargar
+    setTimeout(() => {
+      console.log('Reloading data after preset change');
+      loadPaidUnpaidData();
+    }, 200);
   };
 
   if (error) {
@@ -454,65 +604,48 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-full mx-auto space-y-4 sm:space-y-6">
         
         {/* Header */}
         <ModernCard>
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                  <BarChart3 size={isMobile ? 12 : 16} className="text-white" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <BarChart3 size={16} className="text-white" />
                 </div>
-                <h1 className="text-lg sm:text-2xl font-bold" style={{ color: '#0B2863' }}>
-                  <span className="hidden sm:inline">Payment Analytics Dashboard</span>
-                  <span className="sm:hidden">Payment Analytics</span>
+                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2863' }}>
+                  Payment Analytics
                 </h1>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium">
-                <span className="hidden sm:inline">Real-time payment tracking with advanced visualization engine</span>
-                <span className="sm:hidden">Real-time payment tracking</span>
-              </p>
               {chartData.length > 0 && (
-                <div className="flex items-center gap-2 mt-2 sm:mt-3">
+                <div className="flex items-center gap-2 mt-2">
                   <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
-                  <span className="text-cyan-600 text-xs sm:text-sm font-bold">
+                  <span className="text-cyan-600 text-sm font-bold">
                     {(() => {
                       const start = getWeekRange(year, startWeek).start;
                       const end = getWeekRange(year, endWeek).end;
-                      if (isMobile) {
-                        return `W${startWeek}-W${endWeek}`;
-                      }
+                      if (isMobile) return `W${startWeek}-W${endWeek}`;
                       return `${start} → ${end}`;
                     })()}
                   </span>
                 </div>
               )}
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <ModernButton onClick={loadPaidUnpaidData} disabled={loading} size={isMobile ? "small" : "default"}>
+            <div className="flex flex-wrap gap-2">
+              <ModernButton onClick={loadPaidUnpaidData} disabled={loading} size="small">
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <RefreshCw size={16} />
                 )}
-                {loading ? 'SYNCING' : 'REFRESH'}
+                REFRESH
               </ModernButton>
-              <ModernButton 
-                onClick={() => setChartType(chartType === 'bar' ? 'line' : 'bar')} 
-                variant="secondary"
-                size={isMobile ? "small" : "default"}
-              >
-                {chartType === 'bar' ? <BarChart3 size={16} /> : <LineChart size={16} />}
-                {chartType === 'bar' ? 'BARS' : 'LINES'}
-              </ModernButton>
-              
-              {/* Nuevo botón de export */}
               <ModernButton 
                 onClick={() => setExportDialogOpen(true)}
                 variant="secondary"
-                size={isMobile ? "small" : "default"}
+                size="small"
                 disabled={loading || !rawData}
               >
                 <FileDown size={16} />
@@ -523,7 +656,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
         </ModernCard>
 
         {/* Metrics Grid */}
-        {chartData.length > 0 && (
+        {!loading && chartData.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <MetricCard 
               value={totalStats.totalOrders} 
@@ -532,38 +665,37 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               color="#0B2863"
             />
             <MetricCard 
+              value={totalStats.totalPaid} 
+              label="Paid Orders" 
+              icon={CheckCircle}
+              color="#10B981"
+            />
+            <MetricCard 
               value={`${totalStats.avgPaidPercentage.toFixed(1)}%`} 
               label="Success Rate" 
-              icon={CheckCircle}
-              color="#22c55e"
+              icon={TrendingUp}
+              color="#10B981"
             />
             <MetricCard 
               value={totalStats.bestWeek?.week ? `W${totalStats.bestWeek.week}` : 'N/A'} 
               label="Peak Week" 
               icon={Trophy}
-              color="#FFE67B"
-            />
-            <MetricCard 
-              value={chartData.length} 
-              label="Dataset Size" 
-              icon={Database}
-              color="#0B2863"
+              color="#F59E0B"
             />
           </div>
         )}
 
         {/* Controls */}
         <ModernCard>
-          <div className="grid grid-cols-1 lg:flex gap-4 sm:gap-6">
-            {/* Left: pickers — take remaining space on large screens */}
-            <div className="lg:flex-1">
-              <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <h3 className="font-bold mb-3 text-base flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Calendar size={18} />
-                Temporal Controls
+                Period Selection
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">Year</label>
+                  <label className="block text-gray-700 text-xs font-bold mb-2">Year</label>
                   <YearPicker 
                     year={year} 
                     onYearSelect={setYear}
@@ -572,7 +704,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">Start Week</label>
+                  <label className="block text-gray-700 text-xs font-bold mb-2">Start Week</label>
                   <WeekPicker
                     week={startWeek}
                     onWeekSelect={setStartWeek}
@@ -582,7 +714,7 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">End Week</label>
+                  <label className="block text-gray-700 text-xs font-bold mb-2">End Week</label>
                   <WeekPicker
                     week={endWeek}
                     onWeekSelect={setEndWeek}
@@ -594,31 +726,24 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
               </div>
             </div>
 
-            {/* Right: Quick presets — reduced width on large screens */}
-            <div className="lg:w-1/3">
-              <h3 className="font-bold mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
+            <div>
+              <h3 className="font-bold mb-3 text-base flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Target size={18} />
                 Quick Presets
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
                 {[
-                  { weeks: 4, label: isMobile ? '4 weeks' : 'Last 4 weeks' },
-                  { weeks: 8, label: isMobile ? '8 weeks' : 'Last 8 weeks' },
-                  { weeks: 12, label: isMobile ? '12 weeks' : 'Last 12 weeks' },
-                  { weeks: 26, label: isMobile ? '6 months' : 'Last 6 months' }
+                  { weeks: 4, label: '4 weeks' },
+                  { weeks: 12, label: '12 weeks' },
+                  { weeks: 26, label: '6 months' }
                 ].map(({ weeks, label }) => (
                   <ModernButton
                     key={weeks}
                     variant="secondary"
-                    onClick={() => {
-                      const currentWeek = Math.ceil((new Date().getTime() - new Date(year, 0, 1).getTime()) / 604800000);
-                      const start = Math.max(1, currentWeek - weeks);
-                      const end = Math.min(53, currentWeek);
-                      setStartWeek(start);
-                      setEndWeek(end);
-                    }}
+                    onClick={() => handlePresetClick(weeks)}
                     size="small"
                     className="w-full"
+                    disabled={loading}
                   >
                     {label}
                   </ModernButton>
@@ -628,33 +753,33 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
           </div>
 
           {/* Live Stats */}
-          {rawData && (
-            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-2" style={{ borderColor: '#e5e7eb' }}>
-              <h3 className="font-bold mb-3 text-base sm:text-lg flex items-center gap-2" style={{ color: '#0B2863' }}>
+          {rawData && !loading && (
+            <div className="mt-6 pt-6 border-t-2" style={{ borderColor: '#e5e7eb' }}>
+              <h3 className="font-bold mb-3 text-base flex items-center gap-2" style={{ color: '#0B2863' }}>
                 <Activity size={18} />
-                Real-time Status
+                Summary
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
-                  <div className="font-bold text-base sm:text-lg" style={{ color: '#0B2863' }}>
+                  <div className="font-bold text-lg" style={{ color: '#0B2863' }}>
                     {(rawData?.total_paid || 0) + (rawData?.total_unpaid || 0)}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">TOTAL</div>
                 </div>
                 <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                  <div className="text-green-600 font-bold text-base sm:text-lg">
+                  <div className="text-green-600 font-bold text-lg">
                     {rawData?.total_paid || 0}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">PAID</div>
                 </div>
                 <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3">
-                  <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>
+                  <div className="font-bold text-lg" style={{ color: '#F59E0B' }}>
                     {rawData?.total_unpaid || 0}
                   </div>
                   <div className="text-gray-600 text-xs font-medium">UNPAID</div>
                 </div>
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
-                  <div className="text-blue-600 font-bold text-base sm:text-lg">
+                  <div className="text-blue-600 font-bold text-lg">
                     {(() => {
                       const totalPaid = rawData?.total_paid || 0;
                       const totalUnpaid = rawData?.total_unpaid || 0;
@@ -672,288 +797,60 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
         {/* Loading State */}
         {loading && (
           <ModernCard>
-            <div className="flex items-center justify-center py-12 sm:py-20">
+            <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="relative mb-4 sm:mb-6">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-gray-200 rounded-full"></div>
-                  <div 
-                    className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"
-                  ></div>
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin absolute top-2 left-2 sm:top-3 sm:left-3" style={{ animationDirection: 'reverse' }}></div>
+                <div className="relative mb-6">
+                  <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
                 </div>
-                <div className="font-bold text-lg sm:text-xl mb-2" style={{ color: '#0B2863' }}>Processing Data</div>
-                <div className="text-gray-600 text-sm">
-                  <span className="hidden sm:inline">Analyzing {endWeek - startWeek + 1} weeks • {chartType.toUpperCase()} mode</span>
-                  <span className="sm:hidden">Analyzing {endWeek - startWeek + 1} weeks</span>
-                </div>
+                <div className="font-bold text-xl mb-2" style={{ color: '#0B2863' }}>Processing Data</div>
+                <div className="text-gray-600 text-sm">Analyzing {endWeek - startWeek + 1} weeks</div>
               </div>
             </div>
           </ModernCard>
         )}
 
-        {/* Charts Layout */}
+        {/* ECharts Chart */}
         {!loading && chartData.length > 0 && (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Main Chart */}
-            <ModernCard>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center">
-                    {chartType === 'bar' ? <BarChart3 size={isMobile ? 12 : 16} className="text-white" /> : <LineChart size={isMobile ? 12 : 16} className="text-white" />}
-                  </div>
-                  <h3 className="font-bold text-base sm:text-xl" style={{ color: '#0B2863' }}>
-                    <span className="hidden lg:inline">{chartType === 'bar' ? 'Bar Analysis' : 'Trend Analysis'}</span>
-                    <span className="lg:hidden">{chartType === 'bar' ? 'Bars' : 'Trends'}</span>
-                  </h3>
-                </div>
+          <ModernCard>
+            <div className="mb-4">
+              <div className="text-sm text-gray-600">
+                Chart Status: {chartReady ? '✅ Initialized' : '❌ Not Initialized'} | 
+                Data Points: {chartData.length}
               </div>
-              
-              <div style={{ height: isMobile ? '300px' : isTablet ? '400px' : '450px' }}>
-                {chartType === 'bar' ? (
-                  <ResponsiveBar
-                    data={nivoBarData}
-                    keys={['Paid', 'Unpaid']}
-                    indexBy="week"
-                    margin={getChartMargins()}
-                    padding={0.15}
-                    valueScale={{ type: 'linear' }}
-                    indexScale={{ type: 'band', round: true }}
-                    colors={['#22c55e', '#F09F52']}
-                    theme={responsiveTheme}
-                    borderRadius={6}
-                    borderWidth={2}
-                    borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
-                    axisTop={null}
-                    axisRight={null}
-                    axisBottom={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: isMobile ? -45 : 0,
-                      legend: isMobile ? '' : 'Week',
-                      legendPosition: 'middle',
-                      legendOffset: isMobile ? 40 : 35
-                    }}
-                    axisLeft={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: 0,
-                      legend: isMobile ? '' : 'Orders',
-                      legendPosition: 'middle',
-                      legendOffset: isMobile ? -35 : -45
-                    }}
-                    enableGridY={true}
-                    enableGridX={false}
-                    enableLabel={false}
-                    legends={isDesktop ? [
-                      {
-                        dataFrom: 'keys',
-                        anchor: 'bottom-right',
-                        direction: 'column',
-                        justify: false,
-                        translateX: 120,
-                        translateY: 0,
-                        itemsSpacing: 8,
-                        itemWidth: 100,
-                        itemHeight: 20,
-                        itemDirection: 'left-to-right',
-                        itemOpacity: 0.85,
-                        symbolSize: 16,
-                        symbolShape: 'square'
-                      }
-                    ] : []}
-                    animate={true}
-                    motionConfig="gentle"
-                    onClick={handleChartClick}
-                    tooltip={ModernBarTooltip}
-                  />
-                ) : (
-                  <ResponsiveLine
-                    data={nivoLineData}
-                    margin={getChartMargins()}
-                    xScale={{ type: 'point' }}
-                    yScale={{ type: 'linear', min: 'auto', max: 'auto' }}
-                    theme={responsiveTheme}
-                    curve="monotoneX"
-                    axisTop={null}
-                    axisRight={null}
-                    axisBottom={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: isMobile ? -45 : 0,
-                      legend: isMobile ? '' : 'Week',
-                      legendOffset: isMobile ? 40 : 35,
-                      legendPosition: 'middle'
-                    }}
-                    axisLeft={{
-                      tickSize: 5,
-                      tickPadding: 5,
-                      tickRotation: 0,
-                      legend: isMobile ? '' : 'Orders',
-                      legendOffset: isMobile ? -35 : -45,
-                      legendPosition: 'middle'
-                    }}
-                    enableGridX={false}
-                    enableGridY={true}
-                    colors={['#22c55e', '#F09F52', '#0B2863']}
-                    lineWidth={isMobile ? 3 : 4}
-                    pointSize={isMobile ? 6 : 8}
-                    pointColor={{ theme: 'background' }}
-                    pointBorderWidth={isMobile ? 2 : 3}
-                    pointBorderColor={{ from: 'serieColor' }}
-                    useMesh={true}
-                    animate={true}
-                    motionConfig="gentle"
-                    legends={isDesktop ? [
-                      {
-                        anchor: 'bottom-right',
-                        direction: 'column',
-                        justify: false,
-                        translateX: 120,
-                        translateY: 0,
-                        itemsSpacing: 8,
-                        itemDirection: 'left-to-right',
-                        itemWidth: 80,
-                        itemHeight: 20,
-                        itemOpacity: 0.75,
-                        symbolSize: 16,
-                        symbolShape: 'circle'
-                      }
-                    ] : []}
-                    onClick={handleChartClick}
-                    tooltip={ModernLineTooltip}
-                  />
-                )}
-              </div>
-              
-              <div className="mt-4 text-center">
-                <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-lg text-blue-700 text-xs sm:text-sm font-bold">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span className="hidden sm:inline">Click to drill down</span>
-                  <span className="sm:hidden">Tap to drill down</span>
-                </div>
-              </div>
-            </ModernCard>
-
-            {/* Bottom Analytics Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {/* Distribution Chart */}
-              <ModernCard>
-                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                  <PieChart size={isMobile ? 16 : 20} style={{ color: '#0B2863' }} />
-                  <h3 className="font-bold text-base sm:text-xl" style={{ color: '#0B2863' }}>Distribution</h3>
-                </div>
-                
-                <div style={{ height: isMobile ? '200px' : '280px' }}>
-                  <ResponsivePie
-                    data={nivoPieData}
-                    margin={{ 
-                      top: 20, 
-                      right: 20, 
-                      bottom: 20, 
-                      left: 20 
-                    }}
-                    innerRadius={0.4}
-                    padAngle={2}
-                    cornerRadius={6}
-                    activeOuterRadiusOffset={12}
-                    colors={['#22c55e', '#F09F52']}
-                    theme={responsiveTheme}
-                    borderWidth={3}
-                    borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
-                    arcLinkLabelsSkipAngle={10}
-                    arcLinkLabelsTextColor="#0B2863"
-                    arcLinkLabelsThickness={2}
-                    arcLinkLabelsColor={{ from: 'color' }}
-                    arcLabelsSkipAngle={10}
-                    arcLabelsTextColor="#ffffff"
-                    enableArcLinkLabels={!isMobile}
-                    animate={true}
-                    motionConfig="gentle"
-                    transitionMode="pushIn"
-                  />
-                </div>
-                
-                <div className="space-y-3 mt-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-gray-700 text-xs sm:text-sm font-medium">Paid</span>
-                    </div>
-                    <span className="text-green-600 font-bold text-base sm:text-lg">{totalStats.totalPaid}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F09F52' }}></div>
-                      <span className="text-gray-700 text-xs sm:text-sm font-medium">Unpaid</span>
-                    </div>
-                    <span className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>{totalStats.totalUnpaid}</span>
-                  </div>
-                  <div className="border-t-2 pt-3" style={{ borderColor: '#e5e7eb' }}>
-                    <div className="text-center">
-                      <div className="font-bold text-xl sm:text-2xl" style={{ color: '#0B2863' }}>{totalStats.totalOrders}</div>
-                      <div className="text-gray-600 text-xs sm:text-sm font-medium">Total Records</div>
-                    </div>
-                  </div>
-                </div>
-              </ModernCard>
-
-              {/* Performance Metrics */}
-              <ModernCard>
-                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                    <TrendingUp size={isMobile ? 12 : 16} className="text-white" />
-                  </div>
-                  <h3 className="font-bold text-base sm:text-xl" style={{ color: '#0B2863' }}>Metrics</h3>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-3 sm:p-4">
-                    <div className="text-green-600 font-bold text-2xl sm:text-3xl">
-                      {totalStats.avgPaidPercentage.toFixed(1)}%
-                    </div>
-                    <div className="text-gray-700 text-xs sm:text-sm font-bold mb-3">Success Rate</div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
-                      <div 
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 sm:h-3 rounded-full transition-all duration-1000"
-                        style={{ width: `${totalStats.avgPaidPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-3">
-                      <div className="font-bold text-base sm:text-lg" style={{ color: '#F09F52' }}>
-                        {totalStats.bestWeek?.week ? `W${totalStats.bestWeek.week}` : 'N/A'}
-                      </div>
-                      <div className="text-gray-600 text-xs font-medium">Peak Week</div>
-                    </div>
-                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
-                      <div className="text-blue-600 font-bold text-base sm:text-lg">{chartData.length}</div>
-                      <div className="text-gray-600 text-xs font-medium">Samples</div>
-                    </div>
-                  </div>
-                </div>
-              </ModernCard>
             </div>
-          </div>
+            <div style={{ width: '100%', height: isMobile ? '400px' : '500px', position: 'relative' }}>
+              <div 
+                ref={chartContainerRef}
+                style={{ 
+                  width: '100%', 
+                  height: '100%',
+                  border: '2px solid #0B2863',
+                  backgroundColor: '#FFFFFF'
+                }}
+              />
+            </div>
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-lg text-blue-700 text-sm font-bold">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>{isMobile ? 'Tap bars' : 'Click bars'} for details • Use slider to zoom</span>
+              </div>
+            </div>
+          </ModernCard>
         )}
 
         {/* No Data State */}
         {!loading && chartData.length === 0 && (
           <ModernCard>
-            <div className="text-center py-12 sm:py-20">
-              <div className="text-4xl sm:text-6xl mb-4 sm:mb-6 opacity-50">
-                <BarChart3 size={isMobile ? 48 : 72} className="mx-auto text-gray-400" />
+            <div className="text-center py-20">
+              <div className="text-6xl mb-6 opacity-50">
+                <BarChart3 size={72} className="mx-auto text-gray-400" />
               </div>
-              <h3 className="font-bold text-lg sm:text-xl mb-4" style={{ color: '#0B2863' }}>No Data Detected</h3>
-              <p className="text-gray-600 text-sm mb-6 sm:mb-8 max-w-md mx-auto px-4">
-                <span className="hidden sm:inline">
-                  No payment records found in the specified temporal range. 
-                  Expand search parameters or verify data availability.
-                </span>
-                <span className="sm:hidden">
-                  No payment records found. Try expanding the search range.
-                </span>
+              <h3 className="font-bold text-xl mb-4" style={{ color: '#0B2863' }}>No Data Available</h3>
+              <p className="text-gray-600 text-sm mb-8 max-w-md mx-auto px-4">
+                {isMobile 
+                  ? "No payment records found. Try expanding the search range."
+                  : "No payment records found in the specified temporal range. Expand search parameters or verify data availability."}
               </p>
               <div className="space-y-4">
                 <ModernButton onClick={loadPaidUnpaidData}>
@@ -963,30 +860,14 @@ const PaidUnpaidWeekRangeChart: React.FC<PaidUnpaidWeekRangeChartProps> = ({
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <ModernButton 
                     variant="secondary" 
-                    onClick={() => {
-                      const currentWeek = Math.ceil((new Date().getTime() - new Date(year, 0, 1).getTime()) / 604800000);
-                      const start = Math.max(1, currentWeek - 12);
-                      const end = Math.min(53, currentWeek);
-                      setStartWeek(start);
-                      setEndWeek(end);
-                      setPendingStartWeek(start);
-                      setPendingEndWeek(end);
-                    }}
+                    onClick={() => handlePresetClick(12)}
                     size="small"
                   >
                     Try 12 weeks
                   </ModernButton>
                   <ModernButton 
                     variant="secondary" 
-                    onClick={() => {
-                      const currentWeek = Math.ceil((new Date().getTime() - new Date(year, 0, 1).getTime()) / 604800000);
-                      const start = Math.max(1, currentWeek - 26);
-                      const end = Math.min(53, currentWeek);
-                      setStartWeek(start);
-                      setEndWeek(end);
-                      setPendingStartWeek(start);
-                      setPendingEndWeek(end);
-                    }}
+                    onClick={() => handlePresetClick(26)}
                     size="small"
                   >
                     Try 26 weeks
