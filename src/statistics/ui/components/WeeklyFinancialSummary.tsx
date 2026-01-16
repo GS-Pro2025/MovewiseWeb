@@ -100,14 +100,14 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
         data: [
           {
             name: "Paid Orders",
-            value: currentStats.paidOrders,
-            amount: paidIncome,
+            value: currentStats.paidOrders, 
+                    
             itemStyle: { color: "#22c55e" },
           },
           {
             name: "Unpaid Orders",
             value: currentStats.unpaidOrders,
-            amount: unpaidIncome,
+           
             itemStyle: { color: "#f59e0b" },
           },
         ],
@@ -117,19 +117,14 @@ const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({
 
   /* ----------- BAR (COMPARISON) ----------- */
   const barOption: EChartsOption = {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      formatter: (items: any[]) =>
-        items
-          .map(
-            (i) =>
-              `<b>${i.seriesName}</b>: $${(
-                i.value * 1000
-              ).toLocaleString()}`
-          )
-          .join("<br/>"),
-    },
+tooltip: {
+  trigger: "item",
+  formatter: (p: any) => `
+    <b>${p.name}</b><br/>
+    Orders: ${p.value.count}<br/>
+    Amount: $${p.value.amount.toLocaleString()}
+  `,
+},
     legend: {
       bottom: 0,
       textStyle: { color: "#0B2863", fontWeight: 600 },
