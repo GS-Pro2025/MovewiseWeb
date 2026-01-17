@@ -40,6 +40,18 @@ const AddOperatorsToOrder: React.FC = () => {
   const [fuelCostDialogOpen, setFuelCostDialogOpen] = useState(false);
 
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // Función para refrescar operadores asignados
+  const refreshAssignedOperators = async () => {
+    if (!orderKey) return;
+    try {
+      const assigned = await fetchOperatorsAssignedToOrder(orderKey);
+      setAssignedOperators(assigned);
+    } catch (error) {
+      console.error('Error refreshing assigned operators:', error);
+    }
+  };
+
   // Filtrado de operadores asignados
   const filteredAssignedOperators = assignedOperators.filter(
     (op) =>
@@ -259,9 +271,14 @@ const onDragEnd = (result: DropResult) => {
       <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
         {/* Operadores asignados */}
         <Paper sx={{ width: 600, minHeight: 600, p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Operadores asignados a la orden
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Operadores asignados a la orden
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+              (doble clic para editar tiempos)
+            </Typography>
+          </Box>
           <TextField
               label="Buscar por nombre o identificación"
               size="small"
@@ -305,8 +322,12 @@ const onDragEnd = (result: DropResult) => {
                           borderRadius: 2,
                           backgroundColor: 'background.paper',
                           boxShadow: 1,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
                           '&:hover': {
                             backgroundColor: 'action.hover',
+                            boxShadow: 2,
+                            transform: 'translateY(-2px)',
                           },
                         }}
                         secondaryAction={
@@ -342,21 +363,65 @@ const onDragEnd = (result: DropResult) => {
                           </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                        primary={
-                          <Typography
-                            sx={{
-                              whiteSpace: 'normal',
-                              wordBreak: 'break-word',
-                              maxWidth: 200, // Ajusta el ancho máximo según tu diseño
-                              display: 'inline-block',
-                            }}
-                            variant="body1"
-                          >
-                            {`${op.first_name} ${op.last_name} - Rol:${op.rol}`}
-                          </Typography>
-                        }
-                        secondary={`ID: ${op.identification} - Código: ${op.code}`}
-                      />
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                              <Typography
+                                sx={{
+                                  whiteSpace: 'normal',
+                                  wordBreak: 'break-word',
+                                  fontWeight: 'bold',
+                                }}
+                                variant="body1"
+                              >
+                                {`${op.first_name} ${op.last_name}`}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  backgroundColor: 'primary.main',
+                                  color: 'white',
+                                  px: 1,
+                                  py: 0.3,
+                                  borderRadius: 1,
+                                  fontWeight: 'bold',
+                                }}
+                              >
+                                {op.rol}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 0.5 }}>
+                              <Typography variant="caption" display="block">
+                                ID: {op.identification} - Código: {op.code}
+                              </Typography>
+                              {(op.start_time || op.end_time) && (
+                                <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                                  {op.start_time && (
+                                    <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'bold' }}>
+                                      🕐 Inicio: {new Date(op.start_time).toLocaleString('es-ES', {
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </Typography>
+                                  )}
+                                  {op.end_time && (
+                                    <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                                      🕑 Fin: {new Date(op.end_time).toLocaleString('es-ES', {
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              )}
+                            </Box>
+                          }
+                        />
                       </ListItem>
                     )}
                   </Draggable>
@@ -456,6 +521,7 @@ const onDragEnd = (result: DropResult) => {
       onClose={() => setDetailOpen(false)}
       operator={selectedOperator}
       truckPlate={null}
+      onUpdate={refreshAssignedOperators}
     />
     <AssignOrderToCostFuelDialog
       open={fuelCostDialogOpen}

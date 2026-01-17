@@ -10,10 +10,15 @@ export interface Assignment {
   operator: number;
   order: string;
   data_order: DataOrder;
-  truck: number;
+  truck: number | null;
   assigned_at: string;
   rol: string;
-  additional_costs: number; 
+  additional_costs: number | null;
+  start_time: string | null;
+  end_time: string | null;
+  location_start: string | null;
+  location_end: string | null;
+  status_order: string;
 }
 
 export interface DataOrder {

@@ -147,3 +147,36 @@ export async function patchTruckAssignment(
         throw error;
     }
 }
+
+export async function patchAssignmentTimes(
+    assignmentId: number,
+    start_time?: string | null,
+    end_time?: string | null,
+): Promise<void> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+    try {
+        const body: { start_time?: string | null; end_time?: string | null } = {};
+        if (start_time !== undefined) body.start_time = start_time;
+        if (end_time !== undefined) body.end_time = end_time;
+
+        const response = await fetch(`${BASE_URL_API}/assigns/${assignmentId}/times/`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        });
+    
+        if (!response.ok) {
+        throw new Error('Error al actualizar los tiempos de la asignación');
+        }
+    } catch (error) {
+        console.error('Error updating assignment times:', error);
+        throw error;
+    }
+}
