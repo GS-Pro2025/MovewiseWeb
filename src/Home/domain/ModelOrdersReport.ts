@@ -15,6 +15,11 @@ export interface Operator {
   last_name: string;
   bonus: number | null;
   role: string;
+  start_time: string | null;
+  end_time: string | null;
+  location_start: string | null;
+  location_end: string | null;
+  status_order: string;
 }
 
 export interface Vehicle {

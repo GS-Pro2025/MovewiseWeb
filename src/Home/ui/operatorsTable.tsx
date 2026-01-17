@@ -84,6 +84,11 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Salary</th>
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Bonus</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-24">Date</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Start Time</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">End Time</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Location Start</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Location End</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-20">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -134,6 +139,67 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                         month: '2-digit',
                         day: '2-digit',
                       })}
+                    </span>
+                  </td>
+                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                    {operator.start_time ? (
+                      <span className="text-xs">
+                        {new Date(operator.start_time).toLocaleString('es-ES', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">N/A</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                    {operator.end_time ? (
+                      <span className="text-xs">
+                        {new Date(operator.end_time).toLocaleString('es-ES', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">N/A</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                    {operator.location_start ? (
+                      <span className="text-xs" style={{ color: COLORS.primary }}>
+                        {operator.location_start}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">N/A</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                    {operator.location_end ? (
+                      <span className="text-xs" style={{ color: COLORS.primary }}>
+                        {operator.location_end}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">N/A</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                    <span 
+                      className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white inline-block"
+                      style={{ 
+                        backgroundColor: 
+                          operator.status_order?.toLowerCase() === 'finished' ? COLORS.success :
+                          operator.status_order?.toLowerCase() === 'pending' ? COLORS.secondary :
+                          COLORS.gray
+                      }}
+                    >
+                      {operator.status_order || 'N/A'}
                     </span>
                   </td>
                 </tr>
