@@ -25,7 +25,16 @@ export async function fetchOperatorsAssignedToOrder(orderKey: string): Promise<O
       throw new Error('Error al obtener los operadores asignados a la orden');
     }
 
-    return await response.json();
+    const operators = await response.json();
+    // Asegurar que todos los operadores tengan los nuevos campos
+    return operators.map((op: any) => ({
+      ...op,
+      start_time: op.start_time || null,
+      end_time: op.end_time || null,
+      location_start: op.location_start || null,
+      location_end: op.location_end || null,
+      status_order: op.status_order || 'pending',
+    }));
   } catch (error) {
     console.error('Error fetching operators:', error);
     throw error;
