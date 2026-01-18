@@ -29,6 +29,40 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
     return `$${numValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
   };
 
+  const formatDuration = (start?: string | null, end?: string | null): string | null => {
+    if (!start || !end) return null;
+    const s = new Date(start);
+    const e = new Date(end);
+    const diff = e.getTime() - s.getTime();
+    if (!isFinite(diff) || diff <= 0) return null;
+    const totalMinutes = Math.round(diff / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  const formatTooltipTime = (start?: string | null, end?: string | null): string => {
+    if (!start || !end) return '';
+    const s = new Date(start);
+    const e = new Date(end);
+    const startStr = s.toLocaleString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const endStr = e.toLocaleString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `Start: ${startStr} - End: ${endStr}`;
+  };
+
   return (
     <div className="inline-block bg-white rounded-lg border overflow-hidden" style={{ borderColor: COLORS.primary, maxWidth: 'fit-content' }}>
       {/* Header */}
@@ -84,8 +118,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Salary</th>
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Bonus</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-24">Date</th>
-                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Start Time</th>
-                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">End Time</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Time Worked</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Location Start</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Location End</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-20">Status</th>
@@ -142,30 +175,13 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                    {operator.start_time ? (
-                      <span className="text-xs">
-                        {new Date(operator.start_time).toLocaleString('es-ES', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                    {operator.end_time ? (
-                      <span className="text-xs">
-                        {new Date(operator.end_time).toLocaleString('es-ES', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                    {operator.start_time && operator.end_time ? (
+                      <span
+                        className="text-xs cursor-help"
+                        title={formatTooltipTime(operator.start_time, operator.end_time)}
+                        style={{ color: COLORS.primary }}
+                      >
+                        {formatDuration(operator.start_time, operator.end_time) || 'N/A'}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-xs">N/A</span>
