@@ -1,7 +1,9 @@
-import React from 'react';
-import { Plus, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, User, MapPin } from 'lucide-react';
 import { Operator } from '../domain/ModelOrdersReport';
 import { useNavigate } from 'react-router-dom';
+import LocationDialog from './LocationDialog';
+import { parseLocation, isJsonLocation, LocationData } from '../../service/mapsServices';
 
 interface OperatorsTableProps {
   operators: Operator[];
@@ -17,9 +19,19 @@ const COLORS = {
 
 const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) => {
   const navigate = useNavigate();
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleAddOperator = () => {
     navigate(`/app/add-operators-to-order/${orderKey}`);
+  };
+
+  const handleLocationClick = (location: unknown) => {
+    const parsedLocation = parseLocation(location);
+    if (parsedLocation) {
+      setSelectedLocation(parsedLocation);
+      setIsDialogOpen(true);
+    }
   };
   // Función helper para formatear números correctamente
   const formatCurrency = (value: number | null | undefined): string => {
@@ -65,6 +77,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
 
   return (
     <div className="inline-block bg-white rounded-lg border overflow-hidden" style={{ borderColor: COLORS.primary, maxWidth: 'fit-content' }}>
+      <LocationDialog location={selectedLocation} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
       {/* Header */}
       <div className="px-2 py-1.5 border-b flex items-center justify-between" style={{ 
         backgroundColor: COLORS.primary,
@@ -190,7 +203,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                   <td className="px-2 py-1.5 text-center whitespace-nowrap">
                     {operator.location_start ? (
                       <span className="text-xs" style={{ color: COLORS.primary }}>
-                        {operator.location_start}
+                        {typeof operator.location_start === 'string' ? operator.location_start : 'N/A'}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-xs">N/A</span>
@@ -198,9 +211,19 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                   </td>
                   <td className="px-2 py-1.5 text-center whitespace-nowrap">
                     {operator.location_end ? (
-                      <span className="text-xs" style={{ color: COLORS.primary }}>
-                        {operator.location_end}
-                      </span>
+                      isJsonLocation(operator.location_end) ? (
+                        <button
+                          onClick={() => handleLocationClick(operator.location_end)}
+                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-200 transition-colors group"
+                          title="View end location on map"
+                        >
+                          <MapPin size={16} style={{ color: COLORS.secondary }} className="group-hover:scale-110 transition-transform" />
+                        </button>
+                      ) : (
+                        <span className="text-xs" style={{ color: COLORS.primary }}>
+                          {String(operator.location_end)}
+                        </span>
+                      )
                     ) : (
                       <span className="text-gray-400 text-xs">N/A</span>
                     )}
