@@ -29,6 +29,11 @@ export interface OperatorAssigned {
   address: string;
   company_id: number;
   company_name: string;
+  start_time: string | null;
+  end_time: string | null;
+  location_start: string | null;
+  location_end: string | null;
+  status_order: string;
 }
 export interface OperatorAvailable {
   id_operator: number;
