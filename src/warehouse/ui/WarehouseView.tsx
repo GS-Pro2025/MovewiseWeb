@@ -178,10 +178,19 @@ const WarehouseView = () => {
           <OperatorsTable
             operators={
               (operatorsByOrder[row.original.key] || []).map(op => ({
-                ...op,
-                date: op.assigned_at ?? '',    
-                bonus:  0,     // To review
-                role: op.rol ?? '', 
+                id_assign: op.id_assign,
+                date: op.assigned_at ?? '',
+                code: op.code ?? '',
+                salary: op.salary ?? 0,
+                first_name: op.first_name ?? '',
+                last_name: op.last_name ?? '',
+                bonus: 0,
+                role: op.rol ?? '',
+                start_time: op.start_time ?? null,
+                end_time: op.end_time ?? null,
+                location_start: op.location_start ?? null,
+                location_end: op.location_end ?? null,
+                status_order: op.status_order ?? 'pending',
               }))
             }
             orderKey={row.original.key}

@@ -163,7 +163,7 @@ export async function patchAssignmentTimes(
         if (start_time !== undefined) body.start_time = start_time;
         if (end_time !== undefined) body.end_time = end_time;
 
-        const response = await fetch(`${BASE_URL_API}/assigns/${assignmentId}/times/`, {
+        const response = await fetch(`${BASE_URL_API}/assign/${assignmentId}/times/`, {
         method: 'PATCH',
         headers: {
             'Authorization': `Bearer ${token}`,
