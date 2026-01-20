@@ -8,15 +8,26 @@ export interface LocationData {
 }
 
 /**
+ * Route object with origin and destination
+ */
+export interface RouteData {
+  origin: LocationData;
+  destination: LocationData;
+}
+
+/**
  * Parse location from string or object format
  */
 export function parseLocation(location: unknown): LocationData | null {
   if (!location) return null;
 
   try {
-    // If it's a string, try to parse as JSON
+    // Si es string, intenta parsear como JSON
     if (typeof location === 'string') {
-      const parsed = JSON.parse(location);
+      // Convierte comillas simples a dobles para soportar Python dict
+      const normalized = location.replace(/'/g, '"');
+      const parsed = JSON.parse(normalized);
+      
       return {
         latitude: Number(parsed.latitude),
         longitude: Number(parsed.longitude),
@@ -24,7 +35,7 @@ export function parseLocation(location: unknown): LocationData | null {
       };
     }
 
-    // If it's an object
+    // Si es objeto directo
     if (typeof location === 'object' && location !== null) {
       const loc = location as Record<string, unknown>;
       return {
@@ -35,7 +46,8 @@ export function parseLocation(location: unknown): LocationData | null {
     }
 
     return null;
-  } catch {
+  } catch (error) {
+    console.error('Error parsing location:', location, error);
     return null;
   }
 }
@@ -61,12 +73,27 @@ export function generateGoogleMapsUrl(location: LocationData | null, type: 'embe
   const { latitude, longitude } = location;
 
   if (type === 'embed') {
-    // URL for embedding in iframe using view mode with center (required) and zoom
-    return `https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${latitude},${longitude}&zoom=15`;
+    // Use 'place' mode so the embed shows a marker at the coordinates
+    // q accepts latitude,longitude as a valid value
+    return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${latitude},${longitude}&zoom=15`;
   } else {
     // URL for opening in new window
     return `https://www.google.com/maps?q=${latitude},${longitude}`;
   }
+}
+
+/**
+ * Generate Google Maps Directions URL for embedding a route between two points
+ */
+export function generateGoogleMapsDirectionsUrl(route: RouteData | null): string | null {
+  if (!route) return null;
+
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const origin = `${route.origin.latitude},${route.origin.longitude}`;
+  const destination = `${route.destination.latitude},${route.destination.longitude}`;
+
+  // Use 'directions' mode to embed a route
+  return `https://www.google.com/maps/embed/v1/directions?key=${apiKey}&origin=${origin}&destination=${destination}&mode=driving`;
 }
 
 /**
@@ -87,4 +114,12 @@ export function generateStaticMapUrl(location: LocationData | null, width: numbe
 export function formatLocationDisplay(location: LocationData | null): string {
   if (!location) return 'N/A';
   return location.address || `Lat: ${location.latitude.toFixed(4)}, Lng: ${location.longitude.toFixed(4)}`;
+}
+
+/**
+ * Format route for display
+ */
+export function formatRouteDisplay(route: RouteData | null): string {
+  if (!route) return 'N/A';
+  return `${formatLocationDisplay(route.origin)} → ${formatLocationDisplay(route.destination)}`;
 }

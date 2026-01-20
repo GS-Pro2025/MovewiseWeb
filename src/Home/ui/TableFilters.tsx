@@ -221,9 +221,9 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
   };
 
   return (
-    <div>
+    <div data-statistics-panel="true">
       {/* Statistics Panel - Solo Progress Bar */}
-      <div className="rounded-xl shadow-md border p-3 mb-2" style={{ borderColor: COLORS.primary }}>
+      <div className="rounded-xl shadow-md border p-3 mb-2 transition-all duration-300" style={{ borderColor: COLORS.primary }} data-statistics-panel="true">
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
             <BarChart3 size={16} />
@@ -297,7 +297,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
       </div>
 
       {/* Main Filter Card */}
-      <div className="rounded-xl shadow-md border p-3 mb-3 week-dropdown-container" style={{ borderColor: COLORS.primary }} ref={dropdownRef}>
+      <div className="rounded-xl shadow-md border p-3 mb-3 week-dropdown-container transition-all duration-300" style={{ borderColor: COLORS.primary }} ref={dropdownRef}>
         {/* Header */}
         <div className="flex items-center space-x-2 mb-3">
           <div 
