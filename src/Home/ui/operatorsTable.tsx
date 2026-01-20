@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, User, MapPin } from 'lucide-react';
+import { Plus, User, Navigation } from 'lucide-react';
 import { Operator } from '../domain/ModelOrdersReport';
 import { useNavigate } from 'react-router-dom';
 import LocationDialog from './LocationDialog';
-import { parseLocation, isJsonLocation, LocationData } from '../../service/mapsServices';
+import { parseLocation, isJsonLocation, LocationData, RouteData } from '../../service/mapsServices';
 
 interface OperatorsTableProps {
   operators: Operator[];
@@ -19,6 +19,7 @@ const COLORS = {
 
 const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) => {
   const navigate = useNavigate();
+  const [selectedRoute, setSelectedRoute] = useState<RouteData | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -26,10 +27,16 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
     navigate(`/app/add-operators-to-order/${orderKey}`);
   };
 
-  const handleLocationClick = (location: unknown) => {
-    const parsedLocation = parseLocation(location);
-    if (parsedLocation) {
-      setSelectedLocation(parsedLocation);
+  const handleRouteClick = (locationStart: unknown, locationEnd: unknown) => {
+    const parsedStart = parseLocation(locationStart);
+    const parsedEnd = parseLocation(locationEnd);
+    
+    if (parsedStart && parsedEnd) {
+      setSelectedRoute({
+        origin: parsedStart,
+        destination: parsedEnd,
+      });
+      setSelectedLocation(null);
       setIsDialogOpen(true);
     }
   };
@@ -77,7 +84,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
 
   return (
     <div className="inline-block bg-white rounded-lg border overflow-hidden" style={{ borderColor: COLORS.primary, maxWidth: 'fit-content' }}>
-      <LocationDialog location={selectedLocation} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
+      <LocationDialog location={selectedLocation} route={selectedRoute} isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
       {/* Header */}
       <div className="px-2 py-1.5 border-b flex items-center justify-between" style={{ 
         backgroundColor: COLORS.primary,
@@ -132,8 +139,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Bonus</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-24">Date</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Time Worked</th>
-                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Location Start</th>
-                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-32">Location End</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-40">Route</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-20">Status</th>
               </tr>
             </thead>
@@ -201,27 +207,29 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                     )}
                   </td>
                   <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                    {operator.location_start ? (
-                      <span className="text-xs" style={{ color: COLORS.primary }}>
-                        {typeof operator.location_start === 'string' ? operator.location_start : 'N/A'}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                    {operator.location_end ? (
-                      isJsonLocation(operator.location_end) ? (
+                    {operator.location_start && operator.location_end ? (
+                      isJsonLocation(operator.location_start) && isJsonLocation(operator.location_end) ? (
                         <button
-                          onClick={() => handleLocationClick(operator.location_end)}
-                          className="inline-flex items-center justify-center p-1.5 rounded hover:bg-gray-200 transition-colors group"
-                          title="View end location on map"
+                          onClick={() => handleRouteClick(operator.location_start, operator.location_end)}
+                          className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded transition-colors text-xs font-semibold"
+                          style={{ 
+                            backgroundColor: COLORS.secondary + '20',
+                            color: COLORS.secondary,
+                            border: `1px solid ${COLORS.secondary}`
+                          }}
+                          title="View route on map"
                         >
-                          <MapPin size={16} style={{ color: COLORS.secondary }} className="group-hover:scale-110 transition-transform" />
+                          <Navigation size={14} style={{ color: COLORS.secondary }} className="group-hover:scale-110 transition-transform" />
+                          View Route
                         </button>
                       ) : (
-                        <span className="text-xs" style={{ color: COLORS.primary }}>
-                          {String(operator.location_end)}
+                        <span className="text-xs text-gray-500">
+                          {!isJsonLocation(operator.location_start) && !isJsonLocation(operator.location_end) 
+                            ? 'No coordinates'
+                            : isJsonLocation(operator.location_start) 
+                              ? 'End location missing'
+                              : 'Start location missing'
+                          }
                         </span>
                       )
                     ) : (
