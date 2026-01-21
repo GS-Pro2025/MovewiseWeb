@@ -12,6 +12,8 @@ export interface InactiveOperator {
   size_t_shift: string;
   name_t_shift: string;
   salary: string;
+  hourly_salary?: number | string; // Salario por hora
+  salary_type?: string; // 'hour' o 'day'
   photo: string | null;
   license_front: string | null;
   license_back: string | null;
@@ -50,6 +52,8 @@ export interface Operator {
   size_t_shift: string;
   name_t_shift: string;
   salary: string;
+  hourly_salary?: number | string; // Salario por hora
+  salary_type?: string; // 'hour' o 'day'
   photo: string | null;
   license_front: string | null;
   license_back: string | null;

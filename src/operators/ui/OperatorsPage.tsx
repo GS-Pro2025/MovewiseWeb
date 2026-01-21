@@ -140,6 +140,8 @@ const OperatorsPage: React.FC = () => {
     if (operatorData.size_t_shift) formData.append('size_t_shift', operatorData.size_t_shift);
     if (operatorData.name_t_shift) formData.append('name_t_shift', operatorData.name_t_shift);
     if (operatorData.salary) formData.append('salary', operatorData.salary);
+    if (operatorData.hourly_salary) formData.append('hourly_salary', operatorData.hourly_salary);
+    if (operatorData.salary_type) formData.append('salary_type', operatorData.salary_type);
     if (operatorData.status) formData.append('status', operatorData.status);
 
     if (operatorData.person) {

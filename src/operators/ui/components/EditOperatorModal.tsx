@@ -23,6 +23,8 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
     size_t_shift: operator.size_t_shift || '',
     name_t_shift: operator.name_t_shift || '',
     salary: operator.salary || '',
+    hourly_salary: (operator.hourly_salary as number | string) || '',
+    salary_type: (operator.salary_type as string) || 'day',
     status: operator.status || 'active',
     
     // Datos de la persona
@@ -95,6 +97,8 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
         size_t_shift: operator.size_t_shift || '',
         name_t_shift: operator.name_t_shift || '',
         salary: operator.salary || '',
+        hourly_salary: (operator.hourly_salary as number | string) || '',
+        salary_type: (operator.salary_type as string) || 'day',
         status: operator.status || 'active',
         
         // Datos de la persona
@@ -154,7 +158,12 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
       submitFormData.append('n_children', formData.n_children.toString());
       submitFormData.append('size_t_shift', formData.size_t_shift);
       submitFormData.append('name_t_shift', formData.name_t_shift);
-      submitFormData.append('salary', formData.salary);
+      submitFormData.append('salary_type', formData.salary_type);
+      if (formData.salary_type === 'day') {
+        submitFormData.append('salary', String(formData.salary));
+      } else {
+        submitFormData.append('hourly_salary', String(formData.hourly_salary));
+      }
       submitFormData.append('status', formData.status);
 
       // Datos de la persona (campos de primer nivel requeridos por la API)
@@ -440,18 +449,51 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Salary *
+                  Salary Type *
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.salary}
-                  onChange={(e) => handleInputChange('salary', e.target.value)}
+                <select
+                  value={formData.salary_type}
+                  onChange={(e) => handleInputChange('salary_type', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required
                   disabled={loading}
-                />
+                >
+                  <option value="day">Per Day</option>
+                  <option value="hour">Per Hour</option>
+                </select>
               </div>
+              {formData.salary_type === 'day' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Daily Salary *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.salary}
+                    onChange={(e) => handleInputChange('salary', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              )}
+              {formData.salary_type === 'hour' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hourly Salary *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.hourly_salary}
+                    onChange={(e) => handleInputChange('hourly_salary', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Status *

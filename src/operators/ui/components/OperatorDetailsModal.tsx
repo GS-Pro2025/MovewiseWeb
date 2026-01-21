@@ -103,7 +103,17 @@ const OperatorDetailsModal: React.FC<OperatorDetailsModalProps> = ({
                 <div className="mb-2"><span className="font-medium">Shift Size:</span> {operator.size_t_shift}</div>
               </div>
               <div>
-                <div className="mb-2"><span className="font-medium">Salary:</span> {formatCurrency(operator.salary)}</div>
+                <div className="mb-2">
+                  <span className="font-medium">Salary Type:</span>
+                  <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    {operator.salary_type === 'hour' ? 'Por Hora' : 'Por Día'}
+                  </span>
+                </div>
+                {operator.salary_type === 'hour' ? (
+                  <div className="mb-2"><span className="font-medium">Hourly Salary:</span> ${operator.hourly_salary || 0}</div>
+                ) : (
+                  <div className="mb-2"><span className="font-medium">Daily Salary:</span> {formatCurrency(operator.salary)}</div>
+                )}
                 <div className="mb-2">
                   <span className="font-medium">Status:</span>
                   <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${

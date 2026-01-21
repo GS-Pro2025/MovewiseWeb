@@ -41,6 +41,8 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
     size_t_shirt: '',
     name_t_shirt: '',
     salary: 0,
+    hourly_salary: 0,
+    salary_type: 'day',
     status: 'active',
     first_name: '',
     last_name: '',
@@ -157,7 +159,13 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         if (!formData.code?.trim()) newErrors.code = 'Code is required';
         if (!formData.number_licence?.trim()) newErrors.number_licence = 'License number is required';
         if (!formData.size_t_shirt?.trim()) newErrors.size_t_shirt = 'T-shirt size is required';
-        if (!formData.salary || formData.salary <= 0) newErrors.salary = 'Valid salary is required';
+        if (!formData.salary_type) newErrors.salary_type = 'Salary type is required';
+        if (formData.salary_type === 'day' && (!formData.salary || formData.salary <= 0)) {
+          newErrors.salary = 'Valid daily salary is required';
+        }
+        if (formData.salary_type === 'hour' && (!formData.hourly_salary || formData.hourly_salary <= 0)) {
+          newErrors.hourly_salary = 'Valid hourly salary is required';
+        }
         break;
 
       case 5: // Children (opcional)
@@ -195,7 +203,9 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
     if (!formData.type_id) allErrors.type_id = 'ID type is required';
     if (!formData.phone || !formData.phone.toString().trim()) allErrors.phone = 'Phone is required';
     if (!formData.number_licence || !formData.number_licence.toString().trim()) allErrors.number_licence = 'License number is required';
-    if (formData.salary !== undefined && formData.salary !== null && Number.isNaN(Number(formData.salary))) allErrors.salary = 'Salary must be a number';
+    if (!formData.salary_type) allErrors.salary_type = 'Salary type is required';
+    if (formData.salary_type === 'day' && (!formData.salary || Number(formData.salary) <= 0)) allErrors.salary = 'Valid daily salary is required';
+    if (formData.salary_type === 'hour' && (!formData.hourly_salary || Number(formData.hourly_salary) <= 0)) allErrors.hourly_salary = 'Valid hourly salary is required';
 
     setErrors(allErrors);
     if (Object.keys(allErrors).length > 0) {
@@ -214,7 +224,12 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       formDataToSend.append('n_children', (formData.n_children || 0).toString());
       formDataToSend.append('size_t_shirt', formData.size_t_shirt || '');
       formDataToSend.append('name_t_shirt', formData.name_t_shirt || '');
-      formDataToSend.append('salary', (formData.salary || 0).toString());
+      formDataToSend.append('salary_type', formData.salary_type || 'day');
+      if (formData.salary_type === 'day') {
+        formDataToSend.append('salary', (formData.salary || 0).toString());
+      } else {
+        formDataToSend.append('hourly_salary', (formData.hourly_salary || 0).toString());
+      }
       formDataToSend.append('status', formData.status || 'active');
 
       // Datos personales (compatibilidad)

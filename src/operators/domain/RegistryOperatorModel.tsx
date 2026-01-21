@@ -11,7 +11,10 @@ export type IdentificationType =
   | 'photo'
   | 'license_front'
   | 'license_back'
-  | 'zipcode';
+  | 'zipcode'
+  | 'salary_type';
+
+export type SalaryType = 'hour' | 'day';
 
 export interface Son {
   name: string;
@@ -26,6 +29,8 @@ export interface RegistryOperator {
   size_t_shirt: string;
   name_t_shirt: string;
   salary: number;
+  hourly_salary?: number; // Salario por hora (opcional)
+  salary_type?: SalaryType; // Tipo de salario: 'hour' o 'day' (default: 'day')
   status: string;
   first_name: string;
   last_name: string;
