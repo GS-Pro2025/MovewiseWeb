@@ -67,6 +67,66 @@ export interface CheckLicenseResponse {
   license_number: string;
 }
 
+// Helper function to normalize backend errors to frontend structure
+function normalizeValidationErrors(backendErrors: any): ValidationErrors {
+  const normalized: ValidationErrors = {};
+
+  // Si hay errores de company directamente
+  if (backendErrors.company) {
+    normalized.company = {};
+    Object.keys(backendErrors.company).forEach(key => {
+      const value = backendErrors.company[key];
+      // Convertir string a array si es necesario
+      normalized.company![key as keyof typeof normalized.company] = 
+        Array.isArray(value) ? value : [value];
+    });
+  }
+
+  // Si hay errores de user directamente
+  if (backendErrors.user) {
+    normalized.user = {};
+    Object.keys(backendErrors.user).forEach(key => {
+      if (key === 'person' && typeof backendErrors.user.person === 'object') {
+        // Manejar errores anidados de person
+        normalized.user!.person = {};
+        Object.keys(backendErrors.user.person).forEach(personKey => {
+          const value = backendErrors.user.person[personKey];
+          (normalized.user!.person as any)[personKey] = 
+            Array.isArray(value) ? value : [value];
+        });
+      } else {
+        // Errores de user de primer nivel (user_name, password, etc.)
+        const value = backendErrors.user[key];
+        (normalized.user as any)[key] = Array.isArray(value) ? value : [value];
+      }
+    });
+  }
+
+  // Si hay errores de 'person' directamente (sin user parent)
+  // Este es el caso que está ocurriendo: { "person": { "email": "..." } }
+  if (backendErrors.person && !backendErrors.user) {
+    normalized.user = { person: {} };
+    Object.keys(backendErrors.person).forEach(key => {
+      const value = backendErrors.person[key];
+      (normalized.user!.person as any)[key] = 
+        Array.isArray(value) ? value : [value];
+    });
+  }
+
+  // Si hay errores de primer nivel que coinciden con campos de user
+  // (user_name, password, etc.)
+  const userLevelFields = ['user_name', 'password'];
+  userLevelFields.forEach(field => {
+    if (backendErrors[field]) {
+      if (!normalized.user) normalized.user = {};
+      const value = backendErrors[field];
+      (normalized.user as any)[field] = Array.isArray(value) ? value : [value];
+    }
+  });
+
+  return normalized;
+}
+
 export const registerWithCompany = async (
   registerData: RegisterCompanyData
 ): Promise<RegisterResponse> => {
@@ -87,10 +147,13 @@ export const registerWithCompany = async (
     if (!response.ok) {
       // Manejar errores de validación estructurados (400)
       if (response.status === 400 && data.errors) {
+        // Normalizar errores del backend al formato esperado por el frontend
+        const normalizedErrors = normalizeValidationErrors(data.errors);
+        
         return {
           success: false,
           errorMessage: data.detail || 'Validation errors occurred',
-          validationErrors: data.errors,
+          validationErrors: normalizedErrors,
           data
         };
       }

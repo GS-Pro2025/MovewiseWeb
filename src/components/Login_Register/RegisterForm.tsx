@@ -2,11 +2,43 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, FormEvent, useCallback, useEffect } from "react";
 import { registerWithCompany, RegisterCompanyData, ValidationErrors, CheckLicenseResponse, checkCompanyLicense } from "../../service/RegisterService";
-import { Eye, EyeOff, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
 interface RegisterFormProps {
   onRegisterSuccess?: () => void;
 }
+
+// Snackbar Component
+const Snackbar = ({ message, type, onClose }: { message: string; type: 'error' | 'success' | 'info'; onClose: () => void }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 6000); // Auto-close after 6 seconds
+
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
+  const icon = type === 'error' ? <AlertCircle size={24} /> : type === 'success' ? <CheckCircle size={24} /> : <AlertCircle size={24} />;
+
+  return (
+    <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 min-w-[300px] max-w-[500px] animate-slide-down`}>
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 mt-0.5">{icon}</div>
+        <div className="flex-1">
+          <p className="font-medium break-words">{message}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 ml-2 text-white hover:text-gray-200 transition-colors"
+          aria-label="Close notification"
+        >
+          <XCircle size={20} />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const initialCompany = {
   license_number: "",
@@ -297,6 +329,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   const [isCheckingLicense, setIsCheckingLicense] = useState(false);
   const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null);
   const [fieldValidations, setFieldValidations] = useState<{[key: string]: {isValid: boolean; message?: string}}>({});
+  const [snackbar, setSnackbar] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
   console.log(fieldValidations)
   // Opciones para el tipo de ID
   const idTypeOptions = [
@@ -552,6 +585,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
             
             // Mostrar mensaje de éxito
             setShowSuccess(true);
+            setSnackbar({ message: 'Account created successfully! Redirecting to login...', type: 'success' });
             
             // Después de 3 segundos, redirigir al login
             setTimeout(() => {
@@ -563,22 +597,55 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
           } else {
             console.error("Registration failed:", response.errorMessage);
             
-            // Manejar errores de validación estructurados
+            // Manejar errores de validación estructurados según la guía del backend
             if (response.validationErrors) {
               setValidationErrors(response.validationErrors);
+              
+              // Construir mensaje más descriptivo basado en los errores
+              let snackbarMessage = response.errorMessage || 'Validation error';
               
               // Si hay errores de company, volver al step 1
               if (response.validationErrors.company && Object.keys(response.validationErrors.company).length > 0) {
                 setStep(1);
+                snackbarMessage = `${response.errorMessage || 'Validation error'}. Please check company information in Step 1.`;
+              } else if (response.validationErrors.user) {
+                // Agregar contexto sobre qué campos tienen errores
+                const userErrors = response.validationErrors.user;
+                const errorFields: string[] = [];
+                
+                if (userErrors.user_name) errorFields.push('username');
+                if (userErrors.password) errorFields.push('password');
+                if (userErrors.person) {
+                  Object.keys(userErrors.person).forEach(field => {
+                    if (field === 'email') errorFields.push('email');
+                    else if (field === 'first_name' || field === 'last_name') errorFields.push('name');
+                    else errorFields.push(field);
+                  });
+                }
+                
+                if (errorFields.length > 0) {
+                  snackbarMessage = `${response.errorMessage || 'Validation error'}. Please check: ${errorFields.join(', ')}.`;
+                }
               }
+              
+              setSnackbar({ 
+                message: snackbarMessage, 
+                type: 'error' 
+              });
             } else {
               // Error general
               setErrors({ general: response.errorMessage });
+              setSnackbar({ 
+                message: response.errorMessage || 'Registration failed. Please try again.', 
+                type: 'error' 
+              });
             }
           }
         } catch (error) {
           console.error("Unexpected error:", error);
-          setErrors({ general: "An unexpected error occurred. Please try again." });
+          const errorMessage = "An unexpected error occurred. Please try again.";
+          setErrors({ general: errorMessage });
+          setSnackbar({ message: errorMessage, type: 'error' });
         } finally {
           setIsLoading(false);
         }
@@ -679,14 +746,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   
   return (
     <div className="w-full max-w-lg mx-auto">
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-          <div className="text-center">
-            <strong>Account created successfully!</strong>
-            <p className="text-sm mt-1">Redirecting to login...</p>
-          </div>
-        </div>
+      {/* Snackbar for error/success messages */}
+      {snackbar && (
+        <Snackbar
+          message={snackbar.message}
+          type={snackbar.type}
+          onClose={() => setSnackbar(null)}
+        />
       )}
 
       {/* Header */}
@@ -712,14 +778,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       {/* Form Container */}
       <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* Error general */}
-          {errors.general && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              <strong>Registration Failed:</strong>
-              <p className="mt-1">{errors.general}</p>
-            </div>
-          )}
           
           {step === 1 ? (
             <>
