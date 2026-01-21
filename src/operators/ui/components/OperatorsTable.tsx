@@ -82,6 +82,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                     License
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                    Salary Info
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     Family
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -116,6 +119,21 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{operator.number_licence}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {operator.salary_type === 'hour' ? (
+                          <>
+                            <div className="font-medium">${operator.hourly_salary}/hr</div>
+                            <div className="text-xs text-gray-500">per hour</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="font-medium">${operator.salary}/day</div>
+                            <div className="text-xs text-gray-500">per day</div>
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -217,6 +235,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                       Contact
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                      Salary Info
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -241,6 +262,21 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{operator.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {operator.salary_type === 'hour' ? (
+                            <>
+                              <div className="font-medium">${operator.hourly_salary}/hr</div>
+                              <div className="text-xs text-gray-500">por hora</div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="font-medium">${operator.salary}/day</div>
+                              <div className="text-xs text-gray-500">por día</div>
+                            </>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
