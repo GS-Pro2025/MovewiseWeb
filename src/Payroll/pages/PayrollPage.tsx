@@ -30,6 +30,20 @@ import { PayrollLoading } from '../components/PayrollLoading';
 import { PayrollEmailDialog } from '../components/PayrollEmailDialog';
 import { OperatorRowExtended } from '../types/payroll.types';
 
+// Ya no necesitamos calcular horas, el salary ya viene calculado para tipo "hour"
+
+/**
+ * PayrollPage - Componente principal para la gestión de nóminas
+ * 
+ * Este componente maneja:
+ * - Visualización de nóminas por semana y año
+ * - Filtrado por ubicación (país, estado, ciudad)
+ * - Búsqueda de operadores
+ * - Cálculo de totales brutos y netos
+ * - Gestión de bonos y gastos
+ * - Soporte para salary_type: "day" y "hour"
+ * - Envío de correos con detalles de pago
+ */
 export default function PayrollPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,17 +70,24 @@ export default function PayrollPage() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedOperatorForEmail, setSelectedOperatorForEmail] = useState<OperatorRowExtended | null>(null);
 
-  // Cargar países al montar
+  /**
+   * Effect: Cargar países al montar el componente
+   */
   useEffect(() => {
     fetchCountries().then((countries) => {
-      setCountries(countries.map((c) => ({ country: c.name })));
+      const formattedCountries = countries.map((c) => ({ country: c.name }));
+      setCountries(formattedCountries);
     });
   }, []);
 
-  // Cargar estados cuando cambia el país
+  /**
+   * Effect: Cargar estados cuando cambia el país seleccionado
+   */
   useEffect(() => {
     if (country) {
-      fetchStates(country).then(setStates);
+      fetchStates(country).then((fetchedStates) => {
+        setStates(fetchedStates);
+      });
       setState("");
       setCities([]);
       setCity("");
@@ -74,16 +95,22 @@ export default function PayrollPage() {
     }
   }, [country]);
 
-  // Cargar ciudades cuando cambia el estado
+  /**
+   * Effect: Cargar ciudades cuando cambia el estado seleccionado
+   */
   useEffect(() => {
     if (country && state) {
-      fetchCities(country, state).then(setCities);
+      fetchCities(country, state).then((fetchedCities) => {
+        setCities(fetchedCities);
+      });
       setCity("");
       setLocationStep("city");
     }
   }, [state]);
 
-  // Resetear todo si se borra el input
+  /**
+   * Effect: Resetear filtros de ubicación cuando se borran campos
+   */
   useEffect(() => {
     if (!country) {
       setState("");
@@ -100,20 +127,36 @@ export default function PayrollPage() {
     }
   }, [country, state, city]);
 
-  // Construir el string location
+  /**
+   * Memo: Construir string de ubicación completo
+   * @returns String con formato "País, Estado, Ciudad"
+   */
   const locationString = useMemo(() => {
     if (!country) return "";
     let loc = country;
     if (state) loc += `, ${state}`;
     if (city) loc += `, ${city}`;
+    console.log('📍 [LOCATION] String de ubicación construido:', loc);
     return loc;
   }, [country, state, city]);
 
+  /**
+   * fetchData - Método principal para obtener y procesar datos de nómina
+   * 
+   * Proceso:
+   * 1. Obtiene datos raw del servicio de nómina
+   * 2. Genera mapeo de fechas para la semana
+   * 3. Agrupa datos por operador
+   * 4. Calcula bonos únicos por día
+   * 5. Calcula earnings por día según salary_type (day/hour)
+   * 6. Obtiene gastos (expenses) de payments
+   * 7. Calcula totales brutos y netos
+   */
   const fetchData = async () => {
     try {
-      setLoading(true);
+      setLoading(true);  
       const response = await payrollService(week, year, locationString);
-
+      console.log('[RESPONSE] Datos recibidos del servicio:', response);
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(response.week_info.start_date);
       setWeekDates(dates);
@@ -121,8 +164,12 @@ export default function PayrollPage() {
       const map = new Map<string, OperatorRow>();
       const paymentCache = new Map<string, number>();
 
-      // PASO 1: Crear la estructura básica de cada operador y obtener bonus único
-      response.data.forEach((d) => {
+      // PASO 1: Crear la estructura básica de cada operador y agrupar assignments por día
+      response.data.forEach((d, index) => {
+        if (index === 0) {
+          console.log('👤 [SAMPLE] Ejemplo de registro raw:', d);
+        }
+        
         const key = d.code;
         const assignId = d.id_assign;
         const payId = d.id_payment;
@@ -134,7 +181,7 @@ export default function PayrollPage() {
             lastName: d.last_name,
             role: d.role,
             cost: d.salary,
-            email: d.email, // NUEVO: Agregar email del API
+            email: d.email,
             pay: payId ? payId.toString() : null,
             total: 0,
             additionalBonuses: 0,
@@ -144,8 +191,8 @@ export default function PayrollPage() {
             paymentIds: payId != null ? [payId] : [],
             assignmentsByDay: {},
             operator_phone: d.operator_phone,
-            // Set temporal para controlar los días sumados
             _bonusDaysAdded: new Set<string>(),
+            _salaryType: d.salary_type,
           } as any);
         } else {
           const ex = map.get(key)!;
@@ -159,23 +206,34 @@ export default function PayrollPage() {
         const dayKey = Object.entries(dates).find(
           ([, date]) => date === dataDate
         )?.[0] as keyof WeekAmounts;
+        
         if (dayKey) {
           const ex = map.get(key)!;
+          
           // Solo suma el bonus si aún no se sumó para ese día
           if (!(ex as any)._bonusDaysAdded.has(dayKey)) {
             ex.additionalBonuses += Number(d.bonus) || 0;
             (ex as any)._bonusDaysAdded.add(dayKey);
+            console.log(`💰 [BONUS] ${d.code} - ${dayKey}: +${d.bonus}`);
           }
+          
           if (!ex.assignmentsByDay![dayKey]) ex.assignmentsByDay![dayKey] = [];
           ex.assignmentsByDay![dayKey]!.push({
             id: assignId,
             date: dataDate,
             bonus: Number(d.bonus) || 0,
-          });
+            startTime: d.start_time,
+            endTime: d.end_time,
+            salary: d.salary,
+            salaryType: d.salary_type,
+          } as any);
         }
       });
 
+      console.log(`✅ [STEP 1] Total de operadores únicos: ${map.size}`);
+
       // PASO 1.5: OBTENER EXPENSES DE LOS PAYMENTS
+      console.log('💸 [STEP 1.5] Obteniendo expenses de payments...');
       const paymentPromises: Promise<void>[] = [];
       
       // Recopilar todos los payment_ids únicos
@@ -188,16 +246,20 @@ export default function PayrollPage() {
         });
       });
 
+      console.log(`💳 [PAYMENTS] Total de payment IDs únicos: ${uniquePaymentIds.size}`);
+      console.log('💳 [PAYMENTS] IDs:', Array.from(uniquePaymentIds));
+
       // Hacer llamadas para obtener expenses
       for (const paymentId of uniquePaymentIds) {
         paymentPromises.push(
           getPaymentById(paymentId)
             .then(paymentData => {
               const expense = Number(paymentData.expense) || 0;
+              console.log(`✅ [EXPENSE] Payment ${paymentId}: $${expense}`);
               paymentCache.set(paymentId, expense);
             })
             .catch(error => {
-              console.error(`Error getting payment ${paymentId}:`, error);
+              console.error(`❌ [ERROR] Error obteniendo payment ${paymentId}:`, error);
               paymentCache.set(paymentId, 0);
             })
         );
@@ -205,8 +267,10 @@ export default function PayrollPage() {
 
       // Esperar a que todas las llamadas de payment terminen
       await Promise.all(paymentPromises);
+      console.log('✅ [EXPENSES] Todos los expenses obtenidos');
 
       // Asignar expenses a los operadores basado en sus payments
+      console.log('🔄 [STEP 2] Asignando expenses a operadores...');
       Array.from(map.values()).forEach(operator => {
         let totalExpense = 0;
         const processedPayments = new Set<string>();
@@ -221,52 +285,79 @@ export default function PayrollPage() {
         });
         
         operator.expense = totalExpense;
+        if (totalExpense > 0) {
+          console.log(`💸 [OPERATOR EXPENSE] ${operator.code}: $${totalExpense}`);
+        }
       });
 
-      // PASO 2: Función para buscar si un operador trabajó en una fecha específica
-      const findWorkDay = (
-        operatorCode: string,
-        targetDate: string
-      ): number | null => {
-        const workRecord = response.data.find((d) => {
-          const dataDate = d.date.split("T")[0];
-          return d.code === operatorCode && dataDate === targetDate;
-        });
-        return workRecord ? workRecord.salary : null;
-      };
-
-      // PASO 3: Mapear cada día de la semana para cada operador
+      // PASO 3: Calcular earnings por día según salary_type
+      console.log('🔄 [STEP 3] Calculando earnings por día...');
       const operators = Array.from(map.values()).map((row) => {
+        const salaryType = (row as any)._salaryType;
         delete (row as any)._bonusDaysAdded;
+        delete (row as any)._salaryType;
 
-        // Para cada día de la semana, buscar si trabajó
+        let totalEarnings = 0;
+
         weekdayKeys.forEach((dayKey) => {
-          const dateForThisDay = dates[dayKey];
-          if (dateForThisDay) {
-            const salary = findWorkDay(row.code, dateForThisDay);
-            if (salary !== null) {
-              row[dayKey] = salary;
+          const assignments = row.assignmentsByDay?.[dayKey];
+          
+          if (assignments && assignments.length > 0) {
+            if (salaryType === 'hour') {
+              // MODO HOUR: Sumar los salaries de todas las órdenes del día
+              let dailyEarnings = 0;
+              
+              assignments.forEach((assignment: any) => {
+                const assignmentSalary = Number(assignment.salary) || 0;
+                dailyEarnings += assignmentSalary;
+                console.log(`💵 [ORDER] ${row.code} - ${dayKey} - Assignment ${assignment.id}: ${assignmentSalary}`);
+              });
+              
+              row[dayKey] = dailyEarnings;
+              totalEarnings += dailyEarnings;
+              
+              console.log(`💰 [DAILY HOUR] ${row.code} - ${dayKey}: ${assignments.length} órdenes = ${dailyEarnings.toFixed(2)}`);
+            } else {
+              // MODO DAY: Un solo pago por día (comportamiento original)
+              const dailyEarnings = row.cost;
+              row[dayKey] = dailyEarnings;
+              totalEarnings += dailyEarnings;
+              
+              console.log(`💵 [DAILY DAY] ${row.code} - ${dayKey}: ${dailyEarnings}`);
             }
           }
         });
 
         // Calcular totales
+        row.total = totalEarnings;
+        row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
+        (row as any).netTotal = row.grandTotal - (row.expense || 0);
+
         const daysWorked = weekdayKeys.filter(
           (day) => row[day] != null && row[day]! > 0
         ).length;
-        row.total = daysWorked * row.cost;
-        // grandTotal ahora es el total SIN restar expense (total bruto)
-        row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
-        // Agregar un nuevo campo para el total neto (después de descuentos)
-        (row as any).netTotal = row.grandTotal - (row.expense || 0);
+
+        console.log(`📊 [TOTALS] ${row.code} (${salaryType}):`, {
+          días: daysWorked,
+          tarifa: salaryType === 'hour' ? `${row.cost}/hora` : `${row.cost}/día`,
+          totalBase: row.total,
+          bonos: row.additionalBonuses,
+          bruto: row.grandTotal,
+          gastos: row.expense,
+          neto: (row as any).netTotal
+        });
 
         return row;
       });
+
+      console.log('✅ [COMPLETE] Datos procesados completamente');
+      console.log('👥 [FINAL] Total de operadores procesados:', operators.length);
 
       setGrouped(operators);
       setWeekInfo(response.week_info);
       setError(null);
     } catch (e) {
+      console.error('❌ [ERROR] Error en fetchData:', e);
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
@@ -278,30 +369,52 @@ export default function PayrollPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [week, year, country, state, city]);
 
+  /**
+   * handleModalClose - Cierra el modal y refresca los datos
+   */
   const handleModalClose = () => {
+    console.log('🔒 [MODAL] Cerrando modal de operador');
     setSelectedOperator(null);
     fetchData();
   };
 
-  // Total bruto (sin descuentos)
+  /**
+   * Memo: Total bruto (sin descuentos)
+   */
   const totalGrand = useMemo(
-    () => grouped.reduce((sum, r) => sum + (r.grandTotal || 0), 0),
+    () => {
+      const total = grouped.reduce((sum, r) => sum + (r.grandTotal || 0), 0);
+      console.log('💰 [TOTAL BRUTO] Total general bruto:', total);
+      return total;
+    },
     [grouped]
   );
   
-  // Total neto (con descuentos aplicados)
+  /**
+   * Memo: Total neto (con descuentos aplicados)
+   */
   const totalNet = useMemo(
-    () => grouped.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0),
+    () => {
+      const total = grouped.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0);
+      console.log('💵 [TOTAL NETO] Total general neto:', total);
+      return total;
+    },
     [grouped]
   );
   
+  /**
+   * Memo: Conteo de días trabajados en la semana
+   */
   const countDays = useMemo(
     () =>
       weekdayKeys.filter((day) => grouped.some((r) => r[day] != null)).length,
     [grouped]
   );
 
-  // Filtrar operadores basado en el término de búsqueda
+  /**
+   * Memo: Filtrar operadores basado en el término de búsqueda
+   * Busca en: código, nombre y apellido
+   */
   const filteredOperators = useMemo(() => {
     if (!searchTerm.trim()) {
       return grouped;
@@ -315,27 +428,37 @@ export default function PayrollPage() {
         operator.lastName.toLowerCase().includes(term)
     );
 
+    console.log(`🔍 [SEARCH] Término: "${searchTerm}" | Resultados: ${filtered.length}/${grouped.length}`);
     return filtered;
   }, [grouped, searchTerm]);
 
-  // Totales para los operadores filtrados
+  /**
+   * Memo: Totales para los operadores filtrados (bruto)
+   */
   const filteredTotalGrand = useMemo(
     () => filteredOperators.reduce((sum, r) => sum + (r.grandTotal || 0), 0),
     [filteredOperators]
   );
   
+  /**
+   * Memo: Totales para los operadores filtrados (neto)
+   */
   const filteredTotalNet = useMemo(
     () => filteredOperators.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0),
     [filteredOperators]
   );
 
-  // Total de expenses para las estadísticas
+  /**
+   * Memo: Total de expenses para las estadísticas
+   */
   const totalExpenses = useMemo(
     () => filteredOperators.reduce((sum, r) => sum + (r.expense || 0), 0),
     [filteredOperators]
   );
 
-  // Contadores de pago para operadores filtrados
+  /**
+   * Memo: Estadísticas de pagos (pagados vs no pagados)
+   */
   const paymentStats = useMemo(() => {
     const paidOperators = filteredOperators.filter((r) => r.pay != null);
     const unpaidOperators = filteredOperators.filter((r) => r.pay == null);
@@ -349,29 +472,46 @@ export default function PayrollPage() {
       0
     );
 
-    return {
+    const stats = {
       paid: paidOperators.length,
       unpaid: unpaidOperators.length,
       total: paidOperators.length + unpaidOperators.length,
       paidAmount,
       unpaidAmount,
     };
+
+    console.log('📊 [PAYMENT STATS] Estadísticas de pago:', stats);
+    return stats;
   }, [filteredOperators]);
 
+  /**
+   * changeWeek - Maneja el cambio de semana
+   * @param e - Evento de cambio del input
+   */
   const changeWeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const w = parseInt(e.target.value, 10);
     if (!isNaN(w) && w >= 1 && w <= 53) {
+      console.log('📅 [WEEK CHANGE] Nueva semana:', w);
       setWeek(w);
     }
   };
 
+  /**
+   * changeYear - Maneja el cambio de año
+   * @param newYear - Nuevo año seleccionado
+   */
   const changeYear = (newYear: number) => {
     if (Number.isInteger(newYear) && newYear >= 2020 && newYear <= new Date().getFullYear() + 2) {
+      console.log('📅 [YEAR CHANGE] Nuevo año:', newYear);
       setYear(newYear);
     }
   };
 
+  /**
+   * handleCloseEmailDialog - Cierra el diálogo de envío de email
+   */
   const handleCloseEmailDialog = () => {
+    console.log('📧 [EMAIL] Cerrando diálogo de email');
     setEmailDialogOpen(false);
     setSelectedOperatorForEmail(null);
   };
@@ -453,7 +593,7 @@ export default function PayrollPage() {
           operatorData={{
             ...selectedOperator,
             cost: selectedOperator.cost,
-            total: selectedOperator.total || 0, // Asegurar que total no sea undefined
+            total: selectedOperator.total || 0,
             additionalBonuses: selectedOperator.additionalBonuses || 0, 
             assignmentIds: selectedOperator.assignmentIds || [], 
             paymentIds: selectedOperator.paymentIds || [],
