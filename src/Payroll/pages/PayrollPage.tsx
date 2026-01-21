@@ -74,10 +74,8 @@ export default function PayrollPage() {
    * Effect: Cargar países al montar el componente
    */
   useEffect(() => {
-    console.log('🌍 [INIT] Cargando lista de países...');
     fetchCountries().then((countries) => {
       const formattedCountries = countries.map((c) => ({ country: c.name }));
-      console.log('✅ [COUNTRIES] Países cargados:', formattedCountries);
       setCountries(formattedCountries);
     });
   }, []);
@@ -87,9 +85,7 @@ export default function PayrollPage() {
    */
   useEffect(() => {
     if (country) {
-      console.log('🏛️ [LOCATION] País seleccionado:', country);
       fetchStates(country).then((fetchedStates) => {
-        console.log('✅ [STATES] Estados cargados para', country, ':', fetchedStates);
         setStates(fetchedStates);
       });
       setState("");
@@ -104,9 +100,7 @@ export default function PayrollPage() {
    */
   useEffect(() => {
     if (country && state) {
-      console.log('🏙️ [LOCATION] Estado seleccionado:', state);
       fetchCities(country, state).then((fetchedCities) => {
-        console.log('✅ [CITIES] Ciudades cargadas para', state, ':', fetchedCities);
         setCities(fetchedCities);
       });
       setCity("");
@@ -124,7 +118,6 @@ export default function PayrollPage() {
       setStates([]);
       setCities([]);
       setLocationStep("country");
-      console.log('🔄 [RESET] Filtros de ubicación reseteados');
     } else if (!state) {
       setCity("");
       setCities([]);
@@ -161,25 +154,17 @@ export default function PayrollPage() {
    */
   const fetchData = async () => {
     try {
-      setLoading(true);
-      console.log('📊 [FETCH] Iniciando carga de datos...');
-      console.log('📅 [PARAMS] Semana:', week, '| Año:', year, '| Ubicación:', locationString);
-      
+      setLoading(true);  
       const response = await payrollService(week, year, locationString);
-      console.log('✅ [RESPONSE] Datos recibidos del servicio:', response);
-      console.log('📋 [DATA] Total de registros:', response.data.length);
-      console.log('🗓️ [WEEK_INFO] Información de la semana:', response.week_info);
-
+      console.log('[RESPONSE] Datos recibidos del servicio:', response);
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(response.week_info.start_date);
-      console.log('📆 [DATES] Fechas generadas para la semana:', dates);
       setWeekDates(dates);
 
       const map = new Map<string, OperatorRow>();
       const paymentCache = new Map<string, number>();
 
       // PASO 1: Crear la estructura básica de cada operador y agrupar assignments por día
-      console.log('🔄 [STEP 1] Procesando datos de operadores...');
       response.data.forEach((d, index) => {
         if (index === 0) {
           console.log('👤 [SAMPLE] Ejemplo de registro raw:', d);
@@ -190,7 +175,6 @@ export default function PayrollPage() {
         const payId = d.id_payment;
 
         if (!map.has(key)) {
-          console.log(`➕ [NEW OPERATOR] Creando nuevo operador: ${d.code} - ${d.first_name} ${d.last_name}`);
           map.set(key, {
             code: d.code,
             name: d.first_name,
@@ -208,7 +192,7 @@ export default function PayrollPage() {
             assignmentsByDay: {},
             operator_phone: d.operator_phone,
             _bonusDaysAdded: new Set<string>(),
-            _salaryType: d.salary_type, // Guardamos el salary_type
+            _salaryType: d.salary_type,
           } as any);
         } else {
           const ex = map.get(key)!;
