@@ -4,10 +4,12 @@ import { Operator } from '../domain/ModelOrdersReport';
 import { useNavigate } from 'react-router-dom';
 import LocationDialog from './LocationDialog';
 import { parseLocation, isJsonLocation, LocationData, RouteData } from '../../service/mapsServices';
+import { finishOperatorOrder } from '../../service/AssignService';
 
 interface OperatorsTableProps {
   operators: Operator[];
   orderKey: string;
+  onOperatorUpdate?: () => void;
 }
 
 const COLORS = {
@@ -17,19 +19,84 @@ const COLORS = {
   gray: '#6b7280',
 };
 
-const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) => {
+const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey, onOperatorUpdate }) => {
+  // Console para ver los datos que llegan
+  console.log('=== OperatorsTable Data ===');
+  console.log('Operators:', operators);
+  console.log('Order Key:', orderKey);
+  console.log('Total Operators:', operators.length);
+  
   const navigate = useNavigate();
   const [selectedRoute, setSelectedRoute] = useState<RouteData | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [localOperators, setLocalOperators] = useState<Operator[]>(operators);
+  const [loadingOperatorId, setLoadingOperatorId] = useState<number | null>(null);
+
+  // Actualizar localOperators cuando cambien los operators del padre
+  React.useEffect(() => {
+    console.log('Props operators changed, updating local state');
+    setLocalOperators(operators);
+  }, [operators]);
 
   const handleAddOperator = () => {
     navigate(`/app/add-operators-to-order/${orderKey}`);
   };
 
+  const handleFinishOperator = async (operator: Operator) => {
+    console.log('=== Finishing Operator ===');
+    console.log('Operator to finish:', operator);
+    console.log('Sending payload:', { location_end: null });
+    
+    setLoadingOperatorId(operator.id_assign);
+    
+    try {
+      const data = await finishOperatorOrder(operator.id_assign, null);
+
+      console.log('✅ Success! Response data:', data);
+      console.log('Response status_order:', data?.status_order);
+      
+      // Actualizar el estado local del operador con los datos que devuelve el servidor
+      setLocalOperators(prevOperators => {
+        const updated = prevOperators.map(op => 
+          op.id_assign === operator.id_assign 
+            ? { 
+                ...op, 
+                status_order: data?.status_order || 'finished',
+                location_end: data?.location_end || null,
+                end_time: data?.end_time || new Date().toISOString()
+              }
+            : op
+        );
+        console.log('Updated operators:', updated);
+        return updated;
+      });
+
+      // Llamar callback si existe para actualizar datos en el componente padre
+      if (onOperatorUpdate) {
+        console.log('Calling onOperatorUpdate callback');
+        onOperatorUpdate();
+      }
+      
+      alert('✅ Operador finalizado exitosamente');
+    } catch (error) {
+      console.error('❌ Error finishing operator:', error);
+      alert('Error al finalizar el operador: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setLoadingOperatorId(null);
+    }
+  };
+
   const handleRouteClick = (locationStart: unknown, locationEnd: unknown) => {
+    console.log('=== Route Click ===');
+    console.log('Location Start:', locationStart);
+    console.log('Location End:', locationEnd);
+    
     const parsedStart = parseLocation(locationStart);
     const parsedEnd = parseLocation(locationEnd);
+    
+    console.log('Parsed Start:', parsedStart);
+    console.log('Parsed End:', parsedEnd);
     
     if (parsedStart && parsedEnd) {
       setSelectedRoute({
@@ -38,8 +105,11 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
       });
       setSelectedLocation(null);
       setIsDialogOpen(true);
+    } else {
+      console.log('Failed to parse locations');
     }
   };
+
   // Función helper para formatear números correctamente
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return 'N/A';
@@ -111,7 +181,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
       </div>
 
       {/* Table */}
-      {operators.length === 0 ? (
+      {localOperators.length === 0 ? (
         <div className="text-center py-6 px-4">
           <User size={40} className="mx-auto mb-2" style={{ color: COLORS.gray, opacity: 0.5 }} />
           <p className="text-xs text-gray-500">No operators assigned yet</p>
@@ -144,7 +214,11 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
               </tr>
             </thead>
             <tbody>
-              {operators.map((operator, index) => (
+              {localOperators.map((operator, index) => {
+                // Console para cada operador
+                console.log(`Operator ${index + 1}:`, operator);
+                
+                return (
                 <tr 
                   key={`${operator.code}-${index}`}
                   className={`transition-all duration-200 hover:shadow-sm text-xs ${
@@ -237,42 +311,53 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({ operators, orderKey }) 
                     )}
                   </td>
                   <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                    <span 
-                      className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white inline-block"
-                      style={{ 
-                        backgroundColor: 
-                          operator.status_order?.toLowerCase() === 'finished' ? COLORS.success :
-                          operator.status_order?.toLowerCase() === 'pending' ? COLORS.secondary :
-                          COLORS.gray
-                      }}
-                    >
-                      {operator.status_order || 'N/A'}
-                    </span>
+                    {operator.status_order?.toLowerCase() === 'finished' ? (
+                      <span 
+                        className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white inline-block"
+                        style={{ backgroundColor: COLORS.success }}
+                      >
+                        {operator.status_order}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleFinishOperator(operator)}
+                        disabled={loadingOperatorId === operator.id_assign}
+                        className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white inline-block transition-all duration-200 hover:shadow-md hover:scale-105 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ 
+                          backgroundColor: 
+                            operator.status_order?.toLowerCase() === 'pending' ? COLORS.secondary :
+                            COLORS.gray
+                        }}
+                        title={loadingOperatorId === operator.id_assign ? "Finalizando..." : "Click to finish"}
+                      >
+                        {loadingOperatorId === operator.id_assign ? '...' : (operator.status_order || 'N/A')}
+                      </button>
+                    )}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
       )}
 
       {/* Footer Summary */}
-      {operators.length > 0 && (
+      {localOperators.length > 0 && (
         <div className="px-2 py-1.5 border-t bg-gray-50 flex items-center justify-between" style={{ borderColor: COLORS.primary }}>
           <div className="flex items-center gap-3 text-xs">
             <span className="text-gray-600">
-              <strong>Total:</strong> {operators.length}
+              <strong>Total:</strong> {localOperators.length}
             </span>
             <span className="text-gray-600">
               <strong>Salary:</strong>{' '}
               <span className="font-bold" style={{ color: COLORS.success }}>
-                {formatCurrency(operators.reduce((sum, op) => sum + (Number(op.salary) || 0), 0))}
+                {formatCurrency(localOperators.reduce((sum, op) => sum + (Number(op.salary) || 0), 0))}
               </span>
             </span>
             <span className="text-gray-600">
               <strong>Bonus:</strong>{' '}
               <span className="font-bold" style={{ color: COLORS.secondary }}>
-                {formatCurrency(operators.reduce((sum, op) => sum + (Number(op.bonus) || 0), 0))}
+                {formatCurrency(localOperators.reduce((sum, op) => sum + (Number(op.bonus) || 0), 0))}
               </span>
             </span>
           </div>

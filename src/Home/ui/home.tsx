@@ -617,6 +617,7 @@ const OrdersTable: React.FC = () => {
         onActionsMenuClick={handleActionsMenuClick}
         onAddFuelCost={handleAddFuelCost}
         refreshCostFuelsTrigger={refreshCostFuelsTrigger}
+        onRefreshData={loadData}
       />
 
       {/* Context Menu */}

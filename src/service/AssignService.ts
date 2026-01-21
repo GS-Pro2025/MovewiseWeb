@@ -38,3 +38,34 @@ export async function updateAssign(
 
   return await res.json();
 }
+
+/**
+ * PATCH /assigns/{id}/operator-finish/
+ * Finaliza la orden de un operador.
+ * @param id        — Assignment ID to finish.
+ * @param locationEnd — Dirección final (puede ser string o null).
+ * @returns         — Parsed JSON response.
+ */
+export async function finishOperatorOrder(
+  id: number,
+  locationEnd: string | null = null
+): Promise<any> {
+  const url = `${API_BASE}/assigns/${id}/operator-finish/`;
+
+  const res: Response = await fetchWithAuth(url, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      location_end: locationEnd
+    }),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    throw new Error(`API ${res.status}: ${msg || res.statusText}`);
+  }
+
+  return await res.json();
+}

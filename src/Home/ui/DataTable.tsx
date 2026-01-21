@@ -166,6 +166,7 @@ interface DataTableProps {
   onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void;
   onAddFuelCost?: (row: TableData) => void;
   refreshCostFuelsTrigger?: string | null;
+  onRefreshData?: () => void | Promise<void>;
 }
 
 const LoadingSpinner = () => (
@@ -228,7 +229,9 @@ export const DataTable: React.FC<DataTableProps> = ({
   onContextMenu,
   onActionsMenuClick,
   onAddFuelCost,
-  refreshCostFuelsTrigger
+  refreshCostFuelsTrigger,
+  onRefreshData
+  
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
@@ -528,6 +531,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                                 <OperatorsTable 
                                   operators={row.operators || []}
                                   orderKey={row.id} 
+                                  onOperatorUpdate={onRefreshData}
                                 />
                                 <CostFuelsTable 
                                   costFuels={costFuelsByOrder[row.id] || []}
