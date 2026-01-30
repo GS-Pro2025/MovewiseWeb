@@ -31,7 +31,9 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
 }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [currentStep, setCurrentStep] = useState(1);
+  const [highestStepReached, setHighestStepReached] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
   
   // Estado del formulario completo
   const [formData, setFormData] = useState<Partial<RegistryOperator>>({
@@ -107,6 +109,45 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
     }
   }, []);
 
+  // Verificar si hay datos llenados en el formulario
+  const hasFormData = useCallback((): boolean => {
+    return !!(
+      formData.first_name?.trim() ||
+      formData.last_name?.trim() ||
+      formData.email?.trim() ||
+      formData.phone?.trim() ||
+      formData.id_number?.trim() ||
+      formData.code?.trim() ||
+      formData.number_licence?.trim() ||
+      formData.address?.trim() ||
+      (formData.sons && formData.sons.length > 0) ||
+      files.photo ||
+      files.license_front ||
+      files.license_back
+    );
+  }, [formData, files]);
+
+  // Manejar intento de cerrar el modal
+  const handleCloseAttempt = useCallback(() => {
+    if (hasFormData()) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  }, [hasFormData, onClose]);
+
+  // Confirmar cierre y limpiar datos
+  const handleConfirmClose = useCallback(() => {
+    clearDraft();
+    setShowConfirmClose(false);
+    onClose();
+  }, [clearDraft, onClose]);
+
+  // Cancelar el cierre
+  const handleCancelClose = useCallback(() => {
+    setShowConfirmClose(false);
+  }, []);
+
   // Actualizar datos del formulario
   const updateFormData = useCallback((data: Partial<RegistryOperator>) => {
     setFormData(prev => {
@@ -180,7 +221,9 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
   const handleNext = useCallback(() => {
     if (validateStep(currentStep)) {
       if (currentStep < STEPS.length) {
-        setCurrentStep(prev => prev + 1);
+        const nextStep = currentStep + 1;
+        setCurrentStep(nextStep);
+        setHighestStepReached(prev => Math.max(prev, nextStep));
       }
     } else {
       enqueueSnackbar('Please fix validation errors in this step', { variant: 'error' });
@@ -192,6 +235,13 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       setCurrentStep(prev => prev - 1);
     }
   }, [currentStep]);
+
+  // Navegación directa a un paso (solo si ya fue visitado)
+  const handleStepClick = useCallback((stepId: number) => {
+    if (stepId <= highestStepReached) {
+      setCurrentStep(stepId);
+    }
+  }, [highestStepReached]);
 
   // Submit final
   const handleSubmit = useCallback(async () => {
@@ -263,21 +313,70 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       onClose();
     } catch (error: any) {
       console.error('Error submitting operator:', error);
-      if (error && typeof error === 'object') {
-        const msg = error.message || 'Server validation error';
-        enqueueSnackbar(msg, { variant: 'error' });
+      
+      // Función para extraer mensaje limpio del error
+      const extractCleanMessage = (err: any): string => {
+        // Si el error tiene la estructura { message, errors, status }
+        if (err && typeof err === 'object') {
+          // Primero verificar si hay errores en non_field_errors
+          if (err.errors?.non_field_errors?.length) {
+            return err.errors.non_field_errors[0];
+          }
+          
+          // Si hay otros errores de campo, tomar el primero
+          if (err.errors && typeof err.errors === 'object') {
+            const firstErrorKey = Object.keys(err.errors)[0];
+            if (firstErrorKey) {
+              const firstError = err.errors[firstErrorKey];
+              return Array.isArray(firstError) ? firstError[0] : String(firstError);
+            }
+          }
+        }
+        
+        let rawMsg = err?.message || String(err);
+        
+        // Intentar extraer JSON del mensaje (formato: "HTTP error! status: XXX - {...}")
+        const jsonMatch = rawMsg.match(/- (\{.*\})$/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[1]);
+            // Verificar non_field_errors en el JSON parseado
+            if (parsed.errors?.non_field_errors?.length) {
+              return parsed.errors.non_field_errors[0];
+            }
+            rawMsg = parsed.message || rawMsg;
+          } catch {
+            // ignore parse errors
+          }
+        }
+        
+        // Extraer el detalle del ErrorDetail (formato: "[ErrorDetail(string='...', code='...')]")
+        const errorDetailMatch = rawMsg.match(/ErrorDetail\(string='([^']+)'/);
+        if (errorDetailMatch) {
+          return errorDetailMatch[1];
+        }
+        
+        // Limpiar prefijos comunes
+        rawMsg = rawMsg.replace(/^Unexpected error:\s*/i, '');
+        rawMsg = rawMsg.replace(/^\[|\]$/g, '');
+        
+        return rawMsg || 'Server validation error';
+      };
 
-        if (error.errors && typeof error.errors === 'object') {
-          const normalized: Record<string, string> = {};
-          Object.entries(error.errors).forEach(([key, val]) => {
-            const firstMsg = Array.isArray(val) ? (val[0] as string) : String(val);
-            const shortKey = key.includes('.') ? key.split('.').pop()! : key;
-            normalized[shortKey] = firstMsg;
-          });
+      const cleanMsg = extractCleanMessage(error);
+      enqueueSnackbar(cleanMsg, { variant: 'error' });
+
+      if (error?.errors && typeof error.errors === 'object') {
+        const normalized: Record<string, string> = {};
+        Object.entries(error.errors).forEach(([key, val]) => {
+          if (key === 'non_field_errors') return; // Ya se mostró en el snackbar
+          const firstMsg = Array.isArray(val) ? (val[0] as string) : String(val);
+          const shortKey = key.includes('.') ? key.split('.').pop()! : key;
+          normalized[shortKey] = firstMsg;
+        });
+        if (Object.keys(normalized).length > 0) {
           setErrors(prev => ({ ...prev, ...normalized }));
         }
-      } else {
-        enqueueSnackbar(String(error), { variant: 'error' });
       }
       // no clear draft - keep cached for retry
     } finally {
@@ -289,6 +388,40 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {/* Confirmation Dialog */}
+      {showConfirmClose && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                <i className="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Discard Changes?</h3>
+                <p className="text-sm text-gray-500">You have unsaved data</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">
+              All the information you've entered will be lost. Are you sure you want to close?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelClose}
+                className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+              >
+                Keep Editing
+              </button>
+              <button
+                onClick={handleConfirmClose}
+                className="px-4 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 transition-all"
+              >
+                Discard & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
@@ -298,7 +431,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
               <p className="text-blue-100 mt-1">Step {currentStep} of {STEPS.length}</p>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
             >
               <i className="fas fa-times text-xl"></i>
@@ -311,15 +444,22 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => (
               <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center">
+                <div 
+                  className="flex flex-col items-center"
+                  onClick={() => handleStepClick(step.id)}
+                  style={{ cursor: step.id <= highestStepReached ? 'pointer' : 'default' }}
+                >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                       currentStep === step.id
                         ? 'bg-blue-600 text-white scale-110'
                         : currentStep > step.id
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : step.id <= highestStepReached
+                        ? 'bg-blue-200 text-blue-700 hover:bg-blue-300'
                         : 'bg-gray-300 text-gray-600'
                     }`}
+                    title={step.id <= highestStepReached ? `Go to ${step.name}` : step.name}
                   >
                     {currentStep > step.id ? (
                       <i className="fas fa-check"></i>
@@ -327,7 +467,9 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
                       <i className={`fas ${step.icon} text-sm`}></i>
                     )}
                   </div>
-                  <span className="text-xs mt-2 text-gray-600 hidden md:block">{step.name}</span>
+                  <span className={`text-xs mt-2 hidden md:block ${
+                    step.id <= highestStepReached ? 'text-blue-600 font-medium' : 'text-gray-600'
+                  }`}>{step.name}</span>
                 </div>
                 {index < STEPS.length - 1 && (
                   <div
@@ -342,7 +484,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 280px)' }}>
+        <form autoComplete="off" className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 280px)' }} onSubmit={(e) => e.preventDefault()}>
           {currentStep === 1 && (
             <PersonalDataStep
               data={formData}
@@ -377,7 +519,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
               onChange={(sons) => updateFormData({ sons, n_children: sons.length })}
             />
           )}
-        </div>
+        </form>
 
         {/* Footer */}
         <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t">
@@ -396,7 +538,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
 
           <div className="flex gap-3">
             <button
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="px-6 py-2 rounded-lg font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 transition-all"
             >
               Cancel
