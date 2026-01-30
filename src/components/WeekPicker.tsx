@@ -101,6 +101,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
           aria-haspopup="listbox"
           aria-expanded={showDropdown}
           role="button"
+          translate="no"
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
 
@@ -133,7 +134,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
                   className="text-xs font-bold truncate"
                   style={{ color: PRIMARY }}
                 >
-                  Week {week}
+                  Week <span translate="no">{week}</span>
                 </div>
               </div>
 
@@ -201,6 +202,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
           <div
             className="absolute z-50 left-0 right-0 mt-2 rounded-lg shadow-lg max-w-full"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}
+            translate="no"
           >
             <div className="p-3">
               <div className="flex justify-between items-center mb-2">
@@ -301,6 +303,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
           <div
             className="absolute z-50 left-0 right-0 mt-2 p-3 rounded-lg shadow-lg"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }}
+            translate="no"
           >
             <div className="flex flex-col gap-2">
               <input
