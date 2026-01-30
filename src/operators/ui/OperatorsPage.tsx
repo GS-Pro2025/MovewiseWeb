@@ -196,15 +196,10 @@ const OperatorsPage: React.FC = () => {
   }, []);
   
   const handleSaveNewOperator = useCallback(async (formData: FormData) => {
-    try {
-      await createOperator(formData); 
-      const response = await fetchOperators();
-      setOperators(response.results);
-      enqueueSnackbar('Operator registered successfully', { variant: 'success' });
-    } catch {
-      enqueueSnackbar('Error registering operator', { variant: 'error' });
-    }
-  }, [enqueueSnackbar]);
+    await createOperator(formData); 
+    const response = await fetchOperators();
+    setOperators(response.results);
+  }, []);
   
   const handleEditOperator = useCallback((operator: Operator) => {
     setOperatorToEdit(operator);
@@ -510,6 +505,7 @@ const OperatorsPage: React.FC = () => {
                   placeholder="Search freelancers by name, code, phone, or ID number..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  autoComplete="off"
                   className="block w-full pl-10 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
                   style={{ borderColor: COLORS.primary }}
                   onFocus={(e) => {

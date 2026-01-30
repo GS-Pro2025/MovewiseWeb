@@ -79,6 +79,7 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
               placeholder="Search operators by name, code, email, phone, or license..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
+              autoComplete="off"
               className="block w-full pl-10 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
               style={{ borderColor: COLORS.primary }}
               onFocus={(e) => {
