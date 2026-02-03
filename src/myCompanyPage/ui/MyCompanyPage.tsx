@@ -10,7 +10,11 @@ interface FormData {
   name: string;
   address: string;
   zip_code: string;
+  logo_upload: string | null; // Base64 encoded image
 }
+
+const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 const MyCompanyPage: React.FC = () => {
   const [company, setCompany] = useState<CompanyModel | null>(null);
@@ -22,9 +26,13 @@ const MyCompanyPage: React.FC = () => {
     name: '',
     address: '',
     zip_code: '',
+    logo_upload: null,
   });
   const [validating, setValidating] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadCompany();
@@ -47,7 +55,10 @@ const MyCompanyPage: React.FC = () => {
           name: result.data.name || '',
           address: result.data.address || '',
           zip_code: result.data.zip_code || '',
+          logo_upload: null,
         });
+        setLogoPreview(result.data.logo_url || null);
+        setRemoveLogo(false);
       }
     } catch (error: any) {
       console.error('Error loading company:', error);
@@ -62,6 +73,47 @@ const MyCompanyPage: React.FC = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      enqueueSnackbar('Invalid image format. Allowed: JPEG, PNG, GIF, WebP', { variant: 'error' });
+      setFieldErrors(prev => ({ ...prev, logo: 'Invalid image format' }));
+      return;
+    }
+
+    // Validar tamaño
+    if (file.size > MAX_LOGO_SIZE) {
+      enqueueSnackbar('Logo image must be less than 5MB', { variant: 'error' });
+      setFieldErrors(prev => ({ ...prev, logo: 'Image size must be less than 5MB' }));
+      return;
+    }
+
+    // Limpiar error previo
+    setFieldErrors(prev => ({ ...prev, logo: '' }));
+    setRemoveLogo(false);
+
+    // Convertir a base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormData(prev => ({ ...prev, logo_upload: base64String }));
+      setLogoPreview(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData(prev => ({ ...prev, logo_upload: '' }));
+    setLogoPreview(null);
+    setRemoveLogo(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async () => {
@@ -84,63 +136,93 @@ const MyCompanyPage: React.FC = () => {
     }
 
     try {
-      setValidating(true);
-
-      const companyPayload = {
-        license_number: formData.license_number.trim(),
-        name: formData.name.trim(),
-        address: formData.address.trim(),
-        zip_code: formData.zip_code.trim(),
-      };
-
-      // Validar si el license_number cambió
+      // Detectar qué campos cambiaron
       const licenseChanged = company.license_number !== formData.license_number.trim();
+      const nameChanged = company.name !== formData.name.trim();
+      const addressChanged = company.address !== formData.address.trim();
+      const zipChanged = company.zip_code !== formData.zip_code.trim();
+      const logoChanged = formData.logo_upload !== null || removeLogo;
 
-      if (licenseChanged) {
-        // Verificar si el nuevo license_number ya existe
-        const licenseCheck = await checkCompanyLicense(formData.license_number.trim());
-        
-        if (licenseCheck.exists) {
-          enqueueSnackbar(`License number "${formData.license_number}" is already registered to another company: ${licenseCheck.company_name}`, { variant: 'error' });
-          setFieldErrors(prev => ({ ...prev, license_number: `Already registered to: ${licenseCheck.company_name}` }));
-          setValidating(false);
-          return;
-        }
-      }
+      const textFieldsChanged = licenseChanged || nameChanged || addressChanged || zipChanged;
 
-      // Validar el payload completo de la compañía
-      const validationResult = await validateCompanyPayload(companyPayload);
-
-      if (!validationResult.valid) {
-        // Procesar errores de validación
-        const errors: Record<string, string> = {};
-        
-        if (validationResult.errors?.company) {
-          Object.entries(validationResult.errors.company).forEach(([field, messages]) => {
-            const errorMessages = Array.isArray(messages) ? messages : [messages];
-            errors[field] = errorMessages.join(', ');
-            enqueueSnackbar(`${field}: ${errorMessages[0]}`, { variant: 'warning' });
-          });
-        }
-
-        if (validationResult.errorMessage) {
-          enqueueSnackbar(validationResult.errorMessage, { variant: 'error' });
-        }
-
-        setFieldErrors(errors);
-        setValidating(false);
+      // Si no hay cambios, salir
+      if (!textFieldsChanged && !logoChanged) {
+        enqueueSnackbar('No changes detected', { variant: 'info' });
+        setEditMode(false);
         return;
       }
 
-      // Si hay un zip_code normalizado, usarlo
-      if (validationResult.zip_code_normalized) {
-        companyPayload.zip_code = validationResult.zip_code_normalized;
+      // Solo validar si cambiaron campos de texto
+      if (textFieldsChanged) {
+        setValidating(true);
+
+        // Solo verificar license si cambió
+        if (licenseChanged) {
+          const licenseCheck = await checkCompanyLicense(formData.license_number.trim());
+          
+          if (licenseCheck.exists) {
+            enqueueSnackbar(`License number "${formData.license_number}" is already registered to another company: ${licenseCheck.company_name}`, { variant: 'error' });
+            setFieldErrors(prev => ({ ...prev, license_number: `Already registered to: ${licenseCheck.company_name}` }));
+            setValidating(false);
+            return;
+          }
+        }
+
+        // Validar el payload con los valores actuales del formulario
+        const companyPayload = {
+          license_number: formData.license_number.trim(),
+          name: formData.name.trim(),
+          address: formData.address.trim(),
+          zip_code: formData.zip_code.trim(),
+        };
+
+        const validationResult = await validateCompanyPayload(companyPayload);
+
+        if (!validationResult.valid) {
+          const errors: Record<string, string> = {};
+          
+          if (validationResult.errors?.company) {
+            Object.entries(validationResult.errors.company).forEach(([field, messages]) => {
+              const errorMessages = Array.isArray(messages) ? messages : [messages];
+              errors[field] = errorMessages.join(', ');
+              enqueueSnackbar(`${field}: ${errorMessages[0]}`, { variant: 'warning' });
+            });
+          }
+
+          if (validationResult.errorMessage) {
+            enqueueSnackbar(validationResult.errorMessage, { variant: 'error' });
+          }
+
+          setFieldErrors(errors);
+          setValidating(false);
+          return;
+        }
+
+        setValidating(false);
       }
 
-      setValidating(false);
       setSaving(true);
 
-      const updateData: UpdateCompanyData = companyPayload;
+      // Construir updateData solo con los campos que cambiaron
+      const updateData: UpdateCompanyData = {};
+      
+      if (licenseChanged) {
+        updateData.license_number = formData.license_number.trim();
+      }
+      if (nameChanged) {
+        updateData.name = formData.name.trim();
+      }
+      if (addressChanged) {
+        updateData.address = formData.address.trim();
+      }
+      if (zipChanged) {
+        updateData.zip_code = formData.zip_code.trim();
+      }
+      if (formData.logo_upload) {
+        updateData.logo_upload = formData.logo_upload;
+      } else if (removeLogo) {
+        updateData.logo_upload = '';
+      }
 
       const result = await updateCompany(company.id, updateData);
 
@@ -160,7 +242,10 @@ const MyCompanyPage: React.FC = () => {
           name: result.data.name || '',
           address: result.data.address || '',
           zip_code: result.data.zip_code || '',
+          logo_upload: null,
         });
+        setLogoPreview(result.data.logo_url || null);
+        setRemoveLogo(false);
       }
 
       setEditMode(false);
@@ -181,7 +266,14 @@ const MyCompanyPage: React.FC = () => {
         name: company.name || '',
         address: company.address || '',
         zip_code: company.zip_code || '',
+        logo_upload: null,
       });
+      setLogoPreview(company.logo_url || null);
+      setRemoveLogo(false);
+      setFieldErrors({});
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
     setEditMode(false);
     enqueueSnackbar('Changes cancelled', { variant: 'info' });
@@ -216,9 +308,49 @@ const MyCompanyPage: React.FC = () => {
         <div className="bg-white/90 backdrop-blur-md border border-white/40 rounded-2xl shadow-2xl p-8 mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                  <i className="fas fa-building text-white text-xl"></i>
+              <div className="flex items-center gap-4 mb-2">
+                {/* Company Logo */}
+                <div className="relative">
+                  {logoPreview ? (
+                    <img 
+                      src={logoPreview} 
+                      alt="Company Logo" 
+                      className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                      <i className="fas fa-building text-white text-2xl"></i>
+                    </div>
+                  )}
+                  {editMode && (
+                    <div className="absolute -bottom-1 -right-1 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors shadow-md"
+                        title="Upload logo"
+                      >
+                        <i className="fas fa-camera text-xs"></i>
+                      </button>
+                      {(logoPreview || company.logo_url) && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white hover:bg-red-700 transition-colors shadow-md"
+                          title="Remove logo"
+                        >
+                          <i className="fas fa-times text-xs"></i>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleLogoChange}
+                    className="hidden"
+                  />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -227,6 +359,12 @@ const MyCompanyPage: React.FC = () => {
                   <p className="text-gray-600">Manage your company information</p>
                 </div>
               </div>
+              {fieldErrors.logo && (
+                <p className="text-sm text-red-600 flex items-center gap-1 mt-2">
+                  <i className="fas fa-exclamation-circle"></i>
+                  {fieldErrors.logo}
+                </p>
+              )}
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <span>Created: {new Date(company.created_at).toLocaleDateString()}</span>
               </div>

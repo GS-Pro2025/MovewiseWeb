@@ -10,6 +10,7 @@ export interface UpdateCompanyData {
   address?: string;
   zip_code?: string;
   subscription?: number;
+  logo_upload?: string | null; // Base64 encoded image or null/empty to remove
 }
 
 export async function getMyCompany(): Promise<{ success: boolean; data?: CompanyModel; errorMessage?: string }> {

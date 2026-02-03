@@ -20,6 +20,8 @@ export interface CompanyModel {
   name: string;
   address: string;
   zip_code: string;
+  logo: string | null;
+  logo_url: string | null;
   subscription: number;
   subscription_details: SubscriptionDetailsModel | null;
   created_at: string;
