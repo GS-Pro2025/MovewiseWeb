@@ -225,8 +225,10 @@ const OperatorsPage: React.FC = () => {
       setIsEditDialogOpen(false);
       setOperatorToEdit(null);
       enqueueSnackbar('Operator updated successfully', { variant: 'success' });
-    } catch {
+    } catch (error) {
       enqueueSnackbar('Error updating operator', { variant: 'error' });
+      // Re-throw the error so the modal can display the API validation errors
+      throw error;
     }
   }, [operatorToEdit, createOperatorFormData, enqueueSnackbar]);
 
