@@ -6,7 +6,7 @@ interface EditOperatorModalProps {
   operator: Operator;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (operatorData: FormData) => void;
+  onSave: (operatorData: FormData) => Promise<void>;
 }
 
 const EditOperatorModal: React.FC<EditOperatorModalProps> = ({ 
@@ -196,17 +196,27 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
       await onSave(submitFormData);
     } catch (error: any) {
       // Manejo de errores estructurados retornados por la API (ver documentación)
-      if (error && (error.errors || error.message)) {
+      // Extraer el error de axios (error.response.data) o del objeto directo
+      const apiError = error?.response?.data || error?.data || error;
+      
+      console.error('Error saving operator:', error);
+      console.debug('Parsed API error:', apiError);
+
+      if (apiError && (apiError.errors || apiError.message)) {
         setApiErrors({
-          message: typeof error.message === 'string' ? error.message : undefined,
-          fieldErrors: typeof error.errors === 'object' ? error.errors : undefined
+          message: typeof apiError.message === 'string' ? apiError.message : undefined,
+          fieldErrors: typeof apiError.errors === 'object' ? apiError.errors : undefined
         });
+      } else if (error?.response?.status) {
+        // Error HTTP sin estructura esperada
+        setApiErrors({ message: `Error ${error.response.status}: ${error.response.statusText || 'Request failed'}` });
       } else if (error instanceof Error) {
         setApiErrors({ message: error.message });
+      } else if (typeof error === 'string') {
+        setApiErrors({ message: error });
       } else {
         setApiErrors({ message: 'Unknown error saving operator' });
       }
-      console.error('Error saving operator:', error);
     } finally {
       setLoading(false);
     }
