@@ -165,7 +165,7 @@ const SummaryCost: React.FC = () => {
               onYearSelect={handleYearChange}
               min={2015}
               max={new Date().getFullYear() + 2}
-              className="w-40"
+              className="w-auto"
             />
           </div>
 
@@ -194,7 +194,7 @@ const SummaryCost: React.FC = () => {
                 onWeekSelect={handleWeekChange}
                 min={1}
                 max={53}
-                className="w-60"
+                className="w-auto"
               />
             </div>
           ) : (

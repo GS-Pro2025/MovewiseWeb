@@ -13,6 +13,15 @@ export interface AssignmentData {
   role: string;
   id_payment: string | null;
   operator_phone: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  salary_type: 'day' | 'hour';
+  location_start: string | null;
+  location_end: string | null;
+  order_state_usa: string | null;
+  order_status: string;
+  status_order: string;
+  id_operator: number;
 }
 
 export interface WeekInfo {

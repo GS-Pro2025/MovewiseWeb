@@ -231,7 +231,7 @@ const Statistics = () => {
       <button
         onClick={onClick}
         className={`px-3 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-sm ${
-          active ? "bg-blue-900 text-white shadow-md" : "bg-gray-100 text-blue-900 hover:bg-gray-200"
+          active ? "bg-blue-900 text-white shadow-md" : "bg-gray-300 text-blue-900 hover:bg-gray-200"
         }`}
       >
         <i className={`fas ${icon} text-xs`}></i>
@@ -276,7 +276,7 @@ const Statistics = () => {
 
   if (error && activeSection === "overview") {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+      <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-50">
         <div className="text-center p-6 rounded-xl border-2 shadow-lg max-w-md w-full bg-white border-red-500">
           <div className="text-red-500 mb-4">
             <i className="fas fa-exclamation-triangle text-4xl"></i>
@@ -295,8 +295,8 @@ const Statistics = () => {
   }
 
   return (
-    <div key={i18n.language} className="notranslate min-h-screen bg-gray-50 p-3 sm:p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div key={i18n.language} className="notranslate min-h-screen  p-3 sm:p-4 w-full">
+      <div className="max-w-9xl mx-auto space-y-4">
         {/* Compact Header */}
         <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-2 border-blue-900">
           <div className="flex flex-col gap-3">

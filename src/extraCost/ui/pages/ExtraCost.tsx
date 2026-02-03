@@ -95,7 +95,7 @@ const ExtraCostPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container w-full mx-auto p-4">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2" style={{ color: '#0B2863' }}>
           Extra Costs Management
@@ -137,7 +137,7 @@ const ExtraCostPage: React.FC = () => {
               onYearSelect={setYear}
               min={2015}
               max={new Date().getFullYear() + 2}
-              className="w-40"
+              className="w-auto"
             />
           </div>
 
@@ -166,7 +166,7 @@ const ExtraCostPage: React.FC = () => {
                 onWeekSelect={setWeek}
                 min={1}
                 max={53}
-                className="w-60"
+                className="w-auto"
               />
             </div>
           ) : (

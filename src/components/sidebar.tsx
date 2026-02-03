@@ -152,7 +152,6 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
 
   const handleLogout = () => {
     Cookies.remove('authToken'); 
-    //  CAMBIO: Redirigir a la landing page principal en lugar de /login
     window.location.href = '/'; 
   };
 
@@ -249,16 +248,21 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
         </div>
         
         <ul className="mt-4 list-none p-0 m-0 flex flex-col pb-4">
-          {/* CAMBIO: Actualizar todas las rutas con /app prefix */}
           <NavItem icon="fa-home" text="Dashboard" isCollapsed={isCollapsed && !isMobileOpen} to="/app/dashboard" onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-box" text="Create daily" isCollapsed={isCollapsed && !isMobileOpen} to="/app/create-daily" onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-money-bill" text="Payroll" isCollapsed={isCollapsed && !isMobileOpen} to="/app/payroll" onClick={closeMobileMenu} />
-          <NavItem icon="fa-users" text="Operators" isCollapsed={isCollapsed && !isMobileOpen} to="/app/operators" onClick={closeMobileMenu} /> 
+          <NavItem icon="fa-warehouse" text="Create Warehouse" isCollapsed={isCollapsed && !isMobileOpen} to="/app/create-warehouse" onClick={closeMobileMenu} />
+          <NavItem icon="fa-list" text="Warehouse List" isCollapsed={isCollapsed && !isMobileOpen} to="/app/warehouse" onClick={closeMobileMenu} />
           
-          {/* NUEVO: Agregar opción de Statements */}
-          <NavItem icon="fa-file-invoice-dollar" text="Statements" isCollapsed={isCollapsed && !isMobileOpen} to="/app/statements" onClick={closeMobileMenu} />
+          {/* Statements - Solo visible para superUser */}
+          {user?.is_superUser ? (
+            <NavItem icon="fa-file-invoice-dollar" text="Statements" isCollapsed={isCollapsed && !isMobileOpen} to="/app/statements" onClick={closeMobileMenu} />
+          ) : null}
           
-          <NavItem icon="fa-chart-bar" text="Statistics" isCollapsed={isCollapsed && !isMobileOpen} to="/app/statistics" onClick={closeMobileMenu} />
+          {/* Statistics - Solo visible para superUser */}
+          {user?.is_superUser ? (
+            <NavItem icon="fa-chart-bar" text="Statistics" isCollapsed={isCollapsed && !isMobileOpen} to="/app/statistics" onClick={closeMobileMenu} />
+          ) : null}
 
           {/* Dropdown Cost */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 1 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
@@ -286,7 +290,6 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
               (!isCollapsed || isMobileOpen) && activeDropdown === 1 ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
             }`}>
               <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
-                {/*  Actualizar rutas del dropdown */}
                 <DropdownLink icon="fa-calculator" text="Summary Costs" to="/app/summary-cost" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-gas-pump" text="Resume Fuel" to="/app/resume-fuel" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-dollar-sign" text="Extra Cost" to="/app/extra-cost" onClick={closeMobileMenu} />
@@ -294,40 +297,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
             </div>
           </li>
 
-          {/* Dropdown Warehouse */}
-          <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 2 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
-            <button
-              className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-700 
-              ease-in-out relative hover:bg-[#575b8a] hover:pl-10 text-lg group"
-              onClick={() => toggleDropdown(2)}
-              disabled={isCollapsed && !isMobileOpen}
-            >
-              <div className="flex items-center">
-                <span className="w-9 h-9 leading-9 text-center inline-block mr-4 rounded-sm text-lg transition-all duration-700 ease-in-out">
-                  <i className="fas fa-warehouse"></i>
-                </span>
-                <span className={`text-white text-lg transition-all duration-700 ease-in-out transform ${
-                  isCollapsed && !isMobileOpen ? 'opacity-0 scale-75 w-0 overflow-hidden' : 'opacity-100 scale-100 w-auto'
-                }`}>Warehouse</span>
-              </div>
-              <i className={`fas text-lg transition-all duration-700 ease-in-out transform ${
-                isCollapsed && !isMobileOpen ? 'opacity-0 scale-75 w-0' : 'opacity-100 scale-100 w-auto'
-              } ${activeDropdown === 2 ? 'fa-chevron-down rotate-180' : 'fa-chevron-right rotate-0'} text-white`}></i>
-              <span className="absolute left-0 top-0 w-1 h-full bg-[#6c63ff] transition-transform duration-700 
-                ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top"></span>
-            </button>
-            <div className={`overflow-hidden transition-all duration-700 ease-in-out ${
-              (!isCollapsed || isMobileOpen) && activeDropdown === 2 ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-            }`}>
-              <ul className="list-none p-0 m-0 text-white bg-[#0458AB]">
-                {/* Actualizar rutas del dropdown */}
-                <DropdownLink icon="fa-plus" text="Create Warehouse" to="/app/create-warehouse" onClick={closeMobileMenu} />
-                <DropdownLink icon="fa-list" text="Warehouse List" to="/app/warehouse" onClick={closeMobileMenu} />
-              </ul>
-            </div>
-          </li>
-
-          {/* Dropdown Settings - CONDICIONADO A is_superUser */}
+          {/* Dropdown Settings */}
           <li className={`relative transition-all duration-700 ease-in-out ${activeDropdown === 0 && !isCollapsed ? 'bg-[#6c63ff]' : ''}`}>
             <button
               className="w-full flex items-center justify-between py-3 px-6 text-white transition-all duration-700 
@@ -356,6 +326,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                 <DropdownLink icon="fa-user" text="My Profile" to="/app/profile" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-building" text="Customers" to="/app/customers" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-briefcase" text="Jobs & Tools" to="/app/jobs-tools" onClick={closeMobileMenu} />
+                <DropdownLink icon="fa-users" text="Operators" to="/app/operators" onClick={closeMobileMenu} />
                 
                 {/* Solo mostrar "My Company" y "Admins" si es superUser */}
                 {user && user.is_superUser ? (
@@ -363,6 +334,9 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                     <DropdownLink icon="fa-city" text="My Company" to="/app/my-company" onClick={closeMobileMenu} />
                     <DropdownLink icon="fa-users-cog" text="Admins" to="/app/admins" onClick={closeMobileMenu} />
                   </>
+                {/* Solo mostrar "Admins" si es superUser */}
+                {user?.is_superUser ? (
+                  <DropdownLink icon="fa-users-cog" text="Admins" to="/app/admins" onClick={closeMobileMenu} />
                 ) : null}
               </ul>
             </div>
