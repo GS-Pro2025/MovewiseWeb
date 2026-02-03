@@ -157,3 +157,65 @@ export async function reactivateAdmin(personId: number): Promise<{ success: bool
     };
   }
 }
+
+export async function grantSuperuser(personId: number): Promise<{ success: boolean; data?: any; errorMessage?: string }> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/superuser/permissions/${personId}/`, {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, errorMessage: data.error || data.messDev || 'Error granting superuser permission' };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
+  }
+}
+
+export async function revokeSuperuser(personId: number): Promise<{ success: boolean; data?: any; errorMessage?: string }> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/superuser/permissions/${personId}/`, {
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, errorMessage: data.error || data.messDev || 'Error revoking superuser permission' };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return {
+      success: false,
+      errorMessage: err?.message || 'An unexpected error occurred',
+    };
+  }
+}
