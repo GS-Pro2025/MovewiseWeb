@@ -16,6 +16,7 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
   is_active_user: boolean;
+  is_superUser: number;
   person_id: number;
 }
 
