@@ -357,9 +357,12 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                 <DropdownLink icon="fa-building" text="Customers" to="/app/customers" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-briefcase" text="Jobs & Tools" to="/app/jobs-tools" onClick={closeMobileMenu} />
                 
-                {/* Solo mostrar "Admins" si es superUser */}
+                {/* Solo mostrar "My Company" y "Admins" si es superUser */}
                 {user && user.is_superUser ? (
-                  <DropdownLink icon="fa-users-cog" text="Admins" to="/app/admins" onClick={closeMobileMenu} />
+                  <>
+                    <DropdownLink icon="fa-city" text="My Company" to="/app/my-company" onClick={closeMobileMenu} />
+                    <DropdownLink icon="fa-users-cog" text="Admins" to="/app/admins" onClick={closeMobileMenu} />
+                  </>
                 ) : null}
               </ul>
             </div>

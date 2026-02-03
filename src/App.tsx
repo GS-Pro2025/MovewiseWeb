@@ -24,6 +24,7 @@ import AdminsPage from './adminPanel/ui/AdminsPage';
 import ProfilePage from './profile/ui/ProfilePage';
 import FinancialExpenseBreakdownView from "./financials/ui/FinancialExpenseBreakdownView";
 import StatementPage from './statement/ui/StatementPage';
+import MyCompanyPage from './myCompanyPage/ui/MyCompanyPage';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -111,6 +112,7 @@ const App = () => {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="financial-expense-breakdown" element={<FinancialExpenseBreakdownView />} />
           <Route path="statements" element={<StatementPage />} />
+          <Route path="my-company" element={<MyCompanyPage />} />
         </Route> 
 
         {/* Ruta por defecto */}

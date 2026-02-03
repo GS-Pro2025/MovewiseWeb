@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { enqueueSnackbar } from 'notistack';
 import { AdminUser } from '../domain/AdminDomain';
-import { getCompanyUsers, requestDeactivation, confirmDeactivation, reactivateAdmin } from '../data/RepositoryAdmin';
+import { getCompanyUsers, requestDeactivation, confirmDeactivation, reactivateAdmin, grantSuperuser, revokeSuperuser } from '../data/RepositoryAdmin';
+import { decodeJWTAsync } from '../../service/tokenDecoder';
+import Cookies from 'js-cookie';
 
 interface DeactivationState {
   personId: number | null;
@@ -21,6 +23,9 @@ const AdminsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [reactivatingUser, setReactivatingUser] = useState<number | null>(null);
+  const [grantingSuperuser, setGrantingSuperuser] = useState<number | null>(null);
+  const [revokingSuperuser, setRevokingSuperuser] = useState<number | null>(null);
+  const [currentUserPersonId, setCurrentUserPersonId] = useState<number | null>(null);
   const [deactivationState, setDeactivationState] = useState<DeactivationState>({
     personId: null,
     userName: '',
@@ -31,7 +36,22 @@ const AdminsPage: React.FC = () => {
 
   useEffect(() => {
     loadUsers();
+    loadCurrentUser();
   }, []);
+
+  const loadCurrentUser = async () => {
+    try {
+      const token = Cookies.get('authToken');
+      if (!token) return;
+
+      const decoded = await decodeJWTAsync(token);
+      if (decoded && typeof decoded === 'object' && 'person_id' in decoded) {
+        setCurrentUserPersonId(decoded.person_id as number);
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -144,6 +164,72 @@ const AdminsPage: React.FC = () => {
       enqueueSnackbar(error.message || 'Error reactivating admin', { variant: 'error' });
     } finally {
       setReactivatingUser(null);
+    }
+  };
+
+  const handleGrantSuperuser = async (user: AdminUser) => {
+    if (user.is_superUser === 1) {
+      enqueueSnackbar('User is already a superuser', { variant: 'warning' });
+      return;
+    }
+
+    setGrantingSuperuser(user.person_id);
+
+    try {
+      const result = await grantSuperuser(user.person_id);
+      
+      if (!result.success) {
+        enqueueSnackbar(result.errorMessage || 'Error granting superuser permission', { variant: 'error' });
+        setGrantingSuperuser(null);
+        return;
+      }
+
+      // Actualizar el usuario en la lista local
+      setUsers(users.map(u => 
+        u.person_id === user.person_id 
+          ? { ...u, is_superUser: 1 }
+          : u
+      ));
+
+      enqueueSnackbar('Superuser permission granted successfully', { variant: 'success' });
+    } catch (error: any) {
+      console.error('Error granting superuser:', error);
+      enqueueSnackbar(error.message || 'Error granting superuser permission', { variant: 'error' });
+    } finally {
+      setGrantingSuperuser(null);
+    }
+  };
+
+  const handleRevokeSuperuser = async (user: AdminUser) => {
+    if (user.is_superUser === 0) {
+      enqueueSnackbar('User is not a superuser', { variant: 'warning' });
+      return;
+    }
+
+    setRevokingSuperuser(user.person_id);
+
+    try {
+      const result = await revokeSuperuser(user.person_id);
+      
+      if (!result.success) {
+        enqueueSnackbar(result.errorMessage || 'Error revoking superuser permission', { variant: 'error' });
+        setRevokingSuperuser(null);
+        return;
+      }
+
+      // Actualizar el usuario en la lista local
+      setUsers(users.map(u => 
+        u.person_id === user.person_id 
+          ? { ...u, is_superUser: 0 }
+          : u
+      ));
+
+      enqueueSnackbar('Superuser permission revoked successfully', { variant: 'success' });
+    } catch (error: any) {
+      console.error('Error revoking superuser:', error);
+      enqueueSnackbar(error.message || 'Error revoking superuser permission', { variant: 'error' });
+    } finally {
+      setRevokingSuperuser(null);
     }
   };
 
@@ -289,6 +375,15 @@ const AdminsPage: React.FC = () => {
                       <span className={`text-xs font-medium ${user.is_active_user ? 'text-green-600' : 'text-red-600'}`}>
                         {user.is_active_user ? 'Active' : 'Inactive'}
                       </span>
+                      {user.is_superUser === 1 && (
+                        <>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <i className="fas fa-crown text-yellow-500 text-xs"></i>
+                            <span className="text-xs font-medium text-yellow-600">SuperUser</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -327,34 +422,83 @@ const AdminsPage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
-                  {user.is_active_user ? (
-                    <button
-                      onClick={() => handleRequestDeactivation(user)}
-                      disabled={deactivationState.isLoading}
-                      className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <i className="fas fa-user-slash"></i>
-                      <span>Deactivate</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleReactivateAdmin(user)}
-                      disabled={reactivatingUser === user.person_id}
-                      className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {reactivatingUser === user.person_id ? (
-                        <>
-                          <i className="fas fa-spinner fa-spin"></i>
-                          <span>Reactivating...</span>
-                        </>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    {user.is_active_user ? (
+                      <button
+                        onClick={() => handleRequestDeactivation(user)}
+                        disabled={deactivationState.isLoading || user.person_id === currentUserPersonId}
+                        className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={user.person_id === currentUserPersonId ? 'Cannot deactivate your own account' : ''}
+                      >
+                        <i className="fas fa-user-slash"></i>
+                        <span>Deactivate</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleReactivateAdmin(user)}
+                        disabled={reactivatingUser === user.person_id || user.person_id === currentUserPersonId}
+                        className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={user.person_id === currentUserPersonId ? 'Cannot reactivate your own account' : ''}
+                      >
+                        {reactivatingUser === user.person_id ? (
+                          <>
+                            <i className="fas fa-spinner fa-spin"></i>
+                            <span>Reactivating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-user-check"></i>
+                            <span>Reactivate</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Superuser Controls - Only show for active users */}
+                  {user.is_active_user && (
+                    <div className="flex gap-2">
+                      {user.is_superUser === 1 ? (
+                        <button
+                          onClick={() => handleRevokeSuperuser(user)}
+                          disabled={revokingSuperuser === user.person_id || user.person_id === currentUserPersonId}
+                          className="flex-1 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg font-medium hover:bg-orange-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          title={user.person_id === currentUserPersonId ? 'Cannot revoke your own superuser permission' : ''}
+                        >
+                          {revokingSuperuser === user.person_id ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin"></i>
+                              <span>Revoking...</span>
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-crown"></i>
+                              <span>Revoke SuperUser</span>
+                            </>
+                          )}
+                        </button>
                       ) : (
-                        <>
-                          <i className="fas fa-user-check"></i>
-                          <span>Reactivate</span>
-                        </>
+                        <button
+                          onClick={() => handleGrantSuperuser(user)}
+                          disabled={grantingSuperuser === user.person_id || user.person_id === currentUserPersonId}
+                          className="flex-1 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg font-medium hover:bg-yellow-200 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          title={user.person_id === currentUserPersonId ? 'Cannot grant yourself superuser permission' : ''}
+                        >
+                          {grantingSuperuser === user.person_id ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin"></i>
+                              <span>Granting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-crown"></i>
+                              <span>Grant SuperUser</span>
+                            </>
+                          )}
+                        </button>
                       )}
-                    </button>
+                    </div>
                   )}
                 </div>
               </div>

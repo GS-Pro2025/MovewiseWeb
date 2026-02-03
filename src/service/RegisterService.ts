@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import Cookies from 'js-cookie';
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
@@ -251,6 +252,7 @@ export interface ValidateCompanyResponse {
  * Validate company payload endpoint client
  * POST { company: { license_number, name, address, zip_code } }
  * Returns 200 with validation result or 400 with errors.
+ * Just used in company update form.
  */
 export const validateCompanyPayload = async (
   companyPayload: {
@@ -261,10 +263,12 @@ export const validateCompanyPayload = async (
   }
 ): Promise<ValidateCompanyResponse> => {
   try {
-    const response = await fetch(`${BASE_URL_API}/validate-company/`, {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${BASE_URL_API}/check-company-payload/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
       },
       body: JSON.stringify({ company: companyPayload }),
     });
