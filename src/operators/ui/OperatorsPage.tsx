@@ -225,8 +225,34 @@ const OperatorsPage: React.FC = () => {
       setIsEditDialogOpen(false);
       setOperatorToEdit(null);
       enqueueSnackbar('Operator updated successfully', { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar('Error updating operator', { variant: 'error' });
+    } catch (error: any) {
+      // Extract the actual error message from the API response
+      const apiError = error?.response?.data || error?.data || error;
+      let errorMessage = 'Error updating operator';
+      
+      if (apiError?.errors) {
+        // Handle field errors - collect all error messages
+        const errorMessages: string[] = [];
+        Object.entries(apiError.errors).forEach(([field, msgs]) => {
+          if (Array.isArray(msgs)) {
+            msgs.forEach((msg: string) => {
+              // For non_field_errors, just show the message; for field errors, include the field name
+              if (field === 'non_field_errors') {
+                errorMessages.push(msg);
+              } else {
+                errorMessages.push(`${field}: ${msg}`);
+              }
+            });
+          }
+        });
+        if (errorMessages.length > 0) {
+          errorMessage = errorMessages.join(' | ');
+        }
+      } else if (apiError?.message && apiError.message !== 'Validation error') {
+        errorMessage = apiError.message;
+      }
+      
+      enqueueSnackbar(errorMessage, { variant: 'error' });
       // Re-throw the error so the modal can display the API validation errors
       throw error;
     }
