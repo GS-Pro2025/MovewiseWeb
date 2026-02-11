@@ -3,6 +3,7 @@ import App from './App.tsx';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
+import './i18n';
 import { SnackbarProvider } from 'notistack';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react";
