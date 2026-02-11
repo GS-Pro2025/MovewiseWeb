@@ -396,7 +396,7 @@ export default function PayrollPage() {
   const totalNet = useMemo(
     () => {
       const total = grouped.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0);
-      console.log('💵 [TOTAL NETO] Total general neto:', total);
+      console.log('[TOTAL NETO] Total general neto:', total);
       return total;
     },
     [grouped]

@@ -607,7 +607,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">💰 Payment Summary</h2>
+                <h2 className="text-2xl font-bold">Payment Summary</h2>
                 <p className="text-blue-100 text-sm mt-1">Review and process payment</p>
               </div>
               <button 
