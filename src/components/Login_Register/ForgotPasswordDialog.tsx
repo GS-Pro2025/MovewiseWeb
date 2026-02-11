@@ -1,4 +1,5 @@
 import React, { useState, FormEvent, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ForgotPasswordDialogProps } from '../../types/authTypes';
 
 const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
@@ -9,6 +10,7 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
 }) => {
   const [email, setEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isOpen) {
@@ -49,7 +51,7 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">Reset Password</h3>
+          <h3 className="text-xl font-semibold text-gray-800">{t('login.forgot.title')}</h3>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 text-xl"
@@ -60,13 +62,13 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
         </div>
 
         <p className="text-gray-600 mb-6 text-sm">
-          Enter your email address and we'll send you instructions to reset your password.
+          {t('login.forgot.description')}
         </p>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
+              {t('login.forgot.emailLabel')}
             </label>
             <input
               type="email"
@@ -74,7 +76,7 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-              placeholder="Enter your email"
+              placeholder={t('login.forgot.emailPlaceholder')}
               required
               disabled={isLoading}
             />
@@ -87,14 +89,14 @@ const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
               className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               disabled={isLoading}
             >
-              Cancel
+              {t('login.forgot.cancel')}
             </button>
             <button
               type="submit"
               className="px-6 py-2 bg-[#0458AB] text-white rounded-lg hover:bg-[#60A3D9] transition-colors disabled:opacity-50"
               disabled={isLoading}
             >
-              {isLoading ? 'Sending...' : 'Send Reset Link'}
+              {isLoading ? t('login.forgot.sending') : t('login.forgot.send')}
             </button>
           </div>
         </form>

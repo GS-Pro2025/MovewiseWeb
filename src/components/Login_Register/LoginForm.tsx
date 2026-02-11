@@ -1,4 +1,5 @@
 import React, { useState, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { login } from '../../service/authService';
 import { LoginFormProps } from '../../types/authTypes';
 
@@ -6,6 +7,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const { t } = useTranslation();
   const [snackbar, setSnackbar] = useState<{ open: boolean; text: string; variant: 'success' | 'error' }>({
     open: false,
     text: '',
@@ -21,13 +23,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
     e.preventDefault();
     const result = await login(email, password);
     if (result.success) {
-      enqueueSnackbar(result.message || 'Login success', 'success', 1400);
+      enqueueSnackbar(result.message || t('login.form.loginSuccess'), 'success', 1400);
       // pequeña espera para que se vea el snackbar antes de redirigir
       setTimeout(() => {
         window.location.href = '/dashboard';
       }, 1400);
     } else {
-      enqueueSnackbar(result.message || 'Incorrect email or password', 'error', 3500);
+      enqueueSnackbar(result.message || t('login.form.loginFailed'), 'error', 3500);
     }
   };
 
@@ -37,7 +39,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
 
   return (
     <>
-      <p className="text-xl text-gray-100 mb-6">Sign into your account</p>
+      <p className="text-xl text-gray-100 mb-6">{t('login.form.signInTitle')}</p>
       {/* Snackbar */}
       {snackbar.open && (
         <div
@@ -56,7 +58,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           <input
             type="email"
             id="email"
-            placeholder="Email"
+            placeholder={t('login.form.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="block w-full p-4 text-xl rounded-md bg-black text-white"
@@ -68,7 +70,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           <input
             type={showPassword ? 'text' : 'password'}
             id="password"
-            placeholder="Password"
+            placeholder={t('login.form.passwordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="block w-full p-4 text-xl rounded-md bg-black text-white pr-14"
@@ -79,7 +81,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-lg text-gray-400 hover:text-gray-200"
           >
-            {showPassword ? 'Hide' : 'Show'}
+            {showPassword ? t('login.form.hidePassword') : t('login.form.showPassword')}
           </button>
         </div>
 
@@ -89,7 +91,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
             onClick={handleForgotPasswordClick}
             className="hover:underline hover:text-gray-100"
           >
-            Forgot your password?
+            {t('login.form.forgotPassword')}
           </button>
         </div>
 
@@ -98,7 +100,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
             type="submit"
             className="uppercase block w-full p-4 text-lg font-semibold rounded-full bg-[#0458AB] hover:bg-[#60A3D9] focus:outline-none"
           >
-            Sign in
+            {t('login.form.signInButton')}
           </button>
         </div>
       </form>
