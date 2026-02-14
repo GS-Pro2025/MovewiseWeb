@@ -2,8 +2,15 @@ import React, { useState } from 'react';
 import { Operator, InactiveOperator } from '../../domain/OperatorsModels';
 import OperatorAvatar from './OperatorAvatar';
 import IconButton from '@mui/material/IconButton';
-import EmailIcon from '@mui/icons-material/Email';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
+import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle } from 'lucide-react';
 import SendEmailDialog from './SendEmailDialog';
+import OperatorLoansDialog from './OperatorLoansDialog';
+import CreateLoanDialog from './CreateLoanDialog';
 
 interface OperatorsTableProps {
   activeTab: 'active' | 'inactive';
@@ -32,6 +39,15 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
 }) => {
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isLoansDialogOpen, setIsLoansDialogOpen] = useState(false);
+  const [isCreateLoanDialogOpen, setIsCreateLoanDialogOpen] = useState(false);
+  
+  // Menu state
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuOperator, setMenuOperator] = useState<Operator | null>(null);
+  
+  // Context menu state
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   const getFullName = (operator: Operator): string => {
     return `${operator.first_name} ${operator.last_name}`;
@@ -47,14 +63,154 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
     );
   };
 
-  const handleOpenEmailDialog = (operator: Operator) => {
-    setSelectedOperator(operator);
-    setIsEmailDialogOpen(true);
+  // Menu handlers
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, operator: Operator) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+    setMenuOperator(operator);
+    setContextMenuPosition(null);
+  };
+
+  const handleContextMenu = (event: React.MouseEvent, operator: Operator) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenuPosition({ top: event.clientY, left: event.clientX });
+    setMenuOperator(operator);
+    setMenuAnchorEl(null);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setContextMenuPosition(null);
+    setMenuOperator(null);
+  };
+
+  const handleAction = (action: string) => {
+    if (!menuOperator) return;
+    
+    switch (action) {
+      case 'view':
+        onViewDetails(menuOperator);
+        break;
+      case 'edit':
+        onEditOperator(menuOperator);
+        break;
+      case 'children':
+        onManageChildren(menuOperator);
+        break;
+      case 'delete':
+        onDeleteOperator(menuOperator);
+        break;
+      case 'email':
+        setSelectedOperator(menuOperator);
+        setIsEmailDialogOpen(true);
+        break;
+      case 'loans':
+        setSelectedOperator(menuOperator);
+        setIsLoansDialogOpen(true);
+        break;
+      case 'createLoan':
+        setSelectedOperator(menuOperator);
+        setIsCreateLoanDialogOpen(true);
+        break;
+    }
+    handleMenuClose();
   };
 
   const handleCloseEmailDialog = () => {
     setIsEmailDialogOpen(false);
     setSelectedOperator(null);
+  };
+
+  const handleCloseLoansDialog = () => {
+    setIsLoansDialogOpen(false);
+    setSelectedOperator(null);
+  };
+
+  const handleCloseCreateLoanDialog = () => {
+    setIsCreateLoanDialogOpen(false);
+    setSelectedOperator(null);
+  };
+
+  // Render the actions menu (shared between 3-dot and context menu)
+  const renderActionsMenu = () => {
+    const isOpen = Boolean(menuAnchorEl) || Boolean(contextMenuPosition);
+    
+    return (
+      <Menu
+        open={isOpen}
+        onClose={handleMenuClose}
+        anchorEl={menuAnchorEl}
+        anchorReference={contextMenuPosition ? 'anchorPosition' : 'anchorEl'}
+        anchorPosition={contextMenuPosition || undefined}
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: 200,
+              boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.12)',
+              border: '1px solid #e0e0e0',
+              borderRadius: 2,
+            }
+          }
+        }}
+      >
+        <MenuItem onClick={() => handleAction('view')}>
+          <ListItemIcon>
+            <Eye size={18} color="#3b82f6" />
+          </ListItemIcon>
+          <ListItemText>View Details</ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={() => handleAction('edit')}>
+          <ListItemIcon>
+            <Edit size={18} color="#22c55e" />
+          </ListItemIcon>
+          <ListItemText>Edit</ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={() => handleAction('children')}>
+          <ListItemIcon>
+            <Baby size={18} color="#a855f7" />
+          </ListItemIcon>
+          <ListItemText>Manage Children</ListItemText>
+        </MenuItem>
+        
+        <Divider />
+        
+        <MenuItem onClick={() => handleAction('loans')}>
+          <ListItemIcon>
+            <DollarSign size={18} color="#f59e0b" />
+          </ListItemIcon>
+          <ListItemText>View Loans</ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={() => handleAction('createLoan')}>
+          <ListItemIcon>
+            <PlusCircle size={18} color="#10b981" />
+          </ListItemIcon>
+          <ListItemText>Create Loan</ListItemText>
+        </MenuItem>
+        
+        <MenuItem 
+          onClick={() => handleAction('email')}
+          disabled={!menuOperator?.email}
+        >
+          <ListItemIcon>
+            <Mail size={18} color="#6366f1" />
+          </ListItemIcon>
+          <ListItemText>Send Email</ListItemText>
+        </MenuItem>
+        
+        <Divider />
+        
+        <MenuItem onClick={() => handleAction('delete')}>
+          <ListItemIcon>
+            <Trash2 size={18} color="#ef4444" />
+          </ListItemIcon>
+          <ListItemText sx={{ color: '#ef4444' }}>Deactivate</ListItemText>
+        </MenuItem>
+      </Menu>
+    );
   };
 
   return (
@@ -97,7 +253,11 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {operators.map((operator) => (
-                  <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
+                  <tr 
+                    key={operator.id_operator} 
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onContextMenu={(e) => handleContextMenu(e, operator)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-12 w-12">
@@ -149,45 +309,18 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2 items-center">
-                        <button
-                          onClick={() => onViewDetails(operator)}
-                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
-                          title="View Details"
-                        >
-                          <i className="fas fa-eye"></i>
-                        </button>
-                        <button
-                          onClick={() => onEditOperator(operator)}
-                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
-                          title="Edit"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          onClick={() => onManageChildren(operator)}
-                          className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm"
-                          title="Manage Children"
-                        >
-                          <i className="fas fa-baby"></i>
-                        </button>
-                        <button
-                          onClick={() => onDeleteOperator(operator)}
-                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
-                          title="Deactivate"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-
-                        {/* Send email button */}
+                      <div className="flex justify-center">
                         <IconButton
-                          onClick={() => handleOpenEmailDialog(operator)}
-                          title={operator.email ? `Send email to ${operator.email}` : 'No email available'}
+                          onClick={(e) => handleMenuOpen(e, operator)}
                           size="small"
-                          disabled={!operator.email}
-                          className="bg-gray-100 hover:bg-gray-200"
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: '#e5e7eb',
+                            },
+                          }}
+                          title="Actions"
                         >
-                          <EmailIcon fontSize="small" />
+                          <MoreVertical size={18} />
                         </IconButton>
                       </div>
                     </td>
@@ -309,6 +442,29 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
           operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
         />
       )}
+
+      {/* Loans Dialog */}
+      {selectedOperator && (
+        <OperatorLoansDialog
+          open={isLoansDialogOpen}
+          onClose={handleCloseLoansDialog}
+          operatorId={selectedOperator.id_operator}
+          operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
+        />
+      )}
+
+      {/* Create Loan Dialog */}
+      {selectedOperator && (
+        <CreateLoanDialog
+          open={isCreateLoanDialogOpen}
+          onClose={handleCloseCreateLoanDialog}
+          operatorId={selectedOperator.id_operator}
+          operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
+        />
+      )}
+
+      {/* Actions Menu (3-dot and context menu) */}
+      {renderActionsMenu()}
     </>
   );
 };
