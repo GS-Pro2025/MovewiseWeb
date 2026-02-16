@@ -23,7 +23,6 @@ export interface OrderSummaryTotalsData {
   workCost: number;
   driverSalaries: number;
   otherSalaries: number;
-  operators_discount: number;
   bonus: number;
   costs: CostFromTable[];
   totalCostFromTable: number;
@@ -43,7 +42,6 @@ export interface OrderSummaryLightTotalsResponse {
   workCost?: number;
   driverSalaries?: number;
   otherSalaries?: number;
-  operators_discount?: number;
   bonus?: number;
   costs?: CostFromTable[];
   totalCostFromTable?: number;

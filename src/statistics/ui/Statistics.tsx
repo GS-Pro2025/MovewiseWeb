@@ -15,6 +15,7 @@ import HistoricalAnalysis from "./HistoricalAnalysis";
 import FinancialView from "../../financials/ui/FinancialView";
 import IncomeCalculator from "./components/IncomeCalculator";
 import FinancialExpenseBreakdownView from "../../financials/ui/FinancialExpenseBreakdownView";
+import LoansSummary from "./LoansSummary";
 import { useTranslation } from "react-i18next";
 
 interface StatItem {
@@ -45,7 +46,7 @@ const Statistics = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState<
-    "overview" | "trucks" | "payroll" | "historical" | "financials" | "expenseBreakdown"
+    "overview" | "trucks" | "payroll" | "historical" | "financials" | "expenseBreakdown" | "loans"
   >("overview");
 
   const [selectedWeek, setSelectedWeek] = useState<number>(() => {
@@ -392,6 +393,13 @@ const Statistics = () => {
               >
                 Expense Breakdown
               </TabButton>
+              <TabButton
+                active={activeSection === "loans"}
+                onClick={() => handleTabClick("loans")}
+                icon="fa-hand-holding-usd"
+              >
+                Operator Loans
+              </TabButton>
             </div>
           </div>
         </div>
@@ -477,6 +485,12 @@ const Statistics = () => {
         {activeSection === "expenseBreakdown" && (
           <div className="w-full bg-white rounded-xl shadow-sm p-4 border-2 border-blue-900">
             <FinancialExpenseBreakdownView />
+          </div>
+        )}
+
+        {activeSection === "loans" && (
+          <div className="w-full">
+            <LoansSummary />
           </div>
         )}
       </div>

@@ -7,7 +7,6 @@ import EditExtraIncomeDialog from './EditExtraIncomeDialog';
 import { enqueueSnackbar } from 'notistack';
 
 interface IncomesTableDropdownProps {
-  operatorsDiscount: number;
   extraIncomes: ExtraIncomeItem[];
   totalIncome: number;
   onIncomeDeleted?: (incomeId: number) => void;
@@ -40,7 +39,6 @@ const formatDate = (dateString: string): string => {
 };
 
 const IncomesTableDropdown: React.FC<IncomesTableDropdownProps> = ({ 
-  operatorsDiscount,
   extraIncomes,
   totalIncome,
   onIncomeDeleted,
@@ -283,26 +281,9 @@ const IncomesTableDropdown: React.FC<IncomesTableDropdownProps> = ({
                 </div>
               )}
 
-              {/* Footer con resumen - incluye operators_discount */}
+              {/* Footer con resumen */}
               <div className="bg-green-100 px-4 py-3 border-t-2 border-green-200">
                 <div className="space-y-2">
-                    <div className="flex items-center justify-between border-t border-green-200 pt-2">
-                        <span className="text-sm font-semibold text-green-900">
-                        Total Extra Incomes:
-                        </span>
-                        <span className="text-lg font-bold" style={{ color: '#22c55e' }}>
-                        {formatCurrency(extraIncomes.reduce((sum, inc) => sum + inc.value, 0))}
-                        </span>
-                    </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-green-900">
-                      Operators Discount:
-                    </span>
-                    <span className="text-lg font-bold" style={{ color: '#22c55e' }}>
-                      {formatCurrency(operatorsDiscount)}
-                    </span>
-                  </div>
-                  
                   <div className="flex items-center justify-between border-t border-green-300 pt-2 bg-green-50 -mx-4 -my-3 px-4 py-3">
                     <span className="text-sm font-bold text-green-900">
                       Total Incomes:

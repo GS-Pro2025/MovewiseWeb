@@ -11,7 +11,6 @@ import CreateCostDialog from "./components/CreateCostDialog";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModal";
 import { ExtraIncomeItem, OrderSummaryLightTotalsResponse } from "../domain/ModelsSummaryLight";
 import CostsTableDropdown from './components/CostsTableDropdown';
-import IncomesTableDropdown from './components/IncomesTableDropdown';
 import CreateExtraIncomeDialog from './components/CreateExtraIncomeDialog';
 import YearPicker from "../../components/YearPicker";
 import WeekPicker from "../../components/WeekPicker";
@@ -50,9 +49,7 @@ const TIMELAPSES = [
   { label: "H2 (Jul-Dec)", startWeek: 27, endWeek: 52 },
 ];
 
-const DISCOUNT_TYPES = [
-  { key: "operators_discount", label: "Operators Discount", color: "#22c55e" },
-];
+const DISCOUNT_TYPES: { key: string; label: string; color: string }[] = [];
 
 // Función para calcular el número máximo de semanas en un año
 const getMaxWeeksInYear = (year: number): number => {
@@ -198,11 +195,10 @@ const FinancialExpenseBreakdownView = () => {
       const totalCostFromTable = Number(Number(data.totalCostFromTable || 0).toFixed(2));
 
       // Discounts breakdown - SOLO PARA MOSTRAR, NO SE USAN EN CÁLCULOS
-      discounts.operators_discount = Number(Number(data.operators_discount || 0).toFixed(2));
       const extraIncomes = (data.extraIncomes || []) as ExtraIncomeItem[];
       const totalExtraIncome = Number(Number(data.totalExtraIncome || 0).toFixed(2));
 
-      // Income - YA INCLUYE operators_discount sumado por el backend
+      // Income - rentingCost del backend
       const income = Number(Number(data.rentingCost || 0).toFixed(2));
 
       // YA NO aplicamos descuentos - el backend ya los manejó
@@ -787,101 +783,22 @@ const FinancialExpenseBreakdownView = () => {
                   </td>
                 </tr>
 
-                {/* INCOMES Section */}
-                <tr className="bg-emerald-100">
-                  <td colSpan={3} className="px-6 py-3 font-bold text-sm tracking-wide" style={{ color: '#000000ff' }}>
-                    INCOMES
-                  </td>
-                </tr>
-
-                {/* Verificar si hay extraIncomes */}
-                {summaryData?.extraIncomes && summaryData.extraIncomes.length > 0 ? (
-                  // Si hay extraIncomes, mostrar el dropdown completo
-                  <IncomesTableDropdown
-                    operatorsDiscount={summaryData?.discounts.operators_discount || 0}
-                    extraIncomes={summaryData?.extraIncomes || []}
-                    totalIncome={(summaryData?.discounts.operators_discount || 0) + (summaryData?.totalExtraIncome || 0)}
-                    onIncomeDeleted={(incomeId) => {
-                      setSummaryData(prev => {
-                        if (!prev) return prev;
-                        const updatedIncomes = prev.extraIncomes?.filter(inc => inc.id !== incomeId) || [];
-                        const newTotalExtraIncome = updatedIncomes.reduce((sum, inc) => sum + inc.value, 0);
-                        const newTotalIncome = (prev.discounts.operators_discount || 0) + newTotalExtraIncome;
-                        const newProfit = Number((newTotalIncome - prev.totalCost).toFixed(2));
-                        
-                        return {
-                          ...prev,
-                          extraIncomes: updatedIncomes,
-                          totalExtraIncome: newTotalExtraIncome,
-                          income: newTotalIncome,
-                          profit: newProfit
-                        };
-                      });
-                    }}
-                    onIncomeUpdated={(updatedIncome) => {
-                      setSummaryData(prev => {
-                        if (!prev) return prev;
-                        const updatedIncomes = prev.extraIncomes?.map(inc => 
-                          inc.id === updatedIncome.id ? updatedIncome : inc
-                        ) || [];
-                        const newTotalExtraIncome = updatedIncomes.reduce((sum, inc) => sum + inc.value, 0);
-                        const newTotalIncome = (prev.discounts.operators_discount || 0) + newTotalExtraIncome;
-                        const newProfit = Number((newTotalIncome - prev.totalCost).toFixed(2));
-                        
-                        return {
-                          ...prev,
-                          extraIncomes: updatedIncomes,
-                          totalExtraIncome: newTotalExtraIncome,
-                          income: newTotalIncome,
-                          profit: newProfit
-                        };
-                      });
-                    }}
-                  />
-                ) : (
-                  // Si NO hay extraIncomes, mostrar solo el operators discount con explicación clara
-                  <>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-3 pl-12 font-semibold text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-info-circle text-emerald-600"></i>
-                          <span>Operators Discount (Only Income Source)</span>
-                          <span className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">
-                            AUTOMATIC
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1 pl-6">
-                          No additional extra incomes registered for this period
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 text-right font-semibold" style={{ color: '#22c55e' }}>
-                        {formatCurrency(summaryData?.discounts.operators_discount || 0)}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <div className="text-xs text-gray-400">
-                          Auto-calculated
-                        </div>
-                      </td>
-                    </tr>
-                  </>
-                )}
-
                 {/* Incomes Subtotal */}
                 <tr className="bg-emerald-50 border-b-2 border-emerald-200">
                   <td className="px-6 py-3 pl-8 font-bold text-gray-700">
                     Total Incomes
                     {summaryData?.extraIncomes && summaryData.extraIncomes.length > 0 ? (
                       <span className="text-xs text-gray-500 font-normal ml-2">
-                        (Operators Discount + {summaryData.extraIncomes.length} Extra Income{summaryData.extraIncomes.length !== 1 ? 's' : ''})
+                        ({summaryData.extraIncomes.length} Extra Income{summaryData.extraIncomes.length !== 1 ? 's' : ''})
                       </span>
                     ) : (
                       <span className="text-xs text-gray-500 font-normal ml-2">
-                        (Operators Discount Only)
+                        (No Extra Incomes)
                       </span>
                     )}
                   </td>
                   <td className="px-6 py-3 text-right font-bold" style={{ color: '#22c55e' }}>
-                    {formatCurrency((summaryData?.discounts.operators_discount || 0) + (summaryData?.totalExtraIncome || 0))}
+                    {formatCurrency(summaryData?.totalExtraIncome || 0)}
                   </td>
                   <td className="px-6 py-3 text-center text-gray-400 text-sm">
                     -
@@ -897,7 +814,7 @@ const FinancialExpenseBreakdownView = () => {
                 
                 <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-3 pl-12 font-bold" style={{ color: '#22c55e' }}>
-                    Income (includes operators discount)
+                    Income
                     <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
                       CALCULATED
                     </span>
@@ -1013,7 +930,7 @@ const FinancialExpenseBreakdownView = () => {
             
             const updatedIncomes = [...(prev.extraIncomes || []), incomeAsItem];
             const newTotalExtraIncome = updatedIncomes.reduce((sum, inc) => sum + inc.value, 0);
-            const newTotalIncome = (prev.discounts.operators_discount || 0) + newTotalExtraIncome;
+            const newTotalIncome = newTotalExtraIncome;
             const newProfit = Number((newTotalIncome - prev.totalCost).toFixed(2));
             
             return {
