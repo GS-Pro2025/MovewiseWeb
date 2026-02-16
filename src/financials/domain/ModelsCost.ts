@@ -26,7 +26,6 @@ export interface LightOrderSummary {
     driverSalaries: number;
     otherSalaries: number;
     customer_factory: number;
-    operators_discount: number;
     bonus: number;
     totalCost: number;
   };
@@ -48,7 +47,6 @@ export interface OrderSummaryTotalsData {
   workCost: number;
   driverSalaries: number;
   otherSalaries: number;
-  operators_discount: number;
   bonus: number;
   totalCost: number;
   total_orders: number;

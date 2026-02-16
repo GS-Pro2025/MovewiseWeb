@@ -295,7 +295,6 @@ export const SummaryCostDataTable: React.FC<{
                                 <div className="bg-white p-4 rounded-lg border">
                                   <h4 className="font-semibold text-sm mb-2" style={{ color: '#0B2863' }}>Additional</h4>
                                   <p className="text-xs"><strong>Customer Factory:</strong> {row.summary?.customer_factory ?? row.customer_factory_id ?? 'N/A'}</p>
-                                  <p className="text-xs"><strong>Operators Discount:</strong> ${((row.summary?.operators_discount) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                   <p className="text-xs"><strong>Bonus:</strong> ${((row.summary?.bonus) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                   <p className="text-xs mt-2 font-bold" style={{ color: '#0B2863' }}><strong>Total Cost:</strong> ${((row.summary?.totalCost) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                 </div>
