@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import textoMW from "../assets/textoMWb.png";
 import textoMWScroll from "../assets/textoMW.png";
+import { useTranslation } from "react-i18next";
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -24,6 +26,10 @@ const Navbar: React.FC = () => {
       section.scrollIntoView({ behavior: "smooth" });
       setIsOpen(false);
     }
+  };
+
+  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    void i18n.changeLanguage(event.target.value);
   };
 
   return (
@@ -54,7 +60,7 @@ const Navbar: React.FC = () => {
                 isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
-              Features
+              {t("nav.features")}
             </a>
             <a
               href="#benefits"
@@ -63,7 +69,7 @@ const Navbar: React.FC = () => {
                 isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
-              Benefits
+              {t("nav.benefits")}
             </a>
             <a
               href="#plans"
@@ -72,14 +78,14 @@ const Navbar: React.FC = () => {
                 isScrolled ? "text-[#0B2863]" : "text-white"
               }`}
             >
-              Plans
+              {t("nav.plans")}
             </a>
             <a
               href="#contact"
               onClick={() => scrollToSection("contact")}
               className="cursor-pointer text-[#0B2863] bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
             >
-              Contact Us
+              {t("nav.contact")}
             </a>
           </div>
 
@@ -89,8 +95,23 @@ const Navbar: React.FC = () => {
               to="/login"
               className="bg-[#FFE67B] text-[#0B2863] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC] transition inline-block"
             >
-              Login / Register
+              {t("nav.loginRegister")}
             </RouterLink>
+          </div>
+
+          <div className="hidden md:flex items-center ml-4">
+            <label className={`mr-2 text-sm ${isScrolled ? "text-[#0B2863]" : "text-white"}`}>
+              {t("nav.language")}
+            </label>
+            <select
+              value={i18n.language}
+              onChange={handleLanguageChange}
+              className="rounded-full px-3 py-1 text-sm bg-white/90 text-[#0B2863] border border-white/60 focus:outline-none"
+              aria-label={t("nav.language")}
+            >
+              <option value="en">EN</option>
+              <option value="es">ES</option>
+            </select>
           </div>
 
           {/* Botón menú móvil */}
@@ -136,28 +157,28 @@ const Navbar: React.FC = () => {
               onClick={() => scrollToSection("features")}
               className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
             >
-              Features
+              {t("nav.features")}
             </a>
             <a
               href="#benefits"
               onClick={() => scrollToSection("benefits")}
               className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
             >
-              Benefits
+              {t("nav.benefits")}
             </a>
             <a
               href="#plans"
               onClick={() => scrollToSection("plans")}
               className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
             >
-              Plans
+              {t("nav.plans")}
             </a>
             <a
               href="#contact"
               onClick={() => scrollToSection("contact")}
               className="cursor-pointer bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
             >
-              Contact Us
+              {t("nav.contact")}
             </a>
 
             {/* Login/Register en móvil */}
@@ -166,8 +187,21 @@ const Navbar: React.FC = () => {
               onClick={() => setIsOpen(false)}
               className="bg-blue-950 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-800 transition inline-block"
             >
-              Login / Register
+              {t("nav.loginRegister")}
             </RouterLink>
+
+            <div className="flex items-center gap-2">
+              <span className="text-blue-950 text-sm">{t("nav.language")}</span>
+              <select
+                value={i18n.language}
+                onChange={handleLanguageChange}
+                className="rounded-full px-3 py-1 text-sm bg-white text-blue-950 border border-blue-950/20 focus:outline-none"
+                aria-label={t("nav.language")}
+              >
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+              </select>
+            </div>
           </div>
         </div>
       )}

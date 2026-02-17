@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, FormEvent, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { registerWithCompany, RegisterCompanyData, ValidationErrors, CheckLicenseResponse, checkCompanyLicense } from "../../service/RegisterService";
 import { Eye, EyeOff, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
@@ -10,6 +11,8 @@ interface RegisterFormProps {
 
 // Snackbar Component
 const Snackbar = ({ message, type, onClose }: { message: string; type: 'error' | 'success' | 'info'; onClose: () => void }) => {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
@@ -31,7 +34,7 @@ const Snackbar = ({ message, type, onClose }: { message: string; type: 'error' |
         <button
           onClick={onClose}
           className="flex-shrink-0 ml-2 text-white hover:text-gray-200 transition-colors"
-          aria-label="Close notification"
+          aria-label={t('login.register.closeNotification')}
         >
           <XCircle size={20} />
         </button>
@@ -144,13 +147,22 @@ const LicenseField = React.memo(({
   licenseCheck: CheckLicenseResponse | null;
   required?: boolean;
 }) => {
+  const { t } = useTranslation();
+
   const getValidationState = () => {
     if (value.length === 0) return null;
-    if (value.length < 3) return { isValid: false, message: "Must be at least 3 characters" };
-    if (value.length > 50) return { isValid: false, message: "Must not exceed 50 characters" };
-    if (isChecking) return { isValid: false, message: "Checking availability..." };
-    if (licenseCheck?.exists) return { isValid: false, message: `Already registered to: ${licenseCheck.company_name}` };
-    if (licenseCheck && !licenseCheck.exists) return { isValid: true, message: "Available!" };
+    if (value.length < 3) return { isValid: false, message: t('login.validation.minChars', { count: 3 }) };
+    if (value.length > 50) return { isValid: false, message: t('login.validation.maxChars', { count: 50 }) };
+    if (isChecking) return { isValid: false, message: t('login.validation.checkingAvailability') };
+    if (licenseCheck?.exists) {
+      return {
+        isValid: false,
+        message: t('login.validation.alreadyRegisteredTo', {
+          company: licenseCheck.company_name,
+        })
+      };
+    }
+    if (licenseCheck && !licenseCheck.exists) return { isValid: true, message: t('login.validation.available') };
     return null;
   };
 
@@ -160,7 +172,7 @@ const LicenseField = React.memo(({
     <div className="mb-4 relative">
       <input
         type="text"
-        placeholder="License Number(e.g. MC-DOT-123456)"
+        placeholder={t('login.register.licensePlaceholder')}
         value={value}
         onChange={onChange}
         required={required}
@@ -232,6 +244,7 @@ const PasswordField = React.memo(({
   required?: boolean;
   validation?: { isValid: boolean; message?: string };
 }) => {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   return (
     <div className="mb-4 relative">
@@ -249,7 +262,7 @@ const PasswordField = React.memo(({
         type="button"
         onClick={() => setShow(s => !s)}
         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors"
-        aria-label={show ? "Hide password" : "Show password"}
+        aria-label={show ? t('login.form.hidePassword') : t('login.form.showPassword')}
       >
         {show ? <EyeOff size={20} /> : <Eye size={20} />}
       </button>
@@ -330,13 +343,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
   const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null);
   const [fieldValidations, setFieldValidations] = useState<{[key: string]: {isValid: boolean; message?: string}}>({});
   const [snackbar, setSnackbar] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+  const { t } = useTranslation();
   console.log(fieldValidations)
   // Opciones para el tipo de ID
   const idTypeOptions = [
-    { value: "green_card", label: "Green Card" },
-    { value: "passport", label: "Passport" },
-    { value: "drivers_license", label: "Driver's License" },
-    { value: "state_id", label: "State ID" }
+    { value: "green_card", label: t('login.register.idType.greenCard') },
+    { value: "passport", label: t('login.register.idType.passport') },
+    { value: "drivers_license", label: t('login.register.idType.driversLicense') },
+    { value: "state_id", label: t('login.register.idType.stateId') }
   ];
   // Función para verificar licencia con debounce
   const checkLicenseAvailability = useCallback(async (licenseNumber: string) => {
@@ -356,14 +370,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       setLicenseCheck({
         status: false,
         exists: false,
-        message: 'Unable to verify license. Please ensure it is unique.',
+        message: t('login.validation.licenseVerifyFailed'),
         company_name: null,
         license_number: licenseNumber
       });
     } finally {
       setIsCheckingLicense(false);
     }
-  }, []);
+  }, [t]);                   
   // Effect para verificar licencia con debounce
   useEffect(() => {
     if (licenseCheckTimeout) {
@@ -396,115 +410,117 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     switch (field) {
       case 'license_number':
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (value.length < 3) validation = { isValid: false, message: 'Must be at least 3 characters' };
-        else if (value.length > 50) validation = { isValid: false, message: 'Must not exceed 50 characters' };
-        else validation = { isValid: true, message: 'Valid length' };
+        else if (value.length < 3) validation = { isValid: false, message: t('login.validation.minChars', { count: 3 }) };
+        else if (value.length > 50) validation = { isValid: false, message: t('login.validation.maxChars', { count: 50 }) };
+        else validation = { isValid: true, message: t('login.validation.validLength') };
         break;
 
       case 'company_name':
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (value.length > 255) validation = { isValid: false, message: 'Must not exceed 255 characters' };
-        else if (value.length < 2) validation = { isValid: false, message: 'Must be at least 2 characters' };
-        else validation = { isValid: true, message: 'Valid company name' };
+        else if (value.length > 255) validation = { isValid: false, message: t('login.validation.maxChars', { count: 255 }) };
+        else if (value.length < 2) validation = { isValid: false, message: t('login.validation.minChars', { count: 2 }) };
+        else validation = { isValid: true, message: t('login.validation.validCompanyName') };
         break;
 
       case 'address':
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (value.length > 255) validation = { isValid: false, message: 'Must not exceed 255 characters' };
-        else if (value.length < 5) validation = { isValid: false, message: 'Must be at least 5 characters' };
-        else validation = { isValid: true, message: 'Valid address' };
+        else if (value.length > 255) validation = { isValid: false, message: t('login.validation.maxChars', { count: 255 }) };
+        else if (value.length < 5) validation = { isValid: false, message: t('login.validation.minChars', { count: 5 }) };
+        else validation = { isValid: true, message: t('login.validation.validAddress') };
         break;
 
       case 'zip_code':
         { const normalizedZip = value.replace(/[^0-9]/g, '');
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (normalizedZip.length < 3) validation = { isValid: false, message: 'Must contain at least 3 digits' };
-        else if (normalizedZip.length > 10) validation = { isValid: false, message: 'Must contain at most 10 digits' };
-        else if (!/^[A-Za-z0-9]+$/.test(value)) validation = { isValid: false, message: 'Only letters and numbers allowed' };
-        else validation = { isValid: true, message: `Valid zip code (${normalizedZip.length} digits)` };
+        else if (normalizedZip.length < 3) validation = { isValid: false, message: t('login.validation.minDigits', { count: 3 }) };
+        else if (normalizedZip.length > 10) validation = { isValid: false, message: t('login.validation.maxDigits', { count: 10 }) };
+        else if (!/^[A-Za-z0-9]+$/.test(value)) validation = { isValid: false, message: t('login.validation.onlyLettersNumbers') };
+        else validation = { isValid: true, message: t('login.validation.validZipCode', { count: normalizedZip.length }) };
         break; }
 
       case 'username':
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (value.length > 50) validation = { isValid: false, message: 'Must not exceed 50 characters' };
-        else if (value.length < 3) validation = { isValid: false, message: 'Must be at least 3 characters' };
-        else if (!/^[a-zA-Z0-9_]+$/.test(value)) validation = { isValid: false, message: 'Only letters, numbers, and underscore allowed' };
-        else validation = { isValid: true, message: 'Valid username' };
+        else if (value.length > 50) validation = { isValid: false, message: t('login.validation.maxChars', { count: 50 }) };
+        else if (value.length < 3) validation = { isValid: false, message: t('login.validation.minChars', { count: 3 }) };
+        else if (!/^[a-zA-Z0-9_]+$/.test(value)) validation = { isValid: false, message: t('login.validation.usernameChars') };
+        else validation = { isValid: true, message: t('login.validation.validUsername') };
         break;
 
       case 'password':
         { const passwordChecks = [];
-        if (value.length < 8) passwordChecks.push('8+ characters');
-        if (!/[A-Z]/.test(value)) passwordChecks.push('1 uppercase');
-        if (!/[a-z]/.test(value)) passwordChecks.push('1 lowercase');
-        if (!/\d/.test(value)) passwordChecks.push('1 number');
-        if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(value)) passwordChecks.push('1 special char');
+        if (value.length < 8) passwordChecks.push(t('login.validation.passwordMinChars'));
+        if (!/[A-Z]/.test(value)) passwordChecks.push(t('login.validation.passwordUppercase'));
+        if (!/[a-z]/.test(value)) passwordChecks.push(t('login.validation.passwordLowercase'));
+        if (!/\d/.test(value)) passwordChecks.push(t('login.validation.passwordNumber'));
+        if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(value)) passwordChecks.push(t('login.validation.passwordSpecial'));
         
-        if (passwordChecks.length === 0) validation = { isValid: true, message: 'Strong password!' };
-        else validation = { isValid: false, message: `Need: ${passwordChecks.join(', ')}` };
+        if (passwordChecks.length === 0) validation = { isValid: true, message: t('login.validation.strongPassword') };
+        else validation = { isValid: false, message: t('login.validation.passwordNeeds', { requirements: passwordChecks.join(', ') }) };
         break; }
 
       case 'email':
         { const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (!emailRegex.test(value)) validation = { isValid: false, message: 'Invalid email format' };
-        else validation = { isValid: true, message: 'Valid email address' };
+        else if (!emailRegex.test(value)) validation = { isValid: false, message: t('login.validation.invalidEmail') };
+        else validation = { isValid: true, message: t('login.validation.validEmail') };
         break; }
 
       case 'first_name':
       case 'last_name':
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (value.length > 100) validation = { isValid: false, message: 'Must not exceed 100 characters' };
-        else if (value.length < 2) validation = { isValid: false, message: 'Must be at least 2 characters' };
-        else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(value)) validation = { isValid: false, message: 'Only letters and spaces allowed' };
-        else validation = { isValid: true, message: 'Valid name' };
+        else if (value.length > 100) validation = { isValid: false, message: t('login.validation.maxChars', { count: 100 }) };
+        else if (value.length < 2) validation = { isValid: false, message: t('login.validation.minChars', { count: 2 }) };
+        else if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(value)) validation = { isValid: false, message: t('login.validation.onlyLettersSpaces') };
+        else validation = { isValid: true, message: t('login.validation.validName') };
         break;
 
       case 'id_number':
         if (value.length === 0) validation = { isValid: false, message: '' };
-        else if (value.length > 50) validation = { isValid: false, message: 'Must not exceed 50 characters' };
-        else if (value.length < 5) validation = { isValid: false, message: 'Must be at least 5 characters' };
-        else validation = { isValid: true, message: 'Valid ID number' };
+        else if (value.length > 50) validation = { isValid: false, message: t('login.validation.maxChars', { count: 50 }) };
+        else if (value.length < 5) validation = { isValid: false, message: t('login.validation.minChars', { count: 5 }) };
+        else validation = { isValid: true, message: t('login.validation.validIdNumber') };
         break;
     }
 
     setFieldValidations(prev => ({ ...prev, [field]: validation }));
     return validation;
-  }, []);                   
+  }, [t]);
   // Validaciones locales mejoradas según la documentación de la API
    const validateCompany = () => {
     const errs: any = {};
     
-    if (company.license_number.trim().length === 0) errs.license_number = ["License number is required"];
-    if (company.license_number.trim().length > 50) errs.license_number = ["License number must not exceed 50 characters"];
+    if (company.license_number.trim().length === 0) errs.license_number = [t('login.validation.licenseRequired')];
+    if (company.license_number.trim().length > 50) errs.license_number = [t('login.validation.licenseMax', { count: 50 })];
     
     // Verificar si la licencia ya existe
     if (licenseCheck?.exists) {
       errs.license_number = errs.license_number 
-        ? [...errs.license_number, "This license number is already in use"]
-        : ["This license number is already in use"];
+        ? [...errs.license_number, t('login.validation.licenseInUse')]
+        : [t('login.validation.licenseInUse')];
     }
     
     // Si todavía se está verificando, no permitir continuar
     if (isCheckingLicense && company.license_number.trim().length >= 3) {
       errs.license_number = errs.license_number 
-        ? [...errs.license_number, "Please wait while we verify the license number"]
-        : ["Please wait while we verify the license number"];
+        ? [...errs.license_number, t('login.validation.licenseChecking')]
+        : [t('login.validation.licenseChecking')];
     }
 
-    if (company.name.trim().length === 0) errs.name = ["Company name is required"];
-    if (company.name.trim().length > 255) errs.name = ["Company name must not exceed 255 characters"];
-    if (company.address.trim().length === 0) errs.address = ["Address is required"];
-    if (company.address.trim().length > 255) errs.address = ["Address must not exceed 255 characters"];
+    if (company.name.trim().length === 0) errs.name = [t('login.validation.companyNameRequired')];
+    if (company.name.trim().length > 255) errs.name = [t('login.validation.companyNameMax', { count: 255 })];
+    if (company.address.trim().length === 0) errs.address = [t('login.validation.addressRequired')];
+    if (company.address.trim().length > 255) errs.address = [t('login.validation.addressMax', { count: 255 })];
     
     // ZIP validation (existing code)
     if (company.zip_code.trim().length === 0) {
-      errs.zip_code = ["Zip code is required"];
+      errs.zip_code = [t('login.validation.zipRequired')];
     } else {
-      if (company.zip_code.trim().length < 3) errs.zip_code = ["Zip code must be at least 3 characters"];
-      else if (company.zip_code.trim().length > 10) errs.zip_code = ["Zip code must not exceed 10 characters"];
+      if (company.zip_code.trim().length < 3) errs.zip_code = [t('login.validation.zipMin', { count: 3 })];
+      else if (company.zip_code.trim().length > 10) errs.zip_code = [t('login.validation.zipMax', { count: 10 })];
       if (!/^[A-Za-z0-9]+$/.test(company.zip_code.trim())) {
-        errs.zip_code = errs.zip_code ? [...errs.zip_code, "Zip code must contain only letters and numbers (no spaces or special characters)"] : ["Zip code must contain only letters and numbers (no spaces or special characters)"];
+        errs.zip_code = errs.zip_code
+          ? [...errs.zip_code, t('login.validation.zipLettersNumbers')]
+          : [t('login.validation.zipLettersNumbers')];
       }
     }
     
@@ -517,38 +533,38 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     const errs: any = {};
     
     // Username validation
-    if (user.user_name.trim().length === 0) errs.user_name = ["Username is required"];
-    if (user.user_name.trim().length > 50) errs.user_name = ["Username must not exceed 50 characters"];
+    if (user.user_name.trim().length === 0) errs.user_name = [t('login.validation.usernameRequired')];
+    if (user.user_name.trim().length > 50) errs.user_name = [t('login.validation.usernameMax', { count: 50 })];
     
     // Password validation según documentación
     if (user.password.trim().length < 8) {
-      errs.password = ["Password must be at least 8 characters long"];
+      errs.password = [t('login.validation.passwordMin', { count: 8 })];
     } else {
       const passwordErrors: string[] = [];
-      if (!/[A-Z]/.test(user.password)) passwordErrors.push("Password must contain at least one uppercase letter");
-      if (!/[a-z]/.test(user.password)) passwordErrors.push("Password must contain at least one lowercase letter");
-      if (!/\d/.test(user.password)) passwordErrors.push("Password must contain at least one number");
+      if (!/[A-Z]/.test(user.password)) passwordErrors.push(t('login.validation.passwordNeedUppercase'));
+      if (!/[a-z]/.test(user.password)) passwordErrors.push(t('login.validation.passwordNeedLowercase'));
+      if (!/\d/.test(user.password)) passwordErrors.push(t('login.validation.passwordNeedNumber'));
       if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(user.password)) {
-        passwordErrors.push("Password must contain at least one special character");
+        passwordErrors.push(t('login.validation.passwordNeedSpecial'));
       }
       if (passwordErrors.length > 0) errs.password = passwordErrors;
     }
 
     // Confirm password
     if (confirmPassword !== user.password) {
-      errs.confirm_password = ["Passwords do not match"];
+      errs.confirm_password = [t('login.validation.passwordsNoMatch')];
     }
     
     // Person validation
     const personErrors: any = {};
-    if (!user.person.email.includes("@")) personErrors.email = ["Valid email required"];
-    if (user.person.first_name.trim().length === 0) personErrors.first_name = ["First name is required"];
-    if (user.person.first_name.trim().length > 100) personErrors.first_name = ["First name must not exceed 100 characters"];
-    if (user.person.last_name.trim().length === 0) personErrors.last_name = ["Last name is required"];
-    if (user.person.last_name.trim().length > 100) personErrors.last_name = ["Last name must not exceed 100 characters"];
-    if (!user.person.id_number.trim()) personErrors.id_number = ["ID number is required"];
-    if (user.person.id_number.trim().length > 50) personErrors.id_number = ["ID number must not exceed 50 characters"];
-    if (!user.person.type_id.trim()) personErrors.type_id = ["ID type is required"];
+    if (!user.person.email.includes("@")) personErrors.email = [t('login.validation.emailRequired')];
+    if (user.person.first_name.trim().length === 0) personErrors.first_name = [t('login.validation.firstNameRequired')];
+    if (user.person.first_name.trim().length > 100) personErrors.first_name = [t('login.validation.firstNameMax', { count: 100 })];
+    if (user.person.last_name.trim().length === 0) personErrors.last_name = [t('login.validation.lastNameRequired')];
+    if (user.person.last_name.trim().length > 100) personErrors.last_name = [t('login.validation.lastNameMax', { count: 100 })];
+    if (!user.person.id_number.trim()) personErrors.id_number = [t('login.validation.idNumberRequired')];
+    if (user.person.id_number.trim().length > 50) personErrors.id_number = [t('login.validation.idNumberMax', { count: 50 })];
+    if (!user.person.type_id.trim()) personErrors.type_id = [t('login.validation.idTypeRequired')];
     
     if (Object.keys(personErrors).length > 0) {
       errs.person = personErrors;
@@ -585,7 +601,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
             
             // Mostrar mensaje de éxito
             setShowSuccess(true);
-            setSnackbar({ message: 'Account created successfully! Redirecting to login...', type: 'success' });
+            setSnackbar({ message: t('login.register.successRedirect'), type: 'success' });
             
             // Después de 3 segundos, redirigir al login
             setTimeout(() => {
@@ -602,29 +618,34 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
               setValidationErrors(response.validationErrors);
               
               // Construir mensaje más descriptivo basado en los errores
-              let snackbarMessage = response.errorMessage || 'Validation error';
+              let snackbarMessage = response.errorMessage || t('login.register.validationError');
               
               // Si hay errores de company, volver al step 1
               if (response.validationErrors.company && Object.keys(response.validationErrors.company).length > 0) {
                 setStep(1);
-                snackbarMessage = `${response.errorMessage || 'Validation error'}. Please check company information in Step 1.`;
+                snackbarMessage = t('login.register.validationErrorCompany', {
+                  error: response.errorMessage || t('login.register.validationError')
+                });
               } else if (response.validationErrors.user) {
                 // Agregar contexto sobre qué campos tienen errores
                 const userErrors = response.validationErrors.user;
                 const errorFields: string[] = [];
                 
-                if (userErrors.user_name) errorFields.push('username');
-                if (userErrors.password) errorFields.push('password');
+                if (userErrors.user_name) errorFields.push(t('login.register.field.username'));
+                if (userErrors.password) errorFields.push(t('login.register.field.password'));
                 if (userErrors.person) {
                   Object.keys(userErrors.person).forEach(field => {
-                    if (field === 'email') errorFields.push('email');
-                    else if (field === 'first_name' || field === 'last_name') errorFields.push('name');
+                    if (field === 'email') errorFields.push(t('login.register.field.email'));
+                    else if (field === 'first_name' || field === 'last_name') errorFields.push(t('login.register.field.name'));
                     else errorFields.push(field);
                   });
                 }
                 
                 if (errorFields.length > 0) {
-                  snackbarMessage = `${response.errorMessage || 'Validation error'}. Please check: ${errorFields.join(', ')}.`;
+                  snackbarMessage = t('login.register.validationErrorFields', {
+                    error: response.errorMessage || t('login.register.validationError'),
+                    fields: errorFields.join(', ')
+                  });
                 }
               }
               
@@ -636,14 +657,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
               // Error general
               setErrors({ general: response.errorMessage });
               setSnackbar({ 
-                message: response.errorMessage || 'Registration failed. Please try again.', 
+                message: response.errorMessage || t('login.register.registrationFailed'), 
                 type: 'error' 
               });
             }
           }
         } catch (error) {
           console.error("Unexpected error:", error);
-          const errorMessage = "An unexpected error occurred. Please try again.";
+          const errorMessage = t('login.register.unexpectedError');
           setErrors({ general: errorMessage });
           setSnackbar({ message: errorMessage, type: 'error' });
         } finally {
@@ -757,14 +778,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
       {/* Header */}
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
-        <p className="text-gray-300">Join us and start your journey with FREE PLAN</p>
+        <h1 className="text-2xl font-bold text-white mb-2">{t('login.register.headerTitle')}</h1>
+        <p className="text-gray-300">{t('login.register.headerSubtitle')}</p>
       </div>
 
       {/* Progress Bar */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-gray-300">Progress</span>
+          <span className="text-sm text-gray-300">{t('login.register.progress')}</span>
           <span className="text-sm text-gray-300">{step}/2</span>
         </div>
         <div className="w-full bg-gray-600 rounded-full h-2">
@@ -787,7 +808,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   <div className="w-12 h-12 bg-[#F09F52] rounded-full flex items-center justify-center mr-3">
                     <span className="text-white font-semibold">1</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-white">Company Information</h3>
+                  <h3 className="text-xl font-semibold text-white">{t('login.register.companyInfo')}</h3>
                 </div>
 
               <div className="space-y-4">
@@ -802,7 +823,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                 <InputField
                   type="text"
-                  placeholder="Company Name (e.g. ABC Moving Company LLC)"
+                  placeholder={t('login.register.companyNamePlaceholder')}
                   value={company.name}
                   onChange={handleCompanyChange('name')}
                   errors={validationErrors.company?.name || errors.name}
@@ -812,7 +833,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                 <InputField
                   type="text"
-                  placeholder="Company Address (e.g. 1234 Main Street, Suite 100, New York, NY)"
+                  placeholder={t('login.register.companyAddressPlaceholder')}
                   value={company.address}
                   onChange={handleCompanyChange('address')}
                   errors={validationErrors.company?.address || errors.address}
@@ -821,7 +842,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                 />|
                 <InputField
                   type="text"
-                  placeholder="Zip Code (e.g. 12345, 90210, M5V3L9)"
+                  placeholder={t('login.register.zipPlaceholder')}
                   value={company.zip_code}
                   onChange={handleCompanyChange('zip_code')}
                   errors={validationErrors.company?.zip_code || errors.zip_code}
@@ -836,7 +857,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 disabled={isLoading}
               >
-                Continue to User Data →
+                {t('login.register.continueToUser')}
               </button>
             </>
           ) : (
@@ -847,17 +868,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                     <span className="text-white font-semibold">2</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-white-900">User Information</h3>
+                  <h3 className="text-xl font-semibold text-white-900">{t('login.register.userInfo')}</h3>
                 </div>
 
                 <div className="space-y-4">
                   {/* Account Info */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium text-white-700 mb-3">Account Details</h4>
+                    <h4 className="text-sm font-medium text-white-700 mb-3">{t('login.register.accountDetails')}</h4>
                     <div className="grid grid-cols-1 gap-4">
                      <InputField
                         type="text"
-                        placeholder="Username (e.g. john_doe)"
+                        placeholder={t('login.register.usernamePlaceholder')}
                         value={user.user_name}
                         onChange={handleUserChange('user_name')}
                         errors={validationErrors.user?.user_name || errors.user_name}
@@ -869,7 +890,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                       <PasswordField
                         value={user.password}
                         onChange={handleUserChange('password')}
-                        placeholder="Password"
+                        placeholder={t('login.register.passwordPlaceholder')}
                         errors={validationErrors.user?.password || errors.password}
                         required
                         validation={fieldValidations['password']}
@@ -879,7 +900,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                       <PasswordField
                         value={confirmPassword}
                         onChange={handleConfirmPasswordChange}
-                        placeholder="Confirm Password"
+                        placeholder={t('login.register.confirmPasswordPlaceholder')}
                         errors={errors.confirm_password} // SOLO usar errors locales, no validationErrors del servidor
                         required
                       />
@@ -888,12 +909,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                   {/* Personal Info */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium text-white-700 mb-3">Personal Information</h4>
+                    <h4 className="text-sm font-medium text-white-700 mb-3">{t('login.register.personalInfo')}</h4>
                     <div className="grid grid-cols-1 gap-4">
 
                       <InputField
                         type="email"
-                        placeholder="Email (e.g. john.doe@company.com)"
+                        placeholder={t('login.register.emailWorkPlaceholder')}
                         value={user.person.email}
                         onChange={handlePersonChange('email')}
                         errors={validationErrors.user?.person?.email || errors.person?.email}
@@ -903,7 +924,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                       <InputField
                         type="text"
-                        placeholder="First Name (e.g. John)"
+                        placeholder={t('login.register.firstNamePlaceholder')}
                         value={user.person.first_name}
                         onChange={handlePersonChange('first_name')}
                         errors={validationErrors.user?.person?.first_name || errors.person?.first_name}
@@ -913,7 +934,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                       <InputField
                         type="text"
-                        placeholder="Last Name (e.g. Doe)"
+                        placeholder={t('login.register.lastNamePlaceholder')}
                         value={user.person.last_name}
                         onChange={handlePersonChange('last_name')}
                         errors={validationErrors.user?.person?.last_name || errors.person?.last_name}
@@ -921,7 +942,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                         required
                       />
                       <div className="text-start text-white-400 mb-2">
-                        Birthdate
+                        {t('login.register.birthdate')}
                       </div>
                       <InputField
                         type="date"
@@ -933,7 +954,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                       <InputField
                         type="tel"
-                        placeholder="Phone Number (e.g. +1-555-123-4567, (555) 123-4567)"
+                        placeholder={t('login.register.phonePlaceholder')}
                         value={user.person.phone}
                         onChange={handlePersonChange('phone')}
                         errors={validationErrors.user?.person?.phone || errors.person?.phone}
@@ -941,18 +962,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
                       <InputField
                         type="text"
-                        placeholder="Address (e.g. 123 Main St, Apt 4B, City, State 12345)"
+                        placeholder={t('login.register.addressPlaceholder')}
                         value={user.person.address}
                         onChange={handlePersonChange('address')}
                         errors={validationErrors.user?.person?.address || errors.person?.address}
                       />
                       <div className="text-center">
-                        Identification
+                        {t('login.register.identification')}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <InputField
                           type="text"
-                          placeholder="e.g. A123456789, DL123456789"
+                          placeholder={t('login.register.idNumberPlaceholder')}
                           value={user.person.id_number}
                           onChange={handlePersonChange('id_number')}
                           errors={validationErrors.user?.person?.id_number || errors.person?.id_number}
@@ -960,7 +981,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                           required
                         />
                         <SelectField
-                          placeholder="Select ID Type"
+                          placeholder={t('login.register.selectIdType')}
                           value={user.person.type_id}
                           onChange={handlePersonChange('type_id')}
                           errors={validationErrors.user?.person?.type_id || errors.person?.type_id}
@@ -980,14 +1001,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
                   className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 rounded-lg transition-all duration-300"
                   disabled={isLoading || showSuccess}
                 >
-                  ← Back
+                  {t('login.register.back')}
                 </button>
                 <button 
                   type="submit" 
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoading || showSuccess}
                 >
-                  {isLoading ? "Creating Account..." : showSuccess ? "Account Created!" : "Create FREE Account"}
+                  {isLoading ? t('login.register.creatingAccount') : showSuccess ? t('login.register.accountCreated') : t('login.register.createFreeAccount')}
                 </button>
               </div>
             </>
@@ -998,9 +1019,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       {/* Footer */}
       <div className="text-center mt-6">
         <p className="text-gray-300 text-sm">
-          Already have an account? 
+          {t('login.register.footerAlready')}
           <a href="/login" className="text-blue-400 hover:text-blue-300 ml-1 transition-colors">
-            Sign in
+            {t('login.register.footerSignIn')}
           </a>
         </p>
       </div>
