@@ -1,4 +1,6 @@
 import React from 'react';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import WarningIcon from '@mui/icons-material/Warning';
 import { weekdayKeys } from '../../models/payrroll';
 import { formatCurrency, formatDateForHeader } from '../util/PayrollUtil';
 import { OperatorRowExtended } from '../types/payroll.types';
@@ -57,10 +59,10 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                 Expenses
               </th>
               <th className="py-3 px-4 text-center font-bold text-purple-600 uppercase tracking-wide text-xs border-l border-gray-200">
-                💰 Grand Total
+                Grand Total
               </th>
               <th className="py-3 px-4 text-center font-bold text-emerald-600 uppercase tracking-wide text-xs border-l border-gray-200">
-                💎 Total to Pay
+                Total to Pay
               </th>
             </tr>
           </thead>
@@ -81,9 +83,9 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                     className="py-2 px-4 text-center cursor-pointer"
                   >
                     {r.pay != null ? (
-                      <span className="text-xl">✅</span>
+                      <CheckBoxIcon className="text-emerald-600" fontSize="medium" />
                     ) : (
-                      <span className="text-xl">⚠️</span>
+                      <WarningIcon className="text-amber-500" fontSize="medium" />
                     )}
                   </td>
                   <td 
