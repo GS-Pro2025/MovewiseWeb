@@ -166,10 +166,6 @@ const PayrollStatistics: React.FC = () => {
     return dailySalary * assignCount;
   };
 
-  const getTotalWeeklyPayroll = (): number => {
-    return operators.reduce((total, op) => total + getWeeklySalary(op), 0);
-  };
-
   const getTotalMonthlyPayroll = (): number => {
     return operators.reduce((total, op) => total + getMonthlySalary(op), 0);
   };
