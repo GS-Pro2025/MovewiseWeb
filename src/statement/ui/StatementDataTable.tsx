@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Copy, Inbox, FileX } from 'lucide-react';
-import {
-  Box,
-  CircularProgress,
-  Select,
-  MenuItem,
-} from '@mui/material';
+import { Select, MenuItem } from '@mui/material';
 import { StatementRecord } from '../domain/StatementModels';
 import { updateStatementState } from '../data/StatementRepository';
 import { useSnackbar } from 'notistack';
+import  LoadingSpinner from '../../components/Login_Register/LoadingSpinner';
 
 interface StatementDataTableProps {
   data: StatementRecord[];
@@ -25,78 +22,46 @@ interface StatementDataTableProps {
   onStateUpdated?: (updated: StatementRecord) => void;
 }
 
-const LoadingSpinner = () => (
-  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#0B2863' }}></div>
-);
-
 export const StatementDataTable: React.FC<StatementDataTableProps> = ({
-  data,
-  loading,
-  page,
-  rowsPerPage,
-  totalRows,
-  selectedRows,
-  onPageChange,
-  onRowsPerPageChange,
-  onRowSelect,
-  onSelectAll,
-  onStateUpdated
+  data, loading, page, rowsPerPage, totalRows, selectedRows,
+  onPageChange, onRowsPerPageChange, onRowSelect, onSelectAll, onStateUpdated,
 }) => {
+  const { t } = useTranslation();
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
   const [updatingIds, setUpdatingIds] = React.useState<Set<number>>(new Set());
-  console.log("updatingIds:", updatingIds);
-  const isSelected = useCallback((row: StatementRecord) => 
-    selectedRows.some(selected => selected.id === row.id), 
-    [selectedRows]
-  );
+
+  const isSelected = useCallback((row: StatementRecord) =>
+    selectedRows.some(selected => selected.id === row.id), [selectedRows]);
 
   const isAllSelected = data.length > 0 && selectedRows.length === data.length;
 
   const formatCurrency = (value: string | undefined): string => {
     if (!value) return '$0.00';
-    const num = parseFloat(value);
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(num);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
+      .format(parseFloat(value));
   };
-
-
 
   const getStateColor = (state?: string) => {
     switch (state?.toLowerCase()) {
-      case 'processed':
-        return { backgroundColor: '#22c55e', color: 'white' };
-      case 'exists':
-        return { backgroundColor: '#F09F52', color: 'white' };
-      case 'not_exists':
-        return { backgroundColor: '#ef4444', color: 'white' };
-      default:
-        return { backgroundColor: '#6b7280', color: 'white' };
+      case 'processed':  return { backgroundColor: '#22c55e', color: 'white' };
+      case 'exists':     return { backgroundColor: '#F09F52', color: 'white' };
+      case 'not_exists': return { backgroundColor: '#ef4444', color: 'white' };
+      default:           return { backgroundColor: '#6b7280', color: 'white' };
     }
   };
 
   const handleCopyToClipboard = useCallback(async (e: React.MouseEvent, value: string, rowId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+    e.preventDefault(); e.stopPropagation();
     try {
       await navigator.clipboard.writeText(value);
       setCopiedRef(rowId);
       setTimeout(() => setCopiedRef(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
-    }
+    } catch (err) { console.error('Failed to copy:', err); }
   }, []);
 
   const setRowUpdating = (id: number, v: boolean) => {
-    setUpdatingIds(prev => {
-      const s = new Set(prev);
-      if (v) s.add(id); else s.delete(id);
-      return s;
-    });
+    setUpdatingIds(prev => { const s = new Set(prev); if (v) s.add(id); else s.delete(id); return s; });
   };
 
   const handleStateChange = async (row: StatementRecord, newState: 'Exists' | 'Not_exists' | 'Processed') => {
@@ -104,11 +69,9 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
     setRowUpdating(row.id, true);
     try {
       const updated = await updateStatementState(row.id, newState);
-      // notify parent to update its copies
       onStateUpdated?.(updated);
     } catch (err: any) {
-      console.error('Failed to update state', err);
-      enqueueSnackbar(err?.message || 'Failed to update state', { variant: 'error' });
+      enqueueSnackbar(err?.message || t('statementTable.failedUpdateState'), { variant: 'error' });
     } finally {
       setRowUpdating(row.id, false);
     }
@@ -116,16 +79,9 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: 400,
-        }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center" style={{ height: 400 }}>
+        <LoadingSpinner />
+      </div>
     );
   }
 
@@ -136,70 +92,46 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
           <thead className="sticky top-0 z-10 text-white" style={{ backgroundColor: '#0B2863' }}>
             <tr>
               <th className="px-4 py-3 text-left">
-                <input
-                  type="checkbox"
-                  className="rounded border-2 border-white"
-                  checked={isAllSelected}
-                  onChange={(e) => onSelectAll(e.target.checked)}
-                  disabled={data.length === 0}
-                />
+                <input type="checkbox" className="rounded border-2 border-white"
+                  checked={isAllSelected} onChange={(e) => onSelectAll(e.target.checked)} disabled={data.length === 0} />
               </th>
               <th className="px-4 py-3 text-left font-bold text-sm whitespace-nowrap" style={{ minWidth: 120 }}>
-                Key Ref
+                {t('statementTable.keyRef')}
               </th>
-
               <th className="px-4 py-3 text-center font-bold text-sm whitespace-nowrap" style={{ minWidth: 100 }}>
-                Week
+                {t('statementTable.week')}
               </th>
               <th className="px-4 py-3 text-left font-bold text-sm whitespace-nowrap" style={{ minWidth: 150 }}>
-                Shipper
+                {t('statementTable.shipper')}
               </th>
               <th className="px-4 py-3 text-right font-bold text-sm whitespace-nowrap" style={{ minWidth: 120 }}>
-                Income
+                {t('statementTable.income')}
               </th>
               <th className="px-4 py-3 text-right font-bold text-sm whitespace-nowrap" style={{ minWidth: 120 }}>
-                Expense
+                {t('statementTable.expense')}
               </th>
               <th className="px-4 py-3 text-center font-bold text-sm whitespace-nowrap" style={{ minWidth: 120 }}>
-                State
+                {t('statementTable.state')}
               </th>
             </tr>
           </thead>
 
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={9} className="text-center py-12">
-                  <div className="flex flex-col items-center space-y-4">
-                    <LoadingSpinner />
-                    <span className="text-gray-500">Loading data...</span>
-                  </div>
-                </td>
-              </tr>
-            ) : data.length === 0 ? (
+            {data.length === 0 ? (
               <tr>
                 <td colSpan={9} className="text-center py-16">
                   <div className="flex flex-col items-center justify-center space-y-4">
                     <div className="mb-4">
-                      <Inbox 
-                        size={80}
-                        style={{ color: '#0B2863', opacity: 0.6 }}
-                      />
+                      <Inbox size={80} style={{ color: '#0B2863', opacity: 0.6 }} />
                     </div>
                     <div className="text-center">
-                      <h3 
-                        className="text-xl font-bold mb-2"
-                        style={{ color: '#0B2863' }}
-                      >
-                        No Statement Records Found
+                      <h3 className="text-xl font-bold mb-2" style={{ color: '#0B2863' }}>
+                        {t('statementTable.noRecordsTitle')}
                       </h3>
-                      <p className="text-gray-600 mb-4 max-w-md">
-                        There are no statement records available for the selected week. 
-                        Try adjusting your week selection or filter criteria.
-                      </p>
+                      <p className="text-gray-600 mb-4 max-w-md">{t('statementTable.noRecordsDesc')}</p>
                       <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                         <FileX size={16} />
-                        <span>Tip: Check your week and filter settings above</span>
+                        <span>{t('statementTable.noRecordsTip')}</span>
                       </div>
                     </div>
                   </div>
@@ -209,95 +141,64 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
               data.map((row, rowIndex) => {
                 const isRowSelected = isSelected(row);
                 const isCopied = copiedRef === `${row.id}-keyref`;
-                
                 return (
-                  <tr 
-                    key={row.id}
+                  <tr key={row.id}
                     className={`transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${
                       rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     } ${isRowSelected ? 'ring-2 ring-blue-200' : ''}`}
-                    style={{ 
-                      backgroundColor: isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined 
-                    }}
+                    style={{ backgroundColor: isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined }}
                     onClick={() => onRowSelect(row)}
                   >
                     <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        className="rounded border-2"
-                        style={{ borderColor: '#0B2863' }}
-                        checked={isRowSelected}
-                        onChange={() => onRowSelect(row)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                      <input type="checkbox" className="rounded border-2" style={{ borderColor: '#0B2863' }}
+                        checked={isRowSelected} onChange={() => onRowSelect(row)}
+                        onClick={(e) => e.stopPropagation()} />
                     </td>
-                    
+
                     <td className="px-4 py-3 group relative">
                       <div className="flex items-center gap-2">
-                        <span 
-                          className="font-semibold cursor-pointer hover:underline"
-                          style={{ color: '#0B2863' }}
-                        >
+                        <span className="font-semibold cursor-pointer hover:underline" style={{ color: '#0B2863' }}>
                           {row.keyref}
                         </span>
                         <button
                           className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded hover:bg-gray-200"
                           onClick={(e) => handleCopyToClipboard(e, row.keyref, `${row.id}-keyref`)}
-                          title="Copy to clipboard"
-                        >
+                          title={t('statementTable.copyToClipboard')}>
                           <Copy size={14} style={{ color: isCopied ? '#22c55e' : '#0B2863' }} />
                         </button>
                       </div>
                       {isCopied && (
                         <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                          Copied!
+                          {t('statementTable.copied')}
                         </span>
                       )}
                     </td>
-                    
-                    
+
                     <td className="px-4 py-3 text-center">
-                      <span 
-                        className="px-3 py-1 rounded-full text-xs font-bold text-white"
-                        style={{ backgroundColor: '#0B2863' }}
-                      >
+                      <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: '#0B2863' }}>
                         W{row.week}
                       </span>
                     </td>
-                    
-                    <td className="px-4 py-3 text-gray-700">
-                      {row.shipper_name || 'N/A'}
-                    </td>
-                    
+
+                    <td className="px-4 py-3 text-gray-700">{row.shipper_name || 'N/A'}</td>
+
                     <td className="px-4 py-3 text-right">
-                      <span 
-                        className="font-semibold"
-                        style={{ color: '#22c55e' }}
-                      >
-                        {formatCurrency(row.income)}
-                      </span>
+                      <span className="font-semibold" style={{ color: '#22c55e' }}>{formatCurrency(row.income)}</span>
                     </td>
-                    
+
                     <td className="px-4 py-3 text-right">
-                      <span 
-                        className="font-semibold"
-                        style={{ color: '#ef4444' }}
-                      >
-                        {formatCurrency(row.expense)}
-                      </span>
+                      <span className="font-semibold" style={{ color: '#ef4444' }}>{formatCurrency(row.expense)}</span>
                     </td>
-                    
+
                     <td className="px-4 py-3 text-center">
-                      {updatingIds.has(row.id) ? (
-                        <div className="flex items-center justify-center">
-                          <CircularProgress size={18} />
-                        </div>
-                      ) : (
+                    {updatingIds.has(row.id) ? (
+  <div className="flex items-center justify-center"><LoadingSpinner /></div>
+): (
                         <Select
                           value={row.state || ''}
                           onChange={(e) => handleStateChange(row, e.target.value as 'Exists' | 'Not_exists' | 'Processed')}
                           size="small"
-                          aria-label={`State for ${row.keyref}`}
+                          aria-label={t('statementTable.stateLabel', { keyref: row.keyref })}
                           renderValue={(val) => {
                             const v = String(val || 'Unknown');
                             const style = getStateColor(v);
@@ -307,24 +208,13 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
                               </span>
                             );
                           }}
-                          sx={{
-                            minWidth: 140,
-                            '& .MuiSelect-select': {
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }
-                          }}
+                          sx={{ minWidth: 140, '& .MuiSelect-select': { display: 'flex', alignItems: 'center', justifyContent: 'center' } }}
                         >
-                          <MenuItem value="Exists">
-                            <span style={{ ...getStateColor('Exists'), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>Exists</span>
-                          </MenuItem>
-                          <MenuItem value="Not_exists">
-                            <span style={{ ...getStateColor('Not_exists'), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>Not_exists</span>
-                          </MenuItem>
-                          <MenuItem value="Processed">
-                            <span style={{ ...getStateColor('Processed'), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>Processed</span>
-                          </MenuItem>
+                          {(['Exists', 'Not_exists', 'Processed'] as const).map((s) => (
+                            <MenuItem key={s} value={s}>
+                              <span style={{ ...getStateColor(s), padding: '4px 8px', borderRadius: 8, fontSize: 13 }}>{s}</span>
+                            </MenuItem>
+                          ))}
                         </Select>
                       )}
                     </td>
@@ -335,51 +225,32 @@ export const StatementDataTable: React.FC<StatementDataTableProps> = ({
           </tbody>
         </table>
       </div>
-      
-      {/* Pagination - Exact same styling as DataTable */}
+
+      {/* Pagination */}
       <div className="bg-white border-t-2 px-6 py-4 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-700">Rows per page:</span>
-          <select 
-            value={rowsPerPage} 
-            onChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
+          <span className="text-sm text-gray-700">{t('statementTable.rowsPerPage')}</span>
+          <select value={rowsPerPage} onChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
             className="border-2 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2"
-            style={{ borderColor: '#0B2863' }}
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
+            style={{ borderColor: '#0B2863' }}>
+            {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
-        
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-700">
-            {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, totalRows)} of {totalRows}
+            {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, totalRows)} {t('statementTable.of')} {totalRows}
           </span>
           <div className="flex space-x-2">
-            <button
-              className="px-3 py-1 rounded-lg border-2 text-sm font-semibold transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ 
-                borderColor: '#0B2863',
-                color: '#0B2863'
-              }}
-              disabled={page === 0}
-              onClick={() => onPageChange(page - 1)}
-            >
-              Previous
-            </button>
-            <button
-              className="px-3 py-1 rounded-lg border-2 text-sm font-semibold transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ 
-                borderColor: '#0B2863',
-                color: '#0B2863'
-              }}
-              disabled={(page + 1) * rowsPerPage >= totalRows}
-              onClick={() => onPageChange(page + 1)}
-            >
-              Next
-            </button>
+            {[
+              { label: t('statementTable.previous'), disabled: page === 0, onClick: () => onPageChange(page - 1) },
+              { label: t('statementTable.next'), disabled: (page + 1) * rowsPerPage >= totalRows, onClick: () => onPageChange(page + 1) },
+            ].map(({ label, disabled, onClick }) => (
+              <button key={label} className="px-3 py-1 rounded-lg border-2 text-sm font-semibold transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ borderColor: '#0B2863', color: '#0B2863' }}
+                disabled={disabled} onClick={onClick}>
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>

@@ -1,23 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  Typography,
-  Alert,
-  CircularProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, Paper, Chip, Typography, Alert, CircularProgress,
 } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, Error as ErrorIcon } from '@mui/icons-material';
 import { BulkUpdateStatementResponse, BulkUpdateResult } from '../domain/StatementModels';
@@ -32,20 +18,17 @@ interface BulkUpdateDialogProps {
 }
 
 const BulkUpdateDialog: React.FC<BulkUpdateDialogProps> = ({
-  open,
-  onClose,
-  onConfirm,
-  updateData,
-  loading,
-  isProcessing,
+  open, onClose, onConfirm, updateData, loading, isProcessing,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
-        {updateData ? 'Update Results' : 'Confirm State Update'}
+        {updateData ? t('bulkUpdate.titleResult') : t('bulkUpdate.titleConfirm')}
         {!updateData && !loading && !isProcessing && (
           <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5, fontWeight: 400 }}>
-            Update states for selected statement records
+            {t('bulkUpdate.subtitle')}
           </Typography>
         )}
       </DialogTitle>
@@ -55,125 +38,66 @@ const BulkUpdateDialog: React.FC<BulkUpdateDialogProps> = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
             <CircularProgress />
             <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-              Updating statement record states...
+              {t('bulkUpdate.updating')}
             </Typography>
           </Box>
         ) : updateData ? (
           <>
-            {/* Summary Stats */}
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: 2,
-                mb: 3,
-              }}
-            >
-              <Box sx={{ p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">
-                  Total Updates
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  {updateData.total_updates}
-                </Typography>
-              </Box>
-              <Box sx={{ p: 2, backgroundColor: '#d4edda', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">
-                  Successful
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#155724' }}>
-                  {updateData.successful_updates}
-                </Typography>
-              </Box>
-              <Box sx={{ p: 2, backgroundColor: '#f8d7da', borderRadius: 1 }}>
-                <Typography variant="caption" color="textSecondary">
-                  Failed
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#721c24' }}>
-                  {updateData.failed_updates}
-                </Typography>
-              </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, mb: 3 }}>
+              {[
+                { label: t('bulkUpdate.totalUpdates'), value: updateData.total_updates, bg: '#f5f5f5', color: undefined },
+                { label: t('bulkUpdate.successful'), value: updateData.successful_updates, bg: '#d4edda', color: '#155724' },
+                { label: t('bulkUpdate.failed'), value: updateData.failed_updates, bg: '#f8d7da', color: '#721c24' },
+              ].map(({ label, value, bg, color }) => (
+                <Box key={label} sx={{ p: 2, backgroundColor: bg, borderRadius: 1 }}>
+                  <Typography variant="caption" color="textSecondary">{label}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color }}>{value}</Typography>
+                </Box>
+              ))}
             </Box>
 
-            {/* Alert based on results */}
             {updateData.failed_updates === 0 ? (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                All records updated successfully!
-              </Alert>
+              <Alert severity="success" sx={{ mb: 2 }}>{t('bulkUpdate.successAlert')}</Alert>
             ) : updateData.failed_updates < updateData.total_updates ? (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                Some records failed to update. Check details below.
-              </Alert>
+              <Alert severity="warning" sx={{ mb: 2 }}>{t('bulkUpdate.warningAlert')}</Alert>
             ) : (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                All updates failed. Check details below.
-              </Alert>
+              <Alert severity="error" sx={{ mb: 2 }}>{t('bulkUpdate.errorAlert')}</Alert>
             )}
 
-            {/* Results Table */}
             <TableContainer component={Paper}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                    <TableCell width="50px" align="center">
-                      Status
-                    </TableCell>
-                    <TableCell width="100px">Record ID</TableCell>
-                    <TableCell width="120px">Previous State</TableCell>
-                    <TableCell width="120px">New State</TableCell>
-                    <TableCell>Message</TableCell>
+                    <TableCell width="50px" align="center">{t('bulkUpdate.status')}</TableCell>
+                    <TableCell width="100px">{t('bulkUpdate.recordId')}</TableCell>
+                    <TableCell width="120px">{t('bulkUpdate.previousState')}</TableCell>
+                    <TableCell width="120px">{t('bulkUpdate.newState')}</TableCell>
+                    <TableCell>{t('bulkUpdate.message')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {updateData.results.map((result: BulkUpdateResult, idx: number) => (
-                    <TableRow
-                      key={idx}
-                      sx={{
-                        backgroundColor: result.success ? '#f0f9ff' : '#fff5f5',
-                      }}
-                    >
+                    <TableRow key={idx} sx={{ backgroundColor: result.success ? '#f0f9ff' : '#fff5f5' }}>
                       <TableCell align="center">
-                        {result.success ? (
-                          <CheckCircleIcon sx={{ color: '#28a745', fontSize: '1.25rem' }} />
-                        ) : (
-                          <ErrorIcon sx={{ color: '#dc3545', fontSize: '1.25rem' }} />
-                        )}
+                        {result.success
+                          ? <CheckCircleIcon sx={{ color: '#28a745', fontSize: '1.25rem' }} />
+                          : <ErrorIcon sx={{ color: '#dc3545', fontSize: '1.25rem' }} />}
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 500 }}>
-                        #{result.statement_record_id}
+                      <TableCell sx={{ fontWeight: 500 }}>#{result.statement_record_id}</TableCell>
+                      <TableCell>
+                        {result.previous_state
+                          ? <Chip label={result.previous_state} size="small" variant="outlined" />
+                          : <Typography variant="caption" color="textSecondary">—</Typography>}
                       </TableCell>
                       <TableCell>
-                        {result.previous_state ? (
-                          <Chip
-                            label={result.previous_state}
-                            size="small"
-                            variant="outlined"
-                          />
-                        ) : (
-                          <Typography variant="caption" color="textSecondary">
-                            —
-                          </Typography>
-                        )}
+                        {result.new_state
+                          ? <Chip label={result.new_state} size="small" color="primary" />
+                          : <Typography variant="caption" color="textSecondary">—</Typography>}
                       </TableCell>
                       <TableCell>
-                        {result.new_state ? (
-                          <Chip label={result.new_state} size="small" color="primary" />
-                        ) : (
-                          <Typography variant="caption" color="textSecondary">
-                            —
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {result.success ? (
-                          <Typography variant="caption" color="success.main">
-                            Updated successfully
-                          </Typography>
-                        ) : (
-                          <Typography variant="caption" color="error.main">
-                            {result.error_message || 'Unknown error'}
-                          </Typography>
-                        )}
+                        {result.success
+                          ? <Typography variant="caption" color="success.main">{t('bulkUpdate.updatedSuccess')}</Typography>
+                          : <Typography variant="caption" color="error.main">{result.error_message || t('bulkUpdate.unknownError')}</Typography>}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -185,33 +109,22 @@ const BulkUpdateDialog: React.FC<BulkUpdateDialogProps> = ({
           <Box sx={{ py: 3, textAlign: 'center' }}>
             <Alert severity="info" sx={{ mb: 2 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Ready to Update Statement Record States
+                {t('bulkUpdate.readyTitle')}
               </Typography>
-              <Typography variant="body2">
-                This operation will only update the <strong>state field</strong> of the selected statement records and
-                <strong>the income and expense amount.</strong>
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                To update order amounts, use the "Apply to Orders" option after verification.
-              </Typography>
+              <Typography variant="body2"
+                dangerouslySetInnerHTML={{ __html: t('bulkUpdate.readyDesc') }} />
+              <Typography variant="body2" sx={{ mt: 1 }}>{t('bulkUpdate.readyNote')}</Typography>
             </Alert>
-            <Typography variant="caption" color="textSecondary">
-              Note: You can verify the changes after updating by refreshing the statements table.
-            </Typography>
+            <Typography variant="caption" color="textSecondary">{t('bulkUpdate.footerNote')}</Typography>
           </Box>
         )}
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('bulkUpdate.close')}</Button>
         {!updateData && (
-          <Button
-            onClick={onConfirm}
-            variant="contained"
-            color="primary"
-            disabled={isProcessing}
-          >
-            {isProcessing ? <CircularProgress size={24} /> : 'Confirm Update'}
+          <Button onClick={onConfirm} variant="contained" color="primary" disabled={isProcessing}>
+            {isProcessing ? <CircularProgress size={24} /> : t('bulkUpdate.confirmButton')}
           </Button>
         )}
       </DialogActions>

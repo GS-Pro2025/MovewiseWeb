@@ -1,13 +1,13 @@
+import { useTranslation } from "react-i18next";
 import Onda from "../assets/Rectanglelp.svg";
 import carmovil from "../assets/carMovil.png";
 import textoMW from "../assets/textoMWb.png";
-
-// Importar iconos para las tiendas de aplicaciones
 import appStoreIcon from "../assets/AppStore.svg";
 import playStoreIcon from "../assets/GooglePlay.svg";
 
 const MovingWiseLanding = () => {
-  // Reemplaza estos enlaces con los de tus aplicaciones
+  const { t } = useTranslation();
+
   const appStoreLink =
     "https://apps.apple.com/co/app/movingwise/id6745722010?l=en-GB";
   const playStoreLink =
@@ -18,12 +18,11 @@ const MovingWiseLanding = () => {
       {/* Onda decorativa */}
       <img
         src={Onda}
-        alt="Decorative wave"
+        alt={t("hero.waveAlt")}
         className="absolute inset-0 w-full h-full object-cover mb-4"
         style={{ zIndex: 5 }}
       />
 
-      {/* Overlay */}
       <div className="absolute inset-0"></div>
 
       <div className="relative z-10 w-full h-full">
@@ -35,7 +34,7 @@ const MovingWiseLanding = () => {
               <div className="flex justify-center md:justify-start">
                 <img
                   src={textoMW}
-                  alt="MovingWise Logo"
+                  alt={t("hero.logoAlt")}
                   className="h-20 md:h-28 object-contain"
                 />
               </div>
@@ -43,34 +42,30 @@ const MovingWiseLanding = () => {
               {/* Main Heading */}
               <div className="space-y-4">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight drop-shadow-lg">
-                  Smart logistic <span>management</span> for your{" "}
-                  <span>moving company</span>
+                  {t("hero.heading")}
                 </h2>
 
                 <p className="text-lg sm:text-xl text-white max-w-md mx-auto md:mx-0 drop-shadow">
-                  With MovingWise, organize your trucks, personnel, and
-                  transfers in one place. In real time, without confusion.
+                  {t("hero.subheading")}
                 </p>
               </div>
 
-              {/* CTA Buttons */}
+              {/* CTA Button */}
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
                 <button className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-                  Get Started Now
+                  {t("hero.cta")}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right Content - Imagen del móvil con botones debajo */}
+          {/* Right Content */}
           <div className="w-full md:w-1/2 flex flex-col justify-center items-center">
             <img
               src={carmovil}
-              alt="MovingWise Mobile App"
+              alt={t("hero.mobileAlt")}
               className="w-3/4 sm:w-2/3 md:w-4/5 h-auto object-contain mb-6"
             />
-
-            {/* Download Section - Solo imágenes en fila debajo del móvil */}
 
             <div className="flex justify-center gap-5">
               {/* App Store */}
@@ -82,7 +77,7 @@ const MovingWiseLanding = () => {
               >
                 <img
                   src={appStoreIcon}
-                  alt="Descargar en App Store"
+                  alt={t("hero.appStoreAlt")}
                   className="h-16 w-auto"
                 />
               </a>
@@ -96,7 +91,7 @@ const MovingWiseLanding = () => {
               >
                 <img
                   src={playStoreIcon}
-                  alt="Disponible en Google Play"
+                  alt={t("hero.playStoreAlt")}
                   className="h-16 w-auto"
                 />
               </a>

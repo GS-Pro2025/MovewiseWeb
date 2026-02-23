@@ -1,21 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormControl,
-  FormLabel,
-  TextField,
-  Button,
-  Box,
-  Typography,
-  Divider,
-  Alert,
-  CircularProgress
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Radio, RadioGroup, FormControlLabel, FormControl, FormLabel,
+  TextField, Button, Box, Typography, Divider, Alert, CircularProgress
 } from '@mui/material';
 import { FileSpreadsheet, FileText, Calendar, Database, Download } from 'lucide-react';
 import { PaidUnpaidExportUtils } from './PaidUnpaidExportUtils';
@@ -36,123 +24,93 @@ interface PaidUnpaidExportDialogProps {
 }
 
 const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
-  open,
-  onClose,
-  currentYear,
-  currentStartWeek,
-  currentEndWeek
+  open, onClose, currentYear, currentStartWeek, currentEndWeek
 }) => {
+  const { t } = useTranslation();
+
   const [exportMode, setExportMode] = useState<ExportDialogMode>({
     type: 'range',
     startWeek: currentStartWeek,
     endWeek: currentEndWeek,
     year: currentYear
   });
-  
-  const [format, setFormat] = useState<'xlsx' | 'pdf'>('xlsx');
+  const [format,      setFormat]      = useState<'xlsx' | 'pdf'>('xlsx');
   const [isExporting, setIsExporting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error,       setError]       = useState<string | null>(null);
 
   const handleModeChange = (newType: 'range' | 'historic') => {
     setExportMode(prev => ({
       ...prev,
       type: newType,
       startWeek: newType === 'range' ? prev.startWeek : undefined,
-      endWeek: newType === 'range' ? prev.endWeek : undefined,
-      // El año se mantiene solo para compatibilidad, pero no se usa en historic
-      year: prev.year
+      endWeek:   newType === 'range' ? prev.endWeek   : undefined,
     }));
     setError(null);
   };
 
   const handleExport = async () => {
     setError(null);
-    
-    // Validaciones
+
     if (exportMode.type === 'range') {
       if (!exportMode.startWeek || !exportMode.endWeek) {
-        setError('Please specify both start and end weeks');
-        return;
+        setError(t('exportDialog.validation.specifyWeeks')); return;
       }
       if (exportMode.startWeek > exportMode.endWeek) {
-        setError('Start week cannot be greater than end week');
-        return;
+        setError(t('exportDialog.validation.startBeforeEnd')); return;
       }
       if (exportMode.startWeek < 1 || exportMode.endWeek > 53) {
-        setError('Weeks must be between 1 and 53');
-        return;
+        setError(t('exportDialog.validation.weeksRange')); return;
       }
     }
 
     setIsExporting(true);
-    
     try {
-      // Obtener los datos según el modo seleccionado
       const data = await PaidUnpaidExportUtils.fetchDataForExport(exportMode);
-      
       if (format === 'xlsx') {
         await PaidUnpaidExportUtils.exportToExcel(data, exportMode);
       } else {
-        // Usar el nuevo método que abre en nueva ventana (patrón financialView)
         PaidUnpaidExportUtils.openPrintableReport(data, exportMode);
       }
-      
       onClose();
-    } catch (error) {
-      console.error('Export error:', error);
-      setError(error instanceof Error ? error.message : 'Export failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('exportDialog.validation.failed'));
     } finally {
       setIsExporting(false);
     }
   };
 
+  const sectionLabelSx = {
+    color: '#0B2863', fontWeight: 600, mb: 2,
+    display: 'flex', alignItems: 'center', gap: 1
+  };
+
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: '16px',
-          border: '2px solid #0B2863'
-        }
-      }}
+      PaperProps={{ sx: { borderRadius: '16px', border: '2px solid #0B2863' } }}
     >
-      <DialogTitle sx={{ 
+      {/* Title */}
+      <DialogTitle sx={{
         background: 'linear-gradient(135deg, #0B2863, #1e40af)',
-        color: '#FFE67B',
-        fontWeight: 700,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2
+        color: '#FFE67B', fontWeight: 700,
+        display: 'flex', alignItems: 'center', gap: 2
       }}>
         <Download size={24} />
-        Export Payment Analytics
+        {t('exportDialog.title')}
       </DialogTitle>
-      
-      <DialogContent sx={{ padding: '24px' }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
 
+      <DialogContent sx={{ padding: '24px' }}>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+        {/* ── Data Mode ── */}
         <Box sx={{ mb: 3 }}>
           <FormControl component="fieldset" fullWidth>
-            <FormLabel 
-              component="legend" 
-              sx={{ 
-                color: '#0B2863', 
-                fontWeight: 600, 
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
+            <FormLabel component="legend" sx={sectionLabelSx}>
               <Database size={18} />
-              Data Mode
+              {t('exportDialog.dataMode.label')}
             </FormLabel>
             <RadioGroup
               value={exportMode.type}
@@ -163,10 +121,8 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
                 control={<Radio sx={{ color: '#0B2863' }} />}
                 label={
                   <Box>
-                    <Typography variant="body1" fontWeight={600}>Week Range Export</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Export specific week range with customizable parameters
-                    </Typography>
+                    <Typography variant="body1" fontWeight={600}>{t('exportDialog.dataMode.range')}</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('exportDialog.dataMode.rangeDesc')}</Typography>
                   </Box>
                 }
               />
@@ -175,10 +131,8 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
                 control={<Radio sx={{ color: '#0B2863' }} />}
                 label={
                   <Box>
-                    <Typography variant="body1" fontWeight={600}>Historic Export</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Export all available historical data (all years and weeks)
-                    </Typography>
+                    <Typography variant="body1" fontWeight={600}>{t('exportDialog.dataMode.historic')}</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('exportDialog.dataMode.historicDesc')}</Typography>
                   </Box>
                 }
               />
@@ -186,25 +140,16 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
           </FormControl>
         </Box>
 
+        {/* ── Range Config ── */}
         {exportMode.type === 'range' && (
           <Box sx={{ mb: 3 }}>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                color: '#0B2863', 
-                fontWeight: 600, 
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
+            <Typography variant="subtitle1" sx={sectionLabelSx}>
               <Calendar size={18} />
-              Week Range Configuration
+              {t('exportDialog.rangeConfig.title')}
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
               <TextField
-                label="Year"
+                label={t('exportDialog.rangeConfig.year')}
                 type="number"
                 value={exportMode.year}
                 onChange={(e) => setExportMode(prev => ({ ...prev, year: Number(e.target.value) }))}
@@ -212,7 +157,7 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
                 fullWidth
               />
               <TextField
-                label="Start Week"
+                label={t('exportDialog.rangeConfig.startWeek')}
                 type="number"
                 inputProps={{ min: 1, max: 53 }}
                 value={exportMode.startWeek || ''}
@@ -221,7 +166,7 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
                 fullWidth
               />
               <TextField
-                label="End Week"
+                label={t('exportDialog.rangeConfig.endWeek')}
                 type="number"
                 inputProps={{ min: 1, max: 53 }}
                 value={exportMode.endWeek || ''}
@@ -233,47 +178,27 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
           </Box>
         )}
 
-        {/* Solo mostrar info para modo histórico, no campos de entrada */}
+        {/* ── Historic Info ── */}
         {exportMode.type === 'historic' && (
           <Box sx={{ mb: 3 }}>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                color: '#0B2863', 
-                fontWeight: 600, 
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
+            <Typography variant="subtitle1" sx={sectionLabelSx}>
               <Calendar size={18} />
-              Historic Data Export
+              {t('exportDialog.historicConfig.title')}
             </Typography>
             <Alert severity="info" sx={{ borderRadius: '12px' }}>
-              This will export all available historical payment data from the database. 
-              No date range selection needed - all records will be included.
+              {t('exportDialog.historicConfig.info')}
             </Alert>
           </Box>
         )}
 
         <Divider sx={{ my: 3 }} />
 
+        {/* ── Format ── */}
         <Box>
           <FormControl component="fieldset" fullWidth>
-            <FormLabel 
-              component="legend" 
-              sx={{ 
-                color: '#0B2863', 
-                fontWeight: 600, 
-                mb: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
+            <FormLabel component="legend" sx={sectionLabelSx}>
               <FileText size={18} />
-              Export Format
+              {t('exportDialog.format.label')}
             </FormLabel>
             <RadioGroup
               value={format}
@@ -286,7 +211,7 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <FileSpreadsheet size={16} color="#22c55e" />
-                    <span>Excel (.xlsx)</span>
+                    <span>{t('exportDialog.format.excel')}</span>
                   </Box>
                 }
               />
@@ -296,7 +221,7 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <FileText size={16} color="#ef4444" />
-                    <span>PDF Report</span>
+                    <span>{t('exportDialog.format.pdf')}</span>
                   </Box>
                 }
               />
@@ -304,14 +229,11 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
           </FormControl>
         </Box>
       </DialogContent>
-      
+
+      {/* Actions */}
       <DialogActions sx={{ padding: '16px 24px' }}>
-        <Button 
-          onClick={onClose} 
-          disabled={isExporting}
-          sx={{ color: '#6b7280' }}
-        >
-          Cancel
+        <Button onClick={onClose} disabled={isExporting} sx={{ color: '#6b7280' }}>
+          {t('exportDialog.actions.cancel')}
         </Button>
         <Button
           onClick={handleExport}
@@ -320,14 +242,13 @@ const PaidUnpaidExportDialog: React.FC<PaidUnpaidExportDialogProps> = ({
           startIcon={isExporting ? <CircularProgress size={16} /> : <Download size={16} />}
           sx={{
             background: 'linear-gradient(135deg, #FFE67B, #fbbf24)',
-            color: '#0B2863',
-            fontWeight: 600,
-            '&:hover': {
-              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-            }
+            color: '#0B2863', fontWeight: 600,
+            '&:hover': { background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }
           }}
         >
-          {isExporting ? 'Exporting...' : `Export ${format.toUpperCase()}`}
+          {isExporting
+            ? t('exportDialog.actions.exporting')
+            : t('exportDialog.actions.export', { format: format.toUpperCase() })}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,24 +1,68 @@
+// PayrollModal.tsx actualizado
+
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer'; // Quitamos PDFDownloadLink
 import { cancelPayments, createPayment } from '../../service/PayrollService';
 import { updateAssign } from '../../service/AssignService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { pdf } from '@react-pdf/renderer';
-import { PayrollEmailPDF } from './PayrollEmailPDF';
 import { sendPdfEmail } from '../../service/EmailRepository';
-import { sendPdfToWhatsapp } from '../../service/MetaApiService'; 
+import { fetchWithAuth } from '../../service/authService';
 
-// Definir la interfaz WeekAmounts
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+async function urlToBase64(url: string): Promise<string> {
+  const res  = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function sendPdfViaWhatsapp({
+  pdfBlob, phoneNumber, operatorName, periodStart, periodEnd,
+}: {
+  pdfBlob: Blob; phoneNumber: string; operatorName: string;
+  periodStart: string; periodEnd: string;
+}): Promise<{ status: 'success' | 'error'; messUser?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('file', pdfBlob, `recibo-${Date.now()}.pdf`);
+
+    const res = await fetchWithAuth(`${import.meta.env.VITE_URL_BASE}/s3/upload-temp/`, {
+      method: 'POST', body: formData,
+    });
+    if (!res.ok) throw new Error('Error uploading file');
+
+    const data    = await res.json();
+    const pdfUrl  = data.url;
+    const phone   = phoneNumber.replace(/[^\d+]/g, '');
+    const message = encodeURIComponent(
+      `Hola ${operatorName} , aquí tienes tu recibo de pago para el período *${periodStart} → ${periodEnd}*.\n\n Descárgalo aquí: ${pdfUrl}`
+    );
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    return { status: 'success' };
+  } catch (err: any) {
+    return { status: 'error', messUser: err.message || 'Error desconocido' };
+  }
+}
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 interface WeekAmounts {
-  Mon?: number;
-  Tue?: number;
-  Wed?: number;
-  Thu?: number;
-  Fri?: number;
-  Sat?: number;
-  Sun?: number;
+  Mon?: number; Tue?: number; Wed?: number; Thu?: number;
+  Fri?: number; Sat?: number; Sun?: number;
+}
+
+interface CompanyInfo {
+  name: string; address: string; license_number: string; logo_url: string;
 }
 
 interface PayrollModalProps {
@@ -26,25 +70,12 @@ interface PayrollModalProps {
   onClose: () => void;
   onPaymentComplete?: (updatedOperator: any) => void;
   operatorData: {
-    email: string;
-    phone?: string;
-    code: string;
-    name: string;
-    lastName: string;
-    role: string;
-    cost: number;
-    Mon?: number;
-    Tue?: number;
-    Wed?: number;
-    Thu?: number;
-    Fri?: number;
-    Sat?: number;
-    Sun?: number;
-    total?: number;
-    additionalBonuses: number; // CAMBIAR: requerir como number, no opcional
-    grandTotal?: number;
-    assignmentIds: (number | string)[]; // CAMBIAR: requerir como array, no opcional
-    paymentIds: (number | string)[]; // CAMBIAR: requerir como array, no opcional
+    email: string; phone?: string; code: string; name: string; lastName: string;
+    role: string; cost: number; Mon?: number; Tue?: number; Wed?: number;
+    Thu?: number; Fri?: number; Sat?: number; Sun?: number; total?: number;
+    additionalBonuses: number; grandTotal?: number;
+    assignmentIds: (number | string)[];
+    paymentIds: (number | string)[];
     expense?: number;
     assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] };
     operator_phone?: string | null;
@@ -60,677 +91,524 @@ const formatCurrency = (n?: number) =>
     ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
     : '$0.00';
 
-// Estilos mejorados para el PDF
+// ─────────────────────────────────────────────
+// PDF Styles
+// ─────────────────────────────────────────────
+const C = {
+  navy: '#0B2863', navyLight: '#0f3a8a', light: '#f8fafc',
+  red: '#c0392b', redBg: '#fdecea',
+  green: '#27ae60', greenBg: '#eafaf1',
+  gray: '#64748b', border: '#cbd5e1', white: '#ffffff',
+};
+
 const pdfStyles = StyleSheet.create({
-  page: {
-    flexDirection: 'column',
-    backgroundColor: '#ffffff',
-    padding: 40,
-    fontFamily: 'Helvetica',
-  },
-  header: {
-    fontSize: 28,
-    marginBottom: 30,
-    textAlign: 'center',
-    color: '#2563eb',
-    fontWeight: 'bold',
-    borderBottomWidth: 3,
-    borderBottomColor: '#2563eb',
-    paddingBottom: 15,
-  },
-  companyInfo: {
-    marginBottom: 25,
-    backgroundColor: '#f8fafc',
-    padding: 15,
-    borderRadius: 8,
-  },
-  operatorInfo: {
-    marginBottom: 25,
-    backgroundColor: '#f1f5f9',
-    padding: 20,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10b981',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  infoLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#374151',
-    width: 80,
-  },
-  infoValue: {
-    fontSize: 12,
-    color: '#111827',
-    flex: 1,
-  },
-  tableHeader: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    padding: 10,
-    marginBottom: 2,
-  },
-  tableHeaderText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#374151',
-    textAlign: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-  },
-  rowEven: {
-    backgroundColor: '#f9fafb',
-  },
-  dayLabel: {
-    fontSize: 12,
-    color: '#374151',
-    fontWeight: 'bold',
-  },
-  dayAmount: {
-    fontSize: 12,
-    color: '#111827',
-    fontWeight: 'normal',
-  },
-  subtotalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: '#ddd6fe',
-    borderRadius: 4,
-  },
-  bonusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: '#fef3c7',
-    borderRadius: 4,
-    marginTop: 5,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    backgroundColor: '#10b981',
-    borderRadius: 8,
-  },
-  subtotalLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#6b21a8',
-  },
-  subtotalAmount: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#6b21a8',
-  },
-  bonusLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#92400e',
-  },
-  bonusAmount: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#92400e',
-  },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  footer: {
-    marginTop: 30,
-    paddingTop: 20,
-    borderTopWidth: 2,
-    borderTopColor: '#e5e7eb',
-    textAlign: 'center',
-  },
-  footerText: {
-    fontSize: 10,
-    color: '#6b7280',
-  },
+  page:        { flexDirection: 'column', backgroundColor: C.white, fontFamily: 'Helvetica', paddingBottom: 40 },
+  headerBand:  { backgroundColor: C.navy, paddingHorizontal: 36, paddingVertical: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logo:        { width: 56, height: 56, borderRadius: 6 },
+  logoFallback:{ width: 56, height: 56, borderRadius: 6, backgroundColor: '#1a4a9e', alignItems: 'center', justifyContent: 'center' },
+  logoFallbackText: { color: C.white, fontSize: 14, fontFamily: 'Helvetica-Bold' },
+  headerRight: { alignItems: 'flex-end' },
+  companyName: { fontSize: 15, fontFamily: 'Helvetica-Bold', color: C.white },
+  companyMeta: { fontSize: 8, color: '#94a3b8', marginTop: 2 },
+  titleStrip:  { backgroundColor: C.navyLight, paddingHorizontal: 36, paddingVertical: 9, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  titleText:   { fontSize: 12, fontFamily: 'Helvetica-Bold', color: C.white, letterSpacing: 1.5 },
+  dateText:    { fontSize: 8, color: '#93c5fd' },
+  body:        { paddingHorizontal: 36, paddingTop: 18 },
+  operatorCard:{ backgroundColor: C.light, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: C.navy, padding: 14, marginBottom: 18, flexDirection: 'row', justifyContent: 'space-between' },
+  operatorCol: { flex: 1 },
+  fieldLabel:  { fontSize: 7, color: C.gray, marginBottom: 2, fontFamily: 'Helvetica-Bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  fieldValue:  { fontSize: 11, color: '#0f172a', fontFamily: 'Helvetica-Bold' },
+  fieldValueSm:{ fontSize: 9, color: '#1e293b' },
+  sectionTitle:{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.navy, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5, marginTop: 2 },
+  tableHead:   { flexDirection: 'row', backgroundColor: C.navy, borderRadius: 4, paddingVertical: 7, paddingHorizontal: 10, marginBottom: 1 },
+  thText:      { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.white, flex: 1 },
+  thRight:     { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.white, textAlign: 'right', width: 65 },
+  rowEven:     { flexDirection: 'row', backgroundColor: C.light, paddingVertical: 7, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  rowOdd:      { flexDirection: 'row', backgroundColor: C.white, paddingVertical: 7, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  tdText:      { fontSize: 9, color: '#1e293b', flex: 1 },
+  tdRight:     { fontSize: 9, color: '#1e293b', textAlign: 'right', width: 65, fontFamily: 'Helvetica-Bold' },
+  tdGreen:     { fontSize: 9, color: C.green, flex: 1 },
+  totals:      { marginTop: 14 },
+  rowBase:     { flexDirection: 'row', justifyContent: 'space-between', borderRadius: 6, paddingVertical: 9, paddingHorizontal: 14, marginBottom: 5 },
+  lbl:         { fontSize: 10, fontFamily: 'Helvetica-Bold' },
+  val:         { fontSize: 10, fontFamily: 'Helvetica-Bold' },
+  grandRow:    { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: C.navy, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 16, marginTop: 4 },
+  grandLbl:    { fontSize: 13, fontFamily: 'Helvetica-Bold', color: C.white },
+  grandVal:    { fontSize: 15, fontFamily: 'Helvetica-Bold', color: '#60a5fa' },
+  footer:      { marginTop: 24, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 10, paddingHorizontal: 36, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerTxt:   { fontSize: 7, color: '#94a3b8' },
+  badge:       { backgroundColor: C.navy, borderRadius: 4, paddingVertical: 3, paddingHorizontal: 8 },
+  badgeTxt:    { fontSize: 7, color: C.white, fontFamily: 'Helvetica-Bold' },
 });
 
 interface DayInfo { key: keyof WeekAmounts; label: string; }
 
-const PayrollPDF: React.FC<{ 
-  operatorData: NonNullable<PayrollModalProps['operatorData']>; 
-  days: DayInfo[]; 
-  periodStart: string; 
-  periodEnd: string;
-  dailyBonuses: WeekAmounts;
-  totalDailyBonuses: number;
-}> = ({ operatorData, days, periodStart, periodEnd, dailyBonuses, totalDailyBonuses }) => (
+// ─────────────────────────────────────────────
+// PDF Component
+// ─────────────────────────────────────────────
+const PayrollPDF: React.FC<{
+  operatorData: NonNullable<PayrollModalProps['operatorData']>;
+  days: DayInfo[];
+  periodStart: string; periodEnd: string;
+  dailyBonuses: WeekAmounts; totalDailyBonuses: number;
+  expense: number; grandTotal: number;
+  company: CompanyInfo | null;
+  logoBase64: string | null;
+}> = ({ operatorData, days, periodStart, periodEnd, dailyBonuses, totalDailyBonuses, expense, grandTotal, company, logoBase64 }) => (
   <Document>
     <Page size="A4" style={pdfStyles.page}>
-      <Text style={pdfStyles.header}>PAYMENT SUMMARY</Text>
-      
-      <View style={pdfStyles.companyInfo}>
-        <View style={pdfStyles.infoRow}>
-          <Text style={pdfStyles.infoLabel}>Date:</Text>
-          <Text style={pdfStyles.infoValue}>{new Date().toLocaleDateString()}</Text>
+      {/* Header */}
+      <View style={pdfStyles.headerBand}>
+        <View>
+          {logoBase64
+            ? <Image src={logoBase64} style={pdfStyles.logo} />
+            : (
+              <View style={pdfStyles.logoFallback}>
+                <Text style={pdfStyles.logoFallbackText}>MW</Text>
+              </View>
+            )
+          }
         </View>
-        <View style={pdfStyles.infoRow}>
-          <Text style={pdfStyles.infoLabel}>Period:</Text>
-          <Text style={pdfStyles.infoValue}>{periodStart} → {periodEnd}</Text>
-        </View>
-      </View>
-
-      <View style={pdfStyles.operatorInfo}>
-        <View style={pdfStyles.infoRow}>
-          <Text style={pdfStyles.infoLabel}>Code:</Text>
-          <Text style={pdfStyles.infoValue}>{operatorData.code}</Text>
-        </View>
-        <View style={pdfStyles.infoRow}>
-          <Text style={pdfStyles.infoLabel}>Name:</Text>
-          <Text style={pdfStyles.infoValue}>{operatorData.name} {operatorData.lastName}</Text>
-        </View>
-        <View style={pdfStyles.infoRow}>
-          <Text style={pdfStyles.infoLabel}>Role:</Text>
-          <Text style={pdfStyles.infoValue}>{operatorData.role}</Text>
+        <View style={pdfStyles.headerRight}>
+          <Text style={pdfStyles.companyName}>{company?.name || 'MovingWise'}</Text>
+          <Text style={pdfStyles.companyMeta}>{company?.address || ''}</Text>
+          <Text style={pdfStyles.companyMeta}>Licencia: {company?.license_number || ''}</Text>
         </View>
       </View>
 
-      <View style={pdfStyles.tableHeader}>
-        <Text style={pdfStyles.tableHeaderText}>DAILY BREAKDOWN</Text>
-      </View>
-
-      {days.map(({ key, label }, index) => {
-        const baseAmount = operatorData[key] || 0;
-        const bonusAmount = dailyBonuses[key] || 0;
-        const totalAmount = baseAmount + bonusAmount;
-        
-        return (
-          <View key={key} style={[pdfStyles.row, index % 2 === 0 ? pdfStyles.rowEven : {}]}>
-            <View style={{ flex: 1 }}>
-              <Text style={pdfStyles.dayLabel}>{label}</Text>
-              <Text style={{ fontSize: 10, color: '#6b7280' }}>
-                Base: {formatCurrency(baseAmount)} + Bonus: {formatCurrency(bonusAmount)}
-              </Text>
-            </View>
-            <Text style={pdfStyles.dayAmount}>{formatCurrency(totalAmount)}</Text>
-          </View>
-        );
-      })}
-
-      <View style={pdfStyles.subtotalRow}>
-        <Text style={pdfStyles.subtotalLabel}>Base Subtotal</Text>
-        <Text style={pdfStyles.subtotalAmount}>{formatCurrency(operatorData.total)}</Text>
-      </View>
-
-      <View style={pdfStyles.bonusRow}>
-        <Text style={pdfStyles.bonusLabel}>Daily Bonuses Total</Text>
-        <Text style={pdfStyles.bonusAmount}>{formatCurrency(totalDailyBonuses)}</Text>
-      </View>
-
-      <View style={pdfStyles.totalRow}>
-        <Text style={pdfStyles.totalLabel}>GRAND TOTAL</Text>
-        <Text style={pdfStyles.totalAmount}>{formatCurrency(operatorData.grandTotal)}</Text>
-      </View>
-
-      <View style={pdfStyles.footer}>
-        <Text style={pdfStyles.footerText}>
-          This document was generated automatically on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+      {/* Title strip */}
+      <View style={pdfStyles.titleStrip}>
+        <Text style={pdfStyles.titleText}>RECIBO DE PAGO</Text>
+        <Text style={pdfStyles.dateText}>
+          {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
         </Text>
+      </View>
+
+      <View style={pdfStyles.body}>
+        {/* Operator card */}
+        <View style={pdfStyles.operatorCard}>
+          <View style={pdfStyles.operatorCol}>
+            <Text style={pdfStyles.fieldLabel}>Operador</Text>
+            <Text style={pdfStyles.fieldValue}>{operatorData.name} {operatorData.lastName}</Text>
+            <Text style={pdfStyles.fieldValueSm}>Código: {operatorData.code}</Text>
+          </View>
+          <View style={pdfStyles.operatorCol}>
+            <Text style={pdfStyles.fieldLabel}>Rol</Text>
+            <Text style={pdfStyles.fieldValueSm}>{operatorData.role}</Text>
+          </View>
+          <View style={[pdfStyles.operatorCol, { alignItems: 'flex-end' }]}>
+            <Text style={pdfStyles.fieldLabel}>Período</Text>
+            <Text style={pdfStyles.fieldValueSm}>{periodStart}</Text>
+            <Text style={pdfStyles.fieldValueSm}>→ {periodEnd}</Text>
+          </View>
+        </View>
+
+        {/* Daily breakdown table */}
+        <Text style={pdfStyles.sectionTitle}>Desglose Diario</Text>
+        <View style={pdfStyles.tableHead}>
+          <Text style={pdfStyles.thText}>Día</Text>
+          <Text style={pdfStyles.thText}>Base</Text>
+          <Text style={pdfStyles.thText}>Bono</Text>
+          <Text style={pdfStyles.thRight}>Total</Text>
+        </View>
+
+        {days.map(({ key, label }, i) => {
+          const base  = operatorData[key] || 0;
+          const bonus = dailyBonuses[key] || 0;
+          return (
+            <View key={key} style={i % 2 === 0 ? pdfStyles.rowEven : pdfStyles.rowOdd}>
+              <Text style={pdfStyles.tdText}>{label}</Text>
+              <Text style={pdfStyles.tdText}>{formatCurrency(base)}</Text>
+              <Text style={pdfStyles.tdGreen}>{formatCurrency(bonus)}</Text>
+              <Text style={pdfStyles.tdRight}>{formatCurrency(base + bonus)}</Text>
+            </View>
+          );
+        })}
+
+        {/* Totals */}
+        <View style={pdfStyles.totals}>
+          <View style={[pdfStyles.rowBase, { backgroundColor: '#e8eef8' }]}>
+            <Text style={[pdfStyles.lbl, { color: C.navy }]}>Subtotal Base</Text>
+            <Text style={[pdfStyles.val, { color: C.navy }]}>{formatCurrency(operatorData.total)}</Text>
+          </View>
+          <View style={[pdfStyles.rowBase, { backgroundColor: C.greenBg }]}>
+            <Text style={[pdfStyles.lbl, { color: C.green }]}>✓ Bonos Diarios</Text>
+            <Text style={[pdfStyles.val, { color: C.green }]}>+ {formatCurrency(totalDailyBonuses)}</Text>
+          </View>
+          {expense > 0 && (
+            <View style={[pdfStyles.rowBase, { backgroundColor: C.redBg }]}>
+              <Text style={[pdfStyles.lbl, { color: C.red }]}>✗ Gastos Deducidos</Text>
+              <Text style={[pdfStyles.val, { color: C.red }]}>- {formatCurrency(expense)}</Text>
+            </View>
+          )}
+          <View style={pdfStyles.grandRow}>
+            <Text style={pdfStyles.grandLbl}>PAGO NETO</Text>
+            <Text style={pdfStyles.grandVal}>{formatCurrency(grandTotal)}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Footer */}
+      <View style={pdfStyles.footer}>
+        <Text style={pdfStyles.footerTxt}>
+          Generado el {new Date().toLocaleString('es-ES')}
+        </Text>
+        <View style={pdfStyles.badge}>
+          <Text style={pdfStyles.badgeTxt}>MovingWise</Text>
+        </View>
       </View>
     </Page>
   </Document>
 );
 
+// ─────────────────────────────────────────────
+// Main Modal
+// ─────────────────────────────────────────────
 export const PayrollModal: React.FC<PayrollModalProps> = ({
-  onClose,
-  operatorData,
-  onPaymentComplete,
-  periodStart,
-  periodEnd,
-  weekDates,
-  assignmentsByDay
+  onClose, operatorData, onPaymentComplete, periodStart, periodEnd, weekDates, assignmentsByDay,
 }) => {
-  const [grandTotal, setGrandTotal] = useState(operatorData.grandTotal || 0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPaid, setIsPaid] = useState<boolean>(!!operatorData.paymentIds?.length);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  // SIMPLIFICAR: Usar directamente el expense que viene del operador
-  const [expense, setExpense] = useState<number>(operatorData.expense || 0);
-
-  const [sendingEmail, setSendingEmail] = useState(false);
+  const [grandTotal, setGrandTotal]           = useState(operatorData.grandTotal || 0);
+  const [loading, setLoading]                 = useState(false);
+  const [error, setError]                     = useState<string | null>(null);
+  const [isPaid, setIsPaid]                   = useState<boolean>(!!operatorData.paymentIds?.length);
+  const [cancelLoading, setCancelLoading]     = useState(false);
+  const [expense, setExpense]                 = useState<number>(operatorData.expense || 0);
+  const [sendingEmail, setSendingEmail]       = useState(false);
   const [sendingWhatsapp, setSendingWhatsapp] = useState(false);
-  // NUEVO: Estado para controlar el dropdown de envío
   const [showSendOptions, setShowSendOptions] = useState(false);
+  const [company, setCompany]                 = useState<CompanyInfo | null>(null);
+  const [logoBase64, setLogoBase64]           = useState<string | null>(null);
+  const [downloadingPDF, setDownloadingPDF]   = useState(false);
 
-  // Función para cancelar el pago
+  const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
+    const init: WeekAmounts = {};
+    (['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as (keyof WeekAmounts)[]).forEach(d => {
+      const a = assignmentsByDay?.[d]?.[0];
+      init[d] = a && typeof a.bonus === 'number' ? a.bonus : 0;
+    });
+    return init;
+  });
+
+  const [savingBonus, setSavingBonus] = useState<{ [k in keyof WeekAmounts]?: boolean }>({});
+
+  const days: DayInfo[] = [
+    { key: 'Mon', label: 'Lunes'    }, { key: 'Tue', label: 'Martes'   },
+    { key: 'Wed', label: 'Miércoles' }, { key: 'Thu', label: 'Jueves'  },
+    { key: 'Fri', label: 'Viernes'    }, { key: 'Sat', label: 'Sábado'  },
+    { key: 'Sun', label: 'Domingo'    },
+  ];
+
+  // Load company info + convert logo to base64
+  useEffect(() => {
+    fetchWithAuth(`${import.meta.env.VITE_URL_BASE}/companies/my-company/`)
+      .then(r => r.ok ? r.json() : null)
+      .then(async d => {
+        if (!d) return;
+        setCompany({ name: d.name, address: d.address, license_number: d.license_number, logo_url: d.logo_url });
+        if (d.logo_url) {
+          try {
+            const b64 = await urlToBase64(d.logo_url);
+            setLogoBase64(b64);
+          } catch {
+            // logo fallback silently
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const bonusSum = Object.values(dailyBonuses).reduce((s, b) => s + (b || 0), 0);
+    setGrandTotal((operatorData.total || 0) + bonusSum - expense);
+  }, [dailyBonuses, operatorData.total, expense]);
+
+  const bonusTotal     = () => Object.values(dailyBonuses).reduce((s, b) => s + (b || 0), 0);
+  const getCurrentDate = () => {
+    const t = new Date();
+    return `${String(t.getDate()).padStart(2,'0')}-${String(t.getMonth()+1).padStart(2,'0')}-${t.getFullYear()}`;
+  };
+
+  const handleDailyBonusChange = (day: keyof WeekAmounts, value: number) =>
+    setDailyBonuses(p => ({ ...p, [day]: value }));
+
+  const handleSaveDailyBonus = async (day: keyof WeekAmounts) => {
+    const assigns = assignmentsByDay?.[day];
+    if (!assigns?.length) { toast.error('No hay asignación para este día'); return; }
+    setSavingBonus(p => ({ ...p, [day]: true }));
+    try {
+      await Promise.all(assigns.map(a => updateAssign(Number(a.id), { bonus: dailyBonuses[day] || 0 })));
+      toast.success(`¡Bono para ${day} actualizado!`);
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    } finally {
+      setSavingBonus(p => ({ ...p, [day]: false }));
+    }
+  };
+
   const handleCancelPayment = async () => {
-    if (!operatorData.assignmentIds || operatorData.assignmentIds.length === 0) return;
+    if (!operatorData.assignmentIds?.length) return;
     setCancelLoading(true);
     try {
       const result = await cancelPayments(operatorData.assignmentIds.map(Number));
-      
-      // Check if cancellation was successful
       if (result.status === 'success') {
-        const {  errors, summary } = result.data;
-        
-        // Show success message with summary
+        const { summary } = result.data;
         if (summary.total_errors === 0) {
-          toast.success(`Payment cancelled successfully! Processed: ${summary.total_processed}`);
+          toast.success(`¡Cancelado! Procesados: ${summary.total_processed}`);
         } else {
-          toast.warning(
-            `Cancellation completed with ${summary.total_errors} error(s). ${summary.total_cancelled} payment(s) cancelled.`
-          );
-          
-          // Log errors for debugging
-          if (errors.length > 0) {
-            console.warn('Cancellation errors:', errors);
-          }
+          toast.warning(`Completado con ${summary.total_errors} error(es).`);
         }
-        
         setIsPaid(false);
-        if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: null });
+        onPaymentComplete?.({ ...operatorData, pay: null });
       } else {
-        toast.error(result.messUser || 'Error cancelling payment');
+        toast.error(result.messUser || 'Error al cancelar');
       }
     } catch (e: any) {
-      toast.error(e.message || 'Error cancelling payment');
+      toast.error(e.message);
     } finally {
       setCancelLoading(false);
-    }
-  };
-  // Inicializa dailyBonuses con el bonus de la primera asignación de cada día (si existe)
-  const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
-    const initial: WeekAmounts = {};
-    const days: (keyof WeekAmounts)[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    days.forEach(day => {
-      // Busca el bonus en la primera asignación del día, si existe
-      const assign = assignmentsByDay?.[day]?.[0];
-      initial[day] = assign && typeof assign.bonus === 'number'
-        ? assign.bonus
-        : 0;
-    });
-    return initial;
-  });
-  const [savingBonus, setSavingBonus] = useState<{ [key in keyof WeekAmounts]?: boolean }>({});
-
-  // REMOVER: Ya no necesitamos este useEffect para cargar expense desde la API
-  // useEffect(() => {
-  //   const loadExpenseFromPayment = async () => {
-  //     ...
-  //   };
-  //   loadExpenseFromPayment();
-  // }, [operatorData.paymentIds, operatorData.expense]);
-
-  // Efecto para recalcular cuando cambien los bonos Y expense
-  useEffect(() => {
-    const baseTotal = operatorData.total || 0;
-    const dailyBonusTotal = Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
-    const newGrandTotal = baseTotal + dailyBonusTotal - expense;
-    setGrandTotal(newGrandTotal);
-  }, [dailyBonuses, operatorData.total, expense]);
-
-  const days: DayInfo[] = [
-    { key: 'Mon', label: 'Monday' },
-    { key: 'Tue', label: 'Tuesday' },
-    { key: 'Wed', label: 'Wednesday' },
-    { key: 'Thu', label: 'Thursday' },
-    { key: 'Fri', label: 'Friday' },
-    { key: 'Sat', label: 'Saturday' },
-    { key: 'Sun', label: 'Sunday' },
-  ];
-
-  const getCurrentDate = () => {
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  };
-
-  // Función para calcular el total de bonos diarios
-  const calculateDailyBonusTotal = () => {
-    // Si quieres incluir el adicional, suma aquí:
-    // return Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0) + (operatorData.additionalBonuses || 0);
-    // Si NO quieres incluir el adicional, solo suma los dailyBonuses:
-    return Object.values(dailyBonuses).reduce((sum, bonus) => sum + (bonus || 0), 0);
-  };
-
-  const handleDailyBonusChange = (day: keyof WeekAmounts, value: number) => {
-    setDailyBonuses(prev => ({
-      ...prev,
-      [day]: value
-    }));
-  };
-  const handleSendEmail = async () => {
-    setSendingEmail(true);
-    setShowSendOptions(false);
-    try {
-      // CORREGIR: Asegurar que todos los campos requeridos estén presentes
-      const pdfDoc = (
-        <PayrollEmailPDF
-          operator={{
-            ...operatorData,
-            // Campos requeridos por PayrollEmailPDF
-            cost: operatorData.cost || 0,
-            total: operatorData.total || 0,
-            additionalBonuses: operatorData.additionalBonuses || 0,
-            grandTotal: grandTotal || 0,
-            netTotal: grandTotal || 0, // Agregar netTotal que requiere PayrollEmailPDF
-            assignmentIds: operatorData.assignmentIds || [],
-            paymentIds: operatorData.paymentIds || [],
-            expense: expense || 0,
-          }}
-          weekInfo={{ 
-            start_date: periodStart, 
-            end_date: periodEnd 
-          }}
-          weekDates={weekDates}
-        />
-      );
-      
-      const pdfBlob = await pdf(pdfDoc).toBlob();
-      const pdfFile = new File([pdfBlob], `payment-summary-${operatorData.code}.pdf`, { type: 'application/pdf' });
-      
-      const subject = `Payment Receipt for ${operatorData.name} ${operatorData.lastName}`;
-      const body = `Dear ${operatorData.name},\n\nPlease find attached your payment receipt.`;
-      const to = operatorData.email;
-      
-      const result = await sendPdfEmail(pdfFile, body, subject, to);
-      if (result.success) {
-        toast.success('Email sent successfully!');
-      } else {
-        toast.error(result.errorMessage || 'Error sending email');
-      }
-    } catch (err: any) {
-      console.error('Error sending email:', err); // Agregar log para debug
-      toast.error(err?.message || 'Error sending email');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-
-  // Cambia la función para obtener los ids de las asignaciones del día:
-  const handleSaveDailyBonus = async (day: keyof WeekAmounts) => {
-    const assigns = assignmentsByDay?.[day];
-    if (!assigns || assigns.length === 0) {
-      toast.error('No assignment for this day');
-      return;
-    }
-    setSavingBonus(prev => ({ ...prev, [day]: true }));
-    try {
-      await Promise.all(
-        assigns.map(assign =>
-          updateAssign(Number(assign.id), { bonus: dailyBonuses[day] || 0 })
-        )
-      );
-      toast.success(`Bonus for ${day} updated!`);
-    } catch (e: any) {
-      toast.error(`Error updating bonus for ${day}: ${e.message}`);
-    } finally {
-      setSavingBonus(prev => ({ ...prev, [day]: false }));
     }
   };
 
   const handlePayment = async () => {
     if (!operatorData.assignmentIds) return;
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      // Convert daily bonuses to new format: array of { date, bonus, assign_ids }
       const dailyBonusesArray = days
-        .map(({ key }) => {
-          const assignsForDay = assignmentsByDay?.[key] || [];
-          const bonusAmount = dailyBonuses[key] || 0;
-          
-          return {
-            date: weekDates[key] || '', // Use actual date from weekDates
-            bonus: bonusAmount,
-            assign_ids: assignsForDay.map(a => Number(a.id)),
-          };
-        })
-        .filter(item => item.assign_ids.length > 0); // Only include days with assignments
+        .map(({ key }) => ({
+          date: weekDates[key] || '',
+          bonus: dailyBonuses[key] || 0,
+          assign_ids: (assignmentsByDay?.[key] || []).map(a => Number(a.id)),
+        }))
+        .filter(i => i.assign_ids.length > 0);
 
-      const payload = {
-        value: grandTotal,
-        status: 'paid',
-        date_start: periodStart,
-        date_end: periodEnd,
-        expense: expense || 0,
-        daily_bonuses: dailyBonusesArray,
-      };
-      await createPayment(payload);
+      await createPayment({
+        value: grandTotal, status: 'paid',
+        date_start: periodStart, date_end: periodEnd,
+        expense: expense || 0, daily_bonuses: dailyBonusesArray,
+      });
       setIsPaid(true);
-      toast.success('Payment saved successfully! 🎉');
-      if (onPaymentComplete) onPaymentComplete({ ...operatorData, pay: '' });
+      toast.success('¡Pago guardado! 🎉');
+      onPaymentComplete?.({ ...operatorData, pay: '' });
     } catch (e: any) {
-      setError(e.message || 'Payment failed');
-      toast.error('Payment failed. Please try again.');
+      setError(e.message || 'Error en el pago');
+      toast.error('Error en el pago.');
     } finally {
       setLoading(false);
     }
   };
 
-  // MODIFICAR: función para enviar por WhatsApp usando operator_phone automáticamente
-  const handleSendWhatsapp = async () => {
-    if (!operatorData.operator_phone) {
-      toast.error('No WhatsApp number available for this operator');
-      return;
-    }
-
-    setSendingWhatsapp(true);
-    setShowSendOptions(false);
+  // Función para descargar PDF directamente
+  const handleDownloadPDF = async () => {
+    setDownloadingPDF(true);
     try {
-      // CORREGIR: Usar la misma estructura corregida
-      const pdfDoc = (
-        <PayrollEmailPDF
-          operator={{
-            ...operatorData,
-            cost: operatorData.cost || 0,
-            total: operatorData.total || 0,
-            additionalBonuses: operatorData.additionalBonuses || 0,
-            grandTotal: grandTotal || 0,
-            netTotal: grandTotal || 0, // Agregar netTotal
-            assignmentIds: operatorData.assignmentIds || [],
-            paymentIds: operatorData.paymentIds || [],
-            expense: expense || 0,
-          }}
-          weekInfo={{ 
-            start_date: periodStart, 
-            end_date: periodEnd 
-          }}
-          weekDates={weekDates}
+      // Crear el documento PDF
+      const pdfDocument = (
+        <PayrollPDF
+          operatorData={{ ...operatorData, grandTotal }}
+          days={days}
+          periodStart={periodStart}
+          periodEnd={periodEnd}
+          dailyBonuses={dailyBonuses}
+          totalDailyBonuses={bonusTotal()}
+          expense={expense}
+          grandTotal={grandTotal}
+          company={company}
+          logoBase64={logoBase64}
         />
       );
+
+      // Generar el blob
+      const blob = await pdf(pdfDocument).toBlob();
       
-      const pdfBlob = await pdf(pdfDoc).toBlob();
-      const caption = `Payment Receipt for ${operatorData.name} ${operatorData.lastName} - Period: ${periodStart} to ${periodEnd}`;
+      // Crear URL y descargar
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `pago-${operatorData.code}-${getCurrentDate()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
-      const result = await sendPdfToWhatsapp({
-        pdfFile: pdfBlob,
-        to_number: operatorData.operator_phone,
-        caption: caption
-      });
-      
-      if (result.status === 'success') {
-        toast.success('WhatsApp message sent successfully!');
+      toast.success('PDF descargado exitosamente');
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      toast.error('Error al generar el PDF');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
+  const buildPdfBlob = async () => {
+    const pdfDocument = (
+      <PayrollPDF
+        operatorData={{ ...operatorData, grandTotal }}
+        days={days}
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        dailyBonuses={dailyBonuses}
+        totalDailyBonuses={bonusTotal()}
+        expense={expense}
+        grandTotal={grandTotal}
+        company={company}
+        logoBase64={logoBase64}
+      />
+    );
+    return await pdf(pdfDocument).toBlob();
+  };
+
+  const handleSendEmail = async () => {
+    setSendingEmail(true); setShowSendOptions(false);
+    try {
+      const blob = await buildPdfBlob();
+      const file = new File([blob], `payment-${operatorData.code}.pdf`, { type: 'application/pdf' });
+      const res  = await sendPdfEmail(
+        file,
+        `Estimado ${operatorData.name},\n\nAdjunto encuentra su recibo de pago.`,
+        `Recibo de Pago — ${operatorData.name} ${operatorData.lastName}`,
+        operatorData.email
+      );
+      if (res.success) {
+        toast.success('¡Email enviado!');
       } else {
-        toast.error(result.messUser || 'Error sending WhatsApp message');
+        toast.error(res.errorMessage || 'Error enviando email');
       }
-    } catch (err: any) {
-      console.error('Error sending WhatsApp:', err); // Agregar log para debug
-      toast.error(err?.message || 'Error sending WhatsApp message');
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleSendWhatsapp = async () => {
+    if (!operatorData.operator_phone) { toast.error('No hay número de WhatsApp para este operador'); return; }
+    setSendingWhatsapp(true); setShowSendOptions(false);
+    try {
+      const blob = await buildPdfBlob();
+      const res  = await sendPdfViaWhatsapp({
+        pdfBlob: blob,
+        phoneNumber: operatorData.operator_phone,
+        operatorName: `${operatorData.name} ${operatorData.lastName}`,
+        periodStart, periodEnd,
+      });
+      if (res.status === 'success') {
+        toast.success('¡WhatsApp abierto! 📲');
+      } else {
+        toast.error(res.messUser || 'Error enviando WhatsApp');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
     } finally {
       setSendingWhatsapp(false);
     }
   };
 
+  // ── Reusable UI pieces ──────────────────────
+  const Spinner = () => (
+    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    </svg>
+  );
+
+  const WAIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.515z"/>
+    </svg>
+  );
+
+  // ─────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────
   return (
     <>
-      <ToastContainer 
-        position="top-right" 
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-      
-      {/* Backdrop con blur */}
+      <ToastContainer position="top-right" autoClose={4000} theme="light" />
+
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        {/* Modal Container */}
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden">
-          {/* Header con gradiente */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 text-white">
+
+          {/* Header */}
+          <div className="px-6 py-4 text-white" style={{ background: 'linear-gradient(135deg, #0B2863 0%, #1a4a9e 100%)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Payment Summary</h2>
-                <p className="text-blue-100 text-sm mt-1">Review and process payment</p>
+                <h2 className="text-2xl font-bold">Resumen de Pago</h2>
+                <p className="text-blue-200 text-sm mt-0.5">Revisar y procesar pago</p>
               </div>
-              <button 
-                onClick={onClose} 
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors duration-200"
-              >
+              <button onClick={onClose} className="hover:bg-white/20 rounded-full p-2 transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Content */}
+          {/* Scrollable body */}
           <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
-            {/* Error Alert */}
+
             {error && (
-              <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-400 rounded-md">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                </div>
+              <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-400 rounded-md flex gap-3">
+                <svg className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                </svg>
+                <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
 
-            {/* Operator Info Card */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 mb-6 border border-slate-200">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            {/* Operator card */}
+            <div className="rounded-xl p-5 mb-6 border border-slate-200" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #e8eef8 100%)' }}>
+              <div className="flex items-center mb-3">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0B2863, #1a4a9e)' }}>
                   {operatorData.name[0]}{operatorData.lastName[0]}
                 </div>
-                <div className="ml-4">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {operatorData.name} {operatorData.lastName}
-                  </h3>
-                  <p className="text-gray-600">Code: {operatorData.code}</p>
+                <div className="ml-3">
+                  <h3 className="text-lg font-bold text-gray-900">{operatorData.name} {operatorData.lastName}</h3>
+                  <p className="text-gray-500 text-xs">Código: {operatorData.code} · {operatorData.role}</p>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500 font-medium">Role:</span>
-                  <p className="text-gray-900 font-semibold">{operatorData.role}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-medium">Period:</span>
-                  <p className="text-gray-900 font-semibold">{periodStart} → {periodEnd}</p>
-                </div>
-              </div>
+              <span className="text-xs text-gray-600 bg-white/80 rounded-lg px-3 py-1.5 inline-block border border-slate-200">
+                📅 {periodStart} → {periodEnd}
+              </span>
             </div>
 
             {/* Daily Breakdown */}
-            <div className="space-y-3 mb-6">
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Daily Breakdown
+            <div className="mb-6">
+              <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#0B2863' }}>
+                Desglose Diario
               </h4>
-              
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                {days.map(({ key, label }, index) => (
-                  <div 
-                    key={key} 
-                    className={`flex justify-between items-center px-4 py-3 ${
-                      index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                    } ${index !== days.length - 1 ? 'border-b border-gray-100' : ''}`}
-                  >
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                {days.map(({ key, label }, i) => (
+                  <div key={key} className={`flex justify-between items-center px-4 py-3 ${i % 2 === 0 ? 'bg-slate-50' : 'bg-white'} ${i < days.length - 1 ? 'border-b border-gray-100' : ''}`}>
                     <div className="flex-1">
-                      <span className="font-medium text-gray-700">{label}</span>
-                      <div className="text-sm text-gray-500">
-                        Base: {formatCurrency(operatorData[key])}
-                      </div>
+                      <p className="font-medium text-gray-700 text-sm">{label}</p>
+                      <p className="text-xs text-gray-400">Base: {formatCurrency(operatorData[key])}</p>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      {/* Input para bono del día */}
+                    <div className="flex items-center gap-3">
                       <div className="flex flex-col items-end">
                         <div className="relative flex items-center">
-                          <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-green-600 text-xs">$</span>
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-green-600 text-xs">$</span>
                           <input
-                            type="number"
-                            value={dailyBonuses[key] || ''}
-                            onChange={(e) => handleDailyBonusChange(key, parseFloat(e.target.value) || 0)}
-                            min="0"
-                            step="0.01"
+                            type="number" value={dailyBonuses[key] || ''} min="0" step="0.01" placeholder="0"
+                            onChange={e => handleDailyBonusChange(key, parseFloat(e.target.value) || 0)}
                             disabled={loading || isPaid || savingBonus[key]}
-                            className="w-20 pl-5 pr-2 py-1 text-xs border border-green-300 rounded-md text-right font-medium text-green-700 bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                            placeholder="0"
+                            className="w-20 pl-5 pr-2 py-1 text-xs border border-green-300 rounded-md text-right font-medium text-green-700 bg-green-50 disabled:opacity-50 focus:ring-1 focus:ring-green-400 outline-none"
                           />
-                          {/* Botón para guardar bonus */}
                           <button
                             type="button"
-                            disabled={loading || isPaid || savingBonus[key]}
                             onClick={() => handleSaveDailyBonus(key)}
-                            className="ml-2 text-green-600 hover:text-green-800 disabled:opacity-50"
-                            title="Guardar bonus"
+                            disabled={loading || isPaid || savingBonus[key]}
+                            className="ml-1.5 text-green-600 hover:text-green-800 disabled:opacity-40"
                           >
-                            {savingBonus[key] ? (
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
+                            {savingBonus[key]
+                              ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                              : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                            }
                           </button>
                         </div>
-                        <span className="text-xs text-green-600 mt-1">Bonus</span>
+                        <span className="text-xs text-green-600 mt-0.5">Bono</span>
                       </div>
-                      {/* Total del día */}
-                      <div className="text-right min-w-[80px]">
-                        <div className="font-bold text-gray-900">
-                          {formatCurrency((operatorData[key] || 0) + (dailyBonuses[key] || 0))}
-                        </div>
-                        <div className="text-xs text-gray-500">Total</div>
+                      <div className="text-right min-w-[72px]">
+                        <p className="font-bold text-gray-900 text-sm">{formatCurrency((operatorData[key]||0)+(dailyBonuses[key]||0))}</p>
+                        <p className="text-xs text-gray-400">Total</p>
                       </div>
                     </div>
                   </div>
@@ -738,185 +616,129 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
               </div>
             </div>
 
-            {/* Totals Section */}
-            <div className="space-y-3">
-              {/* Subtotal Base */}
-              <div className="flex justify-between items-center px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
-                <span className="font-semibold text-blue-800">Base Subtotal</span>
-                <span className="font-bold text-blue-900 text-lg">{formatCurrency(operatorData.total)}</span>
+            {/* Totals */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center px-4 py-3 rounded-lg border" style={{ backgroundColor: '#e8eef8', borderColor: '#c7d8f0' }}>
+                <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>Subtotal Base</span>
+                <span className="font-bold" style={{ color: '#0B2863' }}>{formatCurrency(operatorData.total)}</span>
               </div>
-
-              {/* Total de bonos diarios */}
-              <div className="flex justify-between items-center px-4 py-3 bg-green-50 rounded-lg border border-green-200">
-                <span className="font-semibold text-green-800">Daily Bonuses Total</span>
-                <span className="font-bold text-green-900 text-lg">{formatCurrency(calculateDailyBonusTotal())}</span>
+              <div className="flex justify-between items-center px-4 py-3 rounded-lg border" style={{ backgroundColor: '#eafaf1', borderColor: '#a9dfbf' }}>
+                <span className="font-semibold text-sm" style={{ color: '#27ae60' }}>✓ Bonos Diarios</span>
+                <span className="font-bold" style={{ color: '#27ae60' }}>+ {formatCurrency(bonusTotal())}</span>
               </div>
-
-              {/* SIMPLIFICAR: Expense input sin loading ya que viene de la page */}
-              <div className="flex justify-between items-center px-4 py-3 bg-red-50 rounded-lg border border-red-200">
-                <span className="font-semibold text-red-800">Expenses</span>
-                <div className="flex items-center">
-                  <span className="text-red-600 mr-2">$</span>
+              <div className="flex justify-between items-center px-4 py-3 rounded-lg border" style={{ backgroundColor: '#fdecea', borderColor: '#f5c6cb' }}>
+                <span className="font-semibold text-sm" style={{ color: '#c0392b' }}>✗ Gastos</span>
+                <div className="flex items-center gap-1">
+                  <span style={{ color: '#c0392b' }} className="text-sm">-$</span>
                   <input
-                    type="number"
-                    value={expense || ''}
-                    onChange={(e) => setExpense(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
+                    type="number" value={expense || ''} min="0" step="0.01" placeholder="0.00"
+                    onChange={e => setExpense(parseFloat(e.target.value) || 0)}
                     disabled={loading || isPaid}
-                    className="w-24 px-3 py-1 text-right border border-red-300 rounded-md font-semibold text-red-700 bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                    placeholder="0.00"
+                    className="w-24 px-2 py-1 text-right border rounded-md text-sm font-semibold disabled:opacity-50 outline-none focus:ring-1"
+                    style={{ borderColor: '#f5c6cb', color: '#c0392b', backgroundColor: '#fdecea' }}
                   />
                 </div>
               </div>
-
-              {/* Grand Total */}
-              <div className="flex justify-between items-center px-4 py-4 bg-gradient-to-r from-purple-600 to-purple-800 rounded-lg text-white">
-                <span className="font-bold text-xl">Grand Total</span>
-                <span className="font-bold text-2xl">{formatCurrency(grandTotal)}</span>
+              <div className="flex justify-between items-center px-4 py-4 rounded-xl text-white" style={{ background: 'linear-gradient(135deg, #0B2863 0%, #1a4a9e 100%)' }}>
+                <span className="font-bold text-lg">PAGO NETO</span>
+                <span className="font-bold text-2xl" style={{ color: '#93c5fd' }}>{formatCurrency(grandTotal)}</span>
               </div>
             </div>
 
-            {/* Botón de WhatsApp - Solo mostrar si hay teléfono */}
-            {isPaid && operatorData.phone && (
-              <button
-                onClick={handleSendWhatsapp}
-                disabled={sendingWhatsapp}
-                className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
-                  sendingWhatsapp
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-md'
-                }`}
-              >
-                {sendingWhatsapp ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.515z"/>
-                    </svg>
-                    Send WhatsApp ({operatorData.phone})
-                  </>
-                )}
-              </button>
-            )}
           </div>
 
-          {/* Footer Actions */}
+          {/* Footer actions */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
             {isPaid ? (
               <>
-                <PDFDownloadLink
-                  document={
-                    <PayrollPDF 
-                      operatorData={{ 
-                        ...operatorData, 
-                        additionalBonuses: operatorData.additionalBonuses, 
-                        grandTotal 
-                      }} 
-                      days={days} 
-                      periodStart={periodStart} 
-                      periodEnd={periodEnd}
-                      dailyBonuses={dailyBonuses}
-                      totalDailyBonuses={calculateDailyBonusTotal()}
-                    />
-                  }
-                  fileName={`payment-summary-${operatorData.code}-${getCurrentDate()}.pdf`}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold text-center flex items-center justify-center"
+                {/* Botón de Descargar PDF */}
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={downloadingPDF}
+                  className="flex-1 px-4 py-3 text-white rounded-lg font-semibold text-center flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ backgroundColor: '#0B2863' }}
                 >
-                  {({ loading: pdfLoading }) => (
+                  {downloadingPDF ? (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <Spinner />
+                      <span>Generando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                       </svg>
-                      {pdfLoading ? 'Generating PDF...' : 'Download PDF'}
+                      <span>Descargar PDF</span>
                     </>
                   )}
-                </PDFDownloadLink>
+                </button>
 
-                {/* Botón principal con dropdown para enviar PDF */}
+                {/* Send dropdown */}
                 <div className="relative flex-1">
                   <button
                     onClick={() => setShowSendOptions(!showSendOptions)}
                     disabled={sendingEmail || sendingWhatsapp}
-                    className={`w-full px-4 py-3 font-semibold rounded-lg transition-all 
-                      duration-200 flex items-center justify-center  ${
-                      sendingEmail || sendingWhatsapp
-                        ? 'bg-gray-400 text-white cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg'
-                    }`}
+                    className="w-full px-4 py-3 font-semibold rounded-lg text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60"
+                    style={{ backgroundColor: '#1a4a9e' }}
                   >
                     {sendingEmail || sendingWhatsapp ? (
                       <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {sendingEmail ? 'Sending Email...' : 'Sending WhatsApp...'}
+                        <Spinner />
+                        <span>{sendingEmail ? 'Enviando Email...' : 'Subiendo...'}</span>
                       </>
                     ) : (
                       <>
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                         </svg>
-                        Send to Operator
-                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <span>Enviar a Operador</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
                         </svg>
                       </>
                     )}
                   </button>
 
-                  {/* Dropdown Menu */}
                   {showSendOptions && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                      {/* Email Option */}
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-xl z-10 overflow-hidden">
+                      {/* Email */}
                       <button
                         onClick={handleSendEmail}
                         disabled={sendingEmail || sendingWhatsapp}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center transition-colors duration-200 rounded-t-lg border-b border-gray-100"
+                        className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center gap-3 border-b border-gray-100 transition-colors"
                       >
-                        <svg className="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
                         <div className="min-w-0">
-                          <div className="font-medium text-gray-900">Send via Email</div>
-                          <div className="text-sm text-gray-500 truncate max-w-[220px]">{operatorData.email}</div>
+                          <p className="font-semibold text-gray-900 text-sm">Enviar por Email</p>
+                          <p className="text-xs text-gray-400 truncate">{operatorData.email}</p>
                         </div>
                       </button>
 
-                      {/* WhatsApp Option */}
+                      {/* WhatsApp */}
                       {operatorData.operator_phone ? (
                         <button
                           onClick={handleSendWhatsapp}
                           disabled={sendingEmail || sendingWhatsapp}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center transition-colors duration-200 rounded-b-lg"
+                          className="w-full px-4 py-3 text-left hover:bg-slate-50 flex items-center gap-3 transition-colors"
                         >
-                          <svg className="w-5 h-5 mr-3 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.515z"/>
-                          </svg>
+                          <span className="text-green-600 flex-shrink-0">
+                            <WAIcon />
+                          </span>
                           <div>
-                            <div className="font-medium text-gray-900">Send via WhatsApp</div>
-                            <div className="text-sm text-gray-500">{operatorData.operator_phone}</div>
+                            <p className="font-semibold text-gray-900 text-sm">Enviar por WhatsApp</p>
+                            <p className="text-xs text-gray-400">{operatorData.operator_phone}</p>
                           </div>
                         </button>
                       ) : (
-                        <div className="px-4 py-3 text-left text-gray-400 rounded-b-lg border-t border-gray-100">
-                          <div className="flex items-center">
-                            <svg className="w-5 h-5 mr-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.515z"/>
-                            </svg>
-                            <div>
-                              <div className="font-medium text-gray-400">WhatsApp not available</div>
-                              <div className="text-sm text-gray-400">No phone number</div>
-                            </div>
+                        <div className="px-4 py-3 flex items-center gap-3 opacity-40 cursor-not-allowed">
+                          <span className="text-gray-400 flex-shrink-0">
+                            <WAIcon />
+                          </span>
+                          <div>
+                            <p className="font-medium text-gray-400 text-sm">WhatsApp no disponible</p>
+                            <p className="text-xs text-gray-400">Número no registrado</p>
                           </div>
                         </div>
                       )}
@@ -924,68 +746,47 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                   )}
                 </div>
 
+                {/* Cancel payment */}
                 <button
                   onClick={handleCancelPayment}
                   disabled={cancelLoading}
-                  className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
-                    cancelLoading
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700 text-white hover:shadow-lg transform hover:scale-105'
-                  }`}
+                  className="flex-1 px-4 py-3 font-semibold rounded-lg text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ backgroundColor: '#c0392b' }}
                 >
                   {cancelLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Cancelling...
-                    </>
+                    <><Spinner /><span>Cancelando...</span></>
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
                       </svg>
-                      Cancel Payment
+                      <span>Cancelar Pago</span>
                     </>
                   )}
                 </button>
               </>
             ) : (
               <>
-                <button 
-                  disabled 
-                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed font-semibold flex items-center justify-center"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <button disabled className="flex-1 px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed font-semibold flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                   </svg>
-                  PDF Locked
+                  PDF Bloqueado
                 </button>
-
                 <button
                   onClick={handlePayment}
                   disabled={loading}
-                  className={`flex-1 px-4 py-3 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center ${
-                    loading 
-                      ? 'bg-gray-400 text-white cursor-not-allowed' 
-                      : 'bg-green-600 hover:bg-green-700 text-white hover:shadow-lg transform hover:scale-105'
-                  }`}
+                  className="flex-1 px-4 py-3 font-semibold rounded-lg text-white flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60"
+                  style={{ backgroundColor: '#27ae60' }}
                 >
                   {loading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </>
+                    <><Spinner /><span>Procesando...</span></>
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                       </svg>
-                      Process Payment
+                      <span>Procesar Pago</span>
                     </>
                   )}
                 </button>
@@ -995,13 +796,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
         </div>
       </div>
 
-      {/* Click outside para cerrar dropdown */}
       {showSendOptions && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowSendOptions(false)}
-        />
+        <div className="fixed inset-0 z-40" onClick={() => setShowSendOptions(false)} />
       )}
     </>
   );
-}
+};

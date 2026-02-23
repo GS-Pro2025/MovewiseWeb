@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Fuel, DollarSign, Gauge, Calendar } from 'lucide-react';
 import { CostFuelByOrderData } from '../../addFuelCostToOrder/domain/AssignOrderToCostFuelModels';
 
@@ -12,11 +13,12 @@ const COLORS = {
   secondary: '#F09F52',
   success: '#22c55e',
   gray: '#6b7280',
-  fuel: '#ef4444', // Color rojo para fuel
+  fuel: '#ef4444',
 };
 
 const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCost }) => {
-  // Función helper para formatear números correctamente
+  const { t, i18n } = useTranslation();
+
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return 'N/A';
     const numValue = Number(value);
@@ -32,16 +34,16 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
   };
 
   return (
-    <div className="inline-block bg-white rounded-lg border overflow-hidden" style={{ borderColor: COLORS.primary, maxWidth: 'fit-content' }}>
+    <div className="inline-block bg-white rounded-lg border overflow-hidden"
+      style={{ borderColor: COLORS.primary, maxWidth: 'fit-content' }}>
+
       {/* Header */}
-      <div className="px-2 py-1.5 border-b flex items-center justify-between" style={{ 
-        backgroundColor: COLORS.fuel,
-        borderColor: COLORS.fuel 
-      }}>
+      <div className="px-2 py-1.5 border-b flex items-center justify-between"
+        style={{ backgroundColor: COLORS.fuel, borderColor: COLORS.fuel }}>
         <div className="flex items-center gap-1.5">
           <Fuel size={14} className="text-white" />
-          <h3 className="text-xs font-bold text-white">Fuel Costs</h3>
-          <span className="text-xs text-white bg-white/20 px-1.5 py-0.5 rounded-full">
+          <h3 className="text-xs font-bold text-white">{t('costFuels.title')}</h3>
+          <span className="text-xs text-white bg-white/20 px-1.5 py-0.5 rounded-sm">
             {costFuels.length}
           </span>
         </div>
@@ -49,32 +51,26 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
           <button
             onClick={onAddFuelCost}
             className="px-2 py-1 rounded text-xs font-bold transition-all duration-200 hover:shadow-sm flex items-center gap-1"
-            style={{ 
-              backgroundColor: COLORS.secondary,
-              color: 'white'
-            }}
+            style={{ backgroundColor: COLORS.secondary, color: 'white' }}
           >
             <Plus size={12} />
-            Add
+            {t('costFuels.add')}
           </button>
         )}
       </div>
 
-      {/* Table */}
+      {/* Empty State */}
       {costFuels.length === 0 ? (
         <div className="text-center py-6 px-4">
           <Fuel size={40} className="mx-auto mb-2" style={{ color: COLORS.gray, opacity: 0.5 }} />
-          <p className="text-xs text-gray-500">No fuel costs assigned yet</p>
+          <p className="text-xs text-gray-500">{t('costFuels.noFuelCosts')}</p>
           {onAddFuelCost && (
             <button
               onClick={onAddFuelCost}
               className="mt-2 px-3 py-1 rounded text-xs font-bold transition-all duration-200 hover:shadow-sm"
-              style={{ 
-                backgroundColor: COLORS.secondary,
-                color: 'white'
-              }}
+              style={{ backgroundColor: COLORS.secondary, color: 'white' }}
             >
-              Add Fuel Cost
+              {t('costFuels.addFuelCost')}
             </button>
           )}
         </div>
@@ -83,18 +79,18 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
           <table className="w-auto">
             <thead className="text-white text-xs" style={{ backgroundColor: COLORS.fuel }}>
               <tr>
-                <th className="px-2 py-1.5 text-left font-bold whitespace-nowrap w-16">ID</th>
-                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-16">Truck</th>
-                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-24">Total Cost</th>
-                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">$/Gal</th>
-                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Gallons</th>
-                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">Distance</th>
-                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-24">Date</th>
+                <th className="px-2 py-1.5 text-left font-bold whitespace-nowrap w-16">{t('costFuels.id')}</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-16">{t('costFuels.truck')}</th>
+                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-24">{t('costFuels.totalCost')}</th>
+                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">{t('costFuels.costPerGallon')}</th>
+                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">{t('costFuels.gallons')}</th>
+                <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">{t('costFuels.distance')}</th>
+                <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-24">{t('costFuels.date')}</th>
               </tr>
             </thead>
             <tbody>
               {costFuels.map((costFuel, index) => (
-                <tr 
+                <tr
                   key={`${costFuel.id_fuel}-${index}`}
                   className={`transition-all duration-200 hover:shadow-sm text-xs ${
                     index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
@@ -106,10 +102,8 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-center whitespace-nowrap">
-                    <span 
-                      className="px-1.5 py-0.5 rounded-full text-xs font-bold text-white inline-block"
-                      style={{ backgroundColor: COLORS.primary }}
-                    >
+                    <span className="px-1.5 py-0.5 rounded-sm text-xs font-bold text-white inline-block"
+                      style={{ backgroundColor: COLORS.primary }}>
                       {costFuel.truck}
                     </span>
                   </td>
@@ -146,11 +140,10 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
                     <div className="flex items-center justify-center gap-1">
                       <Calendar size={12} style={{ color: COLORS.gray }} />
                       <span className="text-xs">
-                        {new Date(costFuel.date + 'T00:00:00').toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                        })}
+                        {new Date(costFuel.date + 'T00:00:00').toLocaleDateString(
+                          i18n.language === 'es' ? 'es-ES' : 'en-US',
+                          { year: 'numeric', month: '2-digit', day: '2-digit' }
+                        )}
                       </span>
                     </div>
                   </td>
@@ -163,19 +156,20 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
 
       {/* Footer Summary */}
       {costFuels.length > 0 && (
-        <div className="px-2 py-1.5 border-t bg-gray-50 flex items-center justify-between" style={{ borderColor: COLORS.fuel }}>
+        <div className="px-2 py-1.5 border-t bg-gray-50 flex items-center justify-between"
+          style={{ borderColor: COLORS.fuel }}>
           <div className="flex items-center gap-3 text-xs">
             <span className="text-gray-600">
-              <strong>Total Records:</strong> {costFuels.length}
+              <strong>{t('costFuels.totalRecords')}:</strong> {costFuels.length}
             </span>
             <span className="text-gray-600">
-              <strong>Total Cost:</strong>{' '}
+              <strong>{t('costFuels.totalCostLabel')}:</strong>{' '}
               <span className="font-bold" style={{ color: COLORS.success }}>
                 {formatCurrency(costFuels.reduce((sum, cf) => sum + (Number(cf.cost_fuel) || 0), 0))}
               </span>
             </span>
             <span className="text-gray-600">
-              <strong>Total Gallons:</strong>{' '}
+              <strong>{t('costFuels.totalGallons')}:</strong>{' '}
               <span className="font-bold" style={{ color: COLORS.secondary }}>
                 {formatNumber(costFuels.reduce((sum, cf) => sum + (Number(cf.fuel_qty) || 0), 0))}
               </span>
@@ -185,13 +179,10 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
             <button
               onClick={onAddFuelCost}
               className="px-2 py-1 rounded text-xs font-bold transition-all duration-200 hover:shadow-sm flex items-center gap-1"
-              style={{ 
-                backgroundColor: COLORS.fuel,
-                color: 'white'
-              }}
+              style={{ backgroundColor: COLORS.fuel, color: 'white' }}
             >
               <Plus size={10} />
-              Add
+              {t('costFuels.add')}
             </button>
           )}
         </div>
