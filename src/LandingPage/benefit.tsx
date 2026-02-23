@@ -1,15 +1,17 @@
+import { useTranslation } from "react-i18next";
 import ipad from "../assets/ipad.png";
 import mobile from "../assets/iPhone1.png";
 import mobileHorizontal from "../assets/HorizontaliPhone.png";
 
 const Benefits = () => {
+  const { t } = useTranslation();
+
   type MockupType = "dashboard" | "mobile" | "tablet";
 
   interface Benefit {
     id: number;
-    title: string;
-    description: string;
-    buttonText: string;
+    titleKey: string;
+    descriptionKey: string;
     imagePosition: "left" | "right";
     mockupType: MockupType;
   }
@@ -17,60 +19,55 @@ const Benefits = () => {
   const benefits: Benefit[] = [
     {
       id: 1,
-      title: "Full Operations Control",
-      description: "Manage your team, routes, and tasks from a single app.",
-      buttonText: "Start now",
+      titleKey: "benefits.items.operations.title",
+      descriptionKey: "benefits.items.operations.description",
       imagePosition: "right",
       mockupType: "tablet",
     },
     {
       id: 2,
-      title: "Clear Financial Control",
-      description:
-        "Record payments, manage payroll, and get automatic reports on income, expenses, and profits.",
-      buttonText: "Start now",
+      titleKey: "benefits.items.financial.title",
+      descriptionKey: "benefits.items.financial.description",
       imagePosition: "left",
       mockupType: "mobile",
     },
     {
       id: 3,
-      title: "Always Organized Team",
-      description:
-        "Each worker has their own account to register shifts, check-ins, and check-outs, ensuring traceability and order.",
-      buttonText: "Start now",
+      titleKey: "benefits.items.team.title",
+      descriptionKey: "benefits.items.team.description",
       imagePosition: "right",
       mockupType: "dashboard",
     },
   ];
 
   const DashboardMockup = () => (
-      <div className="relative">
-        <img
-          src={mobileHorizontal}
-          alt="Dashboard horizontal"
-          className="w-full min-w-2xl mx-auto  drop-shadow-2xl"
-        />
-      </div>
+    <div className="relative">
+      <img
+        src={mobileHorizontal}
+        alt="Dashboard horizontal"
+        className="w-full min-w-2xl mx-auto drop-shadow-2xl"
+      />
+    </div>
   );
 
   const MobileMockup = () => (
-      <div className="flex justify-center items-center space-x-8">
-        <img
-          src={mobile}
-          alt="iPhone mockup"
-          className="w-full min-w-2xl mx-auto  drop-shadow-2xl"
-        />
-      </div>
+    <div className="flex justify-center items-center space-x-8">
+      <img
+        src={mobile}
+        alt="iPhone mockup"
+        className="w-full min-w-2xl mx-auto drop-shadow-2xl"
+      />
+    </div>
   );
 
   const TabletMockup = () => (
-      <div className="flex justify-center">
-        <img
-          src={ipad}
-          alt="iPad mockup"
-          className="w-full min-w-2xl mx-auto drop-shadow-2xl"
-        />
-      </div>
+    <div className="flex justify-center">
+      <img
+        src={ipad}
+        alt="iPad mockup"
+        className="w-full min-w-2xl mx-auto drop-shadow-2xl"
+      />
+    </div>
   );
 
   const renderMockup = (type: MockupType) => {
@@ -91,7 +88,7 @@ const Benefits = () => {
       <div className="max-w-7xl mx-auto px-8">
         {/* Section Title */}
         <h2 className="text-5xl font-bold text-blue-900 text-center mb-32">
-          Benefits the MovingWise
+          {t("benefits.sectionTitle")}
         </h2>
 
         {/* Benefits List */}
@@ -106,13 +103,13 @@ const Benefits = () => {
               {/* Text Content */}
               <div className="flex-1 space-y-8">
                 <h3 className="text-4xl font-bold text-blue-900 leading-tight">
-                  {benefit.title}
+                  {t(benefit.titleKey)}
                 </h3>
                 <p className="text-gray-700 text-xl leading-relaxed">
-                  {benefit.description}
+                  {t(benefit.descriptionKey)}
                 </p>
                 <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-lg font-medium text-lg transition-colors duration-200 shadow-lg hover:shadow-xl">
-                  {benefit.buttonText}
+                  {t("benefits.startNow")}
                 </button>
               </div>
 

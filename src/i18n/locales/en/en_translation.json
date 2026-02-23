@@ -157,5 +157,1005 @@
       "idNumberMax": "ID number must not exceed {{count}} characters",
       "idTypeRequired": "ID type is required"
     }
+  },
+  "benefits": {
+    "sectionTitle": "Benefits of MovingWise",
+    "startNow": "Start now",
+    "items": {
+      "operations": {
+        "title": "Full Operations Control",
+        "description": "Manage your team, routes, and tasks from a single app."
+      },
+      "financial": {
+        "title": "Clear Financial Control",
+        "description": "Record payments, manage payroll, and get automatic reports on income, expenses, and profits."
+      },
+      "team": {
+        "title": "Always Organized Team",
+        "description": "Each worker has their own account to register shifts, check-ins, and check-outs, ensuring traceability and order."
+      }
+    }
+  },
+  "hero": {
+    "heading": "Smart logistic management for your moving company",
+    "subheading": "With MovingWise, organize your trucks, personnel, and transfers in one place. In real time, without confusion.",
+    "cta": "Get Started Now",
+    "appStoreAlt": "Download on the App Store",
+    "playStoreAlt": "Get it on Google Play",
+    "mobileAlt": "MovingWise Mobile App",
+    "waveAlt": "Decorative wave",
+    "logoAlt": "MovingWise Logo"
+  },
+  "features": {
+    "title": "Features",
+    "subtitle": "The all-in-one tool for your moving company to work without chaos or confusion.",
+    "waveAlt": "Decorative wave",
+    "items": {
+      "staff": {
+        "title": "Easy Staff Assignment",
+        "description": "Assign staff and coordinate every move without complications."
+      },
+      "reports": {
+        "title": "Reports & Total Control",
+        "description": "Generate clear reports of income, expenses and profits."
+      },
+      "realtime": {
+        "title": "Real-time Visibility",
+        "description": "Moving status and worker check-in/out tracking."
+      }
+    }
+  },
+  "plans": {
+    "title": "Plans & Subscriptions",
+    "subtitle": "Choose the plan that fits your needs",
+    "duration": "Duration",
+    "effectivePrice": "Effective price per month",
+    "discount": "Discount",
+    "savings": "Savings",
+    "featuresTitle": "Features",
+    "boxAlt": "Decorative box",
+    "boxStackAlt": "Decorative box stack",
+    "boxPileAlt": "Decorative box pile",
+    "trial": {
+      "name": "TRIAL PLAN",
+      "duration": "1 month",
+      "subtitle": "(FREE)",
+      "buttonText": "Start Free Trial",
+      "features": [
+        "Full access for 30 days",
+        "All features included",
+        "Basic technical support",
+        "No commitments"
+      ]
+    },
+    "monthly": {
+      "name": "MONTHLY PLAN",
+      "duration": "1 month auto-renewal",
+      "subtitle": "per month",
+      "buttonText": "Start Subscription",
+      "features": [
+        "Full access to the platform",
+        "Technical support included",
+        "Automatic updates",
+        "Cancel anytime"
+      ]
+    },
+    "quarterly": {
+      "name": "QUARTERLY PLAN",
+      "duration": "3 months",
+      "subtitle": "every 3 months",
+      "buttonText": "Start Subscription",
+      "features": [
+        "Everything in Monthly Plan",
+        "Guaranteed 5% discount",
+        "Priority support",
+        "Quarterly billing"
+      ]
+    },
+    "semiannual": {
+      "name": "SEMI-ANNUAL PLAN",
+      "duration": "6 months",
+      "subtitle": "every 6 months",
+      "buttonText": "Start Subscription",
+      "features": [
+        "Everything in Quarterly Plan",
+        "Guaranteed 10% discount",
+        "Premium technical support"
+      ]
+    },
+    "annual": {
+      "name": "ANNUAL PLAN",
+      "duration": "12 months",
+      "subtitle": "per year",
+      "badge": "BEST VALUE",
+      "buttonText": "Start Subscription",
+      "features": [
+        "Everything in Semi-Annual Plan",
+        "Maximum 20% discount",
+        "Dedicated 24/7 support",
+        "Personalized consulting"
+      ]
+    }
+  },
+  "contact": {
+    "title": "Start your logistics today",
+    "subtitle": "Leave us your details and an advisor will help you implement Moving Wise in your company.",
+    "namePlaceholder": "Name",
+    "emailPlaceholder": "Email",
+    "phonePlaceholder": "Phone",
+    "messagePlaceholder": "Write your message here...",
+    "sendButton": "Send",
+    "clearButton": "Clear",
+    "successMessage": "Form submitted successfully!"
+  },
+  "footer": {
+    "logoAlt": "MOVING WISE",
+    "description": "At Moving Wise, we believe that an organized operation is the foundation for growth. We designed this tool with detail and commitment so that every move is managed without chaos, with clarity and real results.",
+    "rights": "All rights reserved Moving Wise © 2025"
+  },
+  "sidebar": {
+    "logoAlt": "Move Wise Logo",
+    "logoTextAlt": "Movingwise",
+    "userAvatarAlt": "User Avatar",
+    "toggleMenu": "Toggle mobile menu",
+    "closeMobileMenu": "Close mobile menu",
+    "toggleSidebar": "Toggle sidebar",
+    "nav": {
+      "dashboard": "Dashboard",
+      "createDaily": "Create daily",
+      "payroll": "Payroll",
+      "createWarehouse": "Create Warehouse",
+      "warehouseList": "Warehouse List",
+      "statements": "Statements",
+      "statistics": "Statistics",
+      "cost": "Cost",
+      "summaryCosts": "Summary Costs",
+      "resumeFuel": "Resume Fuel",
+      "extraCost": "Extra Cost",
+      "settings": "Settings",
+      "myProfile": "My Profile",
+      "customers": "Customers",
+      "jobsTools": "Jobs & Tools",
+      "operators": "Operators",
+      "myCompany": "My Company",
+      "admins": "Admins",
+      "logout": "Logout",
+      "finance": "Finance",
+      "financials": "Financials",
+      "expenseBreakdown": "Expense Breakdown",
+      "operatorLoans": "Operator Loans",
+       "trucks": "Vehicle Management"
+    }
+  },
+  "filters": {
+    "title": "FILTERS & SEARCH",
+    "statisticsTitle": "Statistics",
+    "weekStatistics": "Week {{week}} Statistics",
+    "globalSearchResults": "Global Search Results",
+    "resultsFor": "Results for \"{{search}}\"",
+    "weekProgress": "Week {{week}} Progress",
+    "resultsProgress": "Results Progress",
+    "complete": "{{percent}}% Complete",
+    "total": "Total: {{count}}",
+    "finished": "Finished: {{count}} ({{percent}}%)",
+    "pending": "Pending: {{count}} ({{percent}}%)",
+    "inactive": "Inactive: {{count}} ({{percent}}%)",
+    "globalSearch": "Global Search",
+    "clearGlobalSearch": "Clear global search",
+    "searchPlaceholder": "Search order, name, job, location...",
+    "year": "Year",
+    "week": "Week",
+    "weekday": "Weekday",
+    "selectWeekday": "Select weekday",
+    "clearWeekday": "Clear weekday filter",
+    "location": "Location",
+    "selectLocation": "Select {{label}}",
+    "clearLocation": "Clear location",
+    "calendar": "Calendar",
+    "yearWeek": "Year {{year}} - Week {{week}}",
+    "results": "{{count}} results",
+    "activeFilters": "Active Filters",
+    "activeCount": "{{count}} active",
+    "globalLabel": "Global: \"{{search}}\"",
+    "yearWeekLabel": "Year {{year}} - Week {{week}}",
+    "noActiveFilters": "No active filters",
+    "country": "Country",
+    "state": "State",
+    "city": "City"
+  },
+  "weekdays": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
+  },
+  "table": {
+    "actions": "Actions",
+    "status": "Status",
+    "reference": "Reference",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "company": "Company",
+    "job": "Job",
+    "weight": "Weight",
+    "date": "Date",
+    "location": "Location",
+    "weekday": "Weekday",
+    "address": "Address",
+    "email": "Email",
+    "phone": "Phone",
+    "payStatus": "Pay Status",
+    "truckType": "Truck Type",
+    "distance": "Distance (mi)",
+    "expense": "Expense",
+    "income": "Income",
+    "totalCost": "Total Cost",
+    "createdBy": "Created By",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "loading": "Loading data...",
+    "noOrdersTitle": "No Orders Found",
+    "noOrdersDesc": "There are no orders available for the selected filters. Try adjusting your search criteria or create a new order.",
+    "noOrdersTip": "Tip: Check your week and filter settings above",
+    "rowsPerPage": "Rows per page:",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "collapseOperators": "Collapse Operators",
+    "expandOperators": "Expand Operators",
+    "noOperators": "No operators assigned",
+    "orderFinished": "Order finished",
+    "finishOrder": "Finish Order",
+    "moreActions": "More actions",
+    "copyToClipboard": "Copy to clipboard",
+    "copied": "Copied!"
+  },  "operatorsTable": {
+  "title": "Assigned Operators",
+  "add": "Edit",
+  "addFirst": "Add First Operator",
+  "noOperators": "No operators assigned yet",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "role": "Role",
+  "code": "Code",
+  "salary": "Salary",
+  "bonus": "Bonus",
+  "date": "Date",
+  "timeWorked": "Time Worked",
+  "route": "Route",
+  "status": "Status",
+  "viewRoute": "View Route",
+  "noCoordinates": "No coordinates",
+  "endMissing": "End location missing",
+  "startMissing": "Start location missing",
+  "viewRouteTitle": "View route on map",
+  "finalizingTitle": "Finalizing...",
+  "clickToFinish": "Click to finish",
+  "total": "Total",
+  "tooltipStart": "Start",
+  "tooltipEnd": "End",
+  "finishSuccess": "Operator finished successfully",
+  "finishError": "Error finishing operator",
+  "finishing": "Finalizing..."
+},
+"contextMenu": {
+  "continueOrder": "Continue Order",
+  "finishOrder": "Finish Order",
+  "alreadyFinished": "Already Finished",
+  "editOrder": "Edit Order",
+  "inactivateOrder": "Inactivate Order",
+  "deleteOrder": "Delete Order (Absolute)",
+  "viewDispatchTicket": "View Dispatch Ticket",
+  "addFuelCost": "Add Fuel Cost"
+},"costFuels": {
+  "title": "Fuel Costs",
+  "add": "Add",
+  "addFuelCost": "Add Fuel Cost",
+  "noFuelCosts": "No fuel costs assigned yet",
+  "id": "ID",
+  "truck": "Truck",
+  "totalCost": "Total Cost",
+  "costPerGallon": "$/Gal",
+  "gallons": "Gallons",
+  "distance": "Distance",
+  "date": "Date",
+  "totalRecords": "Total Records",
+  "totalCostLabel": "Total Cost",
+  "totalGallons": "Total Gallons"
+},
+"createOrder": {
+  "title": "Create New Order",
+  "subtitle": "Order Management System",
+  "sections": {
+    "orderInfo": "Order Information",
+    "location": "Location Details",
+    "business": "Business Details",
+    "customer": "Customer Information",
+    "dispatch": "Dispatch Ticket"
+  },
+  "fields": {
+    "reference": "Reference",
+    "date": "Date",
+    "address": "Address",
+    "weight": "Weight (lb)",
+    "weightPlaceholder": "Enter weight in pounds",
+    "weightHelper": "Enter weight in pounds (e.g., 1500 or 1500.50)",
+    "weightError": "Please enter a valid number",
+    "country": "Country",
+    "state": "State/Province",
+    "city": "City",
+    "job": "Job",
+    "company": "Company",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phone": "Phone",
+    "location": "Location"
+  },
+  "dispatch": {
+    "upload": "Upload ticket image (optional)",
+    "change": "Change ticket image",
+    "remove": "Remove ticket",
+    "preview": "Dispatch Ticket Preview"
+  },
+  "buttons": {
+    "edit": "Edit",
+    "create": "Create Order",
+    "creating": "Creating Order..."
+  },
+  "messages": {
+    "success": "Order created successfully",
+    "error": "Sorry there was an error creating the order",
+    "errorDefault": "Error creating order, please try again later.",
+    "weightInvalid": "Please enter a valid weight greater than 0",
+    "imageTooLarge": "Sorry, the image cannot be larger than 5mb.",
+    "noJobs": "No jobs available",
+    "noCompanies": "No companies registered"
+  },
+  "suggestions": {
+    "jobTitle": "No jobs available",
+    "jobMessage": "You need to create at least one job before creating an order.",
+    "createJob": "Create Job",
+    "companyTitle": "No companies registered",
+    "companyMessage": "You need to register at least one company before creating an order.",
+    "createCompany": "Register Company"
   }
+},
+"payroll": {
+  "header": {
+    "title": "Operators Payroll",
+    "subtitle": "Manage and track operator payments efficiently"
+  },
+  "controls": {
+    "searchLabel": "Search Operators",
+    "searchPlaceholder": "Search by code, name...",
+    "clearSearch": "Clear search",
+    "locationLabel": "Location",
+    "clearLocation": "Clear",
+    "clearLocationTitle": "Clear location",
+    "selectPlaceholder": "Select {{label}}",
+    "period": "Payroll Period (Week {{week}}, {{year}})",
+    "country": "Country",
+    "state": "State",
+    "city": "City"
+  },
+  "stats": {
+    "workingDays": "Working Days",
+    "filteredOperators": "Filtered Operators",
+    "totalOperators": "Total Operators",
+    "paymentStatus": "Payment Status",
+    "paid": "Paid",
+    "pending": "Pending",
+    "pendingAmount": "Pending Amount",
+    "operatorsPending": "{{count}} operator pending",
+    "operatorsPending_plural": "{{count}} operators pending",
+    "totalExpenses": "Total Expenses",
+    "deductedFromPay": "Deducted from pay",
+    "totalToPay": "Total to Pay",
+    "afterExpenses": "After expenses",
+    "grandTotal": "Grand Total",
+    "beforeExpenses": "Before expenses",
+    "full": "Full: {{amount}}"
+  }
+},
+"payrollTable": {
+  "pay": "Pay",
+  "code": "Code",
+  "cost": "Cost",
+  "name": "Name",
+  "lastName": "Last Name",
+  "additionalBonuses": "Additional Bonuses",
+  "expenses": "Expenses",
+  "grandTotal": "Grand Total",
+  "totalToPay": "Total to Pay",
+  "noResultsSearch": "No operators found matching \"{{search}}\"",
+  "noData": "No data available",
+  "adjustCriteria": "Try adjusting your search criteria"
+},
+"createWarehouse": {
+  "title": "Create Warehouse Order",
+  "subtitle": "Warehouse Management System",
+  "sections": {
+    "orderInfo": "Order Information",
+    "location": "Location Details",
+    "factory": "Customer Factory",
+    "dispatch": "Dispatch Ticket"
+  },
+  "fields": {
+    "date": "Date",
+    "country": "Country",
+    "state": "State",
+    "city": "City",
+    "selectPlaceholder": "Select {{label}}",
+    "customerFactory": "Customer Factory",
+    "selectedLocation": "Selected Location"
+  },
+  "dispatch": {
+    "upload": "Upload Dispatch Ticket",
+    "imageSelected": "Image selected",
+    "remove": "Remove ticket",
+    "selected": "Selected",
+    "preview": "Dispatch Ticket Preview"
+  },
+  "buttons": {
+    "clear": "Clear",
+    "create": "Create Warehouse Order",
+    "creating": "Creating Warehouse Order..."
+  },
+  "messages": {
+    "imageTooLarge": "Sorry, the image cannot be larger than 5mb.",
+    "noFactory": "Please select a customer factory.",
+    "noLocation": "Please select a location.",
+    "success": "Warehouse order created successfully!",
+    "errorLoading": "Error loading customer factories"
+  }
+},"applyToOrders": {
+  "titleResult": "Apply Results",
+  "titleConfirm": "Apply Statement to Orders",
+  "keyRef": "Key Ref: {{keyref}} - {{count}} order(s)",
+  "applying": "Applying amounts to orders...",
+  "totalOrders": "Total Orders",
+  "updated": "Updated",
+  "skipped": "Skipped",
+  "failed": "Failed",
+  "successAlert": "Successfully applied amounts to {{count}} order(s)!",
+  "warningAlert": "Some orders failed to update. Check details below.",
+  "skippedAlert": "All orders were skipped because they already have values.",
+  "distributionPerOrder": "Distribution per Order:",
+  "income": "Income",
+  "expense": "Expense",
+  "orderKey": "Order Key",
+  "previousIncome": "Previous Income",
+  "newIncome": "New Income",
+  "previousExpense": "Previous Expense",
+  "newExpense": "New Expense",
+  "action": "Action",
+  "matchingOrders": "This statement record has <strong>{{count}} matching order(s)</strong>. Choose how to apply the amounts.",
+  "statementAmounts": "Statement Amounts:",
+  "warningValues": "⚠️ Some orders already have values",
+  "warningValuesCaption": "Choose your action carefully to avoid overwriting existing data.",
+  "selectAction": "Select Action:",
+  "autoTitle": "Auto (Recommended)",
+  "autoDesc": "Only updates orders with income/expense at 0 or NULL. Safe option that won't overwrite existing data.",
+  "overwriteTitle": "Overwrite",
+  "overwriteDesc": "Replaces all order amounts with distributed values from the statement. Use when you trust the statement over existing orders.",
+  "addTitle": "Add",
+  "addDesc": "Adds distributed statement amounts to existing order values. Use when you want to combine both sources.",
+  "distributionNote": "<strong>Distribution:</strong> Amounts will be divided equally among all {{count}} order(s). Each order will receive ${{income}} income and ${{expense}} expense.",
+  "noVerification": "No verification data available",
+  "close": "Close",
+  "applyButton": "Apply to Orders"
+},
+"bulkUpdate": {
+  "titleResult": "Update Results",
+  "titleConfirm": "Confirm State Update",
+  "subtitle": "Update states for selected statement records",
+  "updating": "Updating statement record states...",
+  "totalUpdates": "Total Updates",
+  "successful": "Successful",
+  "failed": "Failed",
+  "successAlert": "All records updated successfully!",
+  "warningAlert": "Some records failed to update. Check details below.",
+  "errorAlert": "All updates failed. Check details below.",
+  "status": "Status",
+  "recordId": "Record ID",
+  "previousState": "Previous State",
+  "newState": "New State",
+  "message": "Message",
+  "updatedSuccess": "Updated successfully",
+  "unknownError": "Unknown error",
+  "readyTitle": "Ready to Update Statement Record States",
+  "readyDesc": "This operation will only update the <strong>state field</strong> of the selected statement records and <strong>the income and expense amount.</strong>",
+  "readyNote": "To update order amounts, use the \"Apply to Orders\" option after verification.",
+  "footerNote": "Note: You can verify the changes after updating by refreshing the statements table.",
+  "close": "Close",
+  "confirmButton": "Confirm Update"
+},
+"statementTable": {
+  "keyRef": "Key Ref",
+  "week": "Week",
+  "shipper": "Shipper",
+  "income": "Income",
+  "expense": "Expense",
+  "state": "State",
+  "copyToClipboard": "Copy to clipboard",
+  "copied": "Copied!",
+  "loading": "Loading data...",
+  "noRecordsTitle": "No Statement Records Found",
+  "noRecordsDesc": "There are no statement records available for the selected week. Try adjusting your week selection or filter criteria.",
+  "noRecordsTip": "Tip: Check your week and filter settings above",
+  "rowsPerPage": "Rows per page:",
+  "of": "of",
+  "previous": "Previous",
+  "next": "Next",
+  "stateLabel": "State for {{keyref}}",
+  "stateExists": "Exists",
+  "stateNotExists": "Not_exists",
+  "stateProcessed": "Processed",
+  "failedUpdateState": "Failed to update state"
+},"statementFilters": {
+  "title": "Statement Records - Week {{week}}, {{year}}",
+  "weekLabel": "Week",
+  "yearLabel": "Year",
+  "dateRange": "Date Range:",
+  "searchTitle": "Search",
+  "searchLabel": "Search by Key Ref or Shipper",
+  "searchPlaceholder": "Enter key ref or shipper name...",
+  "searchHelper": "Type to search across key references and shipper names",
+  "weekSummary": "Week Summary",
+  "records": "Records",
+  "income": "Income",
+  "expense": "Expense",
+  "net": "Net",
+  "statusBreakdown": "Status Breakdown:",
+  "stateNotExists": "Not Exists",
+  "stateExists": "Exists",
+  "stateProcessed": "Processed"
+},
+"statementPage": {
+  "title": "Statements",
+  "subtitle": "Manage statement records and imports",
+  "uploadButton": "Upload PDFs (OCR)",
+  "verifyWarning": "Please select at least one record to verify",
+  "verifiedSuccess": "Verified {{count}} records",
+  "verifyFailed": "Verification failed: {{message}}",
+  "verifyWarningMissing": "{{warning}} - Missing IDs: {{ids}}",
+  "noUpdates": "No updates to apply",
+  "updatedRecords": "Updated {{success}}/{{total}} records",
+  "updateFailed": "Update failed: {{message}}",
+  "appliedOrders": "Applied to {{updated}} order(s), {{skipped}} skipped",
+  "applyFailed": "Failed to apply: {{message}}",
+  "startingMode": "Starting document processing in {{mode}} mode...",
+  "processedFiles": "Processed {{success}}/{{total}} files",
+  "unexpectedError": "Unexpected error: {{message}}"
+},
+"statementsList": {
+  "errorLoading": "Error loading statements",
+  "stateUpdated": "Statement {{keyref}} state updated to {{state}}",
+  "exportExcelPending": "Export to Excel functionality to be implemented",
+  "exportPDFPending": "Export to PDF functionality to be implemented"
+},"verificationResultsDialog": {
+  "title": "Verification Results",
+  "summary": "Total Records: {{total}} | With Matches: {{withMatches}} | Without Matches: {{withoutMatches}}",
+  "alertInfo": "Select records to update. The suggested state will be applied to selected records and the statement record income will be updated according to the orders.",
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All",
+  "table": {
+    "keyRef": "Key Ref",
+    "currentState": "Current State",
+    "suggestedState": "Suggested State",
+    "matches": "Matches",
+    "actions": "Actions"
+  },
+  "matchChip": "{{count}} order(s)",
+  "noMatches": "No matches",
+  "amountComparison": {
+    "title": "Amount Comparison",
+    "statementIncome": "Statement Income",
+    "ordersIncome": "Orders Income",
+    "difference": "Difference",
+    "statementExpense": "Statement Expense",
+    "ordersExpense": "Orders Expense"
+  },
+  "matchingOrders": {
+    "title": "Matching Orders ({{count}})",
+    "applyToOrders": "Apply to Orders",
+    "noMatchingOrders": "No matching orders found for this statement record",
+    "table": {
+      "orderKey": "Order Key",
+      "income": "Income",
+      "expense": "Expense",
+      "date": "Date",
+      "status": "Status"
+    }
+  },
+  "noData": "No verification data available",
+  "actions": {
+    "cancel": "Cancel",
+    "applyChanges": "Apply Changes ({{count}})"
+  }
+},
+"statistics": {
+  "title": "Statistics Dashboard",
+  "loadingStatistics": "Loading statistics...",
+  "errorTitle": "Error Loading Statistics",
+  "tryAgain": "Try Again",
+  "tabs": {
+    "overview": "Business Overview",
+    "trucks": "Vehicle Logistics",
+    "payroll": "Payroll Analytics",
+    "historical": "Historical Analysis",
+    "financials": "Financials",
+    "expenseBreakdown": "Expense Breakdown",
+    "loans": "Operator Loans"
+  },
+  "stats": {
+    "totalOrders": "Total Orders",
+    "avgOrdersDay": "Avg Orders/Day",
+    "peakDayOrders": "Peak Day Orders",
+    "activeDays": "Active Days",
+    "activeClients": "Active Clients",
+    "factories": "Factories"
+  }
+},
+"payrollStatistics": {
+  "loadingPayroll": "Loading payroll data...",
+  "errorTitle": "Error Loading Payroll",
+  "tabs": {
+    "directory": "Employee Directory",
+    "ranking": "Weekly Operator Ranking",
+    "inactive": "Inactive Operators"
+  },
+  "directory": {
+    "title": "Payroll Overview",
+    "subtitle": "Manage employee salaries and information",
+    "totalPayroll": "Total Payroll",
+    "totalEmployees": "Total Employees",
+    "averageSalary": "Average Salary",
+    "activeStatus": "Active Status",
+    "searchPlaceholder": "Search employees by name, email, or code...",
+    "showing": "Showing {{filtered}} of {{total}} employees",
+    "noMatch": "No employees found matching \"{{term}}\"",
+    "tableTitle": "Employee Directory",
+    "colEmployee": "Employee",
+    "colEmail": "Email",
+    "colSalary": "Salary",
+    "colStatus": "Status",
+    "code": "Code: {{code}}",
+    "noEmployees": "No employees available",
+    "totalPayrollMonthly": "Total Monthly Payroll",
+    "averageMonthlySalary": "Average Monthly Salary",
+    "averageWeeklySalary": "Average Weekly Salary",
+    "hourlyEmployees": "Hourly Employees",
+    "dailyEmployees": "Daily Employees",
+    "hourlyRate": "Hourly rate",
+    "dailyRate": "Daily rate"
+  },
+  "ranking": {
+    "title": "Weekly Operator Ranking",
+    "subtitle": "Most assigned operators for week {{week}}, {{year}}",
+    "weekRange": "Week range: {{start}} → {{end}}",
+    "labelYear": "Year:",
+    "labelWeek": "Week:",
+    "loading": "Loading ranking...",
+    "colRank": "#",
+    "colEmployee": "Employee",
+    "colEmail": "Email",
+    "colAssignments": "Assignments"
+  },
+  "inactive": {
+    "title": "Inactive Operators",
+    "subtitle": "Operators currently inactive",
+    "searchPlaceholder": "Search inactive operators by name or email...",
+    "showing": "Showing {{filtered}} of {{total}} inactive operators",
+    "noMatch": "No operators found matching \"{{term}}\"",
+    "loading": "Loading inactive operators...",
+    "colEmployee": "Employee",
+    "colEmail": "Email",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "activate": "Activate",
+    "noInactive": "No inactive operators available",
+    "activatedSuccess": "Operator activated successfully",
+    "activateError": "Error activating operator"
+  },
+  "errors": {
+    "loadOperators": "Error loading operators",
+    "loadRanking": "Error loading ranking",
+    "loadInactive": "Error loading inactive operators"
+  }
+},
+"weeklyFinancialSummary": {
+  "loading": "Loading payment status...",
+  "title": "Weekly Financial Summary",
+  "totalOrders": "Total Orders",
+  "metrics": {
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "netProfit": "Net Profit",
+    "margin": "{{value}}% margin"
+  },
+  "charts": {
+    "paymentDistribution": "Payment Distribution",
+    "weeklyComparison": "Weekly Comparison ($K)"
+  },
+  "pie": {
+    "paidOrders": "Paid Orders",
+    "unpaidOrders": "Unpaid Orders",
+    "tooltipOrders": "Orders",
+    "tooltipAmount": "Amount"
+  },
+  "bar": {
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "income": "Income",
+    "expenses": "Expenses",
+    "profit": "Profit",
+    "tooltipOrders": "Orders",
+    "tooltipAmount": "Amount"
+  }
+},
+"paidUnpaidChart": {
+  "error": {
+    "title": "System Error",
+    "retry": "Retry Connection"
+  },
+  "header": {
+    "title": "Payment Analytics",
+    "refresh": "REFRESH",
+    "export": "EXPORT"
+  },
+  "metrics": {
+    "totalOrders": "Total Orders",
+    "paidOrders": "Paid Orders",
+    "successRate": "Success Rate",
+    "peakWeek": "Peak Week"
+  },
+  "controls": {
+    "periodSelection": "Period Selection",
+    "year": "Year",
+    "startWeek": "Start Week",
+    "endWeek": "End Week",
+    "quickPresets": "Quick Presets",
+    "preset4": "4 weeks",
+    "preset12": "12 weeks",
+    "preset26": "6 months"
+  },
+  "summary": {
+    "title": "Summary",
+    "total": "TOTAL",
+    "paid": "PAID",
+    "unpaid": "UNPAID",
+    "rate": "RATE"
+  },
+  "chart": {
+    "title": "Payment Trends",
+    "initialized": "✅ Initialized",
+    "notInitialized": "❌ Not Initialized",
+    "dataPoints": "Data Points: {{count}}",
+    "chartStatus": "Chart Status: {{status}} | Data Points: {{count}}",
+    "clickHintMobile": "Tap bars for details • Use slider to zoom",
+    "clickHintDesktop": "Click bars for details • Use slider to zoom",
+    "seriesPaid": "Paid",
+    "seriesUnpaid": "Unpaid",
+    "seriesTotal": "Total",
+    "yAxisLabel": "Orders",
+    "tooltipWeek": "Week {{week}}"
+  },
+  "loading": {
+    "title": "Processing Data",
+    "subtitle": "Analyzing {{weeks}} weeks"
+  },
+  "noData": {
+    "title": "No Data Available",
+    "descMobile": "No payment records found. Try expanding the search range.",
+    "descDesktop": "No payment records found in the specified temporal range. Expand search parameters or verify data availability.",
+    "rescan": "Rescan Database",
+    "try12": "Try 12 weeks",
+    "try26": "Try 26 weeks"
+  }
+},
+"ordersReportDialog": {
+  "title": "Orders Profit Report - Week {{week}}",
+  "printFull": "Print Full Report",
+  "printUnpaid": "Print Unpaid Only",
+  "stats": {
+    "totalOrders": "Total Orders",
+    "paidOrders": "Paid Orders",
+    "unpaidOrders": "Unpaid Orders",
+    "paymentRate": "Payment Rate"
+  },
+  "paid": {
+    "title": "Paid Orders ({{count}})",
+    "empty": "No paid orders for this week."
+  },
+  "unpaid": {
+    "title": "Unpaid Orders ({{count}})",
+    "empty": "No unpaid orders for this week."
+  },
+  "table": {
+    "orderRef": "Order Ref",
+    "client": "Client",
+    "factory": "Factory",
+    "date": "Date"
+  }
+},
+"exportMenu": {
+  "button": {
+    "exporting": "Exporting...",
+    "exportMobile": "Export",
+    "exportFull": "Export Data"
+  },
+  "header": {
+    "title": "Export Payment Analytics",
+    "rangeSubtitle": "Weeks {{start}}-{{end}}, {{year}} • {{total}} orders",
+    "historicSubtitle": "Historic Data {{year}} • {{total}} orders"
+  },
+  "excel": {
+    "label": "Export to Excel",
+    "description": "Complete data with formatting (.xlsx)"
+  },
+  "pdf": {
+    "label": "Export to PDF",
+    "description": "Professional report with summary (.pdf)"
+  },
+  "footer": {
+    "rangeHint": "Week range {{start}}-{{end}} data will be exported",
+    "historicHint": "Historic data from {{year}} will be exported"
+  }
+},
+"exportDialog": {
+  "title": "Export Payment Analytics",
+  "dataMode": {
+    "label": "Data Mode",
+    "range": "Week Range Export",
+    "rangeDesc": "Export specific week range with customizable parameters",
+    "historic": "Historic Export",
+    "historicDesc": "Export all available historical data (all years and weeks)"
+  },
+  "rangeConfig": {
+    "title": "Week Range Configuration",
+    "year": "Year",
+    "startWeek": "Start Week",
+    "endWeek": "End Week"
+  },
+  "historicConfig": {
+    "title": "Historic Data Export",
+    "info": "This will export all available historical payment data from the database. No date range selection needed - all records will be included."
+  },
+  "format": {
+    "label": "Export Format",
+    "excel": "Excel (.xlsx)",
+    "pdf": "PDF Report"
+  },
+  "validation": {
+    "specifyWeeks": "Please specify both start and end weeks",
+    "startBeforeEnd": "Start week cannot be greater than end week",
+    "weeksRange": "Weeks must be between 1 and 53",
+    "failed": "Export failed"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "exporting": "Exporting...",
+    "export": "Export {{format}}"
+  }
+},
+"summaryCost": {
+  "title": "Summary Cost Management",
+  "subtitle": "Manage summary costs for work orders by week and year",
+  "filters": {
+    "searchPlaceholder": "Search by reference, customer, location, or cost...",
+    "timeFilters": "Time Filters:",
+    "year": "Year:",
+    "mode": "Mode:",
+    "modeSingleWeek": "Single Week",
+    "modeWeekRange": "Week Range",
+    "week": "Week:",
+    "startWeek": "Start Week:",
+    "endWeek": "End Week:",
+    "summary": "Summary:",
+    "summaryWeek": "Year {{year}}, Week {{week}}",
+    "summaryRange": "Year {{year}}, Weeks {{start}}-{{end}}"
+  },
+  "pagination": {
+    "totalRecords": "Total records: {{count}} | Showing page {{page}} of {{total}}",
+    "previous": "← Previous",
+    "next": "Next →",
+    "page": "Page {{page}}",
+    "recordsPerPage": "Records per page:"
+  }
+},
+"weekPicker": {
+  "label": "Week",
+  "selectWeek": "Select week ({{min}}-{{max}})",
+  "switchToInput": "Switch to input",
+  "switchToDropdown": "Switch to dropdown",
+  "pressEnter": "Press Enter",
+  "valid": "Valid: {{min}}-{{max}}",
+  "previousWeek": "Previous week",
+  "nextWeek": "Next week",
+  "close": "Close",
+  "first": "First",
+  "mid": "Mid",
+  "last": "Last",
+  "selectWeekTitle": "Select week {{week}}"
+},
+"yearPicker": {
+  "label": "Year",
+  "selectYear": "Select year ({{min}}-{{max}})",
+  "switchToInput": "Input",
+  "switchToGrid": "Grid",
+  "pressEnter": "Press Enter",
+  "valid": "Valid: {{min}}-{{max}}",
+  "previousYear": "Previous year",
+  "nextYear": "Next year",
+  "close": "Close",
+  "first": "First ({{year}})",
+  "current": "Current ({{year}})",
+  "last": "Last ({{year}})",
+  "currentLabel": "current",
+  "selectedLabel": "selected"
+},
+"weekYearPicker": {
+  "label": "Select Week & Year",
+  "dialogTitle": "Select Week & Year",
+  "calendarView": "Calendar View",
+  "listView": "List View",
+  "week": "Week {{week}}",
+  "currentChip": "Current",
+  "selectedChip": "Selected",
+  "cancel": "Cancel",
+  "today": "Today"
+},
+"summaryCostTable": {
+  "columns": {
+    "actions": "Actions",
+    "reference": "Reference",
+    "date": "Date",
+    "location": "Location",
+    "status": "Status",
+    "customer": "Customer",
+    "income": "Income",
+    "expense": "Expense",
+    "totalCost": "Total Cost"
+  },
+  "loading": "Loading summary costs...",
+  "empty": {
+    "title": "No Summary Data Found",
+    "desc": "There are no summary costs available for the selected filters. Try adjusting your search criteria.",
+    "tip": "Tip: Check your week and filter settings above"
+  },
+  "expand": {
+    "collapse": "Collapse Details",
+    "expand": "Expand Details"
+  },
+  "moreActions": "More actions",
+  "copyToClipboard": "Copy to clipboard",
+  "footer": {
+    "total": "Total: {{count}} orders | Selected: {{selected}}",
+    "showing": "Showing {{count}} results"
+  },
+  "details": {
+    "order": "Order",
+    "reference": "Reference",
+    "date": "Date",
+    "location": "Location",
+    "status": "Status",
+    "customer": "Customer",
+    "income": "Income",
+    "expense": "Expense",
+    "summaryBreakdown": "Summary Breakdown",
+    "fuelCost": "Fuel Cost",
+    "workCost": "Work Cost",
+    "driverSalaries": "Driver Salaries",
+    "otherSalaries": "Other Salaries",
+    "additional": "Additional",
+    "customerFactory": "Customer Factory",
+    "bonus": "Bonus",
+    "totalCost": "Total Cost"
+  }
+}
 }

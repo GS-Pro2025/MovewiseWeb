@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
@@ -15,7 +16,6 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Habilita scroll suave con CSS nativo
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
   }, []);
@@ -28,8 +28,26 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    void i18n.changeLanguage(event.target.value);
+  const languages = [
+    {
+      code: "en",
+      label: "English",
+      flag: "https://flagcdn.com/us.svg",
+    },
+    {
+      code: "es",
+      label: "Español",
+      flag: "https://flagcdn.com/es.svg",
+    },
+  ];
+
+  const currentLang = languages.find(
+    (lang) => lang.code === i18n.language
+  );
+
+  const changeLanguage = (code: string) => {
+    void i18n.changeLanguage(code);
+    setLangOpen(false);
   };
 
   return (
@@ -42,6 +60,7 @@ const Navbar: React.FC = () => {
     >
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-8">
+
           {/* Logo */}
           <a href="#home" onClick={() => scrollToSection("home")}>
             <img
@@ -62,6 +81,7 @@ const Navbar: React.FC = () => {
             >
               {t("nav.features")}
             </a>
+
             <a
               href="#benefits"
               onClick={() => scrollToSection("benefits")}
@@ -71,6 +91,7 @@ const Navbar: React.FC = () => {
             >
               {t("nav.benefits")}
             </a>
+
             <a
               href="#plans"
               onClick={() => scrollToSection("plans")}
@@ -80,6 +101,7 @@ const Navbar: React.FC = () => {
             >
               {t("nav.plans")}
             </a>
+
             <a
               href="#contact"
               onClick={() => scrollToSection("contact")}
@@ -99,19 +121,52 @@ const Navbar: React.FC = () => {
             </RouterLink>
           </div>
 
-          <div className="hidden md:flex items-center ml-4">
-            <label className={`mr-2 text-sm ${isScrolled ? "text-[#0B2863]" : "text-white"}`}>
+          {/* Language Desktop */}
+          <div className="hidden md:flex items-center ml-4 relative">
+            <label
+              className={`mr-2 text-sm ${
+                isScrolled ? "text-[#0B2863]" : "text-white"
+              }`}
+            >
               {t("nav.language")}
             </label>
-            <select
-              value={i18n.language}
-              onChange={handleLanguageChange}
-              className="rounded-full px-3 py-1 text-sm bg-white/90 text-[#0B2863] border border-white/60 focus:outline-none"
-              aria-label={t("nav.language")}
-            >
-              <option value="en">EN</option>
-              <option value="es">ES</option>
-            </select>
+
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(!langOpen)}
+                className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm bg-white/90 text-[#0B2863] border border-white/60 hover:shadow-md transition"
+              >
+                <img
+                  src={currentLang?.flag}
+                  alt={currentLang?.label}
+                  className="w-4 h-4 rounded-sm object-cover"
+                />
+                {currentLang?.code.toUpperCase()}
+              </button>
+
+              {langOpen && (
+                <div className="absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fadeIn">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 transition ${
+                        i18n.language === lang.code
+                          ? "bg-gray-100 font-medium"
+                          : ""
+                      }`}
+                    >
+                      <img
+                        src={lang.flag}
+                        alt={lang.label}
+                        className="w-4 h-4 rounded-sm object-cover"
+                      />
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Botón menú móvil */}
@@ -125,7 +180,6 @@ const Navbar: React.FC = () => {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 {isOpen ? (
                   <path
@@ -152,56 +206,72 @@ const Navbar: React.FC = () => {
       {isOpen && (
         <div className="md:hidden bg-white/90 backdrop-blur-md shadow-lg">
           <div className="flex flex-col items-center space-y-4 py-4">
-            <a
-              href="#features"
-              onClick={() => scrollToSection("features")}
-              className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
-            >
+
+            <a href="#features" onClick={() => scrollToSection("features")}>
               {t("nav.features")}
             </a>
-            <a
-              href="#benefits"
-              onClick={() => scrollToSection("benefits")}
-              className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
-            >
+
+            <a href="#benefits" onClick={() => scrollToSection("benefits")}>
               {t("nav.benefits")}
             </a>
-            <a
-              href="#plans"
-              onClick={() => scrollToSection("plans")}
-              className="cursor-pointer text-blue-950 hover:text-[#FFE67B]"
-            >
+
+            <a href="#plans" onClick={() => scrollToSection("plans")}>
               {t("nav.plans")}
             </a>
+
             <a
               href="#contact"
               onClick={() => scrollToSection("contact")}
-              className="cursor-pointer bg-[#FFE67B] px-6 py-2 rounded-full font-semibold hover:bg-[#FFE67BCC]"
+              className="bg-[#FFE67B] px-6 py-2 rounded-full font-semibold"
             >
               {t("nav.contact")}
             </a>
 
-            {/* Login/Register en móvil */}
             <RouterLink
               to="/login"
               onClick={() => setIsOpen(false)}
-              className="bg-blue-950 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-800 transition inline-block"
+              className="bg-blue-950 text-white px-6 py-2 rounded-full font-semibold"
             >
               {t("nav.loginRegister")}
             </RouterLink>
 
-            <div className="flex items-center gap-2">
-              <span className="text-blue-950 text-sm">{t("nav.language")}</span>
-              <select
-                value={i18n.language}
-                onChange={handleLanguageChange}
-                className="rounded-full px-3 py-1 text-sm bg-white text-blue-950 border border-blue-950/20 focus:outline-none"
-                aria-label={t("nav.language")}
+            {/* Language Mobile */}
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(!langOpen)}
+                className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm bg-white text-blue-950 border border-blue-950/20"
               >
-                <option value="en">EN</option>
-                <option value="es">ES</option>
-              </select>
+                <img
+                  src={currentLang?.flag}
+                  alt={currentLang?.label}
+                  className="w-4 h-4 rounded-sm object-cover"
+                />
+                {currentLang?.code.toUpperCase()}
+              </button>
+
+              {langOpen && (
+                <div className="absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        changeLanguage(lang.code);
+                        setIsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100"
+                    >
+                      <img
+                        src={lang.flag}
+                        alt={lang.label}
+                        className="w-4 h-4 rounded-sm object-cover"
+                      />
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
           </div>
         </div>
       )}

@@ -1,20 +1,20 @@
-// components/ExportMenuComponent.tsx
 import React, { useState } from 'react';
 import {
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Divider,
   Typography,
   Box,
   useMediaQuery,
   useTheme,
+  Chip
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableViewIcon from '@mui/icons-material/TableView';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
-import { FileDown } from 'lucide-react';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import { FileDown, TrendingUp, Calendar } from 'lucide-react';
 import { SuperOrder } from '../domain/ModelsOCR';
 import { ExportUtils } from '../util/ExportUtils';
 
@@ -25,7 +25,7 @@ interface ExportMenuComponentProps {
   year?: number;
   weekRange?: { start: string; end: string };
   disabled?: boolean;
-  fullWidth?: boolean; // Nueva prop para responsividad
+  fullWidth?: boolean;
 }
 
 const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
@@ -68,7 +68,6 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
     handleClose();
     
     try {
-      // Cambiar esta línea para usar la nueva función sin await
       ExportUtils.exportToPDF(superOrders, isSearchResults, week, year, weekRange);
     } finally {
       setIsExporting(false);
@@ -91,19 +90,19 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
     <button
       onClick={handleClick}
       disabled={disabled || isExporting || superOrders.length === 0}
-      className={`px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 justify-center ${
-        fullWidth ? 'w-full' : isMobile ? 'min-w-[120px]' : 'min-w-[140px]'
+      className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 justify-center ${
+        fullWidth ? 'w-full' : isMobile ? 'min-w-[100px]' : 'min-w-[120px]'
       } ${
         disabled || isExporting || superOrders.length === 0
-          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          : 'text-white hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
+          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          : 'text-white hover:shadow-md hover:-translate-y-0.5 active:translate-y-0'
       }`}
       style={{
         background: disabled || isExporting || superOrders.length === 0 
-          ? '#d1d5db' 
+          ? '#e5e7eb' 
           : 'linear-gradient(135deg, #FFE67B 0%, #fbbf24 100%)',
-        color: disabled || isExporting || superOrders.length === 0 ? '#6b7280' : '#0B2863',
-        minHeight: '48px'
+        color: disabled || isExporting || superOrders.length === 0 ? '#9ca3af' : '#0B2863',
+        minHeight: '36px'
       }}
       onMouseEnter={(e) => {
         if (!disabled && !isExporting && superOrders.length > 0) {
@@ -117,15 +116,12 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
       }}
     >
       {isExporting ? (
-        <CloudDownloadIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
+        <CloudDownloadIcon sx={{ fontSize: 16 }} className="animate-spin" />
       ) : (
-        <FileDown size={isMobile ? 16 : 18} />
+        <FileDown size={14} />
       )}
-      <span className="font-bold">
-        {isExporting 
-          ? (isMobile ? 'Exporting...' : 'Exporting...') 
-          : (isMobile ? 'Export' : fullWidth ? 'Export Data' : 'Export')
-        }
+      <span className="font-medium">
+        {isExporting ? '...' : isMobile ? 'Export' : 'Export'}
       </span>
     </button>
   );
@@ -142,161 +138,112 @@ const ExportMenuComponent: React.FC<ExportMenuComponentProps> = ({
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         PaperProps={{
           sx: {
-            borderRadius: '16px',
-            boxShadow: '0 12px 48px rgba(0,0,0,0.15)',
-            border: '2px solid #0B2863',
-            minWidth: isMobile ? '260px' : '280px',
-            maxWidth: isMobile ? '90vw' : '320px',
-            padding: '8px 0',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)'
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            border: '1px solid #0B2863',
+            minWidth: isMobile ? '220px' : '240px',
+            maxWidth: isMobile ? '90vw' : '280px',
+            py: 0.5
           }
         }}
       >
-        {/* Header */}
-        <Box 
-          sx={{ 
-            padding: isMobile ? '12px 16px 8px 16px' : '16px 20px 12px 20px',
-            background: '#0B2863',
-            borderRadius: '12px 12px 0 0',
-            margin: '-8px -0px 8px -0px'
-          }}
-        >
-          <Typography 
-            variant={isMobile ? "subtitle1" : "h6"}
-            sx={{ 
-              color: '#FFE67B', 
-              fontWeight: 700,
-              fontSize: isMobile ? '1rem' : '1.1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            📊 Export Financial Data
+        {/* Header compacto */}
+        <Box sx={{ 
+          px: 2, 
+          py: 1.5, 
+          bgcolor: '#0B2863',
+          borderBottom: '1px solid #FFE67B'
+        }}>
+          <Typography variant="subtitle2" sx={{ color: '#FFE67B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <AssessmentIcon sx={{ fontSize: 16 }} />
+            Export Data
           </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              color: '#ffffff', 
-              fontSize: isMobile ? '0.75rem' : '0.85rem',
-              mt: 0.5,
-              opacity: 0.9
-            }}
-          >
-            {summary.totalOrders} orders • ${summary.totalProfit.toLocaleString()} profit
-          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+            <Chip 
+              label={`${summary.totalOrders} orders`}
+              size="small"
+              sx={{ 
+                height: '20px', 
+                fontSize: '0.65rem',
+                bgcolor: 'rgba(255,255,255,0.2)',
+                color: 'white'
+              }}
+            />
+            <Chip 
+              icon={<TrendingUp size={10} />}
+              label={`$${summary.totalProfit.toLocaleString()}`}
+              size="small"
+              sx={{ 
+                height: '20px', 
+                fontSize: '0.65rem',
+                bgcolor: 'rgba(34, 197, 94, 0.3)',
+                color: 'white'
+              }}
+            />
+          </Box>
         </Box>
 
-        {/* Excel Export Option */}
+        {/* Excel Option */}
         <MenuItem 
           onClick={handleExportExcel} 
           disabled={isExporting}
           sx={{
-            padding: isMobile ? '10px 16px' : '12px 20px',
-            borderRadius: '8px',
-            margin: isMobile ? '4px 8px' : '4px 12px',
-            transition: 'all 0.2s ease',
+            py: 1,
+            px: 2,
+            mx: 1,
+            my: 0.5,
+            borderRadius: '6px',
             '&:hover': {
-              backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              transform: 'translateX(4px)',
+              backgroundColor: 'rgba(34, 197, 94, 0.08)',
             }
           }}
         >
-          <ListItemIcon sx={{ minWidth: isMobile ? '36px' : '40px' }}>
-            <TableViewIcon sx={{ color: '#22c55e', fontSize: isMobile ? 20 : 24 }} />
+          <ListItemIcon sx={{ minWidth: '32px' }}>
+            <TableViewIcon sx={{ color: '#22c55e', fontSize: 18 }} />
           </ListItemIcon>
           <ListItemText>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                fontWeight: 600, 
-                fontSize: isMobile ? '0.875rem' : '0.95rem', 
-                color: '#0B2863' 
-              }}
-            >
-              Export to Excel
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: '#6b7280',
-                fontSize: isMobile ? '0.7rem' : '0.75rem',
-                display: isMobile ? 'none' : 'block'
-              }}
-            >
-              Complete data with formatting (.xlsx)
+            <Typography variant="body2" sx={{ fontWeight: 500, color: '#0B2863' }}>
+              Excel (.xlsx)
             </Typography>
           </ListItemText>
         </MenuItem>
 
-        {/* PDF Export Option */}
+        {/* PDF Option */}
         <MenuItem 
           onClick={handleExportPDF} 
           disabled={isExporting}
           sx={{
-            padding: isMobile ? '10px 16px' : '12px 20px',
-            borderRadius: '8px',
-            margin: isMobile ? '4px 8px' : '4px 12px',
-            transition: 'all 0.2s ease',
+            py: 1,
+            px: 2,
+            mx: 1,
+            my: 0.5,
+            borderRadius: '6px',
             '&:hover': {
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              transform: 'translateX(4px)',
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
             }
           }}
         >
-          <ListItemIcon sx={{ minWidth: isMobile ? '36px' : '40px' }}>
-            <PictureAsPdfIcon sx={{ color: '#ef4444', fontSize: isMobile ? 20 : 24 }} />
+          <ListItemIcon sx={{ minWidth: '32px' }}>
+            <PictureAsPdfIcon sx={{ color: '#ef4444', fontSize: 18 }} />
           </ListItemIcon>
           <ListItemText>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                fontWeight: 600, 
-                fontSize: isMobile ? '0.875rem' : '0.95rem', 
-                color: '#0B2863' 
-              }}
-            >
-              Export to PDF
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: '#6b7280',
-                fontSize: isMobile ? '0.7rem' : '0.75rem',
-                display: isMobile ? 'none' : 'block'
-              }}
-            >
-              Professional report with summary (.pdf)
+            <Typography variant="body2" sx={{ fontWeight: 500, color: '#0B2863' }}>
+              PDF Report
             </Typography>
           </ListItemText>
         </MenuItem>
 
-        <Divider sx={{ 
-          margin: isMobile ? '6px 12px' : '8px 16px', 
-          borderColor: '#0B2863', 
-          opacity: 0.3 
-        }} />
-        
-        {/* Footer Info */}
-        <Box sx={{ padding: isMobile ? '6px 16px' : '8px 20px' }}>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: '#0B2863', 
-              fontSize: isMobile ? '0.7rem' : '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              lineHeight: 1.3
-            }}
-          >
-            💡 <span>
+        {/* Info Footer */}
+        <Box sx={{ px: 2, py: 1, borderTop: '1px solid #e5e7eb', mt: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Calendar size={12} style={{ color: '#6b7280' }} />
+            <Typography variant="caption" sx={{ color: '#6b7280' }}>
               {isSearchResults 
                 ? 'Search results' 
                 : `Week ${week}, ${year}`
-              } data will be exported
-            </span>
-          </Typography>
+              }
+            </Typography>
+          </Box>
         </Box>
       </Menu>
     </>

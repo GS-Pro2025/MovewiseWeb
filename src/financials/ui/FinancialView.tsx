@@ -492,9 +492,9 @@ const FinancialView = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
           <BarChart3 
             size={32} 
-            className="sm:w-10 sm:h-10 text-purple-600"
+            className="sm:w-10 sm:h-10 text-[#092962]"
           />
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent m-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#092962]">
             Financial Summary
           </h1>
         </div>

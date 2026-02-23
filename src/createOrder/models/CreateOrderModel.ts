@@ -16,7 +16,8 @@ export interface CreateOrderModel {
   person: Person;
   weight: number;
   job: number; 
-  customer_factory: number; 
+  customer_factory: number;
+  dispatch_ticket?: string; 
 }
 
 export interface OrderState {
