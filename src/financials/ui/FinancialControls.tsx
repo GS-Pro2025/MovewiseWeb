@@ -12,6 +12,7 @@ import { SuperOrder } from '../domain/ModelsOCR';
 import ExportMenuComponent from './ExportMenuComponent';
 import WeekPicker from '../../components/WeekPicker';
 import YearPicker from '../../components/YearPicker';
+import { useTranslation } from 'react-i18next';
 
 interface FinancialControlsProps {
   week: number;
@@ -38,6 +39,7 @@ interface FinancialControlsProps {
 }
 
 const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
+  const { t } = useTranslation();
   const {
     week,
     onWeekChange,
@@ -82,7 +84,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
           size="small"
           value={searchRef}
           onChange={(e) => onSearchRefChange(e.target.value)}
-          placeholder="Search reference"
+          placeholder={t('financialControls.searchPlaceholder')}
           onKeyDown={(e) => e.key === 'Enter' && searchRef && onSearch()}
           sx={{ minWidth: isMobile ? '100%' : 220 }}
           InputProps={{
@@ -96,7 +98,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
           onClick={onSearch}
           disabled={searchLoading || !searchRef}
         >
-          {searchLoading ? <RotateCcw size={14} className="animate-spin" /> : 'Search'}
+          {searchLoading ? <RotateCcw size={14} className="animate-spin" /> : t('financialControls.search')}
         </Button>
 
         {hasSearchResults && (
@@ -106,7 +108,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
             onClick={onClearSearch}
             startIcon={<RotateCcw size={14} />}
           >
-            Clear
+            {t('financialControls.clear')}
           </Button>
         )}
       </div>
@@ -120,7 +122,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
           startIcon={<UploadFileIcon />}
           onClick={onUploadClick}
         >
-          Upload OCR
+          {t('financialControls.uploadOcr')}
         </Button>
 
         <ExportMenuComponent
@@ -136,7 +138,7 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
       {/* SEARCH RESULT INDICATOR */}
       {hasSearchResults && (
         <div className="text-xs text-gray-600 border-t pt-2">
-          Results for <b>{searchRef}</b> — {exportData.length} orders
+          {t('financialControls.searchResultInfo', { ref: searchRef, count: exportData.length })}
         </div>
       )}
     </div>

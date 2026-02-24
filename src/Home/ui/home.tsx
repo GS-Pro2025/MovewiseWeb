@@ -18,6 +18,7 @@ import PaymentDialog from './PaymentDialog';
 import DeleteOrderDialog from './deleteOrderDialog';
 import CalendarDialog from './calendarDialog';
 import AssignOrderToCostFuelDialog from '../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog';
+import CreateExtraCostDialog from '../../extraCost/ui/components/CreateExtraCostDialog';
 
 // Services
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
@@ -141,7 +142,22 @@ const OrdersTable: React.FC = () => {
   const [filteredData, setFilteredData] = useState<NormalizedTableData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedRows, setSelectedRows] = useState<NormalizedTableData[]>([]);
-  
+  // Añade estos nuevos estados (junto con los otros estados)
+const [createExtraCostDialogOpen, setCreateExtraCostDialogOpen] = useState(false);
+const [selectedOrderForExtraCost, setSelectedOrderForExtraCost] = useState<NormalizedTableData | null>(null);
+
+// Añade este nuevo handler
+const handleCreateExtraCost = (order: NormalizedTableData) => {
+  setSelectedOrderForExtraCost(order);
+  setCreateExtraCostDialogOpen(true);
+};
+
+// Actualiza el handler de éxito para refrescar los costos
+const handleExtraCostSuccess = () => {
+  if (selectedOrderForExtraCost) {
+    handleRefreshCostFuels(selectedOrderForExtraCost.id);
+  }
+};
   // NUEVO: Estado para year
   const [year, setYear] = useState<number>(() => new Date().getFullYear());
   
@@ -632,6 +648,7 @@ const OrdersTable: React.FC = () => {
         onDeleteOrder={handleDeleteOrder}
         onViewDispatchTicket={handleViewDispatchTicket}
         onAddFuelCost={handleAddFuelCost}
+        onCreateExtraCost={handleCreateExtraCost} 
       />
 
       {/* Modals */}
@@ -778,6 +795,16 @@ const OrdersTable: React.FC = () => {
             handleRefreshCostFuels(selectedOrderForFuel.id);
           }
         }}
+      />
+      {/* Create Extra Cost Dialog */}
+      <CreateExtraCostDialog
+        open={createExtraCostDialogOpen}
+        onClose={() => {
+          setCreateExtraCostDialogOpen(false);
+          setSelectedOrderForExtraCost(null);
+        }}
+        id_order={selectedOrderForExtraCost?.id || ''}
+        onSuccess={handleExtraCostSuccess}
       />
     </Box>
   );

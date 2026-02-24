@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, MapPin, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { WeeklyFuelDataResponse, CostFuelWithOrders } from '../../domain/CostFuelWithOrders';
 import { generateCsv, download, mkConfig } from 'export-to-csv';
@@ -24,6 +25,7 @@ const ImagePreviewModal: React.FC<{
   onClose: () => void;
   fuelData?: { cost_gl: number; fuel_qty: number; cost_fuel: number; date: string };
 }> = ({ imageUrl, onClose, fuelData }) => {
+  const { t } = useTranslation();
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-lg"
@@ -38,10 +40,14 @@ const ImagePreviewModal: React.FC<{
           <div className="flex items-center gap-3 text-white">
             <ImageIcon size={24} />
             <div>
-              <h3 className="font-bold text-lg">Fuel Receipt</h3>
+              <h3 className="font-bold text-lg">{t('resumeFuelTable.receipt.title')}</h3>
               {fuelData && (
                 <p className="text-sm text-blue-100">
-                  ${fuelData.cost_gl.toFixed(2)}/gl • {fuelData.fuel_qty.toFixed(1)}gl • Total: ${fuelData.cost_fuel.toFixed(2)}
+                  {t('resumeFuelTable.receipt.details', {
+                    costGl: fuelData.cost_gl.toFixed(2),
+                    fuelQty: fuelData.fuel_qty.toFixed(1),
+                    costFuel: fuelData.cost_fuel.toFixed(2),
+                  })}
                   {fuelData.date && ` • ${new Date(fuelData.date).toLocaleDateString()}`}
                 </p>
               )}
@@ -59,7 +65,7 @@ const ImagePreviewModal: React.FC<{
         <div className="p-6 bg-gray-50 flex items-center justify-center">
           <img 
             src={imageUrl} 
-            alt="Fuel receipt" 
+            alt={t('resumeFuelTable.receipt.imageAlt')}
             className="max-w-full max-h-[70vh] rounded-lg shadow-lg object-contain"
             onError={(e) => {
               e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="%23f3f4f6"/><text x="50%" y="50%" text-anchor="middle" fill="%239ca3af" font-size="16">Image not available</text></svg>';
@@ -69,78 +75,12 @@ const ImagePreviewModal: React.FC<{
 
         {/* Footer */}
         <div className="bg-gray-100 px-6 py-3 text-center">
-          <p className="text-xs text-gray-600">Click outside to close</p>
+          <p className="text-xs text-gray-600">{t('resumeFuelTable.receipt.closeHint')}</p>
         </div>
       </div>
     </div>
   );
 };
-
-const columns: Column[] = [
-  { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
-  { id: 'date', label: 'Date', minWidth: 110, sortable: true },
-  { id: 'truck', label: 'Truck', minWidth: 160, sortable: true,
-    format: (_v, row) => (
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center flex-shrink-0">
-          <TruckIcon size={14} className="text-white" />
-        </div>
-        <div>
-          <div className="font-semibold text-xs" style={{ color: '#0B2863' }}>
-            {row?.truck?.number_truck || 'N/A'}
-          </div>
-          <div className="text-xs text-gray-500">{row?.truck?.type}</div>
-        </div>
-      </div>
-    )
-  },
-  { id: 'cost_gl', label: 'Cost/Gallon', minWidth: 110, sortable: true, align: 'right',
-    format: (value) => (
-      <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>
-        ${(value || 0).toFixed(2)}
-      </span>
-    )
-  },
-  { id: 'fuel_qty', label: 'Fuel Qty', minWidth: 100, sortable: true, align: 'right',
-    format: (value) => (
-      <span className="text-sm">{(value || 0).toFixed(1)} gl</span>
-    )
-  },
-  { id: 'distance', label: 'Distance', minWidth: 100, sortable: true, align: 'right',
-    format: (value) => (
-      <span className="text-sm flex items-center justify-end gap-1">
-        <MapPin size={12} className="text-gray-500" />
-        {(value || 0).toLocaleString()} mi
-      </span>
-    )
-  },
-  { id: 'cost_fuel', label: 'Total Cost', minWidth: 120, sortable: true, align: 'right',
-    format: (value) => (
-      <span className="font-bold text-sm" style={{ color: '#0B2863' }}>
-        ${(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </span>
-    )
-  },
-  { id: 'orders_count', label: 'Orders', minWidth: 80, sortable: true, align: 'center',
-    format: (value) => (
-      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100" style={{ color: '#0B2863' }}>
-        {value || 0}
-      </span>
-    )
-  },
-  { id: 'image_url', label: 'Receipt', minWidth: 80, align: 'center', sortable: false,
-    format: (value) => (
-      value ? (
-        <span className="inline-flex items-center text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded">
-          <ImageIcon size={12} className="mr-1" />
-          Yes
-        </span>
-      ) : (
-        <span className="text-xs text-gray-400">No</span>
-      )
-    )
-  },
-];
 
 const LoadingSpinner = () => (
   <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2" style={{ borderColor: '#0B2863' }}></div>
@@ -216,10 +156,78 @@ export const ResumeFuelTable: React.FC<{
   data: WeeklyFuelDataResponse | null;
   isLoading: boolean;
 }> = ({ data, isLoading }) => {
+  const { t } = useTranslation();
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [previewImage, setPreviewImage] = useState<{ url: string; fuelData?: any } | null>(null);
+
+  // Columns defined inside component to access `t`
+  const columns: Column[] = useMemo(() => [
+    { id: 'expand', label: '', minWidth: 50, align: 'center', sortable: false },
+    { id: 'date', label: t('resumeFuelTable.columns.date'), minWidth: 110, sortable: true },
+    { id: 'truck', label: t('resumeFuelTable.columns.truck'), minWidth: 160, sortable: true,
+      format: (_v, row) => (
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center flex-shrink-0">
+            <TruckIcon size={14} className="text-white" />
+          </div>
+          <div>
+            <div className="font-semibold text-xs" style={{ color: '#0B2863' }}>
+              {row?.truck?.number_truck || 'N/A'}
+            </div>
+            <div className="text-xs text-gray-500">{row?.truck?.type}</div>
+          </div>
+        </div>
+      )
+    },
+    { id: 'cost_gl', label: t('resumeFuelTable.columns.costPerGallon'), minWidth: 110, sortable: true, align: 'right',
+      format: (value) => (
+        <span className="font-semibold text-sm" style={{ color: '#0B2863' }}>
+          ${(value || 0).toFixed(2)}
+        </span>
+      )
+    },
+    { id: 'fuel_qty', label: t('resumeFuelTable.columns.fuelQty'), minWidth: 100, sortable: true, align: 'right',
+      format: (value) => (
+        <span className="text-sm">{(value || 0).toFixed(1)} gl</span>
+      )
+    },
+    { id: 'distance', label: t('resumeFuelTable.columns.distance'), minWidth: 100, sortable: true, align: 'right',
+      format: (value) => (
+        <span className="text-sm flex items-center justify-end gap-1">
+          <MapPin size={12} className="text-gray-500" />
+          {(value || 0).toLocaleString()} mi
+        </span>
+      )
+    },
+    { id: 'cost_fuel', label: t('resumeFuelTable.columns.totalCost'), minWidth: 120, sortable: true, align: 'right',
+      format: (value) => (
+        <span className="font-bold text-sm" style={{ color: '#0B2863' }}>
+          ${(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+      )
+    },
+    { id: 'orders_count', label: t('resumeFuelTable.columns.orders'), minWidth: 80, sortable: true, align: 'center',
+      format: (value) => (
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100" style={{ color: '#0B2863' }}>
+          {value || 0}
+        </span>
+      )
+    },
+    { id: 'image_url', label: t('resumeFuelTable.columns.receipt'), minWidth: 80, align: 'center', sortable: false,
+      format: (value) => (
+        value ? (
+          <span className="inline-flex items-center text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded">
+            <ImageIcon size={12} className="mr-1" />
+            {t('resumeFuelTable.receipt.yes')}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-400">{t('resumeFuelTable.receipt.no')}</span>
+        )
+      )
+    },
+  ], [t]);
 
   // Extraer todos los cost_fuels de todas las semanas
   const allCostFuels = useMemo(() => {
@@ -247,7 +255,7 @@ export const ResumeFuelTable: React.FC<{
       }
       return { key: columnId, direction: 'asc' };
     });
-  }, []);
+  }, [columns]);
 
   const handleRowSelect = useCallback((rowId: number) => {
     setSelectedRows(prev => {
@@ -265,9 +273,8 @@ export const ResumeFuelTable: React.FC<{
   const isSelected = useCallback((rowId: number) => selectedRows.has(rowId), [selectedRows]);
   const isAllSelected = sortedData.length > 0 && selectedRows.size === sortedData.length;
 
-  const handleExportData = useCallback(() => {
-    if (!sortedData || sortedData.length === 0) return;
-    const rowData = sortedData.flatMap(costFuel => {
+  const buildCsvRows = (costFuels: CostFuelWithOrders[]) =>
+    costFuels.flatMap(costFuel => {
       if (costFuel.order_cost_fuels.length === 0) {
         return [{
           fuel_id: costFuel.id_fuel,
@@ -306,52 +313,16 @@ export const ResumeFuelTable: React.FC<{
         distancia_distribuida: order.distance_distributed,
       }));
     });
-    const csv = generateCsv(csvConfig)(rowData);
+
+  const handleExportData = useCallback(() => {
+    if (!sortedData || sortedData.length === 0) return;
+    const csv = generateCsv(csvConfig)(buildCsvRows(sortedData));
     download(csvConfig)(csv);
   }, [sortedData]);
 
   const handleExportSelected = useCallback(() => {
     const selectedCostFuels = sortedData.filter(cf => selectedRows.has(cf.id_fuel));
-    const rowData = selectedCostFuels.flatMap(costFuel => {
-      if (costFuel.order_cost_fuels.length === 0) {
-        return [{
-          fuel_id: costFuel.id_fuel,
-          fecha: costFuel.date,
-          camion: costFuel.truck?.number_truck || '',
-          tipo_camion: costFuel.truck?.type || '',
-          categoria: costFuel.truck?.category || '',
-          costo_galon: costFuel.cost_gl,
-          cantidad_combustible: costFuel.fuel_qty,
-          distancia: costFuel.distance,
-          costo_total: costFuel.cost_fuel,
-          tiene_recibo: costFuel.image_url ? 'Sí' : 'No',
-          orden_ref: '',
-          cliente: '',
-          ubicacion_orden: '',
-          fecha_orden: '',
-        }];
-      }
-      return costFuel.order_cost_fuels.map(order => ({
-        fuel_id: costFuel.id_fuel,
-        fecha: costFuel.date,
-        camion: costFuel.truck?.number_truck || '',
-        tipo_camion: costFuel.truck?.type || '',
-        categoria: costFuel.truck?.category || '',
-        costo_galon: costFuel.cost_gl,
-        cantidad_combustible: costFuel.fuel_qty,
-        distancia: costFuel.distance,
-        costo_total: costFuel.cost_fuel,
-        tiene_recibo: costFuel.image_url ? 'Sí' : 'No',
-        orden_ref: order.order_key_ref,
-        cliente: order.client_name,
-        ubicacion_orden: order.order_location || '',
-        fecha_orden: order.order_date,
-        costo_distribuido: order.cost_fuel_distributed,
-        combustible_distribuido: order.fuel_qty_distributed,
-        distancia_distribuida: order.distance_distributed,
-      }));
-    });
-    const csv = generateCsv(csvConfig)(rowData);
+    const csv = generateCsv(csvConfig)(buildCsvRows(selectedCostFuels));
     download(csvConfig)(csv);
   }, [sortedData, selectedRows]);
 
@@ -368,7 +339,9 @@ export const ResumeFuelTable: React.FC<{
         {/* Toolbar */}
         <div className="bg-white border-b px-4 py-3" style={{ borderColor: '#0B2863' }}>
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-lg font-semibold" style={{ color: '#0B2863' }}>Fuel Cost Records</h2>
+            <h2 className="text-lg font-semibold" style={{ color: '#0B2863' }}>
+              {t('resumeFuelTable.title')}
+            </h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExportData}
@@ -377,7 +350,7 @@ export const ResumeFuelTable: React.FC<{
                 disabled={!sortedData || sortedData.length === 0}
               >
                 <Download size={14} className="inline mr-1" />
-                Export All
+                {t('resumeFuelTable.exportAll')}
               </button>
               <button
                 onClick={handleExportSelected}
@@ -386,7 +359,7 @@ export const ResumeFuelTable: React.FC<{
                 disabled={selectedRows.size === 0}
               >
                 <Download size={14} className="inline mr-1" />
-                Export Selected ({selectedRows.size})
+                {t('resumeFuelTable.exportSelected', { count: selectedRows.size })}
               </button>
             </div>
           </div>
@@ -427,7 +400,7 @@ export const ResumeFuelTable: React.FC<{
                   <td colSpan={columns.length + 1} className="text-center py-10">
                     <div className="flex flex-col items-center space-y-3">
                       <LoadingSpinner />
-                      <span className="text-gray-500 text-sm">Loading fuel data...</span>
+                      <span className="text-gray-500 text-sm">{t('resumeFuelTable.loading')}</span>
                     </div>
                   </td>
                 </tr>
@@ -439,8 +412,10 @@ export const ResumeFuelTable: React.FC<{
                         <Inbox size={64} style={{ color: '#0B2863', opacity: 0.6 }} />
                       </div>
                       <div className="text-center">
-                        <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2863' }}>No Fuel Data Found</h3>
-                        <p className="text-gray-500 text-sm">Try selecting a different week or year</p>
+                        <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2863' }}>
+                          {t('resumeFuelTable.empty.title')}
+                        </h3>
+                        <p className="text-gray-500 text-sm">{t('resumeFuelTable.empty.desc')}</p>
                       </div>
                     </div>
                   </td>
@@ -476,7 +451,7 @@ export const ResumeFuelTable: React.FC<{
                                   <button 
                                     onClick={() => handleExpandClick(rowId)} 
                                     className="text-gray-600 hover:text-blue-700 transition-colors p-1 rounded hover:bg-blue-50"
-                                    title={`${isExpanded ? 'Hide' : 'Show'} ${row.orders_count} order(s)`}
+                                    title={t(isExpanded ? 'resumeFuelTable.expand.hide' : 'resumeFuelTable.expand.show', { count: row.orders_count })}
                                   >
                                     {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                                   </button>
@@ -503,7 +478,7 @@ export const ResumeFuelTable: React.FC<{
                                 <div className="flex items-center justify-between mb-4">
                                   <h4 className="font-bold text-base flex items-center gap-2" style={{ color: '#0B2863' }}>
                                     <Package size={18} />
-                                    Related Orders ({row.orders_count})
+                                    {t('resumeFuelTable.orders.title', { count: row.orders_count })}
                                   </h4>
                                   {row.image_url && (
                                     <button
@@ -519,7 +494,7 @@ export const ResumeFuelTable: React.FC<{
                                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
                                     >
                                       <Eye size={16} />
-                                      View Receipt
+                                      {t('resumeFuelTable.receipt.viewButton')}
                                     </button>
                                   )}
                                 </div>
@@ -529,13 +504,13 @@ export const ResumeFuelTable: React.FC<{
                                     <table className="w-full">
                                       <thead className="bg-gray-100">
                                         <tr>
-                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Order Ref</th>
-                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Client</th>
-                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Location</th>
-                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Order Date</th>
-                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Cost Distributed</th>
-                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Fuel Distributed</th>
-                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">Distance</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.orderRef')}</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.client')}</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.location')}</th>
+                                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.orderDate')}</th>
+                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.costDistributed')}</th>
+                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.fuelDistributed')}</th>
+                                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700">{t('resumeFuelTable.orders.columns.distance')}</th>
                                         </tr>
                                       </thead>
                                       <tbody>
@@ -570,7 +545,7 @@ export const ResumeFuelTable: React.FC<{
                                 ) : (
                                   <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
                                     <Package size={48} className="mx-auto mb-2 text-gray-400" />
-                                    <p className="text-gray-500 text-sm">No orders associated with this fuel cost</p>
+                                    <p className="text-gray-500 text-sm">{t('resumeFuelTable.orders.empty')}</p>
                                   </div>
                                 )}
                               </div>
@@ -590,12 +565,12 @@ export const ResumeFuelTable: React.FC<{
         <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
           <div className="flex items-center space-x-3">
             <span className="text-xs text-gray-700">
-              Total: {sortedData.length} fuel records | Selected: {selectedRows.size}
+              {t('resumeFuelTable.footer.total', { count: sortedData.length, selected: selectedRows.size })}
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <span className="text-xs text-gray-700">
-              Showing {sortedData.length} results
+              {t('resumeFuelTable.footer.showing', { count: sortedData.length })}
             </span>
           </div>
         </div>

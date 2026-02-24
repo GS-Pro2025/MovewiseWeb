@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { Check, Edit, Ban, Trash2, Copy, Image, Fuel } from 'lucide-react';
+import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle } from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
 interface ContextMenuProps {
@@ -15,6 +15,7 @@ interface ContextMenuProps {
   onDeleteOrder: (order: TableData) => void;
   onViewDispatchTicket?: (order: TableData) => void;
   onAddFuelCost?: (order: TableData) => void;
+  onCreateExtraCost?: (order: TableData) => void; // Asegúrate de que esta línea está presente
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -28,6 +29,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onDeleteOrder,
   onViewDispatchTicket,
   onAddFuelCost,
+  onCreateExtraCost, // Asegúrate de que esta línea está presente en la desestructuración
 }) => {
   const { t } = useTranslation();
 
@@ -41,6 +43,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       case 'delete':       onDeleteOrder(row); break;
       case 'view-dispatch': if (onViewDispatchTicket) onViewDispatchTicket(row); break;
       case 'addFuelCost':  if (onAddFuelCost) onAddFuelCost(row); break;
+      case 'createExtraCost': if (onCreateExtraCost) onCreateExtraCost(row); break; 
     }
     onClose();
   };
@@ -100,6 +103,14 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       <MenuItem onClick={() => handleAction('addFuelCost')}>
         <ListItemIcon><Fuel size={16} /></ListItemIcon>
         <ListItemText>{t('contextMenu.addFuelCost')}</ListItemText>
+      </MenuItem>
+
+      {/* Nuevo menú item para Crear Costo Extra */}
+      <MenuItem onClick={() => handleAction('createExtraCost')}>
+        <ListItemIcon>
+          <PlusCircle size={16} color="#0B2863" />
+        </ListItemIcon>
+        <ListItemText>{t('contextMenu.createExtraCost')}</ListItemText>
       </MenuItem>
     </Menu>
   );

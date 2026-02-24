@@ -1,67 +1,36 @@
-// Modelos para el resumen de préstamos de la empresa
+// domain/LoansSummaryModels.ts
 
-export interface LoanStatusBreakdown {
-  status: 'unpaid' | 'paid' | 'canceled';
-  count: number;
-  total_amount: string;
+/** Exactly what the API returns per loan */
+export interface LoanRecord {
+  id_loan: number;
+  operator: number;
+  operator_name: string;
+  total_amount_to_pay: string;
+  description: string;
+  status: 'unpaid' | 'paid' | 'canceled' | string;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+  total_paid: string;
+  remaining_amount: string;
+  payment_percentage: string;
 }
 
-export interface PaymentMethodBreakdown {
-  payment_method: 'cash' | 'deduction' | 'transfer' | 'check';
-  count: number;
-  total_amount: string;
-}
-
-export interface WeeklyLoanBreakdown {
-  week: string;
-  loans_count: number;
-  amount_loaned: string;
-}
-
-export interface WeeklyPaymentBreakdown {
-  week: string;
-  payments_count: number;
-  amount_paid: string;
-}
-
-export interface LoansSummaryPeriod {
-  start_date: string | null;
-  end_date: string | null;
-  weeks: number | null;
-}
-
-export interface LoansSummaryData {
-  total_loans: number;
-  total_amount_loaned: string;
-  by_status: LoanStatusBreakdown[];
-}
-
-export interface PaymentsSummaryData {
-  total_payments: number;
-  total_amount_paid: string;
-  by_payment_method: PaymentMethodBreakdown[];
-}
-
-export interface WeeklyBreakdown {
-  loans: WeeklyLoanBreakdown[];
-  payments: WeeklyPaymentBreakdown[];
-}
-
-export interface OverallSummary {
-  total_pending_amount: string;
-  active_loans_count: number;
-}
-
-export interface CompanyLoansSummaryResponse {
-  period: LoansSummaryPeriod;
-  loans_summary: LoansSummaryData;
-  payments_summary: PaymentsSummaryData;
-  weekly_breakdown: WeeklyBreakdown;
-  overall: OverallSummary;
+/** Aggregated per operator (built in the frontend) */
+export interface OperatorGroup {
+  operator_id: number;
+  operator_name: string;
+  total_loaned: number;
+  total_paid: number;
+  total_pending: number;
+  payment_percentage: number;
+  loans: LoanRecord[];
 }
 
 export interface LoansSummaryFilters {
   weeks?: number;
   start_date?: string;
   end_date?: string;
+  status?: string;
 }

@@ -24,11 +24,11 @@ interface SortConfig {
 
 const columns: Column[] = [
   { id: 'expand',      labelKey: '',                    minWidth: 40,  align: 'center', sortable: false },
-  { id: 'actions',     labelKey: 'table.actions',       minWidth: 100, align: 'center', sortable: false },
+  { id: 'actions',     labelKey: 'table.actions',       minWidth: 70, align: 'center', sortable: false },
   {
     id: 'status',
     labelKey: 'table.status',
-    minWidth: 90,
+    minWidth: 60,
     sortable: true,
     format: (value) => {
       const status = String(value || '');
@@ -46,27 +46,27 @@ const columns: Column[] = [
       );
     }
   },
-  { id: 'key_ref',     labelKey: 'table.reference',  minWidth: 90,  sortable: true, copyable: true },
-  { id: 'firstName',   labelKey: 'table.firstName',  minWidth: 90,  sortable: true },
-  { id: 'lastName',    labelKey: 'table.lastName',   minWidth: 90,  sortable: true },
-  { id: 'company',     labelKey: 'table.company',    minWidth: 110, sortable: true },
-  { id: 'job',         labelKey: 'table.job',        minWidth: 110, sortable: true },
+  { id: 'key_ref',     labelKey: 'table.reference',  minWidth: 70,  sortable: true, copyable: true },
+  { id: 'firstName',   labelKey: 'table.firstName',  minWidth: 60,  sortable: true },
+  { id: 'lastName',    labelKey: 'table.lastName',   minWidth: 60,  sortable: true },
+  { id: 'company',     labelKey: 'table.company',    minWidth: 60, sortable: true },
+  { id: 'job',         labelKey: 'table.job',        minWidth: 60, sortable: true },
   {
     id: 'weight',
     labelKey: 'table.weight',
-    minWidth: 90,
+    minWidth: 40,
     sortable: true,
     format: (value) => String(value || 'N/A')
   },
-  { id: 'dateReference', labelKey: 'table.date',     minWidth: 110, sortable: true },
-  { id: 'state',         labelKey: 'table.location', minWidth: 90,  sortable: true },
-  { id: 'weekday',       labelKey: 'table.weekday',  minWidth: 90,  sortable: true },
-  { id: 'city',          labelKey: 'table.address',  minWidth: 90,  sortable: true },
-  { id: 'email',         labelKey: 'table.email',    minWidth: 110, sortable: true },
+  { id: 'dateReference', labelKey: 'table.date',     minWidth: 60, sortable: true },
+  { id: 'state',         labelKey: 'table.location', minWidth: 60,  sortable: true },
+  { id: 'weekday',       labelKey: 'table.weekday',  minWidth: 50,  sortable: true },
+  { id: 'city',          labelKey: 'table.address',  minWidth: 60,  sortable: true },
+  { id: 'email',         labelKey: 'table.email',    minWidth: 70, sortable: true },
   {
     id: 'phone',
     labelKey: 'table.phone',
-    minWidth: 110,
+    minWidth: 60,
     sortable: true,
     format: (value) => {
       const phone = String(value || '');
@@ -76,7 +76,7 @@ const columns: Column[] = [
   {
     id: 'payStatus',
     labelKey: 'table.payStatus',
-    minWidth: 100,
+    minWidth: 60,
     sortable: true,
     format: (value, t) => {
       const status = Number(value || 0);
@@ -88,11 +88,11 @@ const columns: Column[] = [
       );
     }
   },
-  { id: 'truckType', labelKey: 'table.truckType', minWidth: 110, sortable: true, format: (value) => String(value || 'N/A') },
+  { id: 'truckType', labelKey: 'table.truckType', minWidth: 60, sortable: true, format: (value) => String(value || 'N/A') },
   {
     id: 'distance',
     labelKey: 'table.distance',
-    minWidth: 110,
+    minWidth: 60,
     sortable: true,
     format: (value) => {
       const num = Number(value);
@@ -102,7 +102,7 @@ const columns: Column[] = [
   {
     id: 'expense',
     labelKey: 'table.expense',
-    minWidth: 110,
+    minWidth: 60,
     sortable: true,
     format: (value) => {
       const num = Number(value);
@@ -112,7 +112,7 @@ const columns: Column[] = [
   {
     id: 'income',
     labelKey: 'table.income',
-    minWidth: 110,
+    minWidth: 60,
     sortable: true,
     format: (value) => {
       const num = Number(value);
@@ -122,7 +122,7 @@ const columns: Column[] = [
   {
     id: 'totalCost',
     labelKey: 'table.totalCost',
-    minWidth: 110,
+    minWidth: 60,
     sortable: true,
     format: (value) => {
       const num = Number(value || 0);
@@ -132,7 +132,7 @@ const columns: Column[] = [
   {
     id: 'created_by',
     labelKey: 'table.createdBy',
-    minWidth: 100,
+    minWidth: 60,
     sortable: true,
     format: (value) => (
       <span className="font-semibold text-xs" style={{ color: '#0B2863' }}>
