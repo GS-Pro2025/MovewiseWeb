@@ -9,7 +9,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
   Inbox, Lightbulb, TrendingUp, TrendingDown,
-  Users, UserCheck, User, Eye, Edit, Fuel, Wrench, ClipboardList
+  Users, UserCheck, User, Eye, Edit, Fuel, Wrench,
 } from 'lucide-react';
 import { SuperOrder } from '../domain/ModelsOCR';
 import OrdersByKeyRefTable from './OrdersByKeyRefTable';
