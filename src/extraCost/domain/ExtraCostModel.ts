@@ -28,7 +28,12 @@ export interface ExtraCost {
   type: string;
   id_order: string;
 }
-
+export interface CreateExtraCostDTO {
+  name: string;
+  cost: number;
+  type: string;
+  id_order: string;
+}
 export interface ExtraCostResponse {
   current_company_id: number;
   count: number;

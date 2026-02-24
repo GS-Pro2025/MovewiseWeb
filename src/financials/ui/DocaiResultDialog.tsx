@@ -4,6 +4,7 @@ import { Box, Typography, Chip, Divider, Button, Alert, Accordion, AccordionSumm
 import { ChevronDown } from 'lucide-react';
 import { Bot, FileText, CheckCircle, XCircle, Copy, AlertTriangle, DollarSign, Layers, Receipt, Truck } from 'lucide-react';
 import { OtherTransaction } from '../domain/ModelsOCR';
+import { useTranslation } from 'react-i18next';
 
 interface DocaiResultDialogProps {
   open: boolean;
@@ -14,12 +15,7 @@ interface DocaiResultDialogProps {
     other_transactions_page?: number;
     total_pages_scanned?: number;
     ocr_text?: string;
-    parsed_orders?: Array<{
-      OrderNumber: string;
-      ShipperName: string;
-      CommissionAmount?: string;
-      Amount?: string;
-    }>;
+    parsed_orders?: Array<{ OrderNumber: string; ShipperName: string; CommissionAmount?: string; Amount?: string }>;
     update_result?: any;
     update_summary?: any;
     other_transactions_data?: {
@@ -46,193 +42,98 @@ interface DocaiResultDialogProps {
   };
 }
 
-interface ParsedOrder {
-  OrderNumber: string;
-  ShipperName: string;
-  CommissionAmount?: string;
-  Amount?: string;
-}
-
-interface UpdatedOrder {
-  key_ref: string;
-  key: string;
-  amount_added: string;
-  type: string;
-  new_income: string;
-  new_expense: string;
-  factory: string;
-  orders_count: number;
-}
-
-interface DuplicatedOrder {
-  key_ref: string;
-  count: number;
-  total_amount: string;
-  amount_per_order: string;
-  type: string;
-}
+interface ParsedOrder { OrderNumber: string; ShipperName: string; CommissionAmount?: string; Amount?: string }
+interface UpdatedOrder { key_ref: string; key: string; amount_added: string; type: string; new_income: string; new_expense: string; factory: string; orders_count: number }
+interface DuplicatedOrder { key_ref: string; count: number; total_amount: string; amount_per_order: string; type: string }
 
 const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, result }) => {
+  const { t } = useTranslation();
   if (!open) return null;
 
-  const { 
-    message, 
-    processing_type,
-    other_transactions_page,
-    total_pages_scanned,
-    ocr_text, 
-    parsed_orders, 
-    update_result, 
-    update_summary,
-    other_transactions_data 
-  } = result;
-  
-  // Usar update_summary si está disponible, sino usar update_result para compatibilidad
+  const { message, processing_type, other_transactions_page, total_pages_scanned, ocr_text, parsed_orders, update_result, update_summary, other_transactions_data } = result;
+
   const updateData = update_summary || update_result;
-  
-  const updatedOrders = updateData?.updated_orders ?? [];
-  const notFoundOrders = updateData?.not_found_orders ?? [];
-  const duplicatedOrders = updateData?.duplicated_orders ?? [];
-  const totalUpdated = updateData?.total_updated ?? 0;
-  const totalNotFound = updateData?.total_not_found ?? 0;
-  const totalDuplicated = updateData?.total_duplicated ?? 0;
+  const updatedOrders: UpdatedOrder[]     = updateData?.updated_orders ?? [];
+  const notFoundOrders: string[]          = updateData?.not_found_orders ?? [];
+  const duplicatedOrders: DuplicatedOrder[] = updateData?.duplicated_orders ?? [];
+  const totalUpdated: number              = updateData?.total_updated ?? 0;
+  const totalNotFound: number             = updateData?.total_not_found ?? 0;
+  const totalDuplicated: number           = updateData?.total_duplicated ?? 0;
 
-  // Datos de Other Transactions
-  const hasOtherTransactions = !!other_transactions_data;
-  const otherTransactions = other_transactions_data?.parsed_transactions ?? [];
-  const otherTransactionsSummary = other_transactions_data?.save_summary;
+  const hasOtherTransactions              = !!other_transactions_data;
+  const otherTransactions                 = other_transactions_data?.parsed_transactions ?? [];
+  const otherTransactionsSummary          = other_transactions_data?.save_summary;
 
-  // Helper function para formatear el monto basado en el tipo
   const formatAmount = (order: any) => {
     const amount = parseFloat(order.amount_added || '0');
-    if (order.type === 'expense') {
-      return amount < 0 ? `$${Math.abs(amount)}` : `-$${Math.abs(amount)}`;
-    }
+    if (order.type === 'expense') return amount < 0 ? `$${Math.abs(amount)}` : `-$${Math.abs(amount)}`;
     return `$${Math.abs(amount)}`;
   };
 
-  // Helper function para obtener el color basado en el tipo
-  const getTypeColor = (type: string) => {
-    return type === 'expense' ? '#ef4444' : '#22c55e';
-  };
+  const getTypeColor  = (type: string) => type === 'expense' ? '#ef4444' : '#22c55e';
+  const getTypeText   = (type: string) => type === 'expense' ? t('docai.expense') : t('docai.income');
 
-  // Helper function para obtener el texto del tipo
-  const getTypeText = (type: string) => {
-    return type === 'expense' ? 'Expense' : 'Income';
-  };
-
-  // Helper para determinar si un monto de Other Transaction es gasto
-  const isExpenseAmount = (amount: string) => {
-    return amount.includes('(') && amount.includes(')');
-  };
-
-  // Helper para formatear monto de Other Transaction
+  const isExpenseAmount = (amount: string) => amount.includes('(') && amount.includes(')');
   const formatOtherTransactionAmount = (amount: string) => {
     const cleanAmount = amount.replace(/[$,()]/g, '');
     const numericAmount = parseFloat(cleanAmount);
     const isExpense = isExpenseAmount(amount);
-    
-    return {
-      formatted: `$${numericAmount.toLocaleString()}`,
-      isExpense,
-      color: isExpense ? '#ef4444' : '#22c55e'
-    };
+    return { formatted: `$${numericAmount.toLocaleString()}`, isExpense, color: isExpense ? '#ef4444' : '#22c55e' };
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/10" onClick={onClose}>
       <Box
-        sx={{
-          background: "#fff",
-          borderRadius: 3,
-          boxShadow: 6,
-          p: 4,
-          minWidth: 600,
-          maxWidth: 900,
-          maxHeight: "90vh",
-          overflow: "auto",
-        }}
+        sx={{ background: '#fff', borderRadius: 3, boxShadow: 6, p: 4, minWidth: 600, maxWidth: 900, maxHeight: '90vh', overflow: 'auto' }}
         onClick={e => e.stopPropagation()}
       >
+        {/* Title */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <Bot size={24} color="#1976d2" />
-          <Typography variant="h6" color="primary">
-            AI Document Processing Result
-          </Typography>
+          <Typography variant="h6" color="primary">{t('docai.title')}</Typography>
           {processing_type && (
-            <Chip 
-              icon={processing_type === 'other_transactions' || processing_type === 'mixed' ? <Layers size={16} /> : <FileText size={16} />}
+            <Chip
+              icon={processing_type !== 'regular_orders_only' ? <Layers size={16} /> : <FileText size={16} />}
               label={processing_type.replace('_', ' ').toUpperCase()}
-              color={processing_type === 'other_transactions' || processing_type === 'mixed' ? 'secondary' : 'primary'}
+              color={processing_type !== 'regular_orders_only' ? 'secondary' : 'primary'}
               size="small"
               variant="outlined"
             />
           )}
         </Box>
-        
-        <Alert 
-          severity="info" 
-          sx={{ mb: 2 }}
-          icon={<Bot size={20} />}
-        >
-          {message}
-        </Alert>
 
-        {/* Processing Info */}
+        <Alert severity="info" sx={{ mb: 2 }} icon={<Bot size={20} />}>{message}</Alert>
+
+        {/* Multi-page info */}
         {(total_pages_scanned || other_transactions_page) && (
-          <Alert 
-            severity="info" 
-            sx={{ mb: 2 }}
-            icon={<Layers size={20} />}
-          >
+          <Alert severity="info" sx={{ mb: 2 }} icon={<Layers size={20} />}>
             <Typography variant="body2">
-              <strong>Multi-page processing:</strong> 
-              {total_pages_scanned && ` ${total_pages_scanned} pages scanned`}
-              {other_transactions_page && `, Other Transactions found on page ${other_transactions_page}`}
+              <strong>{t('docai.multiPageProcessing')}:</strong>
+              {total_pages_scanned && ` ${t('docai.pagesScanned', { count: total_pages_scanned })}`}
+              {other_transactions_page && `, ${t('docai.otherTransactionsPage', { page: other_transactions_page })}`}
             </Typography>
           </Alert>
         )}
 
-        {/* Parsed Orders Section */}
+        {/* Parsed Orders */}
         {parsed_orders && parsed_orders.length > 0 && (
           <>
             <Divider sx={{ my: 2 }} />
             <Accordion sx={{ mb: 2 }}>
-              <AccordionSummary 
-                expandIcon={<ChevronDown size={20} />}
-                sx={{ backgroundColor: '#f8f9fa' }}
-              >
+              <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ backgroundColor: '#f8f9fa' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Truck size={20} color="#1976d2" />
-                  <Typography variant="subtitle1">
-                    Extracted Orders ({parsed_orders.length})
-                  </Typography>
+                  <Typography variant="subtitle1">{t('docai.extractedOrders', { count: parsed_orders.length })}</Typography>
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
                 <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
                   {parsed_orders.map((order: ParsedOrder, idx: number) => (
-                    <Box key={idx} sx={{ 
-                      mb: 1, 
-                      p: 2, 
-                      border: '1px solid #eee', 
-                      borderRadius: 1,
-                      backgroundColor: '#f9f9f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
+                    <Box key={idx} sx={{ mb: 1, p: 2, border: '1px solid #eee', borderRadius: 1, backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', gap: 1 }}>
                       <DollarSign size={16} color="#666" />
                       <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {order.OrderNumber}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {order.ShipperName} - {order.Amount || order.CommissionAmount}
-                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{order.OrderNumber}</Typography>
+                        <Typography variant="caption" color="text.secondary">{order.ShipperName} - {order.Amount || order.CommissionAmount}</Typography>
                       </Box>
                     </Box>
                   ))}
@@ -244,24 +145,20 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
 
         <Divider sx={{ my: 2 }} />
 
+        {/* Update Summary */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Bot size={20} color="#1976d2" />
-          <Typography variant="subtitle1">Regular Orders Update Summary:</Typography>
+          <Typography variant="subtitle1">{t('docai.updateSummaryTitle')}</Typography>
         </Box>
-        
         <Box sx={{ mb: 2 }}>
-          <Alert 
-            severity={totalNotFound > 0 || totalDuplicated > 0 ? "warning" : "success"} 
+          <Alert
+            severity={totalNotFound > 0 || totalDuplicated > 0 ? 'warning' : 'success'}
             sx={{ mb: 2 }}
             icon={totalNotFound > 0 || totalDuplicated > 0 ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
           >
-            <strong>{totalUpdated}</strong> order(s) updated successfully
-            {totalNotFound > 0 && (
-              <>, <strong>{totalNotFound}</strong> order(s) not found</>
-            )}
-            {totalDuplicated > 0 && (
-              <>, <strong>{totalDuplicated}</strong> duplicated order(s) detected</>
-            )}
+            {t('docai.updatedSummary', { count: totalUpdated })}
+            {totalNotFound > 0 && <>, {t('docai.notFoundSummary', { count: totalNotFound })}</>}
+            {totalDuplicated > 0 && <>, {t('docai.duplicatedSummary', { count: totalDuplicated })}</>}
           </Alert>
         </Box>
 
@@ -270,86 +167,47 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <CheckCircle size={18} color="#4caf50" />
-              <Typography variant="subtitle2" color="success.main">
-                Updated Orders:
-              </Typography>
+              <Typography variant="subtitle2" color="success.main">{t('docai.updatedOrders')}</Typography>
             </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {updatedOrders.map((order: UpdatedOrder, idx: number) => {
                 const typeColor = getTypeColor(order.type || 'income');
-                const typeText = getTypeText(order.type || 'income');
-                const formattedAmount = formatAmount(order);
-                
+                const typeText  = getTypeText(order.type || 'income');
                 return (
-                  <Box key={idx} sx={{ 
-                    p: 2, 
-                    border: `1px solid ${typeColor}`, 
-                    borderRadius: 1,
-                    backgroundColor: order.type === 'expense' ? '#fef2f2' : '#f1f8e9'
-                  }}>
+                  <Box key={idx} sx={{ p: 2, border: `1px solid ${typeColor}`, borderRadius: 1, backgroundColor: order.type === 'expense' ? '#fef2f2' : '#f1f8e9' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FileText size={16} />
-                        Order: {order.key_ref}
+                        <FileText size={16} />{t('docai.order')}: {order.key_ref}
                       </Typography>
-                      <Box sx={{ 
-                        px: 1, 
-                        py: 0.5, 
-                        borderRadius: 1, 
-                        backgroundColor: typeColor,
-                        color: 'white',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}>
-                        <DollarSign size={12} />
-                        {typeText}
+                      <Box sx={{ px: 1, py: 0.5, borderRadius: 1, backgroundColor: typeColor, color: 'white', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <DollarSign size={12} />{typeText}
                       </Box>
                     </Box>
-                    
                     {order.factory && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        <strong>Client/Company:</strong> {order.factory}
+                        <strong>{t('docai.clientCompany')}:</strong> {order.factory}
                       </Typography>
                     )}
-                    
                     {(order as any).orders_count && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        <strong>Orders Count:</strong> {(order as any).orders_count}
+                        <strong>{t('docai.ordersCount')}:</strong> {(order as any).orders_count}
                       </Typography>
                     )}
-                    
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minWidth(120px, 1fr))', gap: 1 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 1 }}>
                       <Box>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                          Amount Added:
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: typeColor }}>
-                          {formattedAmount}
-                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t('docai.amountAdded')}:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: typeColor }}>{formatAmount(order)}</Typography>
                       </Box>
-                      
                       {order.new_income && (
                         <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            New Income:
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#22c55e' }}>
-                            ${parseFloat(order.new_income).toLocaleString()}
-                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t('docai.newIncome')}:</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#22c55e' }}>${parseFloat(order.new_income).toLocaleString()}</Typography>
                         </Box>
                       )}
-                      
                       {order.new_expense && (
                         <Box>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            New Expense:
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#ef4444' }}>
-                            ${parseFloat(order.new_expense).toLocaleString()}
-                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t('docai.newExpense')}:</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#ef4444' }}>${parseFloat(order.new_expense).toLocaleString()}</Typography>
                         </Box>
                       )}
                     </Box>
@@ -365,55 +223,25 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Copy size={18} color="#ff9800" />
-              <Typography variant="subtitle2" color="warning.main">
-                Duplicated Orders Detected:
-              </Typography>
+              <Typography variant="subtitle2" color="warning.main">{t('docai.duplicatedOrders')}</Typography>
             </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {duplicatedOrders.map((order: DuplicatedOrder, idx: number) => {
                 const typeColor = getTypeColor(order.type);
-                const typeText = getTypeText(order.type);
-                
+                const typeText  = getTypeText(order.type);
                 return (
-                  <Box key={idx} sx={{ 
-                    p: 2, 
-                    border: '1px solid #ff9800', 
-                    borderRadius: 1,
-                    backgroundColor: '#fff3e0'
-                  }}>
+                  <Box key={idx} sx={{ p: 2, border: '1px solid #ff9800', borderRadius: 1, backgroundColor: '#fff3e0' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Copy size={16} />
-                        {order.key_ref} (x{order.count})
+                        <Copy size={16} />{order.key_ref} (x{order.count})
                       </Typography>
-                      <Box sx={{ 
-                        px: 1, 
-                        py: 0.5, 
-                        borderRadius: 1, 
-                        backgroundColor: typeColor,
-                        color: 'white',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}>
-                        <DollarSign size={12} />
-                        {typeText}
+                      <Box sx={{ px: 1, py: 0.5, borderRadius: 1, backgroundColor: typeColor, color: 'white', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <DollarSign size={12} />{typeText}
                       </Box>
                     </Box>
-                    
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minWidth(100px, 1fr))', gap: 1 }}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          Total: ${parseFloat(order.total_amount).toLocaleString()}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          Per Order: ${parseFloat(order.amount_per_order).toLocaleString()}
-                        </Typography>
-                      </Box>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 1 }}>
+                      <Box><Typography variant="caption" color="text.secondary">{t('docai.total')}: ${parseFloat(order.total_amount).toLocaleString()}</Typography></Box>
+                      <Box><Typography variant="caption" color="text.secondary">{t('docai.perOrder')}: ${parseFloat(order.amount_per_order).toLocaleString()}</Typography></Box>
                     </Box>
                   </Box>
                 );
@@ -427,112 +255,45 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <XCircle size={18} color="#f44336" />
-              <Typography variant="subtitle2" color="warning.main">
-                Orders Not Found:
-              </Typography>
+              <Typography variant="subtitle2" color="warning.main">{t('docai.notFoundOrders')}</Typography>
             </Box>
-            <Box sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minWidth(120px, 1fr))",
-              gap: 0.5,
-              maxHeight: 120,
-              overflow: "auto",
-              p: 1,
-              border: "1px solid #eee",
-              borderRadius: 1,
-              backgroundColor: "#fffbe6"
-            }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 0.5, maxHeight: 120, overflow: 'auto', p: 1, border: '1px solid #eee', borderRadius: 1, backgroundColor: '#fffbe6' }}>
               {notFoundOrders.map((order: string, idx: number) => (
-                <Chip
-                  key={idx}
-                  label={order}
-                  color="warning"
-                  variant="outlined"
-                  size="small"
-                  sx={{ fontSize: "0.8rem" }}
-                />
+                <Chip key={idx} label={order} color="warning" variant="outlined" size="small" sx={{ fontSize: '0.8rem' }} />
               ))}
             </Box>
           </Box>
         )}
 
-        {/* Simple Other Transactions Breakdown */}
+        {/* Other Transactions */}
         {hasOtherTransactions && otherTransactions.length > 0 && (
           <Box sx={{ mb: 3 }}>
             <Divider sx={{ my: 2 }} />
-            
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
               <Receipt size={18} color="#9c27b0" />
-              <Typography variant="subtitle2" color="secondary.main">
-                Other Transactions ({otherTransactions.length})
-              </Typography>
+              <Typography variant="subtitle2" color="secondary.main">{t('docai.otherTransactions', { count: otherTransactions.length })}</Typography>
               {otherTransactionsSummary && (
-                <Chip 
-                  label={`${otherTransactionsSummary.costs_created || 0} expense records created`}
-                  size="small"
-                  color="secondary"
-                  variant="outlined"
+                <Chip
+                  label={t('docai.expenseRecordsCreated', { count: otherTransactionsSummary.costs_created || 0 })}
+                  size="small" color="secondary" variant="outlined"
                 />
               )}
             </Box>
-            
-            <Box sx={{ 
-              display: 'grid', 
-              gap: 1, 
-              maxHeight: 200, 
-              overflow: 'auto',
-              border: '1px solid #e0e0e0',
-              borderRadius: 2,
-              p: 2,
-              backgroundColor: '#fafafa'
-            }}>
+            <Box sx={{ display: 'grid', gap: 1, maxHeight: 200, overflow: 'auto', border: '1px solid #e0e0e0', borderRadius: 2, p: 2, backgroundColor: '#fafafa' }}>
               {otherTransactions.map((transaction: OtherTransaction, idx: number) => {
                 const amountInfo = formatOtherTransactionAmount(transaction.Amount);
-                
                 return (
-                  <Box key={idx} sx={{ 
-                    p: 2, 
-                    border: `1px solid ${amountInfo.color}`, 
-                    borderRadius: 1,
-                    backgroundColor: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 2
-                  }}>
+                  <Box key={idx} sx={{ p: 2, border: `1px solid ${amountInfo.color}`, borderRadius: 1, backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }} noWrap>
-                        {transaction.DocumentNumber}
-                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }} noWrap>{transaction.DocumentNumber}</Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} noWrap>
                         {transaction.ItemDescription === 'undefined' ? 'N/A' : transaction.ItemDescription || 'N/A'}
                       </Typography>
                     </Box>
-                    
-                    <Box sx={{ 
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      flexShrink: 0
-                    }}>
-                      <Typography variant="body2" sx={{ 
-                        fontWeight: 600, 
-                        color: amountInfo.color,
-                        minWidth: 'fit-content'
-                      }}>
-                        {amountInfo.formatted}
-                      </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: amountInfo.color, minWidth: 'fit-content' }}>{amountInfo.formatted}</Typography>
                       {amountInfo.isExpense && (
-                        <Chip
-                          label="Expense"
-                          size="small"
-                          sx={{ 
-                            backgroundColor: amountInfo.color,
-                            color: 'white',
-                            fontSize: '0.7rem',
-                            height: 20
-                          }}
-                        />
+                        <Chip label={t('docai.expense')} size="small" sx={{ backgroundColor: amountInfo.color, color: 'white', fontSize: '0.7rem', height: 20 }} />
                       )}
                     </Box>
                   </Box>
@@ -542,44 +303,27 @@ const DocaiResultDialog: React.FC<DocaiResultDialogProps> = ({ open, onClose, re
           </Box>
         )}
 
-        {/* OCR Text Section */}
+        {/* OCR Text */}
         <Accordion sx={{ mb: 2 }}>
-          <AccordionSummary 
-            expandIcon={<ChevronDown size={20} />}
-            sx={{ backgroundColor: '#f8f9fa' }}
-          >
+          <AccordionSummary expandIcon={<ChevronDown size={20} />} sx={{ backgroundColor: '#f8f9fa' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <FileText size={20} color="#1976d2" />
-              <Typography variant="subtitle1">Raw OCR Text</Typography>
+              <Typography variant="subtitle1">{t('docai.rawOcrText')}</Typography>
             </Box>
           </AccordionSummary>
           <AccordionDetails>
-            <Box sx={{
-              background: "#f9f9f9",
-              borderRadius: 2,
-              p: 2,
-              fontFamily: "monospace",
-              fontSize: "0.85rem",
-              maxHeight: 200,
-              overflow: "auto",
-              border: "1px solid #eee"
-            }}>
-              {ocr_text ? ocr_text : <span style={{ color: "#aaa" }}>No OCR text available.</span>}
+            <Box sx={{ background: '#f9f9f9', borderRadius: 2, p: 2, fontFamily: 'monospace', fontSize: '0.85rem', maxHeight: 200, overflow: 'auto', border: '1px solid #eee' }}>
+              {ocr_text ? ocr_text : <span style={{ color: '#aaa' }}>{t('docai.noOcrText')}</span>}
             </Box>
           </AccordionDetails>
         </Accordion>
 
         <Divider sx={{ my: 2 }} />
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={onClose}
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-          >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Button variant="contained" color="primary" onClick={onClose} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CheckCircle size={16} />
-            Close
+            {t('docai.close')}
           </Button>
         </Box>
       </Box>

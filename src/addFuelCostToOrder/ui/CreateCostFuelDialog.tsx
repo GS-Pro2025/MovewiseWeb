@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -46,6 +47,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
   const [trucks, setTrucks] = useState<TruckByOrder[]>([]);
@@ -62,13 +64,11 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
     image: null,
   });
 
-  // Calculate total cost when fuel_qty or cost_gl change
   useEffect(() => {
     const totalCost = formData.fuel_qty * formData.cost_gl;
     setFormData(prev => ({ ...prev, cost_fuel: totalCost }));
   }, [formData.fuel_qty, formData.cost_gl]);
 
-  // Load trucks when dialog opens
   useEffect(() => {
     if (open) {
       loadActiveTrucks();
@@ -81,11 +81,11 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
       const trucksData = await fetchActiveTrucks();
       setTrucks(trucksData);
       if (trucksData.length === 0) {
-        enqueueSnackbar('No active trucks available', { variant: 'warning' });
+        enqueueSnackbar(t('createCostFuel.snackbar.noTrucks'), { variant: 'warning' });
       }
     } catch (error) {
       console.error('Error loading trucks:', error);
-      enqueueSnackbar('Error loading active trucks', { variant: 'error' });
+      enqueueSnackbar(t('createCostFuel.snackbar.errorLoadingTrucks'), { variant: 'error' });
     } finally {
       setLoadingTrucks(false);
     }
@@ -114,29 +114,25 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
   };
 
   const handleSubmit = async () => {
-    // Validation
     if (formData.truck === 0) {
-      enqueueSnackbar('Please select a truck', { variant: 'error' });
+      enqueueSnackbar(t('createCostFuel.snackbar.selectTruck'), { variant: 'error' });
       return;
     }
-
     if (formData.fuel_qty <= 0) {
-      enqueueSnackbar('Fuel quantity must be greater than 0', { variant: 'error' });
+      enqueueSnackbar(t('createCostFuel.snackbar.fuelQtyRequired'), { variant: 'error' });
       return;
     }
-
     if (formData.cost_gl <= 0) {
-      enqueueSnackbar('Cost per gallon must be greater than 0', { variant: 'error' });
+      enqueueSnackbar(t('createCostFuel.snackbar.costGlRequired'), { variant: 'error' });
       return;
     }
-
     if (formData.distance <= 0) {
-      enqueueSnackbar('Distance must be greater than 0', { variant: 'error' });
+      enqueueSnackbar(t('createCostFuel.snackbar.distanceRequired'), { variant: 'error' });
       return;
     }
 
     setLoading(true);
-    enqueueSnackbar('Creating fuel cost record...', { variant: 'info' });
+    enqueueSnackbar(t('createCostFuel.snackbar.creating'), { variant: 'info' });
 
     try {
       const request: CreateCostFuelRequest = {
@@ -146,17 +142,16 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
         fuel_qty: formData.fuel_qty,
         distance: formData.distance,
         date: formData.date,
-        orders: [], // Sin órdenes asociadas por ahora
+        orders: [],
         image: formData.image || undefined,
       };
 
       const response = await CreateCostFuelRepository.createCostFuel(request);
-      
-      enqueueSnackbar(response.messUser || 'Fuel cost record created successfully! 🚛⛽', { 
-        variant: 'success' 
+
+      enqueueSnackbar(response.messUser || t('createCostFuel.snackbar.success'), {
+        variant: 'success'
       });
 
-      // Reset form
       setFormData({
         truck: 0,
         cost_gl: 0,
@@ -172,7 +167,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
       onClose();
     } catch (error: any) {
       console.error('Error creating fuel cost:', error);
-      enqueueSnackbar(`Error: ${error.message}`, { variant: 'error' });
+      enqueueSnackbar(t('createCostFuel.snackbar.error', { message: error.message }), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -180,7 +175,6 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
 
   const handleClose = () => {
     if (!loading) {
-      // Reset form when closing
       setFormData({
         truck: 0,
         cost_gl: 0,
@@ -224,10 +218,10 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
               <LocalGasStation fontSize="large" />
               <Box>
                 <Typography variant="h5" fontWeight="bold">
-                  Create Fuel Cost Record
+                  {t('createCostFuel.title')}
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Register a new fuel expense
+                  {t('createCostFuel.subtitle')}
                 </Typography>
               </Box>
             </Box>
@@ -252,16 +246,16 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
           {loadingTrucks ? (
             <Box display="flex" justifyContent="center" alignItems="center" py={8}>
               <CircularProgress sx={{ color: '#0B2863' }} />
-              <Typography sx={{ ml: 2 }}>Loading trucks...</Typography>
+              <Typography sx={{ ml: 2 }}>{t('createCostFuel.loading.trucks')}</Typography>
             </Box>
           ) : trucks.length === 0 ? (
             <Box textAlign="center" py={8}>
               <LocalGasStation sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                No trucks available
+                {t('createCostFuel.empty.title')}
               </Typography>
               <Typography color="text.secondary">
-                You need active trucks to create a fuel cost record
+                {t('createCostFuel.empty.desc')}
               </Typography>
             </Box>
           ) : (
@@ -269,18 +263,18 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
               {/* Truck Selection Section */}
               <Paper elevation={0} sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 2, mb: 3 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 2 }}>
-                  Select Truck
+                  {t('createCostFuel.sections.selectTruck')}
                 </Typography>
                 <FormControl fullWidth required>
-                  <InputLabel>Choose a truck</InputLabel>
+                  <InputLabel>{t('createCostFuel.sections.chooseTruck')}</InputLabel>
                   <Select
                     value={formData.truck}
                     onChange={(e) => handleInputChange('truck', e.target.value as number)}
-                    label="Choose a truck"
+                    label={t('createCostFuel.sections.chooseTruck')}
                     sx={{ bgcolor: 'white' }}
                   >
                     <MenuItem value={0} disabled>
-                      <em>Select a truck</em>
+                      <em>{t('createCostFuel.sections.selectTruckPlaceholder')}</em>
                     </MenuItem>
                     {trucks.map((truck) => (
                       <MenuItem key={truck.id_truck} value={truck.id_truck}>
@@ -296,7 +290,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
               {/* Date Section */}
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 2 }}>
-                  Date
+                  {t('createCostFuel.sections.date')}
                 </Typography>
                 <TextField
                   fullWidth
@@ -318,12 +312,12 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Gauge size={20} />
-                  Distance
+                  {t('createCostFuel.sections.distance')}
                 </Typography>
                 <TextField
                   fullWidth
                   required
-                  label="Distance"
+                  label={t('createCostFuel.fields.distance')}
                   type="number"
                   value={formData.distance || ''}
                   onChange={(e) => handleInputChange('distance', Number(e.target.value) || 0)}
@@ -345,7 +339,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 3 }}>
                   <LocalGasStation sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  Fuel Information
+                  {t('createCostFuel.sections.fuelInformation')}
                 </Typography>
 
                 <Box sx={{
@@ -357,7 +351,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
                   <TextField
                     fullWidth
                     required
-                    label="Fuel Quantity"
+                    label={t('createCostFuel.fields.fuelQuantity')}
                     type="number"
                     inputProps={{ step: 0.01, min: 0 }}
                     value={formData.fuel_qty || ''}
@@ -376,7 +370,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
                   <TextField
                     fullWidth
                     required
-                    label="Price per Gallon"
+                    label={t('createCostFuel.fields.pricePerGallon')}
                     type="number"
                     inputProps={{ step: 0.01, min: 0 }}
                     value={formData.cost_gl || ''}
@@ -394,7 +388,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
 
                   <TextField
                     fullWidth
-                    label="Total Cost"
+                    label={t('createCostFuel.fields.totalCost')}
                     type="number"
                     value={formData.cost_fuel.toFixed(2)}
                     InputProps={{
@@ -422,14 +416,14 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
               <Box>
                 <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold', mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Image size={20} />
-                  Fuel Receipt Image (Optional)
+                  {t('createCostFuel.sections.receiptImage')}
                 </Typography>
 
                 {imagePreview ? (
                   <Paper elevation={0} sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, position: 'relative' }}>
                     <img
                       src={imagePreview}
-                      alt="Receipt preview"
+                      alt={t('createCostFuel.image.preview')}
                       style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '8px' }}
                     />
                     <Button
@@ -472,10 +466,10 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
                     <label htmlFor="fuel-receipt-upload" style={{ cursor: 'pointer' }}>
                       <Image size={48} style={{ color: '#cbd5e1', margin: '0 auto 12px' }} />
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Click to upload receipt image
+                        {t('createCostFuel.image.uploadPrompt')}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        PNG, JPG up to 10MB
+                        {t('createCostFuel.image.uploadHint')}
                       </Typography>
                     </label>
                   </Paper>
@@ -498,7 +492,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
             '&:hover': { borderColor: '#9ca3af', bgcolor: '#f9fafb' }
           }}
         >
-          Cancel
+          {t('createCostFuel.actions.cancel')}
         </Button>
         <Button
           onClick={handleSubmit}
@@ -513,7 +507,7 @@ const CreateCostFuelDialog: React.FC<CreateCostFuelDialogProps> = ({
           }}
           startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LocalGasStation />}
         >
-          {loading ? 'Creating...' : 'Create Fuel Cost'}
+          {loading ? t('createCostFuel.loading.creating') : t('createCostFuel.actions.create')}
         </Button>
       </DialogActions>
     </Dialog>

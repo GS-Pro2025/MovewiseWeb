@@ -414,752 +414,1055 @@
     "copied": "¡Copiado!"
   },
   "operatorsTable": {
-  "title": "Operadores Asignados",
-  "add": "Editar",
-  "addFirst": "Agregar Primer Operador",
-  "noOperators": "Sin operadores asignados aún",
-  "firstName": "Nombre",
-  "lastName": "Apellido",
-  "role": "Rol",
-  "code": "Código",
-  "salary": "Salario",
-  "bonus": "Bono",
-  "date": "Fecha",
-  "timeWorked": "Tiempo Trabajado",
-  "route": "Ruta",
-  "status": "Estado",
-  "viewRoute": "Ver Ruta",
-  "noCoordinates": "Sin coordenadas",
-  "endMissing": "Ubicación final faltante",
-  "startMissing": "Ubicación inicial faltante",
-  "viewRouteTitle": "Ver ruta en el mapa",
-  "finalizingTitle": "Finalizando...",
-  "clickToFinish": "Clic para finalizar",
-  "total": "Total",
-  "tooltipStart": "Inicio",
-  "tooltipEnd": "Fin",
-  "finishSuccess": "Operador finalizado exitosamente",
-  "finishError": "Error al finalizar el operador",
-  "finishing": "Finalizando..."
-},"contextMenu": {
-  "continueOrder": "Continuar Orden",
-  "finishOrder": "Finalizar Orden",
-  "alreadyFinished": "Ya Finalizada",
-  "editOrder": "Editar Orden",
-  "inactivateOrder": "Inactivar Orden",
-  "deleteOrder": "Eliminar Orden (Absoluto)",
-  "viewDispatchTicket": "Ver Ticket de Despacho",
-  "addFuelCost": "Agregar Costo de Combustible"
-},"costFuels": {
-  "title": "Costos de Combustible",
-  "add": "Agregar",
-  "addFuelCost": "Agregar Costo de Combustible",
-  "noFuelCosts": "Sin costos de combustible asignados aún",
-  "id": "ID",
-  "truck": "Camión",
-  "totalCost": "Costo Total",
-  "costPerGallon": "$/Gal",
-  "gallons": "Galones",
-  "distance": "Distancia",
-  "date": "Fecha",
-  "totalRecords": "Total Registros",
-  "totalCostLabel": "Costo Total",
-  "totalGallons": "Total Galones"
-},
-"createOrder": {
-  "title": "Crear Nueva Orden",
-  "subtitle": "Sistema de Gestión de Órdenes",
-  "sections": {
-    "orderInfo": "Información de la Orden",
-    "location": "Detalles de Ubicación",
-    "business": "Detalles del Negocio",
-    "customer": "Información del Cliente",
-    "dispatch": "Ticket de Despacho"
-  },
-  "fields": {
-    "reference": "Referencia",
-    "date": "Fecha",
-    "address": "Dirección",
-    "weight": "Peso (lb)",
-    "weightPlaceholder": "Ingresa el peso en libras",
-    "weightHelper": "Ingresa el peso en libras (ej: 1500 o 1500.50)",
-    "weightError": "Por favor ingresa un número válido",
-    "country": "País",
-    "state": "Estado/Provincia",
-    "city": "Ciudad",
-    "job": "Trabajo",
-    "company": "Empresa",
+    "title": "Operadores Asignados",
+    "add": "Editar",
+    "addFirst": "Agregar Primer Operador",
+    "noOperators": "Sin operadores asignados aún",
     "firstName": "Nombre",
     "lastName": "Apellido",
-    "email": "Correo electrónico",
-    "phone": "Teléfono",
-    "location": "Ubicación"
-  },
-  "dispatch": {
-    "upload": "Subir imagen del ticket (opcional)",
-    "change": "Cambiar imagen del ticket",
-    "remove": "Eliminar ticket",
-    "preview": "Vista previa del Ticket de Despacho"
-  },
-  "buttons": {
-    "edit": "Editar",
-    "create": "Crear Orden",
-    "creating": "Creando Orden..."
-  },
-  "messages": {
-    "success": "Orden creada exitosamente",
-    "error": "Lo sentimos, hubo un error al crear la orden",
-    "errorDefault": "Error al crear la orden, por favor intenta de nuevo más tarde.",
-    "weightInvalid": "Por favor ingresa un peso válido mayor a 0",
-    "imageTooLarge": "Lo sentimos, la imagen no puede ser mayor a 5mb.",
-    "noJobs": "No hay trabajos disponibles",
-    "noCompanies": "No hay empresas registradas"
-  },  
-  "suggestions": {
-    "jobTitle": "No hay trabajos disponibles",
-    "jobMessage": "Necesitas crear al menos un trabajo antes de crear una orden.",
-    "createJob": "Crear Trabajo",
-    "companyTitle": "No hay empresas registradas",
-    "companyMessage": "Necesitas registrar al menos una empresa antes de crear una orden.",
-    "createCompany": "Registrar Empresa"
-  }
-},
-"payroll": {
-  "header": {
-    "title": "Nómina de Operadores",
-    "subtitle": "Gestiona y rastrea los pagos de operadores eficientemente"
-  },
-  "controls": {
-    "searchLabel": "Buscar Operadores",
-    "searchPlaceholder": "Buscar por código, nombre...",
-    "clearSearch": "Limpiar búsqueda",
-    "locationLabel": "Ubicación",
-    "clearLocation": "Limpiar",
-    "clearLocationTitle": "Limpiar ubicación",
-    "selectPlaceholder": "Seleccionar {{label}}",
-    "period": "Período de Nómina (Semana {{week}}, {{year}})",
-    "country": "País",
-    "state": "Estado",
-    "city": "Ciudad"
-  },
-  "stats": {
-    "workingDays": "Días Laborales",
-    "filteredOperators": "Operadores Filtrados",
-    "totalOperators": "Total Operadores",
-    "paymentStatus": "Estado de Pago",
-    "paid": "Pagado",
-    "pending": "Pendiente",
-    "pendingAmount": "Monto Pendiente",
-    "operatorsPending": "{{count}} operador pendiente",
-    "operatorsPending_plural": "{{count}} operadores pendientes",
-    "totalExpenses": "Total Gastos",
-    "deductedFromPay": "Descontado del pago",
-    "totalToPay": "Total a Pagar",
-    "afterExpenses": "Después de gastos",
-    "grandTotal": "Total General",
-    "beforeExpenses": "Antes de gastos",
-    "full": "Total: {{amount}}"
-  }
-},"payrollTable": {
-  "pay": "Pago",
-  "code": "Código",
-  "cost": "Costo",
-  "name": "Nombre",
-  "lastName": "Apellido",
-  "additionalBonuses": "Bonos Adicionales",
-  "expenses": "Gastos",
-  "grandTotal": "Total General",
-  "totalToPay": "Total a Pagar",
-  "noResultsSearch": "No se encontraron operadores que coincidan con \"{{search}}\"",
-  "noData": "No hay datos disponibles",
-  "adjustCriteria": "Intenta ajustar los criterios de búsqueda"
-},"createWarehouse": {
-  "title": "Crear Orden de Warehouse",
-  "subtitle": "Sistema de Gestión de Warehouse",
-  "sections": {
-    "orderInfo": "Información de la Orden",
-    "location": "Detalles de Ubicación",
-    "factory": "Fábrica del Cliente",
-    "dispatch": "Ticket de Despacho"
-  },
-  "fields": {
+    "role": "Rol",
+    "code": "Código",
+    "salary": "Salario",
+    "bonus": "Bono",
     "date": "Fecha",
-    "country": "País",
-    "state": "Estado",
-    "city": "Ciudad",
-    "selectPlaceholder": "Seleccionar {{label}}",
-    "customerFactory": "Fábrica del Cliente",
-    "selectedLocation": "Ubicación Seleccionada"
+    "timeWorked": "Tiempo Trabajado",
+    "route": "Ruta",
+    "status": "Estado",
+    "viewRoute": "Ver Ruta",
+    "noCoordinates": "Sin coordenadas",
+    "endMissing": "Ubicación final faltante",
+    "startMissing": "Ubicación inicial faltante",
+    "viewRouteTitle": "Ver ruta en el mapa",
+    "finalizingTitle": "Finalizando...",
+    "clickToFinish": "Clic para finalizar",
+    "total": "Total",
+    "tooltipStart": "Inicio",
+    "tooltipEnd": "Fin",
+    "finishSuccess": "Operador finalizado exitosamente",
+    "finishError": "Error al finalizar el operador",
+    "finishing": "Finalizando..."
   },
-  "dispatch": {
-    "upload": "Subir Ticket de Despacho",
-    "imageSelected": "Imagen seleccionada",
-    "remove": "Eliminar ticket",
-    "selected": "Seleccionado",
-    "preview": "Vista previa del Ticket de Despacho"
+  "contextMenu": {
+    "continueOrder": "Continuar Orden",
+    "finishOrder": "Finalizar Orden",
+    "alreadyFinished": "Ya Finalizada",
+    "editOrder": "Editar Orden",
+    "inactivateOrder": "Inactivar Orden",
+    "deleteOrder": "Eliminar Orden (Absoluto)",
+    "viewDispatchTicket": "Ver Ticket de Despacho",
+    "addFuelCost": "Agregar Costo de Combustible",
+    "createExtraCost": "Crear Costo Extra"
   },
-  "buttons": {
-    "clear": "Limpiar",
-    "create": "Crear Orden de Almacén",
-    "creating": "Creando Orden de Almacén..."
+  "costFuels": {
+    "title": "Costos de Combustible",
+    "add": "Agregar",
+    "addFuelCost": "Agregar Costo de Combustible",
+    "noFuelCosts": "Sin costos de combustible asignados aún",
+    "id": "ID",
+    "truck": "Camión",
+    "totalCost": "Costo Total",
+    "costPerGallon": "$/Gal",
+    "gallons": "Galones",
+    "distance": "Distancia",
+    "date": "Fecha",
+    "totalRecords": "Total Registros",
+    "totalCostLabel": "Costo Total",
+    "totalGallons": "Total Galones"
   },
-  "messages": {
-    "imageTooLarge": "Lo sentimos, la imagen no puede ser mayor a 5mb.",
-    "noFactory": "Por favor selecciona una fábrica del cliente.",
-    "noLocation": "Por favor selecciona una ubicación.",
-    "success": "¡Orden de almacén creada exitosamente!",
-    "errorLoading": "Error al cargar las fábricas del cliente"
-  }
-},"applyToOrders": {
-  "titleResult": "Resultados de Aplicación",
-  "titleConfirm": "Aplicar Estado de Cuenta a Órdenes",
-  "keyRef": "Ref: {{keyref}} - {{count}} orden(es)",
-  "applying": "Aplicando montos a las órdenes...",
-  "totalOrders": "Total Órdenes",
-  "updated": "Actualizadas",
-  "skipped": "Omitidas",
-  "failed": "Fallidas",
-  "successAlert": "¡Montos aplicados exitosamente a {{count}} orden(es)!",
-  "warningAlert": "Algunas órdenes fallaron al actualizar. Ver detalles abajo.",
-  "skippedAlert": "Todas las órdenes fueron omitidas porque ya tienen valores.",
-  "distributionPerOrder": "Distribución por Orden:",
-  "income": "Ingreso",
-  "expense": "Gasto",
-  "orderKey": "Clave de Orden",
-  "previousIncome": "Ingreso Anterior",
-  "newIncome": "Nuevo Ingreso",
-  "previousExpense": "Gasto Anterior",
-  "newExpense": "Nuevo Gasto",
-  "action": "Acción",
-  "matchingOrders": "Este registro tiene <strong>{{count}} orden(es) coincidente(s)</strong>. Elige cómo aplicar los montos.",
-  "statementAmounts": "Montos del Estado de Cuenta:",
-  "warningValues": "⚠️ Algunas órdenes ya tienen valores",
-  "warningValuesCaption": "Elige tu acción con cuidado para evitar sobreescribir datos existentes.",
-  "selectAction": "Seleccionar Acción:",
-  "autoTitle": "Auto (Recomendado)",
-  "autoDesc": "Solo actualiza órdenes con ingreso/gasto en 0 o NULL. Opción segura que no sobreescribirá datos existentes.",
-  "overwriteTitle": "Sobreescribir",
-  "overwriteDesc": "Reemplaza todos los montos de órdenes con los valores distribuidos del estado de cuenta. Úsalo cuando confíes en el estado de cuenta sobre las órdenes existentes.",
-  "addTitle": "Agregar",
-  "addDesc": "Suma los montos distribuidos del estado de cuenta a los valores existentes de las órdenes. Úsalo cuando quieras combinar ambas fuentes.",
-  "distributionNote": "<strong>Distribución:</strong> Los montos se dividirán equitativamente entre las {{count}} orden(es). Cada orden recibirá ${{income}} de ingreso y ${{expense}} de gasto.",
-  "noVerification": "No hay datos de verificación disponibles",
-  "close": "Cerrar",
-  "applyButton": "Aplicar a Órdenes"
-},
-"bulkUpdate": {
-  "titleResult": "Resultados de Actualización",
-  "titleConfirm": "Confirmar Actualización de Estado",
-  "subtitle": "Actualizar estados de los registros seleccionados",
-  "updating": "Actualizando estados de registros...",
-  "totalUpdates": "Total Actualizaciones",
-  "successful": "Exitosas",
-  "failed": "Fallidas",
-  "successAlert": "¡Todos los registros actualizados exitosamente!",
-  "warningAlert": "Algunos registros fallaron al actualizar. Ver detalles abajo.",
-  "errorAlert": "Todas las actualizaciones fallaron. Ver detalles abajo.",
-  "status": "Estado",
-  "recordId": "ID Registro",
-  "previousState": "Estado Anterior",
-  "newState": "Nuevo Estado",
-  "message": "Mensaje",
-  "updatedSuccess": "Actualizado exitosamente",
-  "unknownError": "Error desconocido",
-  "readyTitle": "Listo para Actualizar Estados de Registros",
-  "readyDesc": "Esta operación solo actualizará el <strong>campo de estado</strong> de los registros seleccionados y <strong>el monto de ingreso y gasto.</strong>",
-  "readyNote": "Para actualizar montos de órdenes, usa la opción \"Aplicar a Órdenes\" después de la verificación.",
-  "footerNote": "Nota: Puedes verificar los cambios después de actualizar refrescando la tabla.",
-  "close": "Cerrar",
-  "confirmButton": "Confirmar Actualización"
-},
-"statementTable": {
-  "keyRef": "Ref. Clave",
-  "week": "Semana",
-  "shipper": "Transportista",
-  "income": "Ingreso",
-  "expense": "Gasto",
-  "state": "Estado",
-  "copyToClipboard": "Copiar al portapapeles",
-  "copied": "¡Copiado!",
-  "loading": "Cargando datos...",
-  "noRecordsTitle": "No se Encontraron Registros",
-  "noRecordsDesc": "No hay registros disponibles para la semana seleccionada. Intenta ajustar la selección de semana o criterios de filtro.",
-  "noRecordsTip": "Consejo: Verifica la semana y los filtros de arriba",
-  "rowsPerPage": "Filas por página:",
-  "of": "de",
-  "previous": "Anterior",
-  "next": "Siguiente",
-  "stateLabel": "Estado para {{keyref}}",
-  "stateExists": "Exists",
-  "stateNotExists": "Not_exists",
-  "stateProcessed": "Processed",
-  "failedUpdateState": "Error al actualizar el estado"
-},"statementFilters": {
-  "title": "Registros de Estado de Cuenta - Semana {{week}}, {{year}}",
-  "weekLabel": "Semana",
-  "yearLabel": "Año",
-  "dateRange": "Rango de Fechas:",
-  "searchTitle": "Búsqueda",
-  "searchLabel": "Buscar por Ref. Clave o Transportista",
-  "searchPlaceholder": "Ingresa ref. clave o nombre del transportista...",
-  "searchHelper": "Escribe para buscar entre referencias y transportistas",
-  "weekSummary": "Resumen de Semana",
-  "records": "Registros",
-  "income": "Ingreso",
-  "expense": "Gasto",
-  "net": "Neto",
-  "statusBreakdown": "Desglose por Estado:",
-  "stateNotExists": "No Existe",
-  "stateExists": "Existe",
-  "stateProcessed": "Procesado"
-},
-"statementPage": {
-  "title": "Estados de Cuenta",
-  "subtitle": "Gestionar registros e importaciones",
-  "uploadButton": "Subir PDFs (OCR)",
-  "verifyWarning": "Por favor selecciona al menos un registro para verificar",
-  "verifiedSuccess": "{{count}} registros verificados",
-  "verifyFailed": "Verificación fallida: {{message}}",
-  "verifyWarningMissing": "{{warning}} - IDs faltantes: {{ids}}",
-  "noUpdates": "No hay actualizaciones que aplicar",
-  "updatedRecords": "Actualizados {{success}}/{{total}} registros",
-  "updateFailed": "Actualización fallida: {{message}}",
-  "appliedOrders": "Aplicado a {{updated}} orden(es), {{skipped}} omitidas",
-  "applyFailed": "Error al aplicar: {{message}}",
-  "startingMode": "Iniciando procesamiento en modo {{mode}}...",
-  "processedFiles": "Procesados {{success}}/{{total}} archivos",
-  "unexpectedError": "Error inesperado: {{message}}"
-},
-"statementsList": {
-  "errorLoading": "Error al cargar estados de cuenta",
-  "stateUpdated": "Estado de {{keyref}} actualizado a {{state}}",
-  "exportExcelPending": "Exportación a Excel pendiente de implementación",
-  "exportPDFPending": "Exportación a PDF pendiente de implementación"
-},"verificationResultsDialog": {
-  "title": "Resultados de Verificación",
-  "summary": "Total de registros: {{total}} | Con coincidencias: {{withMatches}} | Sin coincidencias: {{withoutMatches}}",
-  "alertInfo": "Seleccione los registros a actualizar. El estado sugerido se aplicará a los registros seleccionados y el ingreso del registro del estado de cuenta se actualizará según las órdenes.",
-  "selectAll": "Seleccionar Todo",
-  "deselectAll": "Deseleccionar Todo",
-  "table": {
-    "keyRef": "Ref. Clave",
-    "currentState": "Estado Actual",
-    "suggestedState": "Estado Sugerido",
-    "matches": "Coincidencias",
-    "actions": "Acciones"
-  },
-  "matchChip": "{{count}} orden(es)",
-  "noMatches": "Sin coincidencias",
-  "amountComparison": {
-    "title": "Comparación de Montos",
-    "statementIncome": "Ingreso del Estado de Cuenta",
-    "ordersIncome": "Ingreso de Órdenes",
-    "difference": "Diferencia",
-    "statementExpense": "Gasto del Estado de Cuenta",
-    "ordersExpense": "Gasto de Órdenes"
-  },
-  "matchingOrders": {
-    "title": "Órdenes Coincidentes ({{count}})",
-    "applyToOrders": "Aplicar a Órdenes",
-    "noMatchingOrders": "No se encontraron órdenes coincidentes para este registro",
-    "table": {
-      "orderKey": "Clave de Orden",
-      "income": "Ingreso",
-      "expense": "Gasto",
+  "createOrder": {
+    "title": "Crear Nueva Orden",
+    "subtitle": "Sistema de Gestión de Órdenes",
+    "sections": {
+      "orderInfo": "Información de la Orden",
+      "location": "Detalles de Ubicación",
+      "business": "Detalles del Negocio",
+      "customer": "Información del Cliente",
+      "dispatch": "Ticket de Despacho"
+    },
+    "fields": {
+      "reference": "Referencia",
       "date": "Fecha",
-      "status": "Estado"
+      "address": "Dirección",
+      "weight": "Peso (lb)",
+      "weightPlaceholder": "Ingresa el peso en libras",
+      "weightHelper": "Ingresa el peso en libras (ej: 1500 o 1500.50)",
+      "weightError": "Por favor ingresa un número válido",
+      "country": "País",
+      "state": "Estado/Provincia",
+      "city": "Ciudad",
+      "job": "Trabajo",
+      "company": "Empresa",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "location": "Ubicación"
+    },
+    "dispatch": {
+      "upload": "Subir imagen del ticket (opcional)",
+      "change": "Cambiar imagen del ticket",
+      "remove": "Eliminar ticket",
+      "preview": "Vista previa del Ticket de Despacho"
+    },
+    "buttons": {
+      "edit": "Editar",
+      "create": "Crear Orden",
+      "creating": "Creando Orden..."
+    },
+    "messages": {
+      "success": "Orden creada exitosamente",
+      "error": "Lo sentimos, hubo un error al crear la orden",
+      "errorDefault": "Error al crear la orden, por favor intenta de nuevo más tarde.",
+      "weightInvalid": "Por favor ingresa un peso válido mayor a 0",
+      "imageTooLarge": "Lo sentimos, la imagen no puede ser mayor a 5mb.",
+      "noJobs": "No hay trabajos disponibles",
+      "noCompanies": "No hay empresas registradas"
+    },
+    "suggestions": {
+      "jobTitle": "No hay trabajos disponibles",
+      "jobMessage": "Necesitas crear al menos un trabajo antes de crear una orden.",
+      "createJob": "Crear Trabajo",
+      "companyTitle": "No hay empresas registradas",
+      "companyMessage": "Necesitas registrar al menos una empresa antes de crear una orden.",
+      "createCompany": "Registrar Empresa"
     }
   },
-  "noData": "No hay datos de verificación disponibles",
-  "actions": {
-    "cancel": "Cancelar",
-    "applyChanges": "Aplicar Cambios ({{count}})"
-  }
-},
-"statistics": {
-  "title": "Panel de Estadísticas",
-  "loadingStatistics": "Cargando estadísticas...",
-  "errorTitle": "Error al Cargar Estadísticas",
-  "tryAgain": "Intentar de Nuevo",
-  "tabs": {
-    "overview": "Resumen de Negocio",
-    "trucks": "Logística de Vehículos",
-    "payroll": "Análisis de Nómina",
-    "historical": "Análisis Histórico",
-    "financials": "Finanzas",
-    "expenseBreakdown": "Desglose de Gastos",
-    "loans": "Préstamos de Operadores"
+  "payroll": {
+    "header": {
+      "title": "Nómina de Operadores",
+      "subtitle": "Gestiona y rastrea los pagos de operadores eficientemente"
+    },
+    "controls": {
+      "searchLabel": "Buscar Operadores",
+      "searchPlaceholder": "Buscar por código, nombre...",
+      "clearSearch": "Limpiar búsqueda",
+      "locationLabel": "Ubicación",
+      "clearLocation": "Limpiar",
+      "clearLocationTitle": "Limpiar ubicación",
+      "selectPlaceholder": "Seleccionar {{label}}",
+      "period": "Período de Nómina (Semana {{week}}, {{year}})",
+      "country": "País",
+      "state": "Estado",
+      "city": "Ciudad"
+    },
+    "stats": {
+      "workingDays": "Días Laborales",
+      "filteredOperators": "Operadores Filtrados",
+      "totalOperators": "Total Operadores",
+      "paymentStatus": "Estado de Pago",
+      "paid": "Pagado",
+      "pending": "Pendiente",
+      "pendingAmount": "Monto Pendiente",
+      "operatorsPending": "{{count}} operador pendiente",
+      "operatorsPending_plural": "{{count}} operadores pendientes",
+      "totalExpenses": "Total Gastos",
+      "deductedFromPay": "Descontado del pago",
+      "totalToPay": "Total a Pagar",
+      "afterExpenses": "Después de gastos",
+      "grandTotal": "Total General",
+      "beforeExpenses": "Antes de gastos",
+      "full": "Total: {{amount}}"
+    }
   },
-  "stats": {
-    "totalOrders": "Total de Órdenes",
-    "avgOrdersDay": "Prom. Órdenes/Día",
-    "peakDayOrders": "Órdenes Día Pico",
-    "activeDays": "Días Activos",
-    "activeClients": "Clientes Activos",
-    "factories": "Fábricas"
-  }
-},
-"payrollStatistics": {
-  "loadingPayroll": "Cargando datos de nómina...",
-  "errorTitle": "Error al Cargar Nómina",
-  "tabs": {
-    "directory": "Directorio de Empleados",
-    "ranking": "Ranking Semanal de Operadores",
-    "inactive": "Operadores Inactivos"
+  "payrollTable": {
+    "pay": "Pago",
+    "code": "Código",
+    "cost": "Costo",
+    "name": "Nombre",
+    "lastName": "Apellido",
+    "additionalBonuses": "Bonos Adicionales",
+    "expenses": "Gastos",
+    "grandTotal": "Total General",
+    "totalToPay": "Total a Pagar",
+    "noResultsSearch": "No se encontraron operadores que coincidan con \"{{search}}\"",
+    "noData": "No hay datos disponibles",
+    "adjustCriteria": "Intenta ajustar los criterios de búsqueda"
   },
-  "directory": {
-    "title": "Resumen de Nómina",
-    "subtitle": "Gestiona salarios e información de empleados",
-    "totalPayroll": "Nómina Total",
-    "totalEmployees": "Total de Empleados",
-    "averageSalary": "Salario Promedio",
-    "activeStatus": "Estado Activo",
-    "searchPlaceholder": "Buscar empleados por nombre, email o código...",
-    "showing": "Mostrando {{filtered}} de {{total}} empleados",
-    "noMatch": "No se encontraron empleados con \"{{term}}\"",
-    "tableTitle": "Directorio de Empleados",
-    "colEmployee": "Empleado",
-    "colEmail": "Email",
-    "colSalary": "Salario",
-    "colStatus": "Estado",
-    "code": "Código: {{code}}",
-    "noEmployees": "No hay empleados disponibles",
-    "totalPayrollMonthly": "Nómina Mensual Total",
+  "createWarehouse": {
+    "title": "Crear Orden de Warehouse",
+    "subtitle": "Sistema de Gestión de Warehouse",
+    "sections": {
+      "orderInfo": "Información de la Orden",
+      "location": "Detalles de Ubicación",
+      "factory": "Fábrica del Cliente",
+      "dispatch": "Ticket de Despacho"
+    },
+    "fields": {
+      "date": "Fecha",
+      "country": "País",
+      "state": "Estado",
+      "city": "Ciudad",
+      "selectPlaceholder": "Seleccionar {{label}}",
+      "customerFactory": "Fábrica del Cliente",
+      "selectedLocation": "Ubicación Seleccionada"
+    },
+    "dispatch": {
+      "upload": "Subir Ticket de Despacho",
+      "imageSelected": "Imagen seleccionada",
+      "remove": "Eliminar ticket",
+      "selected": "Seleccionado",
+      "preview": "Vista previa del Ticket de Despacho"
+    },
+    "buttons": {
+      "clear": "Limpiar",
+      "create": "Crear Orden de Almacén",
+      "creating": "Creando Orden de Almacén..."
+    },
+    "messages": {
+      "imageTooLarge": "Lo sentimos, la imagen no puede ser mayor a 5mb.",
+      "noFactory": "Por favor selecciona una fábrica del cliente.",
+      "noLocation": "Por favor selecciona una ubicación.",
+      "success": "¡Orden de almacén creada exitosamente!",
+      "errorLoading": "Error al cargar las fábricas del cliente"
+    }
+  },
+  "applyToOrders": {
+    "titleResult": "Resultados de Aplicación",
+    "titleConfirm": "Aplicar Estado de Cuenta a Órdenes",
+    "keyRef": "Ref: {{keyref}} - {{count}} orden(es)",
+    "applying": "Aplicando montos a las órdenes...",
+    "totalOrders": "Total Órdenes",
+    "updated": "Actualizadas",
+    "skipped": "Omitidas",
+    "failed": "Fallidas",
+    "successAlert": "¡Montos aplicados exitosamente a {{count}} orden(es)!",
+    "warningAlert": "Algunas órdenes fallaron al actualizar. Ver detalles abajo.",
+    "skippedAlert": "Todas las órdenes fueron omitidas porque ya tienen valores.",
+    "distributionPerOrder": "Distribución por Orden:",
+    "income": "Ingreso",
+    "expense": "Gasto",
+    "orderKey": "Clave de Orden",
+    "previousIncome": "Ingreso Anterior",
+    "newIncome": "Nuevo Ingreso",
+    "previousExpense": "Gasto Anterior",
+    "newExpense": "Nuevo Gasto",
+    "action": "Acción",
+    "matchingOrders": "Este registro tiene <strong>{{count}} orden(es) coincidente(s)</strong>. Elige cómo aplicar los montos.",
+    "statementAmounts": "Montos del Estado de Cuenta:",
+    "warningValues": "⚠️ Algunas órdenes ya tienen valores",
+    "warningValuesCaption": "Elige tu acción con cuidado para evitar sobreescribir datos existentes.",
+    "selectAction": "Seleccionar Acción:",
+    "autoTitle": "Auto (Recomendado)",
+    "autoDesc": "Solo actualiza órdenes con ingreso/gasto en 0 o NULL. Opción segura que no sobreescribirá datos existentes.",
+    "overwriteTitle": "Sobreescribir",
+    "overwriteDesc": "Reemplaza todos los montos de órdenes con los valores distribuidos del estado de cuenta. Úsalo cuando confíes en el estado de cuenta sobre las órdenes existentes.",
+    "addTitle": "Agregar",
+    "addDesc": "Suma los montos distribuidos del estado de cuenta a los valores existentes de las órdenes. Úsalo cuando quieras combinar ambas fuentes.",
+    "distributionNote": "<strong>Distribución:</strong> Los montos se dividirán equitativamente entre las {{count}} orden(es). Cada orden recibirá ${{income}} de ingreso y ${{expense}} de gasto.",
+    "noVerification": "No hay datos de verificación disponibles",
+    "close": "Cerrar",
+    "applyButton": "Aplicar a Órdenes"
+  },
+  "bulkUpdate": {
+    "titleResult": "Resultados de Actualización",
+    "titleConfirm": "Confirmar Actualización de Estado",
+    "subtitle": "Actualizar estados de los registros seleccionados",
+    "updating": "Actualizando estados de registros...",
+    "totalUpdates": "Total Actualizaciones",
+    "successful": "Exitosas",
+    "failed": "Fallidas",
+    "successAlert": "¡Todos los registros actualizados exitosamente!",
+    "warningAlert": "Algunos registros fallaron al actualizar. Ver detalles abajo.",
+    "errorAlert": "Todas las actualizaciones fallaron. Ver detalles abajo.",
+    "status": "Estado",
+    "recordId": "ID Registro",
+    "previousState": "Estado Anterior",
+    "newState": "Nuevo Estado",
+    "message": "Mensaje",
+    "updatedSuccess": "Actualizado exitosamente",
+    "unknownError": "Error desconocido",
+    "readyTitle": "Listo para Actualizar Estados de Registros",
+    "readyDesc": "Esta operación solo actualizará el <strong>campo de estado</strong> de los registros seleccionados y <strong>el monto de ingreso y gasto.</strong>",
+    "readyNote": "Para actualizar montos de órdenes, usa la opción \"Aplicar a Órdenes\" después de la verificación.",
+    "footerNote": "Nota: Puedes verificar los cambios después de actualizar refrescando la tabla.",
+    "close": "Cerrar",
+    "confirmButton": "Confirmar Actualización"
+  },
+  "statementTable": {
+    "keyRef": "Ref. Clave",
+    "week": "Semana",
+    "shipper": "Transportista",
+    "income": "Ingreso",
+    "expense": "Gasto",
+    "state": "Estado",
+    "copyToClipboard": "Copiar al portapapeles",
+    "copied": "¡Copiado!",
+    "loading": "Cargando datos...",
+    "noRecordsTitle": "No se Encontraron Registros",
+    "noRecordsDesc": "No hay registros disponibles para la semana seleccionada. Intenta ajustar la selección de semana o criterios de filtro.",
+    "noRecordsTip": "Consejo: Verifica la semana y los filtros de arriba",
+    "rowsPerPage": "Filas por página:",
+    "of": "de",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "stateLabel": "Estado para {{keyref}}",
+    "stateExists": "Exists",
+    "stateNotExists": "Not_exists",
+    "stateProcessed": "Processed",
+    "failedUpdateState": "Error al actualizar el estado"
+  },
+  "statementFilters": {
+    "title": "Registros de Estado de Cuenta - Semana {{week}}, {{year}}",
+    "weekLabel": "Semana",
+    "yearLabel": "Año",
+    "dateRange": "Rango de Fechas:",
+    "searchTitle": "Búsqueda",
+    "searchLabel": "Buscar por Ref. Clave o Transportista",
+    "searchPlaceholder": "Ingresa ref. clave o nombre del transportista...",
+    "searchHelper": "Escribe para buscar entre referencias y transportistas",
+    "weekSummary": "Resumen de Semana",
+    "records": "Registros",
+    "income": "Ingreso",
+    "expense": "Gasto",
+    "net": "Neto",
+    "statusBreakdown": "Desglose por Estado:",
+    "stateNotExists": "No Existe",
+    "stateExists": "Existe",
+    "stateProcessed": "Procesado"
+  },
+  "statementPage": {
+    "title": "Estados de Cuenta",
+    "subtitle": "Gestionar registros e importaciones",
+    "uploadButton": "Subir PDFs (OCR)",
+    "verifyWarning": "Por favor selecciona al menos un registro para verificar",
+    "verifiedSuccess": "{{count}} registros verificados",
+    "verifyFailed": "Verificación fallida: {{message}}",
+    "verifyWarningMissing": "{{warning}} - IDs faltantes: {{ids}}",
+    "noUpdates": "No hay actualizaciones que aplicar",
+    "updatedRecords": "Actualizados {{success}}/{{total}} registros",
+    "updateFailed": "Actualización fallida: {{message}}",
+    "appliedOrders": "Aplicado a {{updated}} orden(es), {{skipped}} omitidas",
+    "applyFailed": "Error al aplicar: {{message}}",
+    "startingMode": "Iniciando procesamiento en modo {{mode}}...",
+    "processedFiles": "Procesados {{success}}/{{total}} archivos",
+    "unexpectedError": "Error inesperado: {{message}}"
+  },
+  "statementsList": {
+    "errorLoading": "Error al cargar estados de cuenta",
+    "stateUpdated": "Estado de {{keyref}} actualizado a {{state}}",
+    "exportExcelPending": "Exportación a Excel pendiente de implementación",
+    "exportPDFPending": "Exportación a PDF pendiente de implementación"
+  },
+  "verificationResultsDialog": {
+    "title": "Resultados de Verificación",
+    "summary": "Total de registros: {{total}} | Con coincidencias: {{withMatches}} | Sin coincidencias: {{withoutMatches}}",
+    "alertInfo": "Seleccione los registros a actualizar. El estado sugerido se aplicará a los registros seleccionados y el ingreso del registro del estado de cuenta se actualizará según las órdenes.",
+    "selectAll": "Seleccionar Todo",
+    "deselectAll": "Deseleccionar Todo",
+    "table": {
+      "keyRef": "Ref. Clave",
+      "currentState": "Estado Actual",
+      "suggestedState": "Estado Sugerido",
+      "matches": "Coincidencias",
+      "actions": "Acciones"
+    },
+    "matchChip": "{{count}} orden(es)",
+    "noMatches": "Sin coincidencias",
+    "amountComparison": {
+      "title": "Comparación de Montos",
+      "statementIncome": "Ingreso del Estado de Cuenta",
+      "ordersIncome": "Ingreso de Órdenes",
+      "difference": "Diferencia",
+      "statementExpense": "Gasto del Estado de Cuenta",
+      "ordersExpense": "Gasto de Órdenes"
+    },
+    "matchingOrders": {
+      "title": "Órdenes Coincidentes ({{count}})",
+      "applyToOrders": "Aplicar a Órdenes",
+      "noMatchingOrders": "No se encontraron órdenes coincidentes para este registro",
+      "table": {
+        "orderKey": "Clave de Orden",
+        "income": "Ingreso",
+        "expense": "Gasto",
+        "date": "Fecha",
+        "status": "Estado"
+      }
+    },
+    "noData": "No hay datos de verificación disponibles",
+    "actions": {
+      "cancel": "Cancelar",
+      "applyChanges": "Aplicar Cambios ({{count}})"
+    }
+  },
+  "statistics": {
+    "title": "Panel de Estadísticas",
+    "loadingStatistics": "Cargando estadísticas...",
+    "errorTitle": "Error al Cargar Estadísticas",
+    "tryAgain": "Intentar de Nuevo",
+    "tabs": {
+      "overview": "Resumen de Negocio",
+      "trucks": "Logística de Vehículos",
+      "payroll": "Análisis de Nómina",
+      "historical": "Análisis Histórico",
+      "financials": "Finanzas",
+      "expenseBreakdown": "Desglose de Gastos",
+      "loans": "Préstamos de Operadores"
+    },
+    "stats": {
+      "totalOrders": "Total de Órdenes",
+      "avgOrdersDay": "Prom. Órdenes/Día",
+      "peakDayOrders": "Órdenes Día Pico",
+      "activeDays": "Días Activos",
+      "activeClients": "Clientes Activos",
+      "factories": "Fábricas"
+    }
+  },
+  "payrollStatistics": {
+    "loadingPayroll": "Cargando datos de nómina...",
+    "errorTitle": "Error al Cargar Nómina",
+    "tabs": {
+      "directory": "Directorio de Empleados",
+      "ranking": "Ranking Semanal de Operadores",
+      "inactive": "Operadores Inactivos"
+    },
+    "directory": {
+      "title": "Resumen de Nómina",
+      "subtitle": "Gestiona salarios e información de empleados",
+      "totalPayroll": "Nómina Total",
+      "totalEmployees": "Total de Empleados",
+      "averageSalary": "Salario Promedio",
+      "activeStatus": "Estado Activo",
+      "searchPlaceholder": "Buscar empleados por nombre, email o código...",
+      "showing": "Mostrando {{filtered}} de {{total}} empleados",
+      "noMatch": "No se encontraron empleados con \"{{term}}\"",
+      "tableTitle": "Directorio de Empleados",
+      "colEmployee": "Empleado",
+      "colEmail": "Email",
+      "colSalary": "Salario",
+      "colStatus": "Estado",
+      "code": "Código: {{code}}",
+      "noEmployees": "No hay empleados disponibles",
+      "totalPayrollMonthly": "Nómina Mensual Total",
       "averageMonthlySalary": "Salario Promedio Mensual",
       "averageWeeklySalary": "Salario Promedio Semanal",
       "hourlyEmployees": "Empleados por Hora",
       "dailyEmployees": "Empleados por Día",
       "hourlyRate": "Tarifa por hora",
       "dailyRate": "Tarifa diaria",
-            "basedOnDays": "Basado en {days} días laborales/mes",
+      "basedOnDays": "Basado en {days} días laborales/mes",
       "calculationNote": "Cálculos basados en: {hours} horas/día, {days} días/semana, {monthDays} días/mes",
       "averageDailySalary": "Salario Promedio Diario"
+    },
+    "ranking": {
+      "title": "Ranking Semanal de Operadores",
+      "subtitle": "Operadores más asignados para la semana {{week}}, {{year}}",
+      "weekRange": "Rango de semana: {{start}} → {{end}}",
+      "labelYear": "Año:",
+      "labelWeek": "Semana:",
+      "loading": "Cargando ranking...",
+      "colRank": "#",
+      "colEmployee": "Empleado",
+      "colEmail": "Email",
+      "colAssignments": "Asignaciones",
+      "colEarnings": "Ganancias de la Semana",
+      "perAssignment": "{amount}/asignación",
+      "total": "Total",
+      "totalWeeklyPayroll": "Nómina Semanal Total: {total}"
+    },
+    "inactive": {
+      "title": "Operadores Inactivos",
+      "subtitle": "Operadores actualmente inactivos",
+      "searchPlaceholder": "Buscar operadores inactivos por nombre o email...",
+      "showing": "Mostrando {{filtered}} de {{total}} operadores inactivos",
+      "noMatch": "No se encontraron operadores con \"{{term}}\"",
+      "loading": "Cargando operadores inactivos...",
+      "colEmployee": "Empleado",
+      "colEmail": "Email",
+      "colStatus": "Estado",
+      "colActions": "Acciones",
+      "activate": "Activar",
+      "noInactive": "No hay operadores inactivos disponibles",
+      "activatedSuccess": "Operador activado exitosamente",
+      "activateError": "Error al activar operador"
+    },
+    "errors": {
+      "loadOperators": "Error al cargar operadores",
+      "loadRanking": "Error al cargar ranking",
+      "loadInactive": "Error al cargar operadores inactivos"
+    }
   },
-  "ranking": {
-    "title": "Ranking Semanal de Operadores",
-    "subtitle": "Operadores más asignados para la semana {{week}}, {{year}}",
-    "weekRange": "Rango de semana: {{start}} → {{end}}",
-    "labelYear": "Año:",
-    "labelWeek": "Semana:",
-    "loading": "Cargando ranking...",
-    "colRank": "#",
-    "colEmployee": "Empleado",
-    "colEmail": "Email",
-    "colAssignments": "Asignaciones",      
-    "colEarnings": "Ganancias de la Semana",
-    "perAssignment": "{amount}/asignación",
-    "total": "Total",
-    "totalWeeklyPayroll": "Nómina Semanal Total: {total}"
-  },
-  "inactive": {
-    "title": "Operadores Inactivos",
-    "subtitle": "Operadores actualmente inactivos",
-    "searchPlaceholder": "Buscar operadores inactivos por nombre o email...",
-    "showing": "Mostrando {{filtered}} de {{total}} operadores inactivos",
-    "noMatch": "No se encontraron operadores con \"{{term}}\"",
-    "loading": "Cargando operadores inactivos...",
-    "colEmployee": "Empleado",
-    "colEmail": "Email",
-    "colStatus": "Estado",
-    "colActions": "Acciones",
-    "activate": "Activar",
-    "noInactive": "No hay operadores inactivos disponibles",
-    "activatedSuccess": "Operador activado exitosamente",
-    "activateError": "Error al activar operador"
-  },
-  "errors": {
-    "loadOperators": "Error al cargar operadores",
-    "loadRanking": "Error al cargar ranking",
-    "loadInactive": "Error al cargar operadores inactivos"
-  }
-},
-"weeklyFinancialSummary": {
-  "loading": "Cargando estado de pagos...",
-  "title": "Resumen Financiero Semanal",
-  "totalOrders": "Total de Órdenes",
-  "metrics": {
-    "totalIncome": "Ingreso Total",
-    "totalExpenses": "Gastos Totales",
-    "netProfit": "Ganancia Neta",
-    "margin": "{{value}}% margen"
-  },
-  "charts": {
-    "paymentDistribution": "Distribución de Pagos",
-    "weeklyComparison": "Comparación Semanal ($K)"
-  },
-  "pie": {
-    "paidOrders": "Órdenes Pagadas",
-    "unpaidOrders": "Órdenes Pendientes",
-    "tooltipOrders": "Órdenes",
-    "tooltipAmount": "Monto"
-  },
-  "bar": {
-    "thisWeek": "Esta Semana",
-    "lastWeek": "Semana Anterior",
-    "income": "Ingresos",
-    "expenses": "Gastos",
-    "profit": "Ganancia",
-    "tooltipOrders": "Órdenes",
-    "tooltipAmount": "Monto"
-  }
-},
-"paidUnpaidChart": {
-  "error": {
-    "title": "Error del Sistema",
-    "retry": "Reintentar Conexión"
-  },
-  "header": {
-    "title": "Análisis de Pagos",
-    "refresh": "ACTUALIZAR",
-    "export": "EXPORTAR"
-  },
-  "metrics": {
+  "weeklyFinancialSummary": {
+    "loading": "Cargando estado de pagos...",
+    "title": "Resumen Financiero Semanal",
     "totalOrders": "Total de Órdenes",
-    "paidOrders": "Órdenes Pagadas",
-    "successRate": "Tasa de Éxito",
-    "peakWeek": "Semana Pico"
+    "metrics": {
+      "totalIncome": "Ingreso Total",
+      "totalExpenses": "Gastos Totales",
+      "netProfit": "Ganancia Neta",
+      "margin": "{{value}}% margen"
+    },
+    "charts": {
+      "paymentDistribution": "Distribución de Pagos",
+      "weeklyComparison": "Comparación Semanal ($K)"
+    },
+    "pie": {
+      "paidOrders": "Órdenes Pagadas",
+      "unpaidOrders": "Órdenes Pendientes",
+      "tooltipOrders": "Órdenes",
+      "tooltipAmount": "Monto"
+    },
+    "bar": {
+      "thisWeek": "Esta Semana",
+      "lastWeek": "Semana Anterior",
+      "income": "Ingresos",
+      "expenses": "Gastos",
+      "profit": "Ganancia",
+      "tooltipOrders": "Órdenes",
+      "tooltipAmount": "Monto"
+    }
   },
-  "controls": {
-    "periodSelection": "Selección de Período",
-    "year": "Año",
-    "startWeek": "Semana Inicio",
-    "endWeek": "Semana Fin",
-    "quickPresets": "Accesos Rápidos",
-    "preset4": "4 semanas",
-    "preset12": "12 semanas",
-    "preset26": "6 meses"
+  "paidUnpaidChart": {
+    "error": {
+      "title": "Error del Sistema",
+      "retry": "Reintentar Conexión"
+    },
+    "header": {
+      "title": "Análisis de Pagos",
+      "refresh": "ACTUALIZAR",
+      "export": "EXPORTAR"
+    },
+    "metrics": {
+      "totalOrders": "Total de Órdenes",
+      "paidOrders": "Órdenes Pagadas",
+      "successRate": "Tasa de Éxito",
+      "peakWeek": "Semana Pico"
+    },
+    "controls": {
+      "periodSelection": "Selección de Período",
+      "year": "Año",
+      "startWeek": "Semana Inicio",
+      "endWeek": "Semana Fin",
+      "quickPresets": "Accesos Rápidos",
+      "preset4": "4 semanas",
+      "preset12": "12 semanas",
+      "preset26": "6 meses"
+    },
+    "summary": {
+      "title": "Resumen",
+      "total": "TOTAL",
+      "paid": "PAGADO",
+      "unpaid": "PENDIENTE",
+      "rate": "TASA"
+    },
+    "chart": {
+      "title": "Tendencias de Pago",
+      "initialized": "✅ Inicializado",
+      "notInitialized": "❌ No Inicializado",
+      "dataPoints": "Puntos de Datos: {{count}}",
+      "chartStatus": "Estado: {{status}} | Puntos de Datos: {{count}}",
+      "clickHintMobile": "Toca las barras para detalles • Usa el deslizador para zoom",
+      "clickHintDesktop": "Clic en barras para detalles • Usa el deslizador para zoom",
+      "seriesPaid": "Pagado",
+      "seriesUnpaid": "Pendiente",
+      "seriesTotal": "Total",
+      "yAxisLabel": "Órdenes",
+      "tooltipWeek": "Semana {{week}}"
+    },
+    "loading": {
+      "title": "Procesando Datos",
+      "subtitle": "Analizando {{weeks}} semanas"
+    },
+    "noData": {
+      "title": "Sin Datos Disponibles",
+      "descMobile": "No se encontraron registros. Intenta ampliar el rango de búsqueda.",
+      "descDesktop": "No se encontraron registros en el rango temporal especificado. Amplía los parámetros o verifica la disponibilidad de datos.",
+      "rescan": "Reescanear Base de Datos",
+      "try12": "Probar 12 semanas",
+      "try26": "Probar 26 semanas"
+    }
   },
-  "summary": {
-    "title": "Resumen",
-    "total": "TOTAL",
-    "paid": "PAGADO",
-    "unpaid": "PENDIENTE",
-    "rate": "TASA"
+  "ordersReportDialog": {
+    "title": "Reporte de Ganancias - Semana {{week}}",
+    "printFull": "Imprimir Reporte Completo",
+    "printUnpaid": "Imprimir Solo Pendientes",
+    "stats": {
+      "totalOrders": "Total de Órdenes",
+      "paidOrders": "Órdenes Pagadas",
+      "unpaidOrders": "Órdenes Pendientes",
+      "paymentRate": "Tasa de Pago"
+    },
+    "paid": {
+      "title": "Órdenes Pagadas ({{count}})",
+      "empty": "No hay órdenes pagadas para esta semana."
+    },
+    "unpaid": {
+      "title": "Órdenes Pendientes ({{count}})",
+      "empty": "No hay órdenes pendientes para esta semana."
+    },
+    "table": {
+      "orderRef": "Ref. Orden",
+      "client": "Cliente",
+      "factory": "Fábrica",
+      "date": "Fecha"
+    }
   },
-  "chart": {
-    "title": "Tendencias de Pago",
-    "initialized": "✅ Inicializado",
-    "notInitialized": "❌ No Inicializado",
-    "dataPoints": "Puntos de Datos: {{count}}",
-    "chartStatus": "Estado: {{status}} | Puntos de Datos: {{count}}",
-    "clickHintMobile": "Toca las barras para detalles • Usa el deslizador para zoom",
-    "clickHintDesktop": "Clic en barras para detalles • Usa el deslizador para zoom",
-    "seriesPaid": "Pagado",
-    "seriesUnpaid": "Pendiente",
-    "seriesTotal": "Total",
-    "yAxisLabel": "Órdenes",
-    "tooltipWeek": "Semana {{week}}"
+  "exportMenu": {
+    "title": "Exportar Datos",
+    "ordersCount": "{{count}} órdenes",
+    "searchResults": "Resultados de búsqueda",
+    "weekYear": "Semana {{week}}, {{year}}",
+    "button": {
+      "exporting": "Exportando...",
+      "exportMobile": "Exportar",
+      "exportFull": "Exportar Datos",
+      "export": "Exportar"
+    },
+    "header": {
+      "title": "Exportar Análisis de Pagos",
+      "rangeSubtitle": "Semanas {{start}}-{{end}}, {{year}} • {{total}} órdenes",
+      "historicSubtitle": "Datos Históricos {{year}} • {{total}} órdenes"
+    },
+    "excel": {
+      "label": "Exportar a Excel",
+      "description": "Datos completos con formato (.xlsx)"
+    },
+    "pdf": {
+      "label": "Exportar a PDF",
+      "description": "Reporte profesional con resumen (.pdf)"
+    },
+    "footer": {
+      "rangeHint": "Se exportarán los datos del rango semanas {{start}}-{{end}}",
+      "historicHint": "Se exportarán los datos históricos de {{year}}"
+    }
   },
-  "loading": {
-    "title": "Procesando Datos",
-    "subtitle": "Analizando {{weeks}} semanas"
-  },
-  "noData": {
-    "title": "Sin Datos Disponibles",
-    "descMobile": "No se encontraron registros. Intenta ampliar el rango de búsqueda.",
-    "descDesktop": "No se encontraron registros en el rango temporal especificado. Amplía los parámetros o verifica la disponibilidad de datos.",
-    "rescan": "Reescanear Base de Datos",
-    "try12": "Probar 12 semanas",
-    "try26": "Probar 26 semanas"
-  }
-},
-"ordersReportDialog": {
-  "title": "Reporte de Ganancias - Semana {{week}}",
-  "printFull": "Imprimir Reporte Completo",
-  "printUnpaid": "Imprimir Solo Pendientes",
-  "stats": {
-    "totalOrders": "Total de Órdenes",
-    "paidOrders": "Órdenes Pagadas",
-    "unpaidOrders": "Órdenes Pendientes",
-    "paymentRate": "Tasa de Pago"
-  },
-  "paid": {
-    "title": "Órdenes Pagadas ({{count}})",
-    "empty": "No hay órdenes pagadas para esta semana."
-  },
-  "unpaid": {
-    "title": "Órdenes Pendientes ({{count}})",
-    "empty": "No hay órdenes pendientes para esta semana."
-  },
-  "table": {
-    "orderRef": "Ref. Orden",
-    "client": "Cliente",
-    "factory": "Fábrica",
-    "date": "Fecha"
-  }
-},"exportMenu": {
-  "button": {
-    "exporting": "Exportando...",
-    "exportMobile": "Exportar",
-    "exportFull": "Exportar Datos"
-  },
-  "header": {
+  "exportDialog": {
     "title": "Exportar Análisis de Pagos",
-    "rangeSubtitle": "Semanas {{start}}-{{end}}, {{year}} • {{total}} órdenes",
-    "historicSubtitle": "Datos Históricos {{year}} • {{total}} órdenes"
+    "dataMode": {
+      "label": "Modo de Datos",
+      "range": "Exportar Rango de Semanas",
+      "rangeDesc": "Exporta un rango específico de semanas con parámetros personalizables",
+      "historic": "Exportar Histórico",
+      "historicDesc": "Exporta todos los datos históricos disponibles (todos los años y semanas)"
+    },
+    "rangeConfig": {
+      "title": "Configuración de Rango de Semanas",
+      "year": "Año",
+      "startWeek": "Semana Inicio",
+      "endWeek": "Semana Fin"
+    },
+    "historicConfig": {
+      "title": "Exportar Datos Históricos",
+      "info": "Se exportarán todos los datos históricos de pagos disponibles en la base de datos. No se necesita seleccionar rango de fechas - se incluirán todos los registros."
+    },
+    "format": {
+      "label": "Formato de Exportación",
+      "excel": "Excel (.xlsx)",
+      "pdf": "Reporte PDF"
+    },
+    "validation": {
+      "specifyWeeks": "Por favor especifica las semanas de inicio y fin",
+      "startBeforeEnd": "La semana de inicio no puede ser mayor que la semana fin",
+      "weeksRange": "Las semanas deben estar entre 1 y 53",
+      "failed": "Error al exportar"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "exporting": "Exportando...",
+      "export": "Exportar {{format}}"
+    }
   },
-  "excel": {
-    "label": "Exportar a Excel",
-    "description": "Datos completos con formato (.xlsx)"
+  "summaryCost": {
+    "title": "Gestión de Costos Resumidos",
+    "subtitle": "Gestiona los costos resumidos de órdenes de trabajo por semana y año",
+    "filters": {
+      "searchPlaceholder": "Buscar por referencia, cliente, ubicación o costo...",
+      "timeFilters": "Filtros de Tiempo:",
+      "year": "Año:",
+      "mode": "Modo:",
+      "modeSingleWeek": "Semana Individual",
+      "modeWeekRange": "Rango de Semanas",
+      "week": "Semana:",
+      "startWeek": "Semana Inicio:",
+      "endWeek": "Semana Fin:",
+      "summary": "Resumen:",
+      "summaryWeek": "Año {{year}}, Semana {{week}}",
+      "summaryRange": "Año {{year}}, Semanas {{start}}-{{end}}"
+    },
+    "pagination": {
+      "totalRecords": "Total de registros: {{count}} | Mostrando página {{page}} de {{total}}",
+      "previous": "← Anterior",
+      "next": "Siguiente →",
+      "page": "Página {{page}}",
+      "recordsPerPage": "Registros por página:"
+    }
   },
-  "pdf": {
-    "label": "Exportar a PDF",
-    "description": "Reporte profesional con resumen (.pdf)"
+  "weekPicker": {
+    "label": "Semana",
+    "selectWeek": "Seleccionar semana ({{min}}-{{max}})",
+    "switchToInput": "Cambiar a entrada manual",
+    "switchToDropdown": "Cambiar a desplegable",
+    "pressEnter": "Presiona Enter",
+    "valid": "Válido: {{min}}-{{max}}",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "close": "Cerrar",
+    "first": "Primera",
+    "mid": "Medio",
+    "last": "Última",
+    "selectWeekTitle": "Seleccionar semana {{week}}"
   },
-  "footer": {
-    "rangeHint": "Se exportarán los datos del rango semanas {{start}}-{{end}}",
-    "historicHint": "Se exportarán los datos históricos de {{year}}"
-  }
-},
-"exportDialog": {
-  "title": "Exportar Análisis de Pagos",
-  "dataMode": {
-    "label": "Modo de Datos",
-    "range": "Exportar Rango de Semanas",
-    "rangeDesc": "Exporta un rango específico de semanas con parámetros personalizables",
-    "historic": "Exportar Histórico",
-    "historicDesc": "Exporta todos los datos históricos disponibles (todos los años y semanas)"
+  "yearPicker": {
+    "label": "Año",
+    "selectYear": "Seleccionar año ({{min}}-{{max}})",
+    "switchToInput": "Entrada",
+    "switchToGrid": "Cuadrícula",
+    "pressEnter": "Presiona Enter",
+    "valid": "Válido: {{min}}-{{max}}",
+    "previousYear": "Año anterior",
+    "nextYear": "Año siguiente",
+    "close": "Cerrar",
+    "first": "Primero ({{year}})",
+    "current": "Actual ({{year}})",
+    "last": "Último ({{year}})",
+    "currentLabel": "actual",
+    "selectedLabel": "seleccionado"
   },
-  "rangeConfig": {
-    "title": "Configuración de Rango de Semanas",
-    "year": "Año",
-    "startWeek": "Semana Inicio",
-    "endWeek": "Semana Fin"
-  },
-  "historicConfig": {
-    "title": "Exportar Datos Históricos",
-    "info": "Se exportarán todos los datos históricos de pagos disponibles en la base de datos. No se necesita seleccionar rango de fechas - se incluirán todos los registros."
-  },
-  "format": {
-    "label": "Formato de Exportación",
-    "excel": "Excel (.xlsx)",
-    "pdf": "Reporte PDF"
-  },
-  "validation": {
-    "specifyWeeks": "Por favor especifica las semanas de inicio y fin",
-    "startBeforeEnd": "La semana de inicio no puede ser mayor que la semana fin",
-    "weeksRange": "Las semanas deben estar entre 1 y 53",
-    "failed": "Error al exportar"
-  },
-  "actions": {
+  "weekYearPicker": {
+    "label": "Seleccionar Semana y Año",
+    "dialogTitle": "Seleccionar Semana y Año",
+    "calendarView": "Vista Calendario",
+    "listView": "Vista Lista",
+    "week": "Semana {{week}}",
+    "currentChip": "Actual",
+    "selectedChip": "Seleccionada",
     "cancel": "Cancelar",
-    "exporting": "Exportando...",
-    "export": "Exportar {{format}}"
-  }
-},
-"summaryCost": {
-  "title": "Gestión de Costos Resumidos",
-  "subtitle": "Gestiona los costos resumidos de órdenes de trabajo por semana y año",
-  "filters": {
-    "searchPlaceholder": "Buscar por referencia, cliente, ubicación o costo...",
-    "timeFilters": "Filtros de Tiempo:",
-    "year": "Año:",
-    "mode": "Modo:",
-    "modeSingleWeek": "Semana Individual",
-    "modeWeekRange": "Rango de Semanas",
-    "week": "Semana:",
-    "startWeek": "Semana Inicio:",
-    "endWeek": "Semana Fin:",
-    "summary": "Resumen:",
-    "summaryWeek": "Año {{year}}, Semana {{week}}",
-    "summaryRange": "Año {{year}}, Semanas {{start}}-{{end}}"
+    "today": "Hoy"
   },
-  "pagination": {
-    "totalRecords": "Total de registros: {{count}} | Mostrando página {{page}} de {{total}}",
-    "previous": "← Anterior",
-    "next": "Siguiente →",
-    "page": "Página {{page}}",
-    "recordsPerPage": "Registros por página:"
-  }
-},
-"weekPicker": {
-  "label": "Semana",
-  "selectWeek": "Seleccionar semana ({{min}}-{{max}})",
-  "switchToInput": "Cambiar a entrada manual",
-  "switchToDropdown": "Cambiar a desplegable",
-  "pressEnter": "Presiona Enter",
-  "valid": "Válido: {{min}}-{{max}}",
-  "previousWeek": "Semana anterior",
-  "nextWeek": "Semana siguiente",
-  "close": "Cerrar",
-  "first": "Primera",
-  "mid": "Medio",
-  "last": "Última",
-  "selectWeekTitle": "Seleccionar semana {{week}}"
-},
-"yearPicker": {
-  "label": "Año",
-  "selectYear": "Seleccionar año ({{min}}-{{max}})",
-  "switchToInput": "Entrada",
-  "switchToGrid": "Cuadrícula",
-  "pressEnter": "Presiona Enter",
-  "valid": "Válido: {{min}}-{{max}}",
-  "previousYear": "Año anterior",
-  "nextYear": "Año siguiente",
-  "close": "Cerrar",
-  "first": "Primero ({{year}})",
-  "current": "Actual ({{year}})",
-  "last": "Último ({{year}})",
-  "currentLabel": "actual",
-  "selectedLabel": "seleccionado"
-},
-"weekYearPicker": {
-  "label": "Seleccionar Semana y Año",
-  "dialogTitle": "Seleccionar Semana y Año",
-  "calendarView": "Vista Calendario",
-  "listView": "Vista Lista",
-  "week": "Semana {{week}}",
-  "currentChip": "Actual",
-  "selectedChip": "Seleccionada",
-  "cancel": "Cancelar",
-  "today": "Hoy"
-},
-"summaryCostTable": {
-  "columns": {
-    "actions": "Acciones",
-    "reference": "Referencia",
-    "date": "Fecha",
-    "location": "Ubicación",
-    "status": "Estado",
-    "customer": "Cliente",
+  "resumeFuel": {
+    "createButton": "Crear Costo de Combustible",
+    "filterBy": "Filtrar por:",
+    "year": "Año",
+    "week": "Semana",
+    "loading": "Cargando datos de combustible...",
+    "summary": {
+      "totalRecords": "Total de Registros:",
+      "totalCost": "Costo Total:",
+      "totalFuel": "Combustible Total:",
+      "totalDistance": "Distancia Total:",
+      "weekLabel": "Año {{year}}, Semana {{week}}"
+    }
+  },
+  "createCostFuel": {
+    "title": "Crear Registro de Costo de Combustible",
+    "subtitle": "Registrar un nuevo gasto de combustible",
+    "sections": {
+      "selectTruck": "Seleccionar Camión",
+      "chooseTruck": "Elegir un camión",
+      "selectTruckPlaceholder": "Selecciona un camión",
+      "date": "Fecha",
+      "distance": "Distancia",
+      "fuelInformation": "Información de Combustible",
+      "receiptImage": "Imagen del Recibo (Opcional)"
+    },
+    "fields": {
+      "fuelQuantity": "Cantidad de Combustible",
+      "pricePerGallon": "Precio por Galón",
+      "totalCost": "Costo Total",
+      "distance": "Distancia"
+    },
+    "image": {
+      "uploadPrompt": "Haz clic para subir la imagen del recibo",
+      "uploadHint": "PNG, JPG hasta 10MB",
+      "preview": "Vista previa del recibo"
+    },
+    "loading": {
+      "trucks": "Cargando camiones...",
+      "creating": "Creando..."
+    },
+    "empty": {
+      "title": "No hay camiones disponibles",
+      "desc": "Necesitas camiones activos para crear un registro de costo de combustible"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "create": "Crear Costo de Combustible"
+    },
+    "snackbar": {
+      "noTrucks": "No hay camiones activos disponibles",
+      "errorLoadingTrucks": "Error al cargar los camiones activos",
+      "selectTruck": "Por favor selecciona un camión",
+      "fuelQtyRequired": "La cantidad de combustible debe ser mayor a 0",
+      "costGlRequired": "El costo por galón debe ser mayor a 0",
+      "distanceRequired": "La distancia debe ser mayor a 0",
+      "creating": "Creando registro de costo de combustible...",
+      "success": "¡Registro de combustible creado exitosamente! 🚛⛽",
+      "error": "Error: {{message}}"
+    }
+  },
+  "summaryCostTable": {
+    "columns": {
+      "actions": "Acciones",
+      "reference": "Referencia",
+      "date": "Fecha",
+      "location": "Ubicación",
+      "status": "Estado",
+      "customer": "Cliente",
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "totalCost": "Costo Total"
+    },
+    "loading": "Cargando costos resumidos...",
+    "empty": {
+      "title": "No se encontraron datos",
+      "desc": "No hay costos resumidos disponibles para los filtros seleccionados. Intenta ajustar los criterios de búsqueda.",
+      "tip": "Consejo: Verifica la semana y los filtros seleccionados"
+    },
+    "expand": {
+      "collapse": "Contraer Detalles",
+      "expand": "Expandir Detalles"
+    },
+    "moreActions": "Más acciones",
+    "copyToClipboard": "Copiar al portapapeles",
+    "footer": {
+      "total": "Total: {{count}} órdenes | Seleccionados: {{selected}}",
+      "showing": "Mostrando {{count}} resultados"
+    },
+    "details": {
+      "order": "Orden",
+      "reference": "Referencia",
+      "date": "Fecha",
+      "location": "Ubicación",
+      "status": "Estado",
+      "customer": "Cliente",
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "summaryBreakdown": "Desglose del Resumen",
+      "fuelCost": "Costo de Combustible",
+      "workCost": "Costo de Trabajo",
+      "driverSalaries": "Salarios de Conductores",
+      "otherSalaries": "Otros Salarios",
+      "additional": "Adicional",
+      "customerFactory": "Fábrica del Cliente",
+      "bonus": "Bono",
+      "totalCost": "Costo Total"
+    }
+  },
+  "resumeFuelTable": {
+    "title": "Registros de Costo de Combustible",
+    "exportAll": "Exportar Todo",
+    "exportSelected": "Exportar Seleccionados ({{count}})",
+    "loading": "Cargando datos de combustible...",
+    "empty": {
+      "title": "No se encontraron datos de combustible",
+      "desc": "Intenta seleccionar una semana o año diferente"
+    },
+    "expand": {
+      "show": "Mostrar {{count}} orden(es)",
+      "hide": "Ocultar {{count}} orden(es)"
+    },
+    "columns": {
+      "date": "Fecha",
+      "truck": "Camión",
+      "costPerGallon": "Costo/Galón",
+      "fuelQty": "Cantidad",
+      "distance": "Distancia",
+      "totalCost": "Costo Total",
+      "orders": "Órdenes",
+      "receipt": "Recibo"
+    },
+    "receipt": {
+      "yes": "Sí",
+      "no": "No",
+      "title": "Recibo de Combustible",
+      "details": "${{costGl}}/gl • {{fuelQty}}gl • Total: ${{costFuel}}",
+      "closeHint": "Haz clic fuera para cerrar",
+      "imageAlt": "Recibo de combustible",
+      "viewButton": "Ver Recibo"
+    },
+    "orders": {
+      "title": "Órdenes Relacionadas ({{count}})",
+      "columns": {
+        "orderRef": "Referencia",
+        "client": "Cliente",
+        "location": "Ubicación",
+        "orderDate": "Fecha de Orden",
+        "costDistributed": "Costo Distribuido",
+        "fuelDistributed": "Combustible Distribuido",
+        "distance": "Distancia"
+      },
+      "empty": "No hay órdenes asociadas a este costo de combustible"
+    },
+    "footer": {
+      "total": "Total: {{count}} registros | Seleccionados: {{selected}}",
+      "showing": "Mostrando {{count}} resultados"
+    }
+  },
+  "extraCostPage": {
+    "title": "Gestión de Costos Extra",
+    "subtitle": "Administra los costos extra asociados a órdenes de trabajo",
+    "searchPlaceholder": "Buscar por referencia, estado, ubicación o tipo de costo...",
+    "pagination": {
+      "summary": "Total de registros: {{count}} | Página {{page}} de {{total}}",
+      "previous": "← Anterior",
+      "next": "Siguiente →",
+      "page": "Página {{page}}",
+      "rowsPerPage": "Registros por página:"
+    }
+  },
+  "extraCostTable": {
+    "columns": {
+      "actions": "Acciones",
+      "extraCostName": "Nombre del Costo Extra",
+      "type": "Tipo",
+      "costAmount": "Monto",
+      "orderReference": "Referencia de Orden",
+      "date": "Fecha",
+      "orderStatus": "Estado de Orden",
+      "location": "Ubicación"
+    },
+    "loading": "Cargando costos extra...",
+    "empty": {
+      "title": "No se encontraron costos extra",
+      "desc": "No hay costos extra disponibles para los filtros seleccionados. Intenta ajustar los criterios de búsqueda.",
+      "tip": "Consejo: Revisa los parámetros de búsqueda"
+    },
+    "expand": {
+      "collapse": "Contraer Detalles",
+      "expand": "Expandir Detalles"
+    },
+    "actions": {
+      "finishOrder": "Finalizar Orden",
+      "orderFinished": "Orden finalizada",
+      "moreActions": "Más acciones"
+    },
+    "copyToClipboard": "Copiar al portapapeles",
+    "copied": "¡Copiado!",
+    "details": {
+      "orderDetails": "Detalles de la Orden",
+      "orderId": "ID de Orden",
+      "email": "Correo",
+      "distance": "Distancia",
+      "expense": "Gasto",
+      "income": "Ingreso",
+      "extraCostDetails": "Detalles del Costo Extra",
+      "id": "ID",
+      "name": "Nombre",
+      "type": "Tipo",
+      "cost": "Costo",
+      "additionalInfo": "Información Adicional",
+      "payStatus": "Estado de Pago",
+      "dispatchTicket": "Ticket de Despacho"
+    },
+    "footer": {
+      "total": "Total: {{count}} costos extra | Seleccionados: {{selected}}",
+      "showing": "Mostrando {{count}} resultados"
+    }
+  },
+  "financialControls": {
+    "searchPlaceholder": "Buscar referencia",
+    "search": "Buscar",
+    "clear": "Limpiar",
+    "uploadOcr": "Subir OCR",
+    "searchResultInfo": "Resultados para <1>{{ref}}</1> — {{count}} órdenes"
+  },
+  "financialTable": {
+    "columns": {
+      "reference": "Referencia",
+      "client": "Cliente",
+      "expense": "Gasto",
+      "fuelCost": "Costo Combustible",
+      "bonus": "Bono",
+      "operatorSalaries": "Salarios Operadores",
+      "workCost": "Costo Trabajo",
+      "driverSalaries": "Salarios Conductores",
+      "totalDiscount": "Descuento Total",
+      "totalIncome": "Ingreso Total",
+      "profit": "Ganancia",
+      "status": "Estado",
+      "actions": "Acciones"
+    },
+    "paid": "Pagado",
+    "unpaid": "Pendiente",
+    "view": "Ver",
     "income": "Ingreso",
     "expense": "Gasto",
-    "totalCost": "Costo Total"
+    "edit": "Editar",
+    "netProfit": "Ganancia Neta",
+    "costBreakdown": "Desglose de Costos",
+    "fuel": "Combustible",
+    "work": "Trabajo",
+    "drivers": "Conductores",
+    "operators": "Operadores",
+    "totals": "TOTALES",
+    "ordersCount": "{{count}} órdenes",
+    "paidCount": "Pagados: {{count}}",
+    "unpaidCount": "Pendientes: {{count}}",
+    "addIncome": "Agregar Ingreso",
+    "addExpense": "Agregar Gasto",
+    "viewDetails": "Ver Detalles",
+    "showing": "Mostrando {{count}} orden(es)",
+    "scrollHint": "Desplázate horizontalmente para ver más detalles",
+    "empty": {
+      "title": "No se encontraron registros financieros",
+      "desc": "No hay registros disponibles para los filtros seleccionados. Intenta ajustar los criterios de búsqueda.",
+      "tip": "Consejo: Usa los filtros de arriba para refinar tu búsqueda"
+    }
   },
-  "loading": "Cargando costos resumidos...",
-  "empty": {
-    "title": "Sin Datos de Resumen",
-    "desc": "No hay costos resumidos disponibles para los filtros seleccionados. Intenta ajustar los criterios de búsqueda.",
-    "tip": "Sugerencia: Verifica la semana y los filtros seleccionados"
-  },
-  "expand": {
-    "collapse": "Ocultar Detalles",
-    "expand": "Ver Detalles"
-  },
-  "moreActions": "Más acciones",
-  "copyToClipboard": "Copiar al portapapeles",
-  "footer": {
-    "total": "Total: {{count}} órdenes | Seleccionadas: {{selected}}",
-    "showing": "Mostrando {{count}} resultados"
-  },
-  "details": {
+  "docai": {
+    "title": "Resultado del Procesamiento IA",
+    "multiPageProcessing": "Procesamiento multipágina",
+    "pagesScanned": "{{count}} páginas escaneadas",
+    "otherTransactionsPage": "Otras transacciones encontradas en la página {{page}}",
+    "extractedOrders": "Órdenes Extraídas ({{count}})",
+    "updateSummaryTitle": "Resumen de Actualización de Órdenes:",
+    "updatedSummary": "{{count}} orden(es) actualizadas exitosamente",
+    "notFoundSummary": "{{count}} orden(es) no encontradas",
+    "duplicatedSummary": "{{count}} orden(es) duplicadas detectadas",
+    "updatedOrders": "Órdenes Actualizadas:",
+    "duplicatedOrders": "Órdenes Duplicadas Detectadas:",
+    "notFoundOrders": "Órdenes No Encontradas:",
+    "otherTransactions": "Otras Transacciones ({{count}})",
+    "expenseRecordsCreated": "{{count}} registros de gastos creados",
+    "rawOcrText": "Texto OCR sin procesar",
+    "noOcrText": "No hay texto OCR disponible.",
+    "close": "Cerrar",
     "order": "Orden",
-    "reference": "Referencia",
-    "date": "Fecha",
-    "location": "Ubicación",
-    "status": "Estado",
-    "customer": "Cliente",
+    "clientCompany": "Cliente/Empresa",
+    "ordersCount": "Cantidad de Órdenes",
+    "amountAdded": "Monto Agregado",
+    "newIncome": "Nuevo Ingreso",
+    "newExpense": "Nuevo Gasto",
+    "total": "Total",
+    "perOrder": "Por Orden",
     "income": "Ingreso",
-    "expense": "Gasto",
-    "summaryBreakdown": "Desglose de Resumen",
-    "fuelCost": "Costo de Combustible",
-    "workCost": "Costo de Trabajo",
-    "driverSalaries": "Salarios de Conductores",
-    "otherSalaries": "Otros Salarios",
-    "additional": "Adicional",
-    "customerFactory": "Fábrica del Cliente",
-    "bonus": "Bono",
-    "totalCost": "Costo Total"
+    "expense": "Gasto"
+  },
+  "financialView": {
+    "title": "Resumen Financiero",
+    "subtitle": "Monitorea tu rendimiento financiero con análisis detallados",
+    "errors": {
+      "loadData": "Error al cargar los datos"
+    },
+    "search": {
+      "noResults": "No se encontraron resultados.",
+      "error": "Error buscando referencia: {{err}}"
+    },
+    "payment": {
+      "success": "Pago registrado exitosamente",
+      "error": "Error al procesar el pago"
+    },
+    "ocr": {
+      "settingData": "Configurando datos",
+      "startingMode": "Iniciando procesamiento en modo {{mode}}...",
+      "processingFile": "Procesando {{name}} en modo {{mode}}...",
+      "processingFileShort": "Procesando {{name}}...",
+      "success": "Éxito",
+      "failed": "Fallido",
+      "networkError": "Error de red",
+      "fullProcessSuccess": "¡Procesamiento completado! {{updated}} órdenes actualizadas, {{notFound}} no encontradas.",
+      "saveOnlySuccess": "¡Procesamiento completado! {{saved}} registros de declaración guardados.",
+      "allFilesSuccess": "¡Todos los archivos procesados exitosamente!",
+      "allFilesFailed": "Todos los archivos fallaron. Verifica tus archivos e intenta nuevamente.",
+      "partialSuccess": "⚠️ Éxito parcial: {{success}} de {{total}} archivos procesados.",
+      "partialSuccessSnack": "{{success}} de {{total}} archivos procesados exitosamente.",
+      "noFilesProcessed": "Ningún archivo fue procesado. Por favor verifica tus documentos."
+    },
+    "addAmount": {
+      "income": "Ingreso",
+      "expense": "Gasto",
+      "success": "{{type}} agregado exitosamente a {{count}} orden(es)",
+      "noOrdersUpdated": "Ninguna orden fue actualizada",
+      "error": "Error al agregar {{type}}: {{message}}"
+    }
   }
-}
 }

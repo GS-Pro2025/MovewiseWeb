@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { SummaryCostRepository, payByKey_ref } from "../data/SummaryCostRepository";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import { processDocaiStatement, ProcessMode } from "../data/repositoryDOCAI";
@@ -34,6 +35,7 @@ function getWeekRange(year: number, week: number): { start: string; end: string 
 }
 
 const FinancialView = () => {
+  const { t } = useTranslation();
   const repository = new SummaryCostRepository();
   const navigate = useNavigate();
 
@@ -73,15 +75,14 @@ const FinancialView = () => {
   const [ocrFiles, setOcrFiles] = useState<File[]>([]);
   const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
   const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrStep, setOcrStep] = useState<string>("Setting data");
+  const [ocrStep, setOcrStep] = useState<string>(t('financialView.ocr.settingData'));
   const [docaiDialogOpen, setDocaiDialogOpen] = useState(false);
   const [docaiDialogResult, setDocaiDialogResult] = useState<any>(null);
 
-  // Estado para controlar si debemos mostrar confirmación
   const [shouldShowConfirmation, setShouldShowConfirmation] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState("");
 
-  // NUEVOS ESTADOS para los diálogos de add amount
+  // Add amount dialog states
   const [addAmountDialogOpen, setAddAmountDialogOpen] = useState(false);
   const [addAmountType, setAddAmountType] = useState<'income' | 'expense'>('income');
   const [addAmountSuperOrder, setAddAmountSuperOrder] = useState<SuperOrder | null>(null);
@@ -110,14 +111,14 @@ const FinancialView = () => {
       }
       const superOrder = map.get(item.key_ref)!;
       superOrder.orders.push(item);
-      superOrder.totalIncome += item.income ?? 0;
-      superOrder.totalCost += item.summary?.totalCost ?? 0;
-      superOrder.expense += item.summary?.expense ?? 0;
-      superOrder.fuelCost += item.summary?.fuelCost ?? 0;
-      superOrder.bonus += item.summary?.bonus ?? 0;
-      superOrder.workCost += item.summary?.workCost ?? 0;
-      superOrder.driverSalaries += item.summary?.driverSalaries ?? 0;
-      superOrder.otherSalaries += item.summary?.otherSalaries ?? 0;
+      superOrder.totalIncome     += item.income ?? 0;
+      superOrder.totalCost       += item.summary?.totalCost ?? 0;
+      superOrder.expense         += item.summary?.expense ?? 0;
+      superOrder.fuelCost        += item.summary?.fuelCost ?? 0;
+      superOrder.bonus           += item.summary?.bonus ?? 0;
+      superOrder.workCost        += item.summary?.workCost ?? 0;
+      superOrder.driverSalaries  += item.summary?.driverSalaries ?? 0;
+      superOrder.otherSalaries   += item.summary?.otherSalaries ?? 0;
       superOrder.payStatus = superOrder.payStatus && item.payStatus === 1 ? 1 : 0;
     });
     map.forEach((superOrder) => {
@@ -126,27 +127,25 @@ const FinancialView = () => {
     return Array.from(map.values());
   }
 
-  // Fetch data function
+  // Fetch data
   const fetchData = useCallback(async (pageNumber: number, week: number, year: number) => {
     setLoading(true);
     setError(null);
     try {
       const result = await repository.getSummaryCost(pageNumber, week, year);
       setData(result.results);
-      // Removido rowCount ya que no se usa
     } catch (err: any) {
-      setError(err.message || "Error loading data");
+      setError(err.message || t('financialView.errors.loadData'));
     } finally {
       setLoading(false);
     }
   }, [repository]);
 
-  // Load data on component mount and when week changes
   useEffect(() => {
     fetchData(page, week, year);
   }, [page, week, year]);
 
-  // Process and sort super orders
+  // Sorted super orders
   const superOrders = useMemo(() => {
     const grouped = groupByKeyRef(data);
     return grouped.sort((a, b) => {
@@ -157,38 +156,27 @@ const FinancialView = () => {
     });
   }, [data, sortBy, sortOrder]);
 
-  // Calculate summary totals
+  // Summary totals
   const totalSummary = useMemo(() => {
     const currentData = searchResults ? groupByKeyRef(searchResults) : superOrders;
     return currentData.reduce((acc, order) => ({
-      totalIncome: acc.totalIncome + order.totalIncome,
-      totalCost: acc.totalCost + order.totalCost,
-      totalProfit: acc.totalProfit + order.totalProfit,
-      paidOrders: acc.paidOrders + (order.payStatus === 1 ? 1 : 0),
-      unpaidOrders: acc.unpaidOrders + (order.payStatus === 0 ? 1 : 0),
-    }), {
-      totalIncome: 0,
-      totalCost: 0,
-      totalProfit: 0,
-      paidOrders: 0,
-      unpaidOrders: 0,
-    });
+      totalIncome:   acc.totalIncome   + order.totalIncome,
+      totalCost:     acc.totalCost     + order.totalCost,
+      totalProfit:   acc.totalProfit   + order.totalProfit,
+      paidOrders:    acc.paidOrders    + (order.payStatus === 1 ? 1 : 0),
+      unpaidOrders:  acc.unpaidOrders  + (order.payStatus === 0 ? 1 : 0),
+    }), { totalIncome: 0, totalCost: 0, totalProfit: 0, paidOrders: 0, unpaidOrders: 0 });
   }, [superOrders, searchResults]);
 
-  // Current data for display and export
   const currentExportData = searchResults ? groupByKeyRef(searchResults) : superOrders;
 
-  // Event Handlers
+  // ── Event Handlers ──────────────────────────────────────────────────────────
   const handleWeekChange = (newWeek: number) => {
-    if (Number.isInteger(newWeek) && newWeek >= 1 && newWeek <= 53) {
-      setWeek(newWeek);
-    }
+    if (Number.isInteger(newWeek) && newWeek >= 1 && newWeek <= 53) setWeek(newWeek);
   };
 
   const handleYearChange = (newYear: number) => {
-    if (Number.isInteger(newYear) && newYear >= 2020 && newYear <= new Date().getFullYear() + 2) {
-      setYear(newYear);
-    }
+    if (Number.isInteger(newYear) && newYear >= 2020 && newYear <= new Date().getFullYear() + 2) setYear(newYear);
   };
 
   const handleSort = (column: keyof SuperOrder) => {
@@ -216,9 +204,9 @@ const FinancialView = () => {
     try {
       const results = await searchOrdersByKeyRefLike(searchRef.trim());
       setSearchResults(results);
-      if (results.length === 0) enqueueSnackbar("No results found.", { variant: "info" });
+      if (results.length === 0) enqueueSnackbar(t('financialView.search.noResults'), { variant: "info" });
     } catch (err) {
-      enqueueSnackbar(`Error searching reference: ${err}`, { variant: "error" });
+      enqueueSnackbar(t('financialView.search.error', { err }), { variant: "error" });
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -236,10 +224,10 @@ const FinancialView = () => {
     setPayDialogOpen(false);
     setPaySuperOrder(null);
     if (res.success) {
-      enqueueSnackbar("Payment registered successfully", { variant: "success" });
+      enqueueSnackbar(t('financialView.payment.success'), { variant: "success" });
       fetchData(page, week, year);
     } else {
-      enqueueSnackbar(res.errorMessage || "Error processing payment", { variant: "error" });
+      enqueueSnackbar(res.errorMessage || t('financialView.payment.error'), { variant: "error" });
     }
   };
 
@@ -256,38 +244,34 @@ const FinancialView = () => {
     }
   };
 
-  //  OCR Handlers
+  // ── OCR Handlers ────────────────────────────────────────────────────────────
   const handleOcrUpload = async (processMode: ProcessMode = 'full_process', targetWeek?: number, targetYear?: number) => {
     setOcrLoading(true);
-    setOcrStep("Setting data");
-    enqueueSnackbar(`Starting document processing in ${processMode} mode...`, { variant: "info" });
-    
+    setOcrStep(t('financialView.ocr.settingData'));
+    enqueueSnackbar(t('financialView.ocr.startingMode', { mode: processMode }), { variant: "info" });
+
     const results: OCRResult[] = [];
-    let hasAnySuccess = false;
-    let totalUpdatedOrders = 0;
-    let totalNotFoundOrders = 0;
-    let totalSavedRecords = 0;
-    
+    let hasAnySuccess         = false;
+    let totalUpdatedOrders    = 0;
+    let totalNotFoundOrders   = 0;
+    let totalSavedRecords     = 0;
+
     for (const file of ocrFiles) {
-      setOcrStep(`Processing ${file.name} in ${processMode} mode...`);
-      enqueueSnackbar(`Processing ${file.name}...`, { variant: "info" });
-      
+      setOcrStep(t('financialView.ocr.processingFile', { name: file.name, mode: processMode }));
+      enqueueSnackbar(t('financialView.ocr.processingFileShort', { name: file.name }), { variant: "info" });
+
       try {
         const res = await processDocaiStatement(file, processMode, targetWeek, targetYear);
         const isSuccess = res.success !== false;
-        
+
         if (isSuccess) {
           hasAnySuccess = true;
-          
-          // Contar según el modo
           if (processMode === 'full_process' && res.regular_orders_data?.update_summary) {
-            totalUpdatedOrders += res.regular_orders_data.update_summary.total_updated || 0;
+            totalUpdatedOrders  += res.regular_orders_data.update_summary.total_updated || 0;
             totalNotFoundOrders += res.regular_orders_data.update_summary.total_not_found || 0;
           } else if (processMode === 'save_only' && res.regular_orders_data?.save_summary) {
             totalSavedRecords += res.regular_orders_data.save_summary.statement_records_created || 0;
           }
-          
-          // También contar other_transactions si están presentes
           if (res.other_transactions_data?.save_summary) {
             totalSavedRecords += res.other_transactions_data.save_summary.statements_created || 0;
           }
@@ -296,10 +280,10 @@ const FinancialView = () => {
         results.push({
           name: file.name,
           success: isSuccess,
-          message: res.message || (isSuccess ? "Success" : "Failed"),
+          message: res.message || (isSuccess ? t('financialView.ocr.success') : t('financialView.ocr.failed')),
           processMode: res.process_mode || processMode,
           data: res.update_result ? {
-            updated_orders: (res.update_result.updated_orders || []).map((order: { income: any; }) => ({
+            updated_orders: (res.update_result.updated_orders || []).map((order: { income: any }) => ({
               ...order,
               income: order.income ?? 0,
             })),
@@ -308,16 +292,16 @@ const FinancialView = () => {
             total_not_found: res.update_result.total_not_found || 0,
             duplicated_orders: res.update_result.duplicated_orders || [],
             total_duplicated: res.update_result.total_duplicated || 0,
-            statement_records_created: res.regular_orders_data?.update_summary?.statement_records_created || 
+            statement_records_created:
+              res.regular_orders_data?.update_summary?.statement_records_created ||
               res.regular_orders_data?.save_summary?.statement_records_created ||
-              res.other_transactions_data?.save_summary?.statements_created
+              res.other_transactions_data?.save_summary?.statements_created,
           } : undefined,
           ocr_text: res.ocr_text,
           order_key: res.order_key,
           parsed_orders: res.regular_orders_data?.parsed_orders,
         });
 
-        // Preparar datos para el dialog de confirmación - Solo para el primer archivo exitoso
         if (isSuccess && !docaiDialogResult) {
           setDocaiDialogResult({
             message: res.message,
@@ -325,7 +309,6 @@ const FinancialView = () => {
             other_transactions_page: res.other_transactions_page,
             total_pages_scanned: res.total_pages_scanned,
             process_mode: res.process_mode || processMode,
-            // Mapear para compatibilidad con el diálogo
             ocr_text: res.ocr_text,
             parsed_orders: res.regular_orders_data?.parsed_orders,
             update_result: res.update_result,
@@ -338,62 +321,49 @@ const FinancialView = () => {
         results.push({
           name: file.name,
           success: false,
-          message: err?.message || "Network error",
+          message: err?.message || t('financialView.ocr.networkError'),
           processMode,
           data: undefined,
         });
       }
     }
-    
+
     setOcrResults(results);
     setOcrLoading(false);
 
-    // Manejo mejorado de mensajes según el modo
     const successCount = results.filter(r => r.success).length;
-    
+
     if (successCount === results.length && hasAnySuccess) {
-      let confirmMsg = "";
-      if (processMode === 'full_process') {
-        confirmMsg = `Processing completed successfully! ${totalUpdatedOrders} orders updated, ${totalNotFoundOrders} not found.`;
-      } else {
-        confirmMsg = `Statement processing completed! ${totalSavedRecords} statement records saved.`;
-      }
-      
+      const confirmMsg = processMode === 'full_process'
+        ? t('financialView.ocr.fullProcessSuccess', { updated: totalUpdatedOrders, notFound: totalNotFoundOrders })
+        : t('financialView.ocr.saveOnlySuccess', { saved: totalSavedRecords });
       setConfirmationMessage(confirmMsg);
       setShouldShowConfirmation(true);
-      enqueueSnackbar("All files processed successfully!", { variant: "success" });
-      
+      enqueueSnackbar(t('financialView.ocr.allFilesSuccess'), { variant: "success" });
     } else if (successCount === 0) {
-      enqueueSnackbar("All files failed to process. Please check your files and try again.", { variant: "error" });
+      enqueueSnackbar(t('financialView.ocr.allFilesFailed'), { variant: "error" });
     } else if (hasAnySuccess) {
-      const confirmMsg = `⚠️ Partial success: ${successCount} of ${results.length} files processed.`;
+      const confirmMsg = t('financialView.ocr.partialSuccess', { success: successCount, total: results.length });
       setConfirmationMessage(confirmMsg);
       setShouldShowConfirmation(true);
-      enqueueSnackbar(`${successCount} of ${results.length} files processed successfully.`, { variant: "warning" });
+      enqueueSnackbar(t('financialView.ocr.partialSuccessSnack', { success: successCount, total: results.length }), { variant: "warning" });
     } else {
-      enqueueSnackbar("No files were processed successfully. Please verify your documents.", { variant: "warning" });
+      enqueueSnackbar(t('financialView.ocr.noFilesProcessed'), { variant: "warning" });
     }
 
-    // Recargar datos solo si se actualizaron órdenes (full_process mode)
     if (processMode === 'full_process') {
       fetchData(page, week, year);
     }
   };
 
-  // Manejar cierre del dialog de confirmación
   const handleDocaiDialogClose = () => {
     setDocaiDialogOpen(false);
     setDocaiDialogResult(null);
-    
-    // Mostrar mensaje adicional de confirmación si es necesario
     if (shouldShowConfirmation) {
-      enqueueSnackbar(confirmationMessage, { 
+      enqueueSnackbar(confirmationMessage, {
         variant: "success",
         autoHideDuration: 6000,
-        anchorOrigin: {
-          vertical: 'top',
-          horizontal: 'center',
-        }
+        anchorOrigin: { vertical: 'top', horizontal: 'center' },
       });
       setShouldShowConfirmation(false);
       setConfirmationMessage("");
@@ -405,8 +375,6 @@ const FinancialView = () => {
     setOcrFiles([]);
     setOcrResults([]);
     setOcrLoading(false);
-    
-    // Limpiar estados de confirmación
     setShouldShowConfirmation(false);
     setConfirmationMessage("");
     setDocaiDialogResult(null);
@@ -415,19 +383,16 @@ const FinancialView = () => {
   const handleOcrProcessMore = () => {
     setOcrFiles([]);
     setOcrResults([]);
-    // Mantener el dialog de confirmación abierto para más archivos
     setShouldShowConfirmation(false);
     setConfirmationMessage("");
   };
 
-  // NUEVO HANDLER para ver detalles desde OCRUploadDialog
   const handleViewDetailedResults = () => {
-    // Cerrar OCRUploadDialog y abrir DocaiResultDialog
     setOcrDialogOpen(false);
     setDocaiDialogOpen(true);
   };
 
-  // NUEVOS HANDLERS
+  // ── Add Amount Handlers ─────────────────────────────────────────────────────
   const handleAddIncome = (superOrder: SuperOrder) => {
     setAddAmountSuperOrder(superOrder);
     setAddAmountType('income');
@@ -442,42 +407,32 @@ const FinancialView = () => {
 
   const handleConfirmAddAmount = async (amount: number) => {
     if (!addAmountSuperOrder) return;
-    
     setAddAmountLoading(true);
     try {
-      const payload = {
-        amount,
-        key_ref: addAmountSuperOrder.key_ref
-      };
-
-      let result;
-      if (addAmountType === 'income') {
-        result = await addIncomeToOrder(payload);
-      } else {
-        result = await addExpenseToOrder(payload);
-      }
+      const payload = { amount, key_ref: addAmountSuperOrder.key_ref };
+      const result = addAmountType === 'income'
+        ? await addIncomeToOrder(payload)
+        : await addExpenseToOrder(payload);
 
       if (result && result.length > 0) {
         enqueueSnackbar(
-          `${addAmountType === 'income' ? 'Income' : 'Expense'} added successfully to ${result.length} order(s)`, 
+          t('financialView.addAmount.success', { type: addAmountType === 'income' ? t('financialView.addAmount.income') : t('financialView.addAmount.expense'), count: result.length }),
           { variant: "success" }
         );
-        
-        // Recargar datos
         if (searchResults) {
           handleSearch();
         } else {
           fetchData(page, week, year);
         }
       } else {
-        enqueueSnackbar("No orders were updated", { variant: "warning" });
+        enqueueSnackbar(t('financialView.addAmount.noOrdersUpdated'), { variant: "warning" });
       }
 
       setAddAmountDialogOpen(false);
       setAddAmountSuperOrder(null);
     } catch (error: any) {
       enqueueSnackbar(
-        `Error adding ${addAmountType}: ${error.message || error}`, 
+        t('financialView.addAmount.error', { type: addAmountType, message: error.message || error }),
         { variant: "error" }
       );
     } finally {
@@ -485,30 +440,29 @@ const FinancialView = () => {
     }
   };
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6 w-full overflow-x-hidden">
+
       {/* Header */}
       <div className="mb-4 sm:mb-6 md:mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
-          <BarChart3 
-            size={32} 
-            className="sm:w-10 sm:h-10 text-[#092962]"
-          />
+          <BarChart3 size={32} className="sm:w-10 sm:h-10 text-[#092962]" />
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#092962]">
-            Financial Summary
+            {t('financialView.title')}
           </h1>
         </div>
         <p className="text-gray-600 text-sm sm:text-base px-1 sm:px-0">
-          Track your financial performance with detailed insights and analytics
+          {t('financialView.subtitle')}
         </p>
       </div>
 
-      {/* Summary Cards - Responsive */}
+      {/* Summary Cards */}
       <div className="mb-4 sm:mb-6 md:mb-8">
         <FinancialSummaryCards summary={totalSummary} />
       </div>
 
-      {/* Controls - Responsive */}
+      {/* Controls */}
       <div className="mb-4 sm:mb-6 md:mb-8">
         <FinancialControls
           week={week}
@@ -531,10 +485,10 @@ const FinancialView = () => {
         />
       </div>
 
-      {/* Main Content - Responsive */}
+      {/* Main Content */}
       {loading ? (
         <div className="flex justify-center items-center min-h-48 sm:min-h-64 md:min-h-80 px-2 sm:px-0">
-          <LoaderSpinner  />
+          <LoaderSpinner />
         </div>
       ) : error ? (
         <div className="bg-red-50 border-2 border-red-200 text-red-800 px-4 py-3 sm:px-6 sm:py-4 rounded-lg text-sm sm:text-base">
@@ -548,15 +502,15 @@ const FinancialView = () => {
           expandedRows={expandedRows}
           onSort={handleSort}
           onToggleExpand={toggleRowExpansion}
-          onAddIncome={handleAddIncome} 
-          onAddExpense={handleAddExpense} 
+          onAddIncome={handleAddIncome}
+          onAddExpense={handleAddExpense}
           onViewDetails={handleViewDetails}
           onOrderPaid={handleOrderPaid}
           onViewOperators={(orderId: string) => navigate(`/app/add-operators-to-order/${orderId}`)}
         />
       )}
 
-      {/* Dialogs - Responsive */}
+      {/* Dialogs */}
       <PaymentDialog
         open={payDialogOpen}
         expense={paySuperOrder?.expense ?? 0}
@@ -568,10 +522,7 @@ const FinancialView = () => {
       <SuperOrderDetailsDialog
         open={detailsDialogOpen}
         superOrder={selectedSuperOrder}
-        onClose={() => {
-          setDetailsDialogOpen(false);
-          setSelectedSuperOrder(null);
-        }}
+        onClose={() => { setDetailsDialogOpen(false); setSelectedSuperOrder(null); }}
       />
 
       <OCRUploadDialog
@@ -590,7 +541,6 @@ const FinancialView = () => {
         currentYear={year}
       />
 
-      {/* Dialog de resultados detallados - Solo se abre desde OCRUploadDialog */}
       <DocaiResultDialog
         open={docaiDialogOpen}
         onClose={handleDocaiDialogClose}
@@ -602,10 +552,7 @@ const FinancialView = () => {
         type={addAmountType}
         keyRef={addAmountSuperOrder?.key_ref || ''}
         loading={addAmountLoading}
-        onClose={() => {
-          setAddAmountDialogOpen(false);
-          setAddAmountSuperOrder(null);
-        }}
+        onClose={() => { setAddAmountDialogOpen(false); setAddAmountSuperOrder(null); }}
         onConfirm={handleConfirmAddAmount}
       />
     </div>
