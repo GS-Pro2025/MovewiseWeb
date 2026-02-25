@@ -1464,5 +1464,300 @@
       "noOrdersUpdated": "Ninguna orden fue actualizada",
       "error": "Error al agregar {{type}}: {{message}}"
     }
+  },
+  "expenseBreakdown": {
+    "title": "Desglose de Gastos",
+    "subtitle": "Selecciona un período a continuación. El desglose mostrará los datos del rango seleccionado. Usa los botones rápidos para períodos estándar o personaliza tu propio rango.",
+    "back": "Volver al Resumen Financiero",
+    "actions": {
+      "refresh": "Actualizar",
+      "createCost": "Crear Gasto",
+      "createIncome": "Crear Ingreso",
+      "export": "Exportar / Imprimir"
+    },
+    "filters": {
+      "year": "Año",
+      "startWeek": "Semana Inicio",
+      "endWeek": "Semana Fin"
+    },
+    "timelapses": {
+      "q1": "T1 (Ene-Mar)",
+      "q2": "T2 (Abr-Jun)",
+      "q3": "T3 (Jul-Sep)",
+      "q4": "T4 (Oct-Dic)",
+      "h1": "S1 (Ene-Jun)",
+      "h2": "S2 (Jul-Dic)"
+    },
+    "rangeTitle": "Desglose Financiero - Semana {{start}} a {{end}}, {{year}}",
+    "summary": {
+      "totalIncome": "Ingreso Total",
+      "totalCosts": "Costos Totales",
+      "netProfit": "Utilidad Neta",
+      "income": "Ingresos",
+      "totalCost": "Costo Total"
+    },
+    "table": {
+      "category": "Categoría",
+      "amount": "Monto (USD)",
+      "actions": "Acciones",
+      "noActions": "Sin acciones"
+    },
+    "badge": {
+      "calculated": "Calculado"
+    },
+    "sections": {
+      "fixedCosts": "COSTOS FIJOS",
+      "variableCosts": "COSTOS VARIABLES",
+      "financialSummary": "RESUMEN FINANCIERO"
+    },
+    "costGroups": {
+      "otherTransactions": "Otras Transacciones (BD)",
+      "fixedFromDb": "Costos Fijos de Base de Datos",
+      "variableFromDb": "Costos Variables de Base de Datos"
+    },
+    "expenseTypes": {
+      "expense": "Gasto",
+      "fuelCost": "Combustible",
+      "workCost": "Costos Extra",
+      "bonus": "Bonificación",
+      "driverSalaries": "Salarios de Conductores",
+      "otherSalaries": "Salarios de Operadores",
+      "totalCost": "Costo Total"
+    },
+    "subtotals": {
+      "fixed": "Subtotal Costos Fijos",
+      "variable": "Subtotal Costos Variables",
+      "totalIncomes": "Total de Ingresos"
+    },
+    "extraIncomes": {
+      "count_one": "({{count}} Ingreso Extra)",
+      "count_other": "({{count}} Ingresos Extra)",
+      "none": "(Sin Ingresos Extra)"
+    },
+    "snackbar": {
+      "refreshSuccess": "Datos actualizados correctamente",
+      "refreshError": "Error al actualizar los datos",
+      "deleteSuccess": "Gasto eliminado correctamente",
+      "deleteError": "Error al eliminar el gasto",
+      "costCreated": "Gasto creado correctamente",
+      "incomeCreated": "Ingreso extra creado correctamente",
+      "futureWeek": "El período seleccionado comienza después de la semana actual {{week}}. Aún no hay datos disponibles."
+    },
+    "error": {
+      "loading": "Error al cargar el desglose"
+    }
+  },
+  "createExtraIncome": {
+    "title": "Crear Nuevo Ingreso",
+    "fields": {
+      "description": "Descripción",
+      "descriptionPlaceholder": "Ej: Bonificación por excelencia",
+      "amount": "Monto",
+      "date": "Fecha"
+    },
+    "errors": {
+      "descriptionRequired": "La descripción es obligatoria",
+      "valueRequired": "El monto debe ser mayor a 0",
+      "dateRequired": "La fecha es obligatoria"
+    },
+    "preview": {
+      "label": "Vista previa:",
+      "untitled": "Sin título"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "create": "Crear Ingreso",
+      "creating": "Creando..."
+    },
+    "snackbar": {
+      "success": "Ingreso extra creado correctamente",
+      "error": "Error al crear el ingreso extra"
+    }
+  },
+  "costsTableDropdown": {
+    "defaultTitle": "Costos de Base de Datos",
+    "itemsCount": "{{count}} ÍTEMS",
+    "clickToExpand": "Clic para expandir",
+    "columns": {
+      "description": "Descripción",
+      "type": "Tipo",
+      "amount": "Monto",
+      "date": "Fecha",
+      "actions": "Acciones"
+    },
+    "types": {
+      "fixed": "FIJO",
+      "variable": "VARIABLE"
+    },
+    "actions": {
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "deleting": "Eliminando..."
+    },
+    "detail": {
+      "title": "Detalle de Costos (BD)",
+      "showing": "Mostrando {{from}}-{{to}} de {{total}}",
+      "addCost": "Agregar Costo",
+      "empty": "No hay costos registrados"
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {{current}} de {{total}}"
+    },
+    "footer": {
+      "total": "Total costos BD:"
+    },
+    "snackbar": {
+      "deleteSuccess": "Costo eliminado correctamente",
+      "deleteError": "Error al eliminar el costo"
+    }
+  },
+  "addAmountDialog": {
+    "title": {
+      "income": "Agregar Ingreso",
+      "expense": "Agregar Gasto"
+    },
+    "reference": "Referencia",
+    "fields": {
+      "incomeAmount": "Monto de Ingreso",
+      "expenseAmount": "Monto de Gasto"
+    },
+    "types": {
+      "income": "ingreso",
+      "expense": "gasto"
+    },
+    "hint": "Este monto se añadirá al {{type}} actual de todas las órdenes con referencia {{keyRef}}.",
+    "errors": {
+      "invalidAmount": "Por favor ingresa un monto válido mayor a 0"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "addIncome": "Agregar Ingreso",
+      "addExpense": "Agregar Gasto",
+      "adding": "Agregando..."
+    }
+  },
+  "createCostDialog": {
+    "title": "Crear Nuevo Gasto",
+    "fields": {
+      "description": "Descripción",
+      "descriptionPlaceholder": "Ingresa la descripción del gasto",
+      "cost": "Monto del Gasto",
+      "type": "Tipo de Gasto"
+    },
+    "types": {
+      "fixed": "FIJO",
+      "variable": "VARIABLE"
+    },
+    "errors": {
+      "descriptionRequired": "La descripción es obligatoria",
+      "costRequired": "El monto debe ser mayor a 0",
+      "typeRequired": "El tipo es obligatorio"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "create": "Crear Gasto",
+      "creating": "Creando..."
+    },
+    "snackbar": {
+      "success": "Gasto creado correctamente",
+      "error": "Error al crear el gasto"
+    }
+  },    "loansSummary": {
+    "loading": "Cargando préstamos…",
+    "error": {
+      "title": "No se pudieron cargar los datos",
+      "loading": "Error al cargar los préstamos",
+      "retry": "Reintentar"
+    },
+    "header": {
+      "title": "Préstamos a Operadores",
+      "recordsLoaded": "{{count}} registros cargados en total",
+      "refresh": "Actualizar"
+    },
+    "filters": {
+      "quickPeriods": "Períodos Rápidos",
+      "customWeek": "Semana Personalizada"
+    },
+    "periods": {
+      "lastWeek": "Última Semana",
+      "lastMonth": "Último Mes",
+      "lastQuarter": "Último Trimestre",
+      "last6Months": "Últimos 6 Meses",
+      "lastYear": "Último Año",
+      "allTime": "Todo el Tiempo"
+    },
+    "status": {
+      "all": "Todos los estados",
+      "unpaid": "No pagado",
+      "paid": "Pagado",
+      "canceled": "Cancelado"
+    },
+    "kpi": {
+      "totalReceivable": "Total por Cobrar",
+      "totalReceivableSub": "Cuentas pendientes de cobro",
+      "totalLoaned": "Total Prestado",
+      "totalLoanedSub": "Total desembolsado",
+      "totalCollected": "Total Cobrado",
+      "totalCollectedSub": "Pagos recibidos",
+      "unpaidLoans": "Préstamos Impagos",
+      "unpaidLoansSub": "Préstamos aún pendientes"
+    },
+    "recovery": {
+      "title": "Tasa de Recuperación General",
+      "collected": "Cobrado",
+      "pending": "Pendiente"
+    },
+    "tabs": {
+      "overview": "Resumen",
+      "loans": "Historial de Préstamos",
+      "weekly": "Semanal"
+    },
+    "overview": {
+      "title": "Desglose de Deuda por Operador",
+      "operatorsCount": "{{count}} operadores",
+      "empty": "No hay préstamos que coincidan con los filtros actuales",
+      "loanCount": "{{count}} préstamo",
+      "loanCount_other": "{{count}} préstamos",
+      "loaned": "Prestado",
+      "paid": "Pagado",
+      "pending": "Pendiente",
+      "loansOf": "Préstamos — {{name}}"
+    },
+    "loan": {
+      "noDescription": "Sin descripción",
+      "created": "Creado",
+      "by": "Por",
+      "updated": "Actualizado",
+      "paid": "Pagado",
+      "due": "Por pagar"
+    },
+    "history": {
+      "title": "Todos los Préstamos",
+      "recordsCount": "{{count}} registros"
+    },
+    "table": {
+      "operator": "Operador",
+      "description": "Descripción",
+      "createdBy": "Creado por",
+      "total": "Total",
+      "paid": "Pagado",
+      "remaining": "Restante",
+      "status": "Estado",
+      "date": "Fecha",
+      "progress": "Progreso",
+      "totalRow": "Total ({{count}} préstamos)"
+    },
+    "weekly": {
+      "title": "Préstamos por Semana",
+      "empty": "Sin datos para este período",
+      "loanCount": "{{count}} préstamo",
+      "loanCount_other": "{{count}} préstamos"
+    },
+    "footer": {
+      "hint": "Haz clic en cualquier operador en la pestaña <strong>Resumen</strong> para ver sus préstamos individuales. Usa los botones de filtro de estado para aislar préstamos impagos, pagados o cancelados."
+    }
   }
+
 }
