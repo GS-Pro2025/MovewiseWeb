@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { Typography, Menu, MenuItem, Divider } from "@mui/material";
+import { Menu, MenuItem, Divider } from "@mui/material";
 import type { OrderSummary } from "../domain/OrderSummaryModel";
 import PaymentDialog from "../../Home/ui/PaymentDialog";
 import { updateOrder } from "../data/SummaryCostRepository";
@@ -33,11 +33,7 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
 
   const handleConfirmPayment = async (expense: number, income: number) => {
     if (!selectedOrder) return;
-    const updatedOrder: UpdatePaymentData = {
-      expense: expense,
-      income: income,
-      payStatus: 1,
-    };
+    const updatedOrder: UpdatePaymentData = { expense, income, payStatus: 1 };
     await updateOrder(selectedOrder.key, updatedOrder);
     setSelectedOrder(null);
     enqueueSnackbar('Payment registered', { variant: 'success' });
@@ -47,372 +43,184 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
 
   const handleContextMenu = (event: React.MouseEvent, order: OrderSummary) => {
     event.preventDefault();
-    setContextMenu({
-      mouseX: event.clientX - 2,
-      mouseY: event.clientY - 4,
-      order,
-    });
+    setContextMenu({ mouseX: event.clientX - 2, mouseY: event.clientY - 4, order });
   };
 
-  const handleCloseContextMenu = () => {
-    setContextMenu(null);
-  };
+  const handleCloseContextMenu = () => setContextMenu(null);
 
-  const ViewOperatorsButton = ({ orderId }: { orderId: string }) => (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        onViewOperators(orderId);
-      }}
-      className="p-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md"
-      style={{
-        color: '#0B2863',
-        borderColor: '#0B2863',
-        backgroundColor: 'transparent'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#0B2863';
-        e.currentTarget.style.color = '#ffffff';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent';
-        e.currentTarget.style.color = '#0B2863';
-      }}
-      title="View Operators"
-    >
-      <VisibilityIcon sx={{ fontSize: 18 }} />
-    </button>
-  );
-
-  const PayButton = ({ order }: { order: OrderSummary }) => {
-    const isPaid = order.payStatus === 1;
-    return (
-      <button
-        onClick={() => handlePayClick(order)}
-        disabled={isPaid}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-          isPaid
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
-            : 'bg-green-500 text-white hover:bg-green-600 hover:shadow-md hover:-translate-y-0.5'
-        }`}
-      >
-        <PaymentIcon sx={{ fontSize: 16 }} />
-        Pay
-      </button>
-    );
-  };
-
-  const PayStatusChip = ({ status }: { status: number }) => (
-    <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-        status === 1 
-          ? 'bg-green-500 text-white' 
-          : 'text-white'
-      }`}
-      style={{
-        backgroundColor: status === 1 ? '#22c55e' : '#FFE67B',
-        color: status === 1 ? '#ffffff' : '#0B2863'
-      }}
-    >
-      {status === 1 ? 'Paid' : 'Unpaid'}
-    </span>
-  );
+  // ── Shared cell class ──
+  const td = "px-2 py-1.5 text-[11px] text-gray-700 whitespace-nowrap";
+  const th = "px-2 py-2 text-left text-[10px] font-semibold text-white uppercase tracking-wide whitespace-nowrap";
 
   return (
-    <div className="p-4">
-      {/* Header */}
-      <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #0B2863' }}>
-        <Typography 
-          variant="h6" 
-          className="!font-bold !flex !items-center !gap-2"
-          style={{ color: '#0B2863' }}
-        >
-          📋 Reference: <span style={{ color: '#FFE67B', backgroundColor: '#0B2863', padding: '4px 12px', borderRadius: '8px' }}>{keyRef}</span>
-        </Typography>
+    <div>
+      {/* Compact header */}
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Ref:</span>
+        <span className="text-[11px] font-bold text-[#0B2863] bg-blue-50 border border-blue-200 rounded px-2 py-0.5">
+          {keyRef}
+        </span>
+        <span className="ml-auto text-[10px] text-gray-400">{orders.length} orders</span>
       </div>
 
-      {/* Table Container */}
-      <div 
-        className="rounded-xl shadow-lg border-2 bg-white overflow-auto max-h-96"
-        style={{ borderColor: '#0B2863' }}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            {/* Header */}
-            <thead>
-              <tr style={{ backgroundColor: '#0B2863' }}>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Operators
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Order ID
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Location
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Income
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Total Cost
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Fuel Cost
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Bonus
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-bold text-white uppercase tracking-wide">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            {/* Body */}
-            <tbody>
-              {orders.map((order, index) => (
-                <tr 
-                  key={order.key}
-                  className="transition-colors duration-200 border-b border-gray-200 cursor-context-menu"
-                  style={{
-                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc'
-                  }}
-                  onContextMenu={(e) => handleContextMenu(e as any, order)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#e0f2fe';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-                  }}
-                >
-                  {/* Operators */}
-                  <td className="px-4 py-3">
-                    <div className="flex justify-center">
-                      <ViewOperatorsButton orderId={order.key} />
-                    </div>
-                  </td>
-
-                  {/* Order ID */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-semibold !truncate !max-w-[120px]"
-                      style={{ color: '#0B2863' }}
-                      title={order.key}
-                    >
-                      {order.key}
-                    </Typography>
-                  </td>
-
-                  {/* Date */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-medium"
-                      style={{ color: '#0B2863' }}
-                    >
-                      {order.date}
-                    </Typography>
-                  </td>
-
-                  {/* Location */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-medium !truncate !max-w-[150px]"
-                      style={{ color: '#0B2863' }}
-                      title={order.state}
-                    >
-                      {order.state}
-                    </Typography>
-                  </td>
-
-                  {/* Income */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-bold"
-                      style={{ color: '#22c55e' }}
-                    >
-                      ${order.income?.toLocaleString() || 0}
-                    </Typography>
-                  </td>
-
-                  {/* Total Cost */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-bold"
-                      style={{ color: '#000000' }}
-                    >
-                      ${order.summary?.totalCost?.toLocaleString() || 0}
-                    </Typography>
-                  </td>
-
-                  {/* Fuel Cost */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-bold"
-                      style={{ color: '#000000' }}
-                    >
-                      ${order.summary?.fuelCost?.toLocaleString() || 0}
-                    </Typography>
-                  </td>
-
-                  {/* Bonus */}
-                  <td className="px-4 py-3">
-                    <Typography 
-                      variant="body2" 
-                      className="!font-bold"
-                      style={{ color: '#000000' }}
-                    >
-                      ${order.summary?.bonus?.toLocaleString() || 0}
-                    </Typography>
-                  </td>
-
-                  {/* Pay Status */}
-                  <td className="px-4 py-3">
-                    <PayStatusChip status={order.payStatus} />
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-3">
-                    <PayButton order={order} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty State */}
-        {orders.length === 0 && (
-          <div className="text-center py-8">
-            <div className="flex flex-col items-center gap-3">
-              <span className="text-4xl">📦</span>
-              <Typography 
-                variant="h6" 
-                className="!font-semibold"
-                style={{ color: '#0B2863' }}
+      {/* Table */}
+      <div className="rounded border border-gray-200 bg-white overflow-auto max-h-72">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-[#0B2863]">
+              <th className={th}>Ops</th>
+              <th className={th}>Date</th>
+              <th className={th}>Location</th>
+              <th className={`${th} text-right`}>Income</th>
+              <th className={`${th} text-right`}>Total Cost</th>
+              <th className={`${th} text-right`}>Fuel</th>
+              <th className={`${th} text-right`}>Bonus</th>
+              <th className={th}>Status</th>
+              <th className={th}>Pay</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order, index) => (
+              <tr
+                key={order.key}
+                className="border-b border-gray-100 transition-colors cursor-context-menu"
+                style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                onContextMenu={(e) => handleContextMenu(e as any, order)}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f0f6ff'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f9fafb'; }}
               >
-                No orders found
-              </Typography>
-              <Typography variant="body2" className="!text-gray-500">
-                No orders available for this reference
-              </Typography>
-            </div>
+                {/* Operators button */}
+                <td className={td}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onViewOperators(order.key); }}
+                    className="p-1 rounded border border-[#0B2863] text-[#0B2863] hover:bg-[#0B2863] hover:text-white transition-colors"
+                    title="View Operators"
+                  >
+                    <VisibilityIcon sx={{ fontSize: 13 }} />
+                  </button>
+                </td>
+
+                {/* Date */}
+                <td className={td}>{order.date}</td>
+
+                {/* Location */}
+                <td className={td}>
+                  <span className="truncate max-w-[120px] block" title={order.state}>
+                    {order.state}
+                  </span>
+                </td>
+
+                {/* Income */}
+                <td className={`${td} text-right font-semibold text-green-600`}>
+                  ${order.income?.toLocaleString() || 0}
+                </td>
+
+                {/* Total Cost */}
+                <td className={`${td} text-right`}>
+                  ${order.summary?.totalCost?.toLocaleString() || 0}
+                </td>
+
+                {/* Fuel */}
+                <td className={`${td} text-right`}>
+                  ${order.summary?.fuelCost?.toLocaleString() || 0}
+                </td>
+
+                {/* Bonus */}
+                <td className={`${td} text-right`}>
+                  ${order.summary?.bonus?.toLocaleString() || 0}
+                </td>
+
+                {/* Status */}
+                <td className={td}>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium
+                    ${order.payStatus === 1
+                      ? 'bg-green-100 text-green-700 border border-green-300'
+                      : 'bg-amber-50 text-amber-700 border border-amber-300'}`}>
+                    {order.payStatus === 1 ? 'Paid' : 'Unpaid'}
+                  </span>
+                </td>
+
+                {/* Pay button */}
+                <td className={td}>
+                  <button
+                    onClick={() => handlePayClick(order)}
+                    disabled={order.payStatus === 1}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border transition-colors
+                      ${order.payStatus === 1
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-green-500 text-green-600 hover:bg-green-500 hover:text-white'}`}
+                  >
+                    <PaymentIcon sx={{ fontSize: 11 }} />
+                    Pay
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {orders.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+            <span className="text-2xl mb-1">📦</span>
+            <p className="text-[11px]">No orders for this reference</p>
           </div>
         )}
       </div>
 
-      {/* Summary Footer */}
-      <div 
-        className="mt-4 p-3 rounded-lg flex justify-between items-center"
-        style={{ backgroundColor: '#FFE67B' }}
-      >
-        <Typography 
-          variant="body1" 
-          className="!font-semibold"
-          style={{ color: '#0B2863' }}
-        >
-          Total Orders: {orders.length}
-        </Typography>
-        <div className="flex gap-4">
-          <Typography 
-            variant="body2" 
-            className="!font-medium"
-            style={{ color: '#0B2863' }}
-          >
-            Paid: <span className="font-bold text-green-600">{orders.filter(o => o.payStatus === 1).length}</span>
-          </Typography>
-          <Typography 
-            variant="body2" 
-            className="!font-medium"
-            style={{ color: '#0B2863' }}
-          >
-            Unpaid: <span className="font-bold">{orders.filter(o => o.payStatus === 0).length}</span>
-          </Typography>
+      {/* Compact footer */}
+      {orders.length > 0 && (
+        <div className="flex items-center gap-3 mt-1.5 px-1">
+          <span className="text-[10px] text-gray-400">
+            <span className="text-green-600 font-semibold">{orders.filter(o => o.payStatus === 1).length}</span> paid
+          </span>
+          <span className="text-[10px] text-gray-400">
+            <span className="text-amber-600 font-semibold">{orders.filter(o => o.payStatus === 0).length}</span> unpaid
+          </span>
+          <span className="ml-auto text-[10px] font-semibold text-gray-600">
+            Total income: <span className="text-green-600">${orders.reduce((s, o) => s + (o.income ?? 0), 0).toLocaleString()}</span>
+          </span>
         </div>
-      </div>
+      )}
 
       {/* Context Menu */}
       <Menu
         open={!!contextMenu}
         onClose={handleCloseContextMenu}
         anchorReference="anchorPosition"
-        anchorPosition={
-          contextMenu
-            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : undefined
-        }
+        anchorPosition={contextMenu ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
         onContextMenu={(e) => e.preventDefault()}
+        PaperProps={{ sx: { minWidth: 150, borderRadius: 1.5, boxShadow: '0 4px 16px rgba(0,0,0,0.1)' } }}
       >
         <MenuItem
+          dense
           onClick={() => {
-            if (contextMenu?.order) {
-              setSelectedOrder(contextMenu.order);
-              setPaymentDialogOpen(true);
-            }
+            if (contextMenu?.order) { setSelectedOrder(contextMenu.order); setPaymentDialogOpen(true); }
             handleCloseContextMenu();
           }}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            '&:hover': {
-              backgroundColor: 'rgba(11, 40, 99, 0.1)'
-            }
-          }}
+          sx={{ fontSize: '0.72rem', gap: 1, '&:hover': { backgroundColor: 'rgba(11,40,99,0.08)' } }}
         >
-          <TrendingUp size={18} style={{ color: '#0B2863' }} />
-          <span>Add Income</span>
+          <TrendingUp size={13} color="#0B2863" /> Add Income
         </MenuItem>
         <MenuItem
+          dense
           onClick={() => {
-            if (contextMenu?.order) {
-              setSelectedOrder(contextMenu.order);
-              setPaymentDialogOpen(true);
-            }
+            if (contextMenu?.order) { setSelectedOrder(contextMenu.order); setPaymentDialogOpen(true); }
             handleCloseContextMenu();
           }}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            '&:hover': {
-              backgroundColor: 'rgba(11, 40, 99, 0.1)'
-            }
-          }}
+          sx={{ fontSize: '0.72rem', gap: 1, '&:hover': { backgroundColor: 'rgba(11,40,99,0.08)' } }}
         >
-          <TrendingDown size={18} style={{ color: '#0B2863' }} />
-          <span>Add Expense</span>
+          <TrendingDown size={13} color="#6b7280" /> Add Expense
         </MenuItem>
         <Divider />
         <MenuItem
+          dense
           onClick={() => {
-            if (contextMenu?.order) {
-              onViewOperators(contextMenu.order.key);
-            }
+            if (contextMenu?.order) onViewOperators(contextMenu.order.key);
             handleCloseContextMenu();
           }}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            '&:hover': {
-              backgroundColor: 'rgba(11, 40, 99, 0.1)'
-            }
-          }}
+          sx={{ fontSize: '0.72rem', gap: 1, '&:hover': { backgroundColor: 'rgba(11,40,99,0.08)' } }}
         >
-          <Eye size={18} style={{ color: '#0B2863' }} />
-          <span>View Operators</span>
+          <Eye size={13} color="#0B2863" /> View Operators
         </MenuItem>
       </Menu>
 
