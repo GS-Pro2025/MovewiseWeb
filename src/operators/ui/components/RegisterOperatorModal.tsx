@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { RegistryOperator } from '../../domain/RegistryOperatorModel';
 import PersonalDataStep from './RegisterOperatorSteps/PersonalDataStep';
 import ContactInfoStep from './RegisterOperatorSteps/ContactInfoStep';
@@ -14,12 +15,13 @@ interface RegisterOperatorModalProps {
   onSave: (operatorData: FormData) => Promise<void>;
 }
 
-const STEPS = [
-  { id: 1, name: 'Personal Data', icon: 'fa-user' },
-  { id: 2, name: 'Contact Info', icon: 'fa-address-card' },
-  { id: 3, name: 'Operator Data', icon: 'fa-id-badge' },
-  { id: 4, name: 'Documents', icon: 'fa-file-upload' },
-  { id: 5, name: 'Children', icon: 'fa-baby' }
+// Step definitions — labels resolved via i18n at render time
+const STEP_IDS = [
+  { id: 1, key: 'personalData',  icon: 'fa-user' },
+  { id: 2, key: 'contactInfo',   icon: 'fa-address-card' },
+  { id: 3, key: 'operatorData',  icon: 'fa-id-badge' },
+  { id: 4, key: 'documents',     icon: 'fa-file-upload' },
+  { id: 5, key: 'children',      icon: 'fa-baby' }
 ];
 
 const LOCAL_KEY = 'register_operator_draft_v1';
@@ -29,13 +31,14 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
   onClose,
   onSave
 }) => {
+  const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [highestStepReached, setHighestStepReached] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
-  
-  // Estado del formulario completo
+
   const [formData, setFormData] = useState<Partial<RegistryOperator>>({
     number_licence: '',
     code: '',
@@ -58,7 +61,6 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
     sons: []
   });
 
-  // Archivos separados (para FormData) — no se guardan en localStorage
   const [files, setFiles] = useState<{
     photo?: File;
     license_front?: File;
@@ -67,7 +69,8 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Cargar draft desde localStorage al abrir (si existe)
+  // ── Draft persistence ──────────────────────────────────────────────────────
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LOCAL_KEY);
@@ -78,197 +81,155 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         }
       }
     } catch (err) {
-      // ignore parse errors
       console.warn('Could not parse register draft', err);
     }
-  }, []); // cargar una vez al montar el componente (persistente entre aperturas)
+  }, []);
 
-  // Guardar draft en cada cambio relevante (no guardamos archivos)
   const saveDraft = useCallback((payload?: Partial<RegistryOperator>) => {
     try {
-      const toStore = {
-        data: { ...formData, ...(payload || {}) }
-      };
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(toStore));
+      localStorage.setItem(LOCAL_KEY, JSON.stringify({ data: { ...formData, ...(payload || {}) } }));
     } catch (err) {
       console.warn('Could not save register draft', err);
     }
   }, [formData]);
 
-  // Guardar automáticamente cuando formData cambie
-  useEffect(() => {
-    saveDraft();
-  }, [formData, saveDraft]);
+  useEffect(() => { saveDraft(); }, [formData, saveDraft]);
 
   const clearDraft = useCallback(() => {
-    try {
-      localStorage.removeItem(LOCAL_KEY);
-    } catch {
-      // ignore
-      console.warn('Could not clear register draft');
-    }
+    try { localStorage.removeItem(LOCAL_KEY); } catch { /* ignore */ }
   }, []);
 
-  // Verificar si hay datos llenados en el formulario
+  // ── Close handling ─────────────────────────────────────────────────────────
+
   const hasFormData = useCallback((): boolean => {
     return !!(
-      formData.first_name?.trim() ||
-      formData.last_name?.trim() ||
-      formData.email?.trim() ||
-      formData.phone?.trim() ||
-      formData.id_number?.trim() ||
-      formData.code?.trim() ||
-      formData.number_licence?.trim() ||
-      formData.address?.trim() ||
+      formData.first_name?.trim() || formData.last_name?.trim() ||
+      formData.email?.trim()       || formData.phone?.trim() ||
+      formData.id_number?.trim()   || formData.code?.trim() ||
+      formData.number_licence?.trim() || formData.address?.trim() ||
       (formData.sons && formData.sons.length > 0) ||
-      files.photo ||
-      files.license_front ||
-      files.license_back
+      files.photo || files.license_front || files.license_back
     );
   }, [formData, files]);
 
-  // Manejar intento de cerrar el modal
   const handleCloseAttempt = useCallback(() => {
-    if (hasFormData()) {
-      setShowConfirmClose(true);
-    } else {
-      onClose();
-    }
+    if (hasFormData()) setShowConfirmClose(true);
+    else onClose();
   }, [hasFormData, onClose]);
 
-  // Confirmar cierre y limpiar datos
   const handleConfirmClose = useCallback(() => {
     clearDraft();
     setShowConfirmClose(false);
     onClose();
   }, [clearDraft, onClose]);
 
-  // Cancelar el cierre
-  const handleCancelClose = useCallback(() => {
-    setShowConfirmClose(false);
-  }, []);
+  const handleCancelClose = useCallback(() => { setShowConfirmClose(false); }, []);
 
-  // Actualizar datos del formulario
+  // ── Form update ────────────────────────────────────────────────────────────
+
   const updateFormData = useCallback((data: Partial<RegistryOperator>) => {
     setFormData(prev => {
       const next = { ...prev, ...data };
-      // guardar draft inmediatamente con los cambios
-      try {
-        localStorage.setItem(LOCAL_KEY, JSON.stringify({ data: next }));
-      } catch {
-        console.warn('Could not save register draft');
-      }
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ data: next })); } catch { /* ignore */ }
       return next;
     });
-    // Limpiar errores del campo actualizado
-    const updatedFields = Object.keys(data);
     setErrors(prev => {
       const newErrors = { ...prev };
-      updatedFields.forEach(field => delete newErrors[field]);
+      Object.keys(data).forEach(field => delete newErrors[field]);
       return newErrors;
     });
   }, []);
 
-  // Actualizar archivos (no se guardan en cache)
   const updateFiles = useCallback((newFiles: typeof files) => {
     setFiles(prev => ({ ...prev, ...newFiles }));
   }, []);
 
-  // Validaciones por paso
+  // ── Validation ─────────────────────────────────────────────────────────────
+
   const validateStep = useCallback((step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
     switch (step) {
-      case 1: // Personal Data
-        if (!formData.first_name?.trim()) newErrors.first_name = 'First name is required';
-        if (!formData.last_name?.trim()) newErrors.last_name = 'Last name is required';
-        if (!formData.birth_date) newErrors.birth_date = 'Birth date is required';
-        if (!formData.type_id) newErrors.type_id = 'ID type is required';
-        if (!formData.id_number?.trim()) newErrors.id_number = 'ID number is required';
+      case 1:
+        if (!formData.first_name?.trim()) newErrors.first_name = t('operators.registerModal.validation.firstName');
+        if (!formData.last_name?.trim())  newErrors.last_name  = t('operators.registerModal.validation.lastName');
+        if (!formData.birth_date)         newErrors.birth_date = t('operators.registerModal.validation.birthDate');
+        if (!formData.type_id)            newErrors.type_id    = t('operators.registerModal.validation.typeId');
+        if (!formData.id_number?.trim())  newErrors.id_number  = t('operators.registerModal.validation.idNumber');
         break;
 
-      case 2: // Contact Info
-        if (!formData.phone?.trim()) newErrors.phone = 'Phone is required';
+      case 2:
+        if (!formData.phone?.trim()) {
+          newErrors.phone = t('operators.registerModal.validation.phone');
+        }
         if (!formData.email?.trim()) {
-          newErrors.email = 'Email is required';
+          newErrors.email = t('operators.registerModal.validation.email');
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-          newErrors.email = 'Invalid email format';
+          newErrors.email = t('operators.registerModal.validation.emailInvalid');
         }
         break;
 
-      case 3: // Operator Data
-        if (!formData.code?.trim()) newErrors.code = 'Code is required';
-        if (!formData.number_licence?.trim()) newErrors.number_licence = 'License number is required';
-        if (!formData.size_t_shirt?.trim()) newErrors.size_t_shirt = 'T-shirt size is required';
-        if (!formData.salary_type) newErrors.salary_type = 'Salary type is required';
-        if (formData.salary_type === 'day' && (!formData.salary || formData.salary <= 0)) {
-          newErrors.salary = 'Valid daily salary is required';
-        }
-        if (formData.salary_type === 'hour' && (!formData.hourly_salary || formData.hourly_salary <= 0)) {
-          newErrors.hourly_salary = 'Valid hourly salary is required';
-        }
-        break;
-
-      case 5: // Children (opcional)
+      case 3:
+        if (!formData.code?.trim())           newErrors.code           = t('operators.registerModal.validation.code');
+        if (!formData.number_licence?.trim()) newErrors.number_licence = t('operators.registerModal.validation.numberLicence');
+        if (!formData.size_t_shirt?.trim())   newErrors.size_t_shirt   = t('operators.registerModal.validation.tShirtSize');
+        if (!formData.salary_type)            newErrors.salary_type    = t('operators.registerModal.validation.salaryType');
+        if (formData.salary_type === 'day' && (!formData.salary || formData.salary <= 0))
+          newErrors.salary = t('operators.registerModal.validation.salary');
+        if (formData.salary_type === 'hour' && (!formData.hourly_salary || formData.hourly_salary <= 0))
+          newErrors.hourly_salary = t('operators.registerModal.validation.hourlySalary');
         break;
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [formData, t]);
 
-  // Navegación entre pasos
+  // ── Navigation ─────────────────────────────────────────────────────────────
+
   const handleNext = useCallback(() => {
     if (validateStep(currentStep)) {
-      if (currentStep < STEPS.length) {
-        const nextStep = currentStep + 1;
-        setCurrentStep(nextStep);
-        setHighestStepReached(prev => Math.max(prev, nextStep));
-      }
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      setHighestStepReached(prev => Math.max(prev, nextStep));
     } else {
-      enqueueSnackbar('Please fix validation errors in this step', { variant: 'error' });
+      enqueueSnackbar(t('operators.registerModal.validation.fixErrors'), { variant: 'error' });
     }
-  }, [currentStep, validateStep, enqueueSnackbar]);
+  }, [currentStep, validateStep, enqueueSnackbar, t]);
 
   const handlePrevious = useCallback(() => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
+    if (currentStep > 1) setCurrentStep(prev => prev - 1);
   }, [currentStep]);
 
-  // Navegación directa a un paso (solo si ya fue visitado)
   const handleStepClick = useCallback((stepId: number) => {
-    if (stepId <= highestStepReached) {
-      setCurrentStep(stepId);
-    }
+    if (stepId <= highestStepReached) setCurrentStep(stepId);
   }, [highestStepReached]);
 
-  // Submit final
+  // ── Submit ─────────────────────────────────────────────────────────────────
+
   const handleSubmit = useCallback(async () => {
-    // validar todo antes de enviar
     const allErrors: Record<string, string> = {};
-    if (!formData.first_name || !formData.first_name.toString().trim()) allErrors.first_name = 'First name is required';
-    if (!formData.last_name || !formData.last_name.toString().trim()) allErrors.last_name = 'Last name is required';
-    if (!formData.id_number || !formData.id_number.toString().trim()) allErrors.id_number = 'ID number is required';
-    if (!formData.type_id) allErrors.type_id = 'ID type is required';
-    if (!formData.phone || !formData.phone.toString().trim()) allErrors.phone = 'Phone is required';
-    if (!formData.number_licence || !formData.number_licence.toString().trim()) allErrors.number_licence = 'License number is required';
-    if (!formData.salary_type) allErrors.salary_type = 'Salary type is required';
-    if (formData.salary_type === 'day' && (!formData.salary || Number(formData.salary) <= 0)) allErrors.salary = 'Valid daily salary is required';
-    if (formData.salary_type === 'hour' && (!formData.hourly_salary || Number(formData.hourly_salary) <= 0)) allErrors.hourly_salary = 'Valid hourly salary is required';
+    if (!formData.first_name?.toString().trim())    allErrors.first_name    = t('operators.registerModal.validation.firstName');
+    if (!formData.last_name?.toString().trim())     allErrors.last_name     = t('operators.registerModal.validation.lastName');
+    if (!formData.id_number?.toString().trim())     allErrors.id_number     = t('operators.registerModal.validation.idNumber');
+    if (!formData.type_id)                          allErrors.type_id       = t('operators.registerModal.validation.typeId');
+    if (!formData.phone?.toString().trim())         allErrors.phone         = t('operators.registerModal.validation.phone');
+    if (!formData.number_licence?.toString().trim()) allErrors.number_licence = t('operators.registerModal.validation.numberLicence');
+    if (!formData.salary_type)                      allErrors.salary_type   = t('operators.registerModal.validation.salaryType');
+    if (formData.salary_type === 'day' && (!formData.salary || Number(formData.salary) <= 0))
+      allErrors.salary = t('operators.registerModal.validation.salary');
+    if (formData.salary_type === 'hour' && (!formData.hourly_salary || Number(formData.hourly_salary) <= 0))
+      allErrors.hourly_salary = t('operators.registerModal.validation.hourlySalary');
 
     setErrors(allErrors);
     if (Object.keys(allErrors).length > 0) {
-      enqueueSnackbar('Please fix validation errors before submitting', { variant: 'error' });
+      enqueueSnackbar(t('operators.registerModal.validation.fixBeforeSubmit'), { variant: 'error' });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Crear FormData
       const formDataToSend = new FormData();
-
-      // Datos del operador
       formDataToSend.append('code', formData.code || '');
       formDataToSend.append('number_licence', formData.number_licence || '');
       formDataToSend.append('n_children', (formData.n_children || 0).toString());
@@ -281,8 +242,6 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         formDataToSend.append('hourly_salary', (formData.hourly_salary || 0).toString());
       }
       formDataToSend.append('status', formData.status || 'active');
-
-      // Datos personales (compatibilidad)
       formDataToSend.append('first_name', formData.first_name || '');
       formDataToSend.append('last_name', formData.last_name || '');
       formDataToSend.append('birth_date', formData.birth_date || '');
@@ -291,150 +250,134 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
       formDataToSend.append('id_number', formData.id_number || '');
       formDataToSend.append('type_id', formData.type_id || 'id_number');
       formDataToSend.append('email', formData.email || '');
-      formDataToSend.append('status', 'active');
 
-      // Archivos
-      if (files.photo) formDataToSend.append('photo', files.photo);
+      if (files.photo)         formDataToSend.append('photo', files.photo);
       if (files.license_front) formDataToSend.append('license_front', files.license_front);
-      if (files.license_back) formDataToSend.append('license_back', files.license_back);
+      if (files.license_back)  formDataToSend.append('license_back', files.license_back);
 
-      // Hijos (si hay)
-      if (formData.sons && formData.sons.length > 0) {
+      if (formData.sons && formData.sons.length > 0)
         formDataToSend.append('sons', JSON.stringify(formData.sons));
-      }
 
       if (formData.zipcode) formDataToSend.append('zipcode', formData.zipcode);
 
       await onSave(formDataToSend);
-
-      // Éxito: limpiar draft y cerrar modal
       clearDraft();
-      enqueueSnackbar('Operator registered successfully', { variant: 'success' });
+      enqueueSnackbar(t('operators.registerModal.snackbar.success'), { variant: 'success' });
       onClose();
     } catch (error: any) {
       console.error('Error submitting operator:', error);
-      
-      // Función para extraer mensaje limpio del error
+
       const extractCleanMessage = (err: any): string => {
-        // Si el error tiene la estructura { message, errors, status }
         if (err && typeof err === 'object') {
-          // Primero verificar si hay errores en non_field_errors
-          if (err.errors?.non_field_errors?.length) {
-            return err.errors.non_field_errors[0];
-          }
-          
-          // Si hay otros errores de campo, tomar el primero
+          if (err.errors?.non_field_errors?.length) return err.errors.non_field_errors[0];
           if (err.errors && typeof err.errors === 'object') {
-            const firstErrorKey = Object.keys(err.errors)[0];
-            if (firstErrorKey) {
-              const firstError = err.errors[firstErrorKey];
-              return Array.isArray(firstError) ? firstError[0] : String(firstError);
+            const firstKey = Object.keys(err.errors)[0];
+            if (firstKey) {
+              const firstErr = err.errors[firstKey];
+              return Array.isArray(firstErr) ? firstErr[0] : String(firstErr);
             }
           }
         }
-        
         let rawMsg = err?.message || String(err);
-        
-        // Intentar extraer JSON del mensaje (formato: "HTTP error! status: XXX - {...}")
         const jsonMatch = rawMsg.match(/- (\{.*\})$/);
         if (jsonMatch) {
           try {
             const parsed = JSON.parse(jsonMatch[1]);
-            // Verificar non_field_errors en el JSON parseado
-            if (parsed.errors?.non_field_errors?.length) {
-              return parsed.errors.non_field_errors[0];
-            }
+            if (parsed.errors?.non_field_errors?.length) return parsed.errors.non_field_errors[0];
             rawMsg = parsed.message || rawMsg;
-          } catch {
-            // ignore parse errors
-          }
+          } catch { /* ignore */ }
         }
-        
-        // Extraer el detalle del ErrorDetail (formato: "[ErrorDetail(string='...', code='...')]")
         const errorDetailMatch = rawMsg.match(/ErrorDetail\(string='([^']+)'/);
-        if (errorDetailMatch) {
-          return errorDetailMatch[1];
-        }
-        
-        // Limpiar prefijos comunes
-        rawMsg = rawMsg.replace(/^Unexpected error:\s*/i, '');
-        rawMsg = rawMsg.replace(/^\[|\]$/g, '');
-        
-        return rawMsg || 'Server validation error';
+        if (errorDetailMatch) return errorDetailMatch[1];
+        rawMsg = rawMsg.replace(/^Unexpected error:\s*/i, '').replace(/^\[|\]$/g, '');
+        return rawMsg || t('operators.registerModal.snackbar.fallbackError');
       };
 
-      const cleanMsg = extractCleanMessage(error);
-      enqueueSnackbar(cleanMsg, { variant: 'error' });
+      enqueueSnackbar(extractCleanMessage(error), { variant: 'error' });
 
       if (error?.errors && typeof error.errors === 'object') {
         const normalized: Record<string, string> = {};
         Object.entries(error.errors).forEach(([key, val]) => {
-          if (key === 'non_field_errors') return; // Ya se mostró en el snackbar
+          if (key === 'non_field_errors') return;
           const firstMsg = Array.isArray(val) ? (val[0] as string) : String(val);
           const shortKey = key.includes('.') ? key.split('.').pop()! : key;
           normalized[shortKey] = firstMsg;
         });
-        if (Object.keys(normalized).length > 0) {
-          setErrors(prev => ({ ...prev, ...normalized }));
-        }
+        if (Object.keys(normalized).length > 0) setErrors(prev => ({ ...prev, ...normalized }));
       }
-      // no clear draft - keep cached for retry
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, files, onSave, clearDraft, enqueueSnackbar, onClose]);
+  }, [formData, files, onSave, clearDraft, enqueueSnackbar, onClose, t]);
 
   if (!isOpen) return null;
 
+  const STEPS = STEP_IDS.map(s => ({
+    ...s,
+    name: t(`operators.registerModal.steps.${s.key}`)
+  }));
+
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      {/* Confirmation Dialog */}
+
+      {/* ── Confirm Close Dialog ── */}
       {showConfirmClose && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                <i className="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                <i className="fas fa-exclamation-triangle text-yellow-600 text-xl" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Discard Changes?</h3>
-                <p className="text-sm text-gray-500">You have unsaved data</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {t('operators.registerModal.confirmClose.title')}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {t('operators.registerModal.confirmClose.subtitle')}
+                </p>
               </div>
             </div>
             <p className="text-gray-600 mb-6">
-              All the information you've entered will be lost. Are you sure you want to close?
+              {t('operators.registerModal.confirmClose.message')}
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelClose}
                 className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
               >
-                Keep Editing
+                {t('operators.registerModal.confirmClose.keepEditing')}
               </button>
               <button
                 onClick={handleConfirmClose}
                 className="px-4 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 transition-all"
               >
-                Discard & Close
+                {t('operators.registerModal.confirmClose.discard')}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ── Main Modal ── */}
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">Register New Operator</h2>
-              <p className="text-blue-100 mt-1">Step {currentStep} of {STEPS.length}</p>
+              <h2 className="text-2xl font-bold">{t('operators.registerModal.title')}</h2>
+              <p className="text-blue-100 mt-1">
+                {t('operators.registerModal.stepIndicator', {
+                  current: currentStep,
+                  total: STEPS.length
+                })}
+              </p>
             </div>
             <button
               onClick={handleCloseAttempt}
               className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
             >
-              <i className="fas fa-times text-xl"></i>
+              <i className="fas fa-times text-xl" />
             </button>
           </div>
         </div>
@@ -444,7 +387,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => (
               <React.Fragment key={step.id}>
-                <div 
+                <div
                   className="flex flex-col items-center"
                   onClick={() => handleStepClick(step.id)}
                   style={{ cursor: step.id <= highestStepReached ? 'pointer' : 'default' }}
@@ -459,24 +402,27 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
                         ? 'bg-blue-200 text-blue-700 hover:bg-blue-300'
                         : 'bg-gray-300 text-gray-600'
                     }`}
-                    title={step.id <= highestStepReached ? `Go to ${step.name}` : step.name}
+                    title={
+                      step.id <= highestStepReached
+                        ? t('operators.registerModal.stepTooltip', { name: step.name })
+                        : step.name
+                    }
                   >
-                    {currentStep > step.id ? (
-                      <i className="fas fa-check"></i>
-                    ) : (
-                      <i className={`fas ${step.icon} text-sm`}></i>
-                    )}
+                    {currentStep > step.id
+                      ? <i className="fas fa-check" />
+                      : <i className={`fas ${step.icon} text-sm`} />
+                    }
                   </div>
                   <span className={`text-xs mt-2 hidden md:block ${
                     step.id <= highestStepReached ? 'text-blue-600 font-medium' : 'text-gray-600'
-                  }`}>{step.name}</span>
+                  }`}>
+                    {step.name}
+                  </span>
                 </div>
                 {index < STEPS.length - 1 && (
-                  <div
-                    className={`flex-1 h-1 mx-2 transition-all ${
-                      currentStep > step.id ? 'bg-green-500' : 'bg-gray-300'
-                    }`}
-                  />
+                  <div className={`flex-1 h-1 mx-2 transition-all ${
+                    currentStep > step.id ? 'bg-green-500' : 'bg-gray-300'
+                  }`} />
                 )}
               </React.Fragment>
             ))}
@@ -484,35 +430,16 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
         </div>
 
         {/* Content */}
-        <form autoComplete="off" className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 280px)' }} onSubmit={(e) => e.preventDefault()}>
-          {currentStep === 1 && (
-            <PersonalDataStep
-              data={formData}
-              errors={errors}
-              onChange={updateFormData}
-            />
-          )}
-          {currentStep === 2 && (
-            <ContactInfoStep
-              data={formData}
-              errors={errors}
-              onChange={updateFormData}
-            />
-          )}
-          {currentStep === 3 && (
-            <OperatorDataStep
-              data={formData}
-              errors={errors}
-              onChange={updateFormData}
-            />
-          )}
-          {currentStep === 4 && (
-            <DocumentsStep
-              files={files}
-              errors={errors}
-              onChange={updateFiles}
-            />
-          )}
+        <form
+          autoComplete="off"
+          className="p-6 overflow-y-auto"
+          style={{ maxHeight: 'calc(90vh - 280px)' }}
+          onSubmit={(e) => e.preventDefault()}
+        >
+          {currentStep === 1 && <PersonalDataStep data={formData} errors={errors} onChange={updateFormData} />}
+          {currentStep === 2 && <ContactInfoStep  data={formData} errors={errors} onChange={updateFormData} />}
+          {currentStep === 3 && <OperatorDataStep data={formData} errors={errors} onChange={updateFormData} />}
+          {currentStep === 4 && <DocumentsStep    files={files}   errors={errors} onChange={updateFiles} />}
           {currentStep === 5 && (
             <ChildrenStep
               sons={formData.sons || []}
@@ -532,8 +459,8 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
                 : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
             }`}
           >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Previous
+            <i className="fas fa-arrow-left mr-2" />
+            {t('operators.registerModal.footer.previous')}
           </button>
 
           <div className="flex gap-3">
@@ -541,7 +468,7 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
               onClick={handleCloseAttempt}
               className="px-6 py-2 rounded-lg font-medium bg-gray-300 text-gray-700 hover:bg-gray-400 transition-all"
             >
-              Cancel
+              {t('operators.registerModal.footer.cancel')}
             </button>
 
             {currentStep < STEPS.length ? (
@@ -549,8 +476,8 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
                 onClick={handleNext}
                 className="px-6 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all"
               >
-                Next
-                <i className="fas fa-arrow-right ml-2"></i>
+                {t('operators.registerModal.footer.next')}
+                <i className="fas fa-arrow-right ml-2" />
               </button>
             ) : (
               <button
@@ -564,13 +491,13 @@ const RegisterOperatorModal: React.FC<RegisterOperatorModalProps> = ({
               >
                 {isSubmitting ? (
                   <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Saving...
+                    <i className="fas fa-spinner fa-spin mr-2" />
+                    {t('operators.registerModal.footer.saving')}
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-check mr-2"></i>
-                    Register Operator
+                    <i className="fas fa-check mr-2" />
+                    {t('operators.registerModal.footer.register')}
                   </>
                 )}
               </button>

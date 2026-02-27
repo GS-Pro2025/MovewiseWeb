@@ -17,10 +17,13 @@ import {
   Lock,
   MapPin,
   CreditCard,
-  Cake
+  Cake,
+  ZoomIn,
+  Download
 } from 'lucide-react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import { enqueueSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next'; // ← asegúrate de tener i18next instalado
 import { 
   UserProfile, 
   ProfileFormData, 
@@ -28,7 +31,8 @@ import {
 } from '../domain/ProfileDomain';
 import { profileRepository } from '../data/ProfileRepository';
 
-// Reusable Components - MOVED OUTSIDE to prevent re-creation on each render
+// ─── Reusable Components ───────────────────────────────────────────────────────
+
 interface CardProps {
   children: React.ReactNode;
   className?: string;
@@ -100,20 +104,10 @@ interface InputFieldProps {
 }
 
 const InputField: React.FC<InputFieldProps> = ({ 
-  label, 
-  value, 
-  onChange, 
-  type = 'text', 
-  disabled, 
-  icon, 
-  placeholder, 
-  rightIcon, 
-  onRightIconClick 
+  label, value, onChange, type = 'text', disabled, icon, placeholder, rightIcon, onRightIconClick 
 }) => (
   <div className="space-y-2">
-    <label className="block text-sm font-semibold text-slate-700">
-      {label}
-    </label>
+    <label className="block text-sm font-semibold text-slate-700">{label}</label>
     <div className="relative">
       {icon && (
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
@@ -152,18 +146,9 @@ interface SelectFieldProps {
   options: { label: string; value: string }[];
 }
 
-const SelectField: React.FC<SelectFieldProps> = ({ 
-  label, 
-  value, 
-  onChange, 
-  disabled, 
-  icon, 
-  options 
-}) => (
+const SelectField: React.FC<SelectFieldProps> = ({ label, value, onChange, disabled, icon, options }) => (
   <div className="space-y-2">
-    <label className="block text-sm font-semibold text-slate-700">
-      {label}
-    </label>
+    <label className="block text-sm font-semibold text-slate-700">{label}</label>
     <div className="relative">
       {icon && (
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10">
@@ -179,9 +164,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
         }`}
       >
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
+          <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
       <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
@@ -193,12 +176,100 @@ const SelectField: React.FC<SelectFieldProps> = ({
   </div>
 );
 
+// ─── Photo Modal ───────────────────────────────────────────────────────────────
+
+interface PhotoModalProps {
+  src: string;
+  name: string;
+  onClose: () => void;
+  title: string;
+  downloadLabel?: string;
+}
+
+const PhotoModal: React.FC<PhotoModalProps> = ({ src, name, onClose, title, downloadLabel = 'Download photo' }) => {
+  const handleDownload = async () => {
+    try {
+      // If it's already a base64/data URL, download directly
+      if (src.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = src;
+        link.download = `${name.replace(/\s+/g, '_')}_photo.png`;
+        link.click();
+        return;
+      }
+
+      // For remote URLs (e.g. ui-avatars), fetch and convert to blob
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${name.replace(/\s+/g, '_')}_photo.png`;
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      // fallback: open in new tab
+      window.open(src, '_blank');
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full mx-4 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+          <span className="text-sm font-semibold text-slate-600">{title}</span>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Full photo — rectangular, no crop */}
+        <div className="bg-slate-900 flex items-center justify-center" style={{ minHeight: 320 }}>
+          <img
+            src={src}
+            alt={name}
+            className="max-w-full max-h-96 object-contain"
+            style={{ display: 'block' }}
+          />
+        </div>
+
+        {/* Bottom bar: name + download */}
+        <div className="flex items-center justify-between px-5 py-4 bg-white">
+          <div>
+            <p className="text-base font-bold text-slate-800">{name}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{title}</p>
+          </div>
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm hover:shadow-md"
+          >
+            <Download className="h-4 w-4" />
+            {downloadLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+
 const ProfilePage: React.FC = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Initialize use cases
   const [profileUseCases] = useState(() => new ProfileUseCases(profileRepository));
   
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -208,8 +279,8 @@ const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
-  
-  // Form states
+  const [showPhotoModal, setShowPhotoModal] = useState(false); // ← nuevo estado
+
   const [formData, setFormData] = useState<ProfileFormData>({
     user_name: '',
     first_name: '',
@@ -232,19 +303,14 @@ const ProfilePage: React.FC = () => {
     confirm: false
   });
 
-  useEffect(() => {
-    loadUserProfile();
-  }, []);
+  useEffect(() => { loadUserProfile(); }, []);
 
   const loadUserProfile = async () => {
     try {
       setLoading(true);
       setError(null);
-      
       const profile = await profileUseCases.loadProfile();
       setUser(profile);
-      
-      // Initialize form data
       setFormData({
         user_name: profile.user_name || '',
         first_name: profile.person.first_name || '',
@@ -261,21 +327,16 @@ const ProfilePage: React.FC = () => {
         confirm_password: ''
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error loading profile';
+      const errorMessage = err instanceof Error ? err.message : t('profile.errors.updateError');
       setError(errorMessage);
       enqueueSnackbar(errorMessage, { variant: 'error' });
-      console.error('Error loading profile:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    // Clear messages when user starts typing
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (error) setError(null);
     if (success) setSuccess(null);
   };
@@ -283,21 +344,15 @@ const ProfilePage: React.FC = () => {
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check file size (e.g., max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        const errorMessage = 'Image size must be less than 5MB';
-        setError(errorMessage);
-        enqueueSnackbar(errorMessage, { variant: 'error' });
+        const msg = t('profile.photo.sizeError');
+        setError(msg);
+        enqueueSnackbar(msg, { variant: 'error' });
         return;
       }
-
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFormData(prev => ({
-          ...prev,
-          photo: base64String
-        }));
+        setFormData(prev => ({ ...prev, photo: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -307,122 +362,55 @@ const ProfilePage: React.FC = () => {
     try {
       setSaving(true);
       setError(null);
-      
-      // Validación específica para cambio de contraseña
+
       if (showPasswordChange || formData.new_password || formData.current_password) {
-        // Si está intentando cambiar contraseña
         if (!formData.current_password) {
-          const errorMessage = 'Current password is required to change password';
-          setError(errorMessage);
-          enqueueSnackbar(errorMessage, { variant: 'error' });
-          return;
+          const msg = t('profile.errors.currentPasswordRequired');
+          setError(msg); enqueueSnackbar(msg, { variant: 'error' }); return;
         }
-        
         if (!formData.new_password) {
-          const errorMessage = 'New password is required';
-          setError(errorMessage);
-          enqueueSnackbar(errorMessage, { variant: 'error' });
-          return;
+          const msg = t('profile.errors.newPasswordRequired');
+          setError(msg); enqueueSnackbar(msg, { variant: 'error' }); return;
         }
-        
         if (formData.new_password !== formData.confirm_password) {
-          const errorMessage = 'Passwords do not match';
-          setError(errorMessage);
-          enqueueSnackbar(errorMessage, { variant: 'error' });
-          return;
+          const msg = t('profile.errors.passwordsMismatch');
+          setError(msg); enqueueSnackbar(msg, { variant: 'error' }); return;
         }
-        
         if (formData.new_password.length < 6) {
-          const errorMessage = 'Password must be at least 6 characters long';
-          setError(errorMessage);
-          enqueueSnackbar(errorMessage, { variant: 'error' });
-          return;
+          const msg = t('profile.errors.passwordTooShort');
+          setError(msg); enqueueSnackbar(msg, { variant: 'error' }); return;
         }
       }
-      
-      // Validate form data
+
       const validation = profileUseCases.validateProfileData(formData);
       if (!validation.isValid) {
-        const errorMessage = validation.errors.join(', ');
-        setError(errorMessage);
-        enqueueSnackbar(errorMessage, { variant: 'error' });
-        return;
+        const msg = validation.errors.join(', ');
+        setError(msg); enqueueSnackbar(msg, { variant: 'error' }); return;
       }
-      
-      // Prepare update data
+
       const updateData = profileUseCases.prepareUpdateData(formData);
-      
-      // DEBUG: Log what we're sending
-      console.log('DEBUG Frontend: Sending data:', updateData);
-      
-      // Update profile
       const updatedProfile = await profileUseCases.updateProfile(updateData);
       
       setUser(updatedProfile);
       setEditMode(false);
       setShowPasswordChange(false);
-      
-      // Clear password fields
-      setFormData(prev => ({
-        ...prev,
-        current_password: '',
-        new_password: '',
-        confirm_password: ''
-      }));
-      
-      // Success messages
-      const successMessage = 'Profile updated successfully';
-      setSuccess(successMessage);
-      enqueueSnackbar(successMessage, { variant: 'success' });
-      
-      // Clear success message after a few seconds
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-      
+      setFormData(prev => ({ ...prev, current_password: '', new_password: '', confirm_password: '' }));
+
+      const msg = t('profile.updateSuccess');
+      setSuccess(msg);
+      enqueueSnackbar(msg, { variant: 'success' });
+      setTimeout(() => setSuccess(null), 3000);
+
     } catch (err: any) {
-      let errorMessage = 'Error updating profile';
-      
-      // Handle specific API errors
-      if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      console.error('Frontend error:', err);
-      
-      // Handle specific error cases from the backend
-      if (err.message?.includes('Current password is incorrect')) {
-        errorMessage = 'Current password is incorrect. Please verify and try again.';
-        enqueueSnackbar(errorMessage, { variant: 'error' });
-        setError(errorMessage);
-        return;
-      }
-      
-      if (err.message?.includes('Current password is required')) {
-        errorMessage = 'Current password is required to change password';
-        enqueueSnackbar(errorMessage, { variant: 'error' });
-        setError(errorMessage);
-        return;
-      }
-      
-      if (err.message?.includes('Email already')) {
-        errorMessage = 'This email is already registered to another user';
-        enqueueSnackbar(errorMessage, { variant: 'error' });
-        setError(errorMessage);
-        return;
-      }
-      
-      if (err.message?.includes('ID number already')) {
-        errorMessage = 'This ID number is already registered to another user';
-        enqueueSnackbar(errorMessage, { variant: 'error' });
-        setError(errorMessage);
-        return;
-      }
-      
-      setError(errorMessage);
-      enqueueSnackbar(errorMessage, { variant: 'error' });
-      console.error('Error updating profile:', err);
-      
+      let msg = t('profile.errors.updateError');
+      if (err.message?.includes('Current password is incorrect')) msg = t('profile.errors.incorrectPassword');
+      else if (err.message?.includes('Current password is required')) msg = t('profile.errors.currentPasswordRequired');
+      else if (err.message?.includes('Email already')) msg = t('profile.errors.emailTaken');
+      else if (err.message?.includes('ID number already')) msg = t('profile.errors.idTaken');
+      else if (err.message) msg = err.message;
+
+      setError(msg);
+      enqueueSnackbar(msg, { variant: 'error' });
     } finally {
       setSaving(false);
     }
@@ -430,7 +418,6 @@ const ProfilePage: React.FC = () => {
 
   const handleCancel = () => {
     if (!user) return;
-    
     setFormData({
       user_name: user.user_name || '',
       first_name: user.person.first_name || '',
@@ -450,107 +437,108 @@ const ProfilePage: React.FC = () => {
     setShowPasswordChange(false);
     setError(null);
     setSuccess(null);
-    
-    // Show cancel message
-    enqueueSnackbar('Changes cancelled', { variant: 'info' });
+    enqueueSnackbar(t('profile.changesCancelled'), { variant: 'info' });
   };
 
+  // ── Loading state ──
   if (loading) {
     return (
       <div className={`min-h-screen bg-slate-50 ${isMobile ? 'p-4' : 'p-6'}`}>
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       </div>
     );
   }
 
+  // ── Error state ──
   if (!user) {
     return (
       <div className={`min-h-screen bg-slate-50 ${isMobile ? 'p-4' : 'p-6'}`}>
         <Card className="text-center p-8">
           <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-          <h3 className="text-2xl font-bold mb-4 text-red-600">Error Loading Profile</h3>
-          <p className="text-slate-600 mb-6">Could not load user profile data.</p>
+          <h3 className="text-2xl font-bold mb-4 text-red-600">{t('profile.errorLoading')}</h3>
+          <p className="text-slate-600 mb-6">{t('profile.errorLoadingDesc')}</p>
           <Button variant="primary" onClick={loadUserProfile} isMobile={isMobile}>
-            Try Again
+            {t('profile.tryAgain')}
           </Button>
         </Card>
       </div>
     );
   }
 
-  // Add the ID Type options
   const idTypeOptions = [
-    { label: "Select ID Type", value: "" },
-    { label: "Driver's License", value: "DL" },
-    { label: "State ID", value: "SI" },
-    { label: "Green Card", value: "GC" },
-    { label: "Passport", value: "PA" },
+    { label: t('profile.idTypes.select'),         value: '' },
+    { label: t('profile.idTypes.driversLicense'),  value: 'DL' },
+    { label: t('profile.idTypes.stateId'),          value: 'SI' },
+    { label: t('profile.idTypes.greenCard'),        value: 'GC' },
+    { label: t('profile.idTypes.passport'),         value: 'PA' },
   ];
+
+  const currentPhoto = (editMode ? formData.photo : user.photo)?.trim()
+    ? (editMode ? formData.photo : user.photo) as string
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(`${user.person.first_name} ${user.person.last_name}`)}&background=0458AB&color=fff&size=256`;
+
+  const fullName = editMode
+    ? `${formData.first_name} ${formData.last_name}`
+    : `${user.person.first_name} ${user.person.last_name}`;
 
   return (
     <div className={`min-h-screen bg-slate-50 ${isMobile ? 'p-4' : 'p-6'}`}>
-      {/* Header */}
+
+      {/* ── Photo Modal ── */}
+      {showPhotoModal && (
+        <PhotoModal
+          src={currentPhoto}
+          name={fullName}
+          onClose={() => setShowPhotoModal(false)}
+          title={t('profile.photo.dialogTitle')}
+          downloadLabel={t('profile.photo.downloadLabel')}
+        />
+      )}
+
+      {/* ── Header ── */}
       <Card className={`${isMobile ? 'p-4' : 'p-8'} mb-6`}>
         <div className={`${isMobile ? 'mb-4' : 'flex items-center justify-between mb-6'}`}>
           <div className={`flex items-center gap-4 ${isMobile ? 'mb-4' : ''}`}>
             <User className={`${isMobile ? 'h-8 w-8' : 'h-10 w-10'} text-blue-600`} />
             <div>
               <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-slate-800`}>
-                My Profile
+                {t('profile.title')}
               </h1>
               <p className={`${isMobile ? 'text-sm' : 'text-lg'} text-slate-600 mt-2`}>
-                View and edit your profile information
+                {t('profile.subtitle')}
               </p>
             </div>
           </div>
-          
+
           <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center gap-4'}`}>
             {!editMode ? (
-              <Button 
-                variant="primary" 
-                onClick={() => setEditMode(true)}
-                fullWidth={isMobile}
-                isMobile={isMobile}
-              >
+              <Button variant="primary" onClick={() => setEditMode(true)} fullWidth={isMobile} isMobile={isMobile}>
                 <Edit3 className="h-4 w-4" />
-                Edit Profile
+                {t('profile.editButton')}
               </Button>
             ) : (
               <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
-                <Button 
-                  variant="outline" 
-                  onClick={handleCancel}
-                  fullWidth={isMobile}
-                  isMobile={isMobile}
-                >
+                <Button variant="outline" onClick={handleCancel} fullWidth={isMobile} isMobile={isMobile}>
                   <X className="h-4 w-4" />
-                  Cancel
+                  {t('profile.cancelButton')}
                 </Button>
-                <Button 
-                  variant="primary" 
-                  onClick={handleSave}
-                  disabled={saving}
-                  fullWidth={isMobile}
-                  isMobile={isMobile}
-                >
+                <Button variant="primary" onClick={handleSave} disabled={saving} fullWidth={isMobile} isMobile={isMobile}>
                   <Save className="h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? t('profile.saving') : t('profile.saveButton')}
                 </Button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Messages */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
             <span className="text-red-700">{error}</span>
           </div>
         )}
-
         {success && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
@@ -559,34 +547,44 @@ const ProfilePage: React.FC = () => {
         )}
       </Card>
 
-      {/* Profile Content */}
+      {/* ── Body ── */}
       <div className={`grid grid-cols-1 ${!isMobile ? 'lg:grid-cols-3' : ''} gap-6`}>
-        {/* Profile Photo & Basic Info */}
+
+        {/* ── Sidebar: Photo & Basic Info ── */}
         <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
           <div className="text-center">
-            {/* Profile Photo */}
+            {/* Profile Photo with zoom button */}
             <div className="relative inline-block mb-4">
-              <div className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} rounded-full overflow-hidden border-4 border-white shadow-lg mx-auto`}>
+              <div
+                className={`${isMobile ? 'w-24 h-24' : 'w-32 h-32'} rounded-full overflow-hidden border-4 border-white shadow-lg mx-auto`}
+              >
                 <img
-                  src={
-                    (editMode ? formData.photo : user.photo)?.trim() 
-                      ? (editMode ? formData.photo : user.photo) || undefined
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(`${user.person.first_name} ${user.person.last_name}`)}&background=0458AB&color=fff&size=256`
-                  }
-                  alt="Profile"
+                  src={currentPhoto}
+                  alt={t('profile.photo.altText')}
                   className="w-full h-full object-cover"
                 />
               </div>
-              
+
+              {/* Camera button (edit mode) */}
               {editMode && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg"
+                  title={t('profile.photo.viewLabel')}
                 >
                   <Camera className="h-4 w-4" />
                 </button>
               )}
-              
+
+              {/* Zoom / view button (always visible) */}
+              <button
+                onClick={() => setShowPhotoModal(true)}
+                className={`absolute ${editMode ? 'bottom-0 left-0' : 'bottom-0 right-0'} w-8 h-8 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-900 transition-colors shadow-lg`}
+                title={t('profile.photo.viewLabel')}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </button>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -596,212 +594,191 @@ const ProfilePage: React.FC = () => {
               />
             </div>
 
-            {/* Name */}
             <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-slate-800 mb-2`}>
-              {editMode ? `${formData.first_name} ${formData.last_name}` : `${user.person.first_name} ${user.person.last_name}`}
+              {fullName}
             </h2>
-            
-            {/* Username */}
             <p className="text-blue-600 mb-2 font-medium">
               @{editMode ? formData.user_name : user.user_name}
             </p>
-            
-            {/* Email */}
             <p className="text-slate-600 mb-4">
               {editMode ? formData.email : user.person.email}
             </p>
-
-            {/* Role Badge */}
             <div className="flex justify-center">
               <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
-                user.is_superUser 
-                  ? 'bg-purple-100 text-purple-800' 
-                  : 'bg-blue-100 text-blue-800'
+                user.is_superUser ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
               }`}>
                 <Shield className="h-4 w-4" />
-                {user.is_superUser ? 'Super Admin' : 'Admin'}
+                {user.is_superUser ? t('profile.roles.superAdmin') : t('profile.roles.admin')}
               </span>
             </div>
           </div>
         </Card>
 
-        {/* Profile Form */}
+        {/* ── Main Form ── */}
         <div className={`${!isMobile ? 'lg:col-span-2' : ''} space-y-6`}>
-          {/* Account Information */}
+
+          {/* Account Info */}
           <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-slate-800 mb-6 flex items-center gap-2`}>
               <User className="h-5 w-5" />
-              Account Information
+              {t('profile.sections.accountInfo')}
             </h3>
-            
             <div className={`grid grid-cols-1 ${!isMobile ? 'md:grid-cols-2' : ''} gap-6`}>
               <InputField
-                label="Username"
+                label={t('profile.fields.username')}
                 value={editMode ? formData.user_name : user.user_name}
-                onChange={(value) => handleInputChange('user_name', value)}
+                onChange={(v) => handleInputChange('user_name', v)}
                 disabled={!editMode}
                 icon={<User className="h-4 w-4" />}
-                placeholder="Enter username"
+                placeholder={t('profile.fields.usernamePlaceholder')}
               />
-              
               <InputField
-                label="Email"
+                label={t('profile.fields.email')}
                 value={editMode ? formData.email : user.person.email}
-                onChange={(value) => handleInputChange('email', value)}
+                onChange={(v) => handleInputChange('email', v)}
                 disabled={!editMode}
                 type="email"
                 icon={<Mail className="h-4 w-4" />}
-                placeholder="Enter email address"
+                placeholder={t('profile.fields.emailPlaceholder')}
               />
             </div>
           </Card>
 
-          {/* Personal Information */}
+          {/* Personal Info */}
           <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
             <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-slate-800 mb-6 flex items-center gap-2`}>
               <Building className="h-5 w-5" />
-              Personal Information
+              {t('profile.sections.personalInfo')}
             </h3>
-            
             <div className={`grid grid-cols-1 ${!isMobile ? 'md:grid-cols-2' : ''} gap-6`}>
               <InputField
-                label="First Name"
+                label={t('profile.fields.firstName')}
                 value={editMode ? formData.first_name : user.person.first_name}
-                onChange={(value) => handleInputChange('first_name', value)}
+                onChange={(v) => handleInputChange('first_name', v)}
                 disabled={!editMode}
                 icon={<User className="h-4 w-4" />}
-                placeholder="Enter first name"
+                placeholder={t('profile.fields.firstNamePlaceholder')}
               />
-              
               <InputField
-                label="Last Name"
+                label={t('profile.fields.lastName')}
                 value={editMode ? formData.last_name : user.person.last_name}
-                onChange={(value) => handleInputChange('last_name', value)}
+                onChange={(v) => handleInputChange('last_name', v)}
                 disabled={!editMode}
                 icon={<User className="h-4 w-4" />}
-                placeholder="Enter last name"
+                placeholder={t('profile.fields.lastNamePlaceholder')}
               />
-              
               <InputField
-                label="Phone"
+                label={t('profile.fields.phone')}
                 value={editMode ? formData.phone : (user.person.phone || '')}
-                onChange={(value) => handleInputChange('phone', value)}
+                onChange={(v) => handleInputChange('phone', v)}
                 disabled={!editMode}
                 icon={<Phone className="h-4 w-4" />}
-                placeholder="Enter phone number"
+                placeholder={t('profile.fields.phonePlaceholder')}
               />
-              
               <InputField
-                label="Birth Date"
+                label={t('profile.fields.birthDate')}
                 value={editMode ? formData.birth_date : (user.person.birth_date || '')}
-                onChange={(value) => handleInputChange('birth_date', value)}
+                onChange={(v) => handleInputChange('birth_date', v)}
                 disabled={!editMode}
                 type="date"
                 icon={<Cake className="h-4 w-4" />}
               />
-              
               <InputField
-                label="Address"
+                label={t('profile.fields.address')}
                 value={editMode ? formData.address : (user.person.address || '')}
-                onChange={(value) => handleInputChange('address', value)}
+                onChange={(v) => handleInputChange('address', v)}
                 disabled={!editMode}
                 icon={<MapPin className="h-4 w-4" />}
-                placeholder="Enter address"
+                placeholder={t('profile.fields.addressPlaceholder')}
               />
-              
               <InputField
-                label="ID Number"
+                label={t('profile.fields.idNumber')}
                 value={editMode ? formData.id_number : (user.person.id_number || '')}
-                onChange={(value) => handleInputChange('id_number', value)}
+                onChange={(v) => handleInputChange('id_number', v)}
                 disabled={!editMode}
                 icon={<CreditCard className="h-4 w-4" />}
-                placeholder="Enter ID number"
+                placeholder={t('profile.fields.idNumberPlaceholder')}
               />
-              
               <div className={`${!isMobile ? 'md:col-span-2' : ''}`}>
                 {editMode ? (
                   <SelectField
-                    label="ID Type"
+                    label={t('profile.fields.idType')}
                     value={formData.type_id}
-                    onChange={(value) => handleInputChange('type_id', value)}
+                    onChange={(v) => handleInputChange('type_id', v)}
                     disabled={!editMode}
                     icon={<CreditCard className="h-4 w-4" />}
                     options={idTypeOptions}
                   />
                 ) : (
                   <InputField
-                    label="ID Type"
+                    label={t('profile.fields.idType')}
                     value={user.person.type_id || ''}
                     onChange={() => {}}
                     disabled={true}
                     icon={<CreditCard className="h-4 w-4" />}
-                    placeholder="e.g. Driver License, Passport, etc."
+                    placeholder={t('profile.fields.idTypePlaceholder')}
                   />
                 )}
               </div>
             </div>
           </Card>
 
-          {/* Account Security */}
+          {/* Security */}
           {editMode && (
             <Card className={`${isMobile ? 'p-4' : 'p-6'}`}>
               <div className="flex items-center justify-between mb-6">
                 <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-slate-800 flex items-center gap-2`}>
                   <Lock className="h-5 w-5" />
-                  Account Security
+                  {t('profile.sections.security')}
                 </h3>
-                
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPasswordChange(!showPasswordChange)}
                   isMobile={isMobile}
                 >
-                  {showPasswordChange ? 'Cancel' : 'Change Password'}
+                  {showPasswordChange ? t('profile.security.cancelChange') : t('profile.security.changePassword')}
                 </Button>
               </div>
 
               {showPasswordChange && (
                 <div className="space-y-4">
                   <InputField
-                    label="Current Password"
+                    label={t('profile.security.currentPassword')}
                     value={formData.current_password}
-                    onChange={(value) => handleInputChange('current_password', value)}
+                    onChange={(v) => handleInputChange('current_password', v)}
                     type={showPasswords.current ? 'text' : 'password'}
                     icon={<Lock className="h-4 w-4" />}
-                    placeholder="Enter current password"
+                    placeholder={t('profile.security.currentPasswordPlaceholder')}
                     rightIcon={showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     onRightIconClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
                   />
-                  
                   <InputField
-                    label="New Password"
+                    label={t('profile.security.newPassword')}
                     value={formData.new_password}
-                    onChange={(value) => handleInputChange('new_password', value)}
+                    onChange={(v) => handleInputChange('new_password', v)}
                     type={showPasswords.new ? 'text' : 'password'}
                     icon={<Lock className="h-4 w-4" />}
-                    placeholder="Enter new password"
+                    placeholder={t('profile.security.newPasswordPlaceholder')}
                     rightIcon={showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     onRightIconClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
                   />
-                  
                   <InputField
-                    label="Confirm New Password"
+                    label={t('profile.security.confirmPassword')}
                     value={formData.confirm_password}
-                    onChange={(value) => handleInputChange('confirm_password', value)}
+                    onChange={(v) => handleInputChange('confirm_password', v)}
                     type={showPasswords.confirm ? 'text' : 'password'}
                     icon={<Lock className="h-4 w-4" />}
-                    placeholder="Confirm new password"
+                    placeholder={t('profile.security.confirmPasswordPlaceholder')}
                     rightIcon={showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     onRightIconClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
                   />
-                  
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-700">
-                      <strong>Password Requirements:</strong>
-                      <br />• At least 6 characters long
-                      <br />• New password must be different from current password
-                      <br />• Current password is required to change password
+                      <strong>{t('profile.security.requirements')}</strong>
+                      <br />• {t('profile.security.req1')}
+                      <br />• {t('profile.security.req2')}
+                      <br />• {t('profile.security.req3')}
                     </p>
                   </div>
                 </div>

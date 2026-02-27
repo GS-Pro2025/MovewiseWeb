@@ -1664,7 +1664,8 @@
       "success": "Gasto creado correctamente",
       "error": "Error al crear el gasto"
     }
-  },    "loansSummary": {
+  },
+  "loansSummary": {
     "loading": "Cargando préstamos…",
     "error": {
       "title": "No se pudieron cargar los datos",
@@ -1758,6 +1759,1206 @@
     "footer": {
       "hint": "Haz clic en cualquier operador en la pestaña <strong>Resumen</strong> para ver sus préstamos individuales. Usa los botones de filtro de estado para aislar préstamos impagos, pagados o cancelados."
     }
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "subtitle": "Ver y editar tu información de perfil",
+    "editButton": "Editar Perfil",
+    "saveButton": "Guardar Cambios",
+    "saving": "Guardando...",
+    "cancelButton": "Cancelar",
+    "tryAgain": "Intentar de nuevo",
+    "errorLoading": "Error al cargar el perfil",
+    "errorLoadingDesc": "No se pudo cargar la información del perfil de usuario.",
+    "changesCancelled": "Cambios cancelados",
+    "updateSuccess": "Perfil actualizado exitosamente",
+    "photo": {
+      "altText": "Perfil",
+      "sizeError": "El tamaño de la imagen debe ser menor a 5MB",
+      "viewLabel": "Ver foto",
+      "dialogTitle": "Foto de Perfil",
+      "downloadLabel": "Descargar foto"
+    },
+    "roles": {
+      "superAdmin": "Super Administrador",
+      "admin": "Administrador"
+    },
+    "sections": {
+      "accountInfo": "Información de Cuenta",
+      "personalInfo": "Información Personal",
+      "security": "Seguridad de la Cuenta"
+    },
+    "fields": {
+      "username": "Usuario",
+      "usernamePlaceholder": "Ingresa el nombre de usuario",
+      "email": "Correo Electrónico",
+      "emailPlaceholder": "Ingresa el correo electrónico",
+      "firstName": "Nombre",
+      "firstNamePlaceholder": "Ingresa el nombre",
+      "lastName": "Apellido",
+      "lastNamePlaceholder": "Ingresa el apellido",
+      "phone": "Teléfono",
+      "phonePlaceholder": "Ingresa el número de teléfono",
+      "birthDate": "Fecha de Nacimiento",
+      "address": "Dirección",
+      "addressPlaceholder": "Ingresa la dirección",
+      "idNumber": "Número de Identificación",
+      "idNumberPlaceholder": "Ingresa el número de identificación",
+      "idType": "Tipo de Identificación",
+      "idTypePlaceholder": "Ej. Licencia de conducir, Pasaporte, etc."
+    },
+    "idTypes": {
+      "select": "Selecciona el tipo de ID",
+      "driversLicense": "Licencia de Conducir",
+      "stateId": "Cédula de Ciudadanía",
+      "greenCard": "Tarjeta de Residencia",
+      "passport": "Pasaporte"
+    },
+    "security": {
+      "changePassword": "Cambiar Contraseña",
+      "cancelChange": "Cancelar",
+      "currentPassword": "Contraseña Actual",
+      "currentPasswordPlaceholder": "Ingresa la contraseña actual",
+      "newPassword": "Nueva Contraseña",
+      "newPasswordPlaceholder": "Ingresa la nueva contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña",
+      "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
+      "requirements": "Requisitos de la contraseña:",
+      "req1": "Al menos 6 caracteres de longitud",
+      "req2": "La nueva contraseña debe ser diferente a la actual",
+      "req3": "Se requiere la contraseña actual para cambiarla"
+    },
+    "errors": {
+      "currentPasswordRequired": "Se requiere la contraseña actual para cambiar la contraseña",
+      "newPasswordRequired": "Se requiere una nueva contraseña",
+      "passwordsMismatch": "Las contraseñas no coinciden",
+      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+      "updateError": "Error al actualizar el perfil",
+      "incorrectPassword": "La contraseña actual es incorrecta. Por favor verifica e intenta de nuevo.",
+      "emailTaken": "Este correo electrónico ya está registrado a otro usuario",
+      "idTaken": "Este número de identificación ya está registrado a otro usuario"
+    }
+  },
+  "customers": {
+    "title": "Nuestras Empresas Aliadas",
+    "subtitle": "Aquí puedes gestionar la lista de empresas con las que trabajamos.",
+    "sectionTitle": "Lista de Empresas",
+    "add": {
+      "label": "Nombre de la nueva empresa",
+      "button": "Agregar",
+      "emptyWarning": "El nombre de la empresa no puede estar vacío.",
+      "success": "Empresa agregada exitosamente.",
+      "error": "Error al agregar la empresa."
+    },
+    "search": {
+      "label": "Buscar empresa"
+    },
+    "delete": {
+      "confirm": "¿Estás seguro de que deseas eliminar esta empresa?",
+      "success": "Empresa eliminada exitosamente.",
+      "error": "Error al eliminar la empresa."
+    },
+    "loading": "Cargando empresas...",
+    "noResults": "No hay empresas que coincidan con tu búsqueda.",
+    "errors": {
+      "loadError": "Error desconocido al cargar las empresas.",
+      "addError": "Error desconocido al agregar la empresa.",
+      "deleteError": "Error desconocido al eliminar la empresa."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Gestión de Trabajos y Herramientas",
+    "subtitle": "Aquí puedes gestionar la lista de trabajos y las herramientas asociadas a cada uno.",
+    "jobs": {
+      "sectionTitle": "Lista de Trabajos",
+      "addLabel": "Nombre del nuevo trabajo",
+      "addButton": "Añadir Trabajo",
+      "searchLabel": "Buscar trabajo",
+      "loading": "Cargando trabajos...",
+      "noResults": "No se encontraron trabajos.",
+      "emptyWarning": "El nombre del trabajo no puede estar vacío.",
+      "noChanges": "No hay cambios para guardar.",
+      "addSuccess": "Trabajo añadido con éxito.",
+      "addError": "Error al añadir trabajo.",
+      "deleteSuccess": "Trabajo eliminado con éxito.",
+      "deleteError": "Error al eliminar trabajo.",
+      "updateSuccess": "Trabajo actualizado con éxito.",
+      "updateError": "Error al actualizar trabajo.",
+      "errors": {
+        "loadError": "Error desconocido al cargar trabajos.",
+        "addError": "Error desconocido al añadir trabajo.",
+        "deleteError": "Error desconocido al eliminar trabajo.",
+        "updateError": "Error desconocido al actualizar trabajo."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Herramientas para:",
+      "dialogTitleLoading": "Cargando...",
+      "sectionTitle": "Lista de Herramientas",
+      "addLabel": "Nombre de la nueva herramienta",
+      "addButton": "Añadir",
+      "closeButton": "Cerrar",
+      "loading": "Cargando herramientas...",
+      "noResults": "No hay herramientas para este trabajo.",
+      "noJobSelected": "No se ha seleccionado un trabajo para añadir la herramienta.",
+      "emptyWarning": "El nombre de la herramienta no puede estar vacío.",
+      "addSuccess": "Herramienta añadida con éxito.",
+      "addError": "Error al añadir herramienta.",
+      "deleteSuccess": "Herramienta eliminada con éxito.",
+      "deleteError": "Error al eliminar herramienta.",
+      "errors": {
+        "loadError": "Error desconocido al cargar herramientas.",
+        "addError": "Error desconocido al añadir herramienta.",
+        "deleteError": "Error desconocido al eliminar herramienta."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancelar",
+      "confirmButton": "Confirmar",
+      "deleteJob": {
+        "title": "Confirmar eliminación de trabajo",
+        "message": "¿Estás seguro de que quieres eliminar este trabajo? Se eliminarán también las herramientas asociadas."
+      },
+      "deleteTool": {
+        "title": "Confirmar eliminación de herramienta",
+        "message": "¿Estás seguro de que quieres eliminar esta herramienta?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Administración de Vehículos",
+    "subtitle": "Gestiona todos los vehículos de la flota",
+    "addButton": "Nuevo Vehículo",
+    "search": {
+      "placeholder": "Buscar por placa, nombre, tipo o categoría..."
+    },
+    "table": {
+      "plate": "Placa",
+      "name": "Nombre",
+      "type": "Tipo",
+      "category": "Categoría",
+      "actions": "Acciones",
+      "noResults": "No se encontraron vehículos",
+      "editTooltip": "Editar",
+      "deleteTooltip": "Eliminar"
+    },
+    "pagination": {
+      "rowsPerPage": "Filas por página",
+      "displayedRows": "{{from}}-{{to}} de {{count}}"
+    },
+    "types": {
+      "owned": "Propio",
+      "rented": "Rentado"
+    },
+    "categories": {
+      "truck_26": "Camión 26",
+      "truck_49": "Camión 49",
+      "truck_001": "Camión 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "Nuevo Vehículo",
+      "titleEdit": "Editar Vehículo",
+      "plateLabel": "Placa",
+      "nameLabel": "Nombre",
+      "typeLabel": "Tipo",
+      "typeHelper": "Selecciona si el vehículo es propio o rentado",
+      "categoryLabel": "Categoría",
+      "categoryHelper": "Selecciona la categoría del vehículo",
+      "cancelButton": "Cancelar",
+      "createButton": "Crear",
+      "updateButton": "Actualizar",
+      "requiredFields": "Todos los campos son requeridos"
+    },
+    "deleteDialog": {
+      "title": "Confirmar Eliminación",
+      "message": "¿Estás seguro de que deseas eliminar el vehículo",
+      "warning": "Esta acción no se puede deshacer.",
+      "cancelButton": "Cancelar",
+      "deleteButton": "Eliminar"
+    },
+    "snackbar": {
+      "loadError": "Error al cargar los vehículos",
+      "createSuccess": "Vehículo creado correctamente",
+      "createError": "Error al guardar el vehículo",
+      "updateSuccess": "Vehículo actualizado correctamente",
+      "updateError": "Error al guardar el vehículo",
+      "deleteSuccess": "Vehículo eliminado correctamente",
+      "deleteError": "Error al eliminar el vehículo"
+    }
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "subtitle": "Ver y editar tu información de perfil",
+    "editButton": "Editar Perfil",
+    "saveButton": "Guardar Cambios",
+    "saving": "Guardando...",
+    "cancelButton": "Cancelar",
+    "tryAgain": "Intentar de nuevo",
+    "errorLoading": "Error al cargar el perfil",
+    "errorLoadingDesc": "No se pudo cargar la información del perfil de usuario.",
+    "changesCancelled": "Cambios cancelados",
+    "updateSuccess": "Perfil actualizado exitosamente",
+    "photo": {
+      "altText": "Perfil",
+      "sizeError": "El tamaño de la imagen debe ser menor a 5MB",
+      "viewLabel": "Ver foto",
+      "dialogTitle": "Foto de Perfil",
+      "downloadLabel": "Descargar foto"
+    },
+    "roles": {
+      "superAdmin": "Super Administrador",
+      "admin": "Administrador"
+    },
+    "sections": {
+      "accountInfo": "Información de Cuenta",
+      "personalInfo": "Información Personal",
+      "security": "Seguridad de la Cuenta"
+    },
+    "fields": {
+      "username": "Usuario",
+      "usernamePlaceholder": "Ingresa el nombre de usuario",
+      "email": "Correo Electrónico",
+      "emailPlaceholder": "Ingresa el correo electrónico",
+      "firstName": "Nombre",
+      "firstNamePlaceholder": "Ingresa el nombre",
+      "lastName": "Apellido",
+      "lastNamePlaceholder": "Ingresa el apellido",
+      "phone": "Teléfono",
+      "phonePlaceholder": "Ingresa el número de teléfono",
+      "birthDate": "Fecha de Nacimiento",
+      "address": "Dirección",
+      "addressPlaceholder": "Ingresa la dirección",
+      "idNumber": "Número de Identificación",
+      "idNumberPlaceholder": "Ingresa el número de identificación",
+      "idType": "Tipo de Identificación",
+      "idTypePlaceholder": "Ej. Licencia de conducir, Pasaporte, etc."
+    },
+    "idTypes": {
+      "select": "Selecciona el tipo de ID",
+      "driversLicense": "Licencia de Conducir",
+      "stateId": "Cédula de Ciudadanía",
+      "greenCard": "Tarjeta de Residencia",
+      "passport": "Pasaporte"
+    },
+    "security": {
+      "changePassword": "Cambiar Contraseña",
+      "cancelChange": "Cancelar",
+      "currentPassword": "Contraseña Actual",
+      "currentPasswordPlaceholder": "Ingresa la contraseña actual",
+      "newPassword": "Nueva Contraseña",
+      "newPasswordPlaceholder": "Ingresa la nueva contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña",
+      "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
+      "requirements": "Requisitos de la contraseña:",
+      "req1": "Al menos 6 caracteres de longitud",
+      "req2": "La nueva contraseña debe ser diferente a la actual",
+      "req3": "Se requiere la contraseña actual para cambiarla"
+    },
+    "errors": {
+      "currentPasswordRequired": "Se requiere la contraseña actual para cambiar la contraseña",
+      "newPasswordRequired": "Se requiere una nueva contraseña",
+      "passwordsMismatch": "Las contraseñas no coinciden",
+      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+      "updateError": "Error al actualizar el perfil",
+      "incorrectPassword": "La contraseña actual es incorrecta. Por favor verifica e intenta de nuevo.",
+      "emailTaken": "Este correo electrónico ya está registrado a otro usuario",
+      "idTaken": "Este número de identificación ya está registrado a otro usuario"
+    }
+  },
+  "customers": {
+    "title": "Nuestras Empresas Aliadas",
+    "subtitle": "Aquí puedes gestionar la lista de empresas con las que trabajamos.",
+    "sectionTitle": "Lista de Empresas",
+    "add": {
+      "label": "Nombre de la nueva empresa",
+      "button": "Agregar",
+      "emptyWarning": "El nombre de la empresa no puede estar vacío.",
+      "success": "Empresa agregada exitosamente.",
+      "error": "Error al agregar la empresa."
+    },
+    "search": {
+      "label": "Buscar empresa"
+    },
+    "delete": {
+      "confirm": "¿Estás seguro de que deseas eliminar esta empresa?",
+      "success": "Empresa eliminada exitosamente.",
+      "error": "Error al eliminar la empresa."
+    },
+    "loading": "Cargando empresas...",
+    "noResults": "No hay empresas que coincidan con tu búsqueda.",
+    "errors": {
+      "loadError": "Error desconocido al cargar las empresas.",
+      "addError": "Error desconocido al agregar la empresa.",
+      "deleteError": "Error desconocido al eliminar la empresa."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Gestión de Trabajos y Herramientas",
+    "subtitle": "Aquí puedes gestionar la lista de trabajos y las herramientas asociadas a cada uno.",
+    "jobs": {
+      "sectionTitle": "Lista de Trabajos",
+      "addLabel": "Nombre del nuevo trabajo",
+      "addButton": "Añadir Trabajo",
+      "searchLabel": "Buscar trabajo",
+      "loading": "Cargando trabajos...",
+      "noResults": "No se encontraron trabajos.",
+      "emptyWarning": "El nombre del trabajo no puede estar vacío.",
+      "noChanges": "No hay cambios para guardar.",
+      "addSuccess": "Trabajo añadido con éxito.",
+      "addError": "Error al añadir trabajo.",
+      "deleteSuccess": "Trabajo eliminado con éxito.",
+      "deleteError": "Error al eliminar trabajo.",
+      "updateSuccess": "Trabajo actualizado con éxito.",
+      "updateError": "Error al actualizar trabajo.",
+      "errors": {
+        "loadError": "Error desconocido al cargar trabajos.",
+        "addError": "Error desconocido al añadir trabajo.",
+        "deleteError": "Error desconocido al eliminar trabajo.",
+        "updateError": "Error desconocido al actualizar trabajo."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Herramientas para:",
+      "dialogTitleLoading": "Cargando...",
+      "sectionTitle": "Lista de Herramientas",
+      "addLabel": "Nombre de la nueva herramienta",
+      "addButton": "Añadir",
+      "closeButton": "Cerrar",
+      "loading": "Cargando herramientas...",
+      "noResults": "No hay herramientas para este trabajo.",
+      "noJobSelected": "No se ha seleccionado un trabajo para añadir la herramienta.",
+      "emptyWarning": "El nombre de la herramienta no puede estar vacío.",
+      "addSuccess": "Herramienta añadida con éxito.",
+      "addError": "Error al añadir herramienta.",
+      "deleteSuccess": "Herramienta eliminada con éxito.",
+      "deleteError": "Error al eliminar herramienta.",
+      "errors": {
+        "loadError": "Error desconocido al cargar herramientas.",
+        "addError": "Error desconocido al añadir herramienta.",
+        "deleteError": "Error desconocido al eliminar herramienta."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancelar",
+      "confirmButton": "Confirmar",
+      "deleteJob": {
+        "title": "Confirmar eliminación de trabajo",
+        "message": "¿Estás seguro de que quieres eliminar este trabajo? Se eliminarán también las herramientas asociadas."
+      },
+      "deleteTool": {
+        "title": "Confirmar eliminación de herramienta",
+        "message": "¿Estás seguro de que quieres eliminar esta herramienta?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Administración de Vehículos",
+    "subtitle": "Gestiona todos los vehículos de la flota",
+    "addButton": "Nuevo Vehículo",
+    "search": {
+      "placeholder": "Buscar por placa, nombre, tipo o categoría..."
+    },
+    "table": {
+      "plate": "Placa",
+      "name": "Nombre",
+      "type": "Tipo",
+      "category": "Categoría",
+      "actions": "Acciones",
+      "noResults": "No se encontraron vehículos",
+      "editTooltip": "Editar",
+      "deleteTooltip": "Eliminar"
+    },
+    "pagination": {
+      "rowsPerPage": "Filas por página",
+      "displayedRows": "{{from}}-{{to}} de {{count}}"
+    },
+    "types": {
+      "owned": "Propio",
+      "rented": "Rentado"
+    },
+    "categories": {
+      "truck_26": "Camión 26",
+      "truck_49": "Camión 49",
+      "truck_001": "Camión 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "Nuevo Vehículo",
+      "titleEdit": "Editar Vehículo",
+      "plateLabel": "Placa",
+      "nameLabel": "Nombre",
+      "typeLabel": "Tipo",
+      "typeHelper": "Selecciona si el vehículo es propio o rentado",
+      "categoryLabel": "Categoría",
+      "categoryHelper": "Selecciona la categoría del vehículo",
+      "cancelButton": "Cancelar",
+      "createButton": "Crear",
+      "updateButton": "Actualizar",
+      "requiredFields": "Todos los campos son requeridos"
+    },
+    "deleteDialog": {
+      "title": "Confirmar Eliminación",
+      "message": "¿Estás seguro de que deseas eliminar el vehículo",
+      "warning": "Esta acción no se puede deshacer.",
+      "cancelButton": "Cancelar",
+      "deleteButton": "Eliminar"
+    },
+    "snackbar": {
+      "loadError": "Error al cargar los vehículos",
+      "createSuccess": "Vehículo creado correctamente",
+      "createError": "Error al guardar el vehículo",
+      "updateSuccess": "Vehículo actualizado correctamente",
+      "updateError": "Error al guardar el vehículo",
+      "deleteSuccess": "Vehículo eliminado correctamente",
+      "deleteError": "Error al eliminar el vehículo"
+    }
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "subtitle": "Ver y editar tu información de perfil",
+    "editButton": "Editar Perfil",
+    "saveButton": "Guardar Cambios",
+    "saving": "Guardando...",
+    "cancelButton": "Cancelar",
+    "tryAgain": "Intentar de nuevo",
+    "errorLoading": "Error al cargar el perfil",
+    "errorLoadingDesc": "No se pudo cargar la información del perfil de usuario.",
+    "changesCancelled": "Cambios cancelados",
+    "updateSuccess": "Perfil actualizado exitosamente",
+    "photo": {
+      "altText": "Perfil",
+      "sizeError": "El tamaño de la imagen debe ser menor a 5MB",
+      "viewLabel": "Ver foto",
+      "dialogTitle": "Foto de Perfil",
+      "downloadLabel": "Descargar foto"
+    },
+    "roles": {
+      "superAdmin": "Super Administrador",
+      "admin": "Administrador"
+    },
+    "sections": {
+      "accountInfo": "Información de Cuenta",
+      "personalInfo": "Información Personal",
+      "security": "Seguridad de la Cuenta"
+    },
+    "fields": {
+      "username": "Usuario",
+      "usernamePlaceholder": "Ingresa el nombre de usuario",
+      "email": "Correo Electrónico",
+      "emailPlaceholder": "Ingresa el correo electrónico",
+      "firstName": "Nombre",
+      "firstNamePlaceholder": "Ingresa el nombre",
+      "lastName": "Apellido",
+      "lastNamePlaceholder": "Ingresa el apellido",
+      "phone": "Teléfono",
+      "phonePlaceholder": "Ingresa el número de teléfono",
+      "birthDate": "Fecha de Nacimiento",
+      "address": "Dirección",
+      "addressPlaceholder": "Ingresa la dirección",
+      "idNumber": "Número de Identificación",
+      "idNumberPlaceholder": "Ingresa el número de identificación",
+      "idType": "Tipo de Identificación",
+      "idTypePlaceholder": "Ej. Licencia de conducir, Pasaporte, etc."
+    },
+    "idTypes": {
+      "select": "Selecciona el tipo de ID",
+      "driversLicense": "Licencia de Conducir",
+      "stateId": "Cédula de Ciudadanía",
+      "greenCard": "Tarjeta de Residencia",
+      "passport": "Pasaporte"
+    },
+    "security": {
+      "changePassword": "Cambiar Contraseña",
+      "cancelChange": "Cancelar",
+      "currentPassword": "Contraseña Actual",
+      "currentPasswordPlaceholder": "Ingresa la contraseña actual",
+      "newPassword": "Nueva Contraseña",
+      "newPasswordPlaceholder": "Ingresa la nueva contraseña",
+      "confirmPassword": "Confirmar Nueva Contraseña",
+      "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
+      "requirements": "Requisitos de la contraseña:",
+      "req1": "Al menos 6 caracteres de longitud",
+      "req2": "La nueva contraseña debe ser diferente a la actual",
+      "req3": "Se requiere la contraseña actual para cambiarla"
+    },
+    "errors": {
+      "currentPasswordRequired": "Se requiere la contraseña actual para cambiar la contraseña",
+      "newPasswordRequired": "Se requiere una nueva contraseña",
+      "passwordsMismatch": "Las contraseñas no coinciden",
+      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+      "updateError": "Error al actualizar el perfil",
+      "incorrectPassword": "La contraseña actual es incorrecta. Por favor verifica e intenta de nuevo.",
+      "emailTaken": "Este correo electrónico ya está registrado a otro usuario",
+      "idTaken": "Este número de identificación ya está registrado a otro usuario"
+    }
+  },
+  "customers": {
+    "title": "Nuestras Empresas Aliadas",
+    "subtitle": "Aquí puedes gestionar la lista de empresas con las que trabajamos.",
+    "sectionTitle": "Lista de Empresas",
+    "add": {
+      "label": "Nombre de la nueva empresa",
+      "button": "Agregar",
+      "emptyWarning": "El nombre de la empresa no puede estar vacío.",
+      "success": "Empresa agregada exitosamente.",
+      "error": "Error al agregar la empresa."
+    },
+    "search": {
+      "label": "Buscar empresa"
+    },
+    "delete": {
+      "confirm": "¿Estás seguro de que deseas eliminar esta empresa?",
+      "success": "Empresa eliminada exitosamente.",
+      "error": "Error al eliminar la empresa."
+    },
+    "loading": "Cargando empresas...",
+    "noResults": "No hay empresas que coincidan con tu búsqueda.",
+    "errors": {
+      "loadError": "Error desconocido al cargar las empresas.",
+      "addError": "Error desconocido al agregar la empresa.",
+      "deleteError": "Error desconocido al eliminar la empresa."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Gestión de Trabajos y Herramientas",
+    "subtitle": "Aquí puedes gestionar la lista de trabajos y las herramientas asociadas a cada uno.",
+    "jobs": {
+      "sectionTitle": "Lista de Trabajos",
+      "addLabel": "Nombre del nuevo trabajo",
+      "addButton": "Añadir Trabajo",
+      "searchLabel": "Buscar trabajo",
+      "loading": "Cargando trabajos...",
+      "noResults": "No se encontraron trabajos.",
+      "emptyWarning": "El nombre del trabajo no puede estar vacío.",
+      "noChanges": "No hay cambios para guardar.",
+      "addSuccess": "Trabajo añadido con éxito.",
+      "addError": "Error al añadir trabajo.",
+      "deleteSuccess": "Trabajo eliminado con éxito.",
+      "deleteError": "Error al eliminar trabajo.",
+      "updateSuccess": "Trabajo actualizado con éxito.",
+      "updateError": "Error al actualizar trabajo.",
+      "errors": {
+        "loadError": "Error desconocido al cargar trabajos.",
+        "addError": "Error desconocido al añadir trabajo.",
+        "deleteError": "Error desconocido al eliminar trabajo.",
+        "updateError": "Error desconocido al actualizar trabajo."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Herramientas para:",
+      "dialogTitleLoading": "Cargando...",
+      "sectionTitle": "Lista de Herramientas",
+      "addLabel": "Nombre de la nueva herramienta",
+      "addButton": "Añadir",
+      "closeButton": "Cerrar",
+      "loading": "Cargando herramientas...",
+      "noResults": "No hay herramientas para este trabajo.",
+      "noJobSelected": "No se ha seleccionado un trabajo para añadir la herramienta.",
+      "emptyWarning": "El nombre de la herramienta no puede estar vacío.",
+      "addSuccess": "Herramienta añadida con éxito.",
+      "addError": "Error al añadir herramienta.",
+      "deleteSuccess": "Herramienta eliminada con éxito.",
+      "deleteError": "Error al eliminar herramienta.",
+      "errors": {
+        "loadError": "Error desconocido al cargar herramientas.",
+        "addError": "Error desconocido al añadir herramienta.",
+        "deleteError": "Error desconocido al eliminar herramienta."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancelar",
+      "confirmButton": "Confirmar",
+      "deleteJob": {
+        "title": "Confirmar eliminación de trabajo",
+        "message": "¿Estás seguro de que quieres eliminar este trabajo? Se eliminarán también las herramientas asociadas."
+      },
+      "deleteTool": {
+        "title": "Confirmar eliminación de herramienta",
+        "message": "¿Estás seguro de que quieres eliminar esta herramienta?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Administración de Vehículos",
+    "subtitle": "Gestiona todos los vehículos de la flota",
+    "addButton": "Nuevo Vehículo",
+    "search": {
+      "placeholder": "Buscar por placa, nombre, tipo o categoría..."
+    },
+    "table": {
+      "plate": "Placa",
+      "name": "Nombre",
+      "type": "Tipo",
+      "category": "Categoría",
+      "actions": "Acciones",
+      "noResults": "No se encontraron vehículos",
+      "editTooltip": "Editar",
+      "deleteTooltip": "Eliminar"
+    },
+    "pagination": {
+      "rowsPerPage": "Filas por página",
+      "displayedRows": "{{from}}-{{to}} de {{count}}"
+    },
+    "types": {
+      "owned": "Propio",
+      "rented": "Rentado"
+    },
+    "categories": {
+      "truck_26": "Camión 26",
+      "truck_49": "Camión 49",
+      "truck_001": "Camión 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "Nuevo Vehículo",
+      "titleEdit": "Editar Vehículo",
+      "plateLabel": "Placa",
+      "nameLabel": "Nombre",
+      "typeLabel": "Tipo",
+      "typeHelper": "Selecciona si el vehículo es propio o rentado",
+      "categoryLabel": "Categoría",
+      "categoryHelper": "Selecciona la categoría del vehículo",
+      "cancelButton": "Cancelar",
+      "createButton": "Crear",
+      "updateButton": "Actualizar",
+      "requiredFields": "Todos los campos son requeridos"
+    },
+    "deleteDialog": {
+      "title": "Confirmar Eliminación",
+      "message": "¿Estás seguro de que deseas eliminar el vehículo",
+      "warning": "Esta acción no se puede deshacer.",
+      "cancelButton": "Cancelar",
+      "deleteButton": "Eliminar"
+    },
+    "snackbar": {
+      "loadError": "Error al cargar los vehículos",
+      "createSuccess": "Vehículo creado correctamente",
+      "createError": "Error al guardar el vehículo",
+      "updateSuccess": "Vehículo actualizado correctamente",
+      "updateError": "Error al guardar el vehículo",
+      "deleteSuccess": "Vehículo eliminado correctamente",
+      "deleteError": "Error al eliminar el vehículo"
+    }
+  },
+  "operators": {
+    "tabs": {
+      "operators": "Operadores",
+      "freelancers": "Freelancers"
+    },
+    "error": {
+      "title": "Error al Cargar los Datos"
+    },
+    "freelancers": {
+      "title": "Directorio de Freelancers",
+      "subtitle": "Gestiona y visualiza la información de los freelancers",
+      "totalLabel": "Total Freelancers",
+      "createButton": "Crear Freelancer",
+      "searchPlaceholder": "Buscar freelancers por nombre, código, teléfono o número de ID...",
+      "tableTitle": "Freelancers",
+      "tableResultsSuffix": "resultados",
+      "stats": {
+        "total": "Total Freelancers",
+        "active": "Estado Activo",
+        "searchResults": "Resultados de Búsqueda"
+      },
+      "pagination": {
+        "showing": "Mostrando {{from}} - {{to}} de {{total}} freelancers",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {{page}}"
+      }
+    },
+    "snackbar": {
+      "loadError": "Error al cargar los operadores",
+      "activateSuccess": "Operador activado exitosamente",
+      "activateError": "Error al activar el operador",
+      "updateSuccess": "Operador actualizado exitosamente",
+      "updateError": "Error al actualizar el operador",
+      "deleteSuccess": "Operador desactivado exitosamente",
+      "deleteError": "Error al desactivar el operador",
+      "addChildSuccess": "Hijo agregado exitosamente",
+      "addChildError": "Error al agregar el hijo",
+      "freelancerCreated": "Freelancer creado exitosamente",
+      "freelancerCreatedWarning": "Freelancer creado, pero hubo un error al actualizar la lista"
+    },
+    "header": {
+      "title": "Directorio de Operadores",
+      "subtitle": "Gestiona y visualiza la información de los operadores",
+      "totalLabel": "Total Operadores",
+      "registerButton": "Registrar Operador",
+      "searchPlaceholder": "Buscar operadores por nombre, código, correo, teléfono o licencia...",
+      "stats": {
+        "active": "Operadores Activos",
+        "inactive": "Operadores Inactivos",
+        "withChildren": "Con Hijos",
+        "searchResults": "Resultados de Búsqueda"
+      },
+      "tabs": {
+        "active": "Operadores Activos",
+        "inactive": "Operadores Inactivos"
+      }
+    },
+    "table": {
+      "activeTitle": "Operadores Activos",
+      "inactiveTitle": "Operadores Inactivos",
+      "resultsSuffix": "resultados",
+      "columns": {
+        "operator": "Operador",
+        "contact": "Contacto",
+        "license": "Licencia",
+        "salaryInfo": "Info Salarial",
+        "family": "Familia",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "salary": {
+        "perHour": "por hora",
+        "perDay": "por día"
+      },
+      "children": "hijos",
+      "noResults": {
+        "title": "No se encontraron operadores",
+        "subtitle": "Intenta ajustar los términos de búsqueda"
+      },
+      "code": "Código",
+      "loading": "Cargando operadores inactivos...",
+      "activateButton": "Activar",
+      "menu": {
+        "viewDetails": "Ver Detalles",
+        "edit": "Editar",
+        "manageChildren": "Gestionar Hijos",
+        "viewLoans": "Ver Préstamos",
+        "createLoan": "Crear Préstamo",
+        "sendEmail": "Enviar Correo",
+        "deactivate": "Desactivar"
+      }
+    },
+    "registerModal": {
+      "title": "Registrar Nuevo Operador",
+      "stepIndicator": "Paso {{current}} de {{total}}",
+      "steps": {
+        "personalData": "Datos Personales",
+        "contactInfo": "Info de Contacto",
+        "operatorData": "Datos del Operador",
+        "documents": "Documentos",
+        "children": "Hijos"
+      },
+      "stepTooltip": "Ir a {{name}}",
+      "confirmClose": {
+        "title": "¿Descartar Cambios?",
+        "subtitle": "Tienes datos sin guardar",
+        "message": "Toda la información que has ingresado se perderá. ¿Estás seguro de que deseas cerrar?",
+        "keepEditing": "Seguir Editando",
+        "discard": "Descartar y Cerrar"
+      },
+      "footer": {
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "cancel": "Cancelar",
+        "register": "Registrar Operador",
+        "saving": "Guardando..."
+      },
+      "validation": {
+        "fixErrors": "Por favor corrige los errores de validación en este paso",
+        "fixBeforeSubmit": "Por favor corrige los errores de validación antes de enviar",
+        "firstName": "El nombre es requerido",
+        "lastName": "El apellido es requerido",
+        "birthDate": "La fecha de nacimiento es requerida",
+        "typeId": "El tipo de ID es requerido",
+        "idNumber": "El número de ID es requerido",
+        "phone": "El teléfono es requerido",
+        "email": "El correo electrónico es requerido",
+        "emailInvalid": "Formato de correo inválido",
+        "code": "El código es requerido",
+        "numberLicence": "El número de licencia es requerido",
+        "tShirtSize": "La talla de camiseta es requerida",
+        "salaryType": "El tipo de salario es requerido",
+        "salary": "Se requiere un salario diario válido",
+        "hourlySalary": "Se requiere un salario por hora válido"
+      },
+      "snackbar": {
+        "success": "Operador registrado exitosamente",
+        "fallbackError": "Error de validación del servidor"
+      }
+    },
+    "loansDialog": {
+      "title": "Préstamos - {{name}}",
+      "loanCount": "{{count}} préstamo(s) | {{unpaid}} sin pagar",
+      "totalUnpaid": "Total sin pagar: {{amount}}",
+      "allPaid": "Todo Pagado",
+      "statusFilter": {
+        "label": "Filtrar por Estado",
+        "all": "Todos",
+        "unpaid": "Sin Pagar",
+        "paid": "Pagado",
+        "canceled": "Cancelado"
+      },
+      "status": {
+        "unpaid": "Sin Pagar",
+        "paid": "Pagado",
+        "canceled": "Cancelado"
+      },
+      "table": {
+        "description": "Descripción",
+        "totalAmount": "Monto Total",
+        "paid": "Pagado",
+        "remaining": "Restante",
+        "progress": "Progreso",
+        "status": "Estado",
+        "created": "Creado",
+        "actions": "Acciones",
+        "createdBy": "Creado por: {{name}}",
+        "updated": "Actualizado: {{date}}"
+      },
+      "empty": "No se encontraron préstamos para este operador",
+      "tooltips": {
+        "registerPayment": "Registrar Pago",
+        "cancelLoan": "Cancelar Préstamo"
+      },
+      "menu": {
+        "registerPayment": "Registrar Pago",
+        "cancelLoan": "Cancelar Préstamo",
+        "noActions": "Sin acciones disponibles"
+      },
+      "snackbar": {
+        "statusUpdated": "Estado del préstamo actualizado a {{status}}",
+        "statusError": "Error al actualizar el estado"
+      },
+      "closeButton": "Cerrar"
+    },
+    "detailsModal": {
+      "title": "Detalles del Operador",
+      "closeButton": "Cerrar",
+      "sections": {
+        "personal": "Información Personal",
+        "contact": "Información de Contacto",
+        "work": "Información Laboral",
+        "family": "Información Familiar",
+        "license": "Imágenes de Licencia"
+      },
+      "fields": {
+        "code": "Código",
+        "birthDate": "Fecha de Nacimiento",
+        "idType": "Tipo de ID",
+        "idNumber": "Número de ID",
+        "email": "Correo Electrónico",
+        "phone": "Teléfono",
+        "address": "Dirección",
+        "licenseNumber": "Número de Licencia",
+        "shiftName": "Nombre del Turno",
+        "shiftSize": "Talla de Camiseta",
+        "salaryType": "Tipo de Salario",
+        "hourlySalary": "Salario por Hora",
+        "dailySalary": "Salario Diario",
+        "status": "Estado",
+        "numChildren": "Número de Hijos"
+      },
+      "salaryType": {
+        "hour": "Por Hora",
+        "day": "Por Día"
+      },
+      "children": {
+        "detailsTitle": "Detalles de los Hijos",
+        "name": "Nombre",
+        "birthDate": "Fecha de Nacimiento",
+        "gender": "Género"
+      },
+      "license": {
+        "front": "Frente",
+        "back": "Reverso",
+        "frontAlt": "Frente de Licencia",
+        "backAlt": "Reverso de Licencia",
+        "viewFull": "Ver imagen completa",
+        "download": "Descargar",
+        "downloading": "Descargando...",
+        "close": "Cerrar",
+        "photo": "Foto de Perfil",
+        "photoAlt": "Foto de Perfil",
+        "viewPhoto": "Ver foto"
+      }
+    },
+    "editModal": {
+      "title": "Editar Operador - {{name}}",
+      "sections": {
+        "personal": "Información Personal",
+        "contact": "Información de Contacto",
+        "work": "Información Laboral",
+        "files": "Fotos y Documentos"
+      },
+      "fields": {
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "birthDate": "Fecha de Nacimiento",
+        "idType": "Tipo de ID",
+        "idTypePlaceholder": "Seleccionar Tipo de ID",
+        "idNumber": "Número de ID",
+        "email": "Correo Electrónico",
+        "phone": "Teléfono",
+        "address": "Dirección",
+        "operatorCode": "Código de Operador",
+        "licenseNumber": "Número de Licencia",
+        "shiftName": "Nombre del Turno",
+        "shiftSize": "Talla de Camiseta",
+        "shiftSizePlaceholder": "Seleccionar Talla",
+        "salaryType": "Tipo de Salario",
+        "dailySalary": "Salario Diario",
+        "hourlySalary": "Salario por Hora",
+        "status": "Estado",
+        "profilePhoto": "Foto de Perfil",
+        "licenseFront": "Frente de Licencia",
+        "licenseBack": "Reverso de Licencia"
+      },
+      "idTypes": {
+        "greenCard": "Green Card",
+        "passport": "Pasaporte",
+        "driversLicense": "Licencia de Conducir",
+        "stateId": "ID Estatal",
+        "nationalId": "ID Nacional"
+      },
+      "shiftSizes": {
+        "s": "Pequeño",
+        "m": "Mediano",
+        "l": "Grande",
+        "xl": "Extra Grande"
+      },
+      "salaryTypes": {
+        "day": "Por Día",
+        "hour": "Por Hora"
+      },
+      "statuses": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "freelance": "Freelance"
+      },
+      "currentPhoto": "Foto actual",
+      "currentFront": "Frente actual",
+      "currentBack": "Reverso actual",
+      "buttons": {
+        "cancel": "Cancelar",
+        "save": "Guardar Cambios",
+        "saving": "Guardando..."
+      },
+      "errors": {
+        "unknown": "Error desconocido al guardar el operador"
+      }
+    },
+    "createLoanDialog": {
+      "title": "Crear Préstamo",
+      "forOperator": "Para: {{name}}",
+      "fields": {
+        "amount": "Monto del Préstamo",
+        "amountHelper": "Ingresa el monto total a pagar",
+        "amountPlaceholder": "0.00",
+        "description": "Descripción",
+        "descriptionHelper": "Proporciona una descripción para este préstamo",
+        "descriptionPlaceholder": "Ej. Préstamo de emergencia para gastos médicos"
+      },
+      "note": "<strong>Nota:</strong> El préstamo se creará con estado \"sin pagar\". El operador podrá realizar pagos hacia este préstamo con el tiempo.",
+      "validation": {
+        "amountRequired": "El monto es requerido",
+        "amountPositive": "El monto debe ser mayor a 0",
+        "descriptionRequired": "La descripción es requerida",
+        "descriptionMinLength": "La descripción debe tener al menos 5 caracteres"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "create": "Crear Préstamo",
+        "creating": "Creando..."
+      },
+      "snackbar": {
+        "success": "Préstamo creado exitosamente",
+        "error": "Error al crear el préstamo"
+      }
+    },
+    "createFreelancer": {
+      "title": "Crear Freelancer",
+      "subtitle": "Registro rápido para operadores freelance",
+      "fields": {
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "idNumber": "Número de ID",
+        "idType": "Tipo de ID",
+        "phone": "Teléfono",
+        "address": "Dirección",
+        "licenseNumber": "Número de Licencia",
+        "salary": "Salario"
+      },
+      "idTypes": {
+        "id_number": "Número de ID",
+        "passport": "Pasaporte",
+        "drivers_license": "Licencia de Conducir",
+        "green_card": "Green Card"
+      },
+      "validation": {
+        "firstName": "El nombre es requerido",
+        "lastName": "El apellido es requerido",
+        "idNumber": "El número de ID es requerido",
+        "idType": "El tipo de ID es requerido",
+        "phone": "El teléfono es requerido",
+        "salary": "El salario debe ser un número",
+        "fixErrors": "Por favor corrige los errores de validación"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "create": "Crear Freelancer",
+        "creating": "Creando..."
+      },
+      "snackbar": {
+        "success": "Freelancer creado exitosamente",
+        "error": "Error al crear el freelancer"
+      }
+    }
+  },
+  "company": {
+    "title": "Mi Empresa",
+    "subtitle": "Gestiona la información de tu empresa",
+    "createdAt": "Creado: {{date}}",
+    "notFound": {
+      "title": "Empresa No Encontrada",
+      "message": "No se pudo cargar la información de la empresa."
+    },
+    "logo": {
+      "alt": "Logo de la Empresa",
+      "upload": "Subir logo",
+      "remove": "Eliminar logo",
+      "errorFormat": "Formato de imagen inválido. Permitidos: JPEG, PNG, GIF, WebP",
+      "errorSize": "El logo debe pesar menos de 5MB",
+      "fieldErrorFormat": "Formato de imagen inválido",
+      "fieldErrorSize": "El tamaño de la imagen debe ser menor a 5MB",
+      "viewFull": "Ver imagen completa",
+      "download": "Descargar",
+      "downloading": "Descargando...",
+      "close": "Cerrar"
+    },
+    "buttons": {
+      "edit": "Editar Empresa",
+      "cancel": "Cancelar",
+      "save": "Guardar Cambios",
+      "saving": "Guardando...",
+      "validating": "Validando..."
+    },
+    "sections": {
+      "info": "Información de la Empresa",
+      "subscription": "Detalles de Suscripción",
+      "additional": "Detalles Adicionales"
+    },
+    "fields": {
+      "name": "Nombre de la Empresa",
+      "namePlaceholder": "Ingresa el nombre de la empresa",
+      "license": "Número de Licencia (MC Number)",
+      "licensePlaceholder": "Ej. MC-123456",
+      "address": "Dirección",
+      "addressPlaceholder": "Ingresa la dirección de la empresa",
+      "zipCode": "Código Postal",
+      "zipCodePlaceholder": "Ingresa el código postal",
+      "subscriptionPlan": "Plan de Suscripción"
+    },
+    "subscription": {
+      "plan": "Plan",
+      "status": "Estado",
+      "price": "Precio",
+      "priceValue": "${{amount}}/mes",
+      "duration": "Duración",
+      "durationValue": "{{months}} mes(es)",
+      "startDate": "Fecha de Inicio",
+      "endDate": "Fecha de Fin",
+      "noSubscription": "Sin suscripción"
+    },
+    "additional": {
+      "createdAt": "Creado El"
+    },
+    "snackbar": {
+      "loadError": "Error al cargar los datos de la empresa",
+      "nameRequired": "El nombre de la empresa es requerido",
+      "licenseRequired": "El número de licencia es requerido",
+      "noChanges": "No se detectaron cambios",
+      "licenseExists": "El número de licencia \"{{license}}\" ya está registrado para otra empresa: {{company}}",
+      "updateSuccess": "Empresa actualizada exitosamente",
+      "updateError": "Error al actualizar la empresa",
+      "cancelInfo": "Cambios cancelados"
+    },
+    "validation": {
+      "nameRequired": "El nombre de la empresa es requerido",
+      "licenseRequired": "El número de licencia es requerido",
+      "licenseExists": "Ya registrado en: {{company}}"
+    },
+    "na": "N/D"
+  },
+  "admins": {
+    "title": "Administradores de la Empresa",
+    "subtitle": "Gestiona los usuarios administradores de tu empresa",
+    "companyId": "ID de empresa: {{id}}",
+    "totalUsers": "Total de usuarios: {{count}}",
+    "addAdmin": "Agregar Admin",
+    "createFirstAdmin": "Crear Primer Admin",
+    "filters": {
+      "searchPlaceholder": "Buscar por usuario, nombre o correo...",
+      "statusAll": "Todos",
+      "statusActive": "Solo Activos",
+      "statusInactive": "Solo Inactivos"
+    },
+    "card": {
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "superuser": "SuperUsuario",
+      "born": "Nacimiento: {{date}}",
+      "created": "Creado: {{date}}"
+    },
+    "idTypes": {
+      "DL": "Licencia de Conducir",
+      "SI": "ID Estatal",
+      "GC": "Green Card",
+      "PA": "Pasaporte",
+      "driver license": "Licencia de Conducir",
+      "Passport": "Pasaporte"
+    },
+    "actions": {
+      "deactivate": "Desactivar",
+      "reactivate": "Reactivar",
+      "reactivating": "Reactivando...",
+      "grantSuperuser": "Dar SuperUsuario",
+      "granting": "Otorgando...",
+      "revokeSuperuser": "Quitar SuperUsuario",
+      "revoking": "Quitando...",
+      "tooltipSelf": "No puedes realizar esta acción en tu propia cuenta"
+    },
+    "empty": {
+      "title": "No se encontraron usuarios",
+      "withFilter": "Intenta ajustar tu búsqueda o los filtros.",
+      "noAdmins": "Aún no se han creado administradores."
+    },
+    "deactivationModal": {
+      "titleDeactivate": "Desactivar Admin",
+      "titleVerify": "Ingresar Código de Verificación",
+      "sendingCode": "Enviando código de verificación...",
+      "confirmQuestion": "¿Estás seguro de que deseas desactivar este administrador?",
+      "codeSentNote": "Se enviará un código de verificación a su correo.",
+      "codeReceivedNote": "Se envió un código de 4 dígitos al correo del admin.",
+      "codeLabel": "Código de Verificación",
+      "codePlaceholder": "Ingresa el código de 4 dígitos",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar",
+      "deactivating": "Desactivando..."
+    },
+    "snackbar": {
+      "loadError": "Error al cargar usuarios",
+      "codeSent": "Código de verificación enviado al correo del admin",
+      "deactivateRequestError": "Error al solicitar desactivación",
+      "codeRequired": "Por favor ingresa el código de verificación",
+      "deactivateConfirmError": "Error al confirmar la desactivación",
+      "deactivateSuccess": "Admin desactivado exitosamente",
+      "reactivateError": "Error al reactivar el admin",
+      "reactivateSuccess": "Admin reactivado exitosamente",
+      "alreadySuperuser": "El usuario ya es superusuario",
+      "notSuperuser": "El usuario no es superusuario",
+      "grantError": "Error al otorgar permisos de superusuario",
+      "grantSuccess": "Permiso de superusuario otorgado exitosamente",
+      "revokeError": "Error al revocar permisos de superusuario",
+      "revokeSuccess": "Permiso de superusuario revocado exitosamente"
+    }
   }
-
 }

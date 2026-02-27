@@ -1653,99 +1653,1529 @@
       "success": "Cost created successfully",
       "error": "Error creating cost"
     }
-  },"loansSummary": {
-      "loading": "Loading loans…",
-      "error": {
-        "title": "Could not load data",
-        "loading": "Error loading loans",
-        "retry": "Retry"
+  },
+  "loansSummary": {
+    "loading": "Loading loans…",
+    "error": {
+      "title": "Could not load data",
+      "loading": "Error loading loans",
+      "retry": "Retry"
+    },
+    "header": {
+      "title": "Operator Loans",
+      "recordsLoaded": "{{count}} total records loaded",
+      "refresh": "Refresh"
+    },
+    "filters": {
+      "quickPeriods": "Quick Periods",
+      "customWeek": "Custom Week"
+    },
+    "periods": {
+      "lastWeek": "Last Week",
+      "lastMonth": "Last Month",
+      "lastQuarter": "Last Quarter",
+      "last6Months": "Last 6 Months",
+      "lastYear": "Last Year",
+      "allTime": "All Time"
+    },
+    "status": {
+      "all": "All statuses",
+      "unpaid": "Unpaid",
+      "paid": "Paid",
+      "canceled": "Canceled"
+    },
+    "kpi": {
+      "totalReceivable": "Total Receivable",
+      "totalReceivableSub": "Accounts pending collection",
+      "totalLoaned": "Total Loaned",
+      "totalLoanedSub": "Total disbursed",
+      "totalCollected": "Total Collected",
+      "totalCollectedSub": "Payments received",
+      "unpaidLoans": "Unpaid Loans",
+      "unpaidLoansSub": "Loans still pending"
+    },
+    "recovery": {
+      "title": "Overall Recovery Rate",
+      "collected": "Collected",
+      "pending": "Pending"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "loans": "Loan History",
+      "weekly": "Weekly"
+    },
+    "overview": {
+      "title": "Debt Breakdown by Operator",
+      "operatorsCount": "{{count}} operators",
+      "empty": "No loans match the current filters",
+      "loanCount": "{{count}} loan",
+      "loanCount_other": "{{count}} loans",
+      "loaned": "Loaned",
+      "paid": "Paid",
+      "pending": "Pending",
+      "loansOf": "Loans — {{name}}"
+    },
+    "loan": {
+      "noDescription": "No description",
+      "created": "Created",
+      "by": "By",
+      "updated": "Updated",
+      "paid": "Paid",
+      "due": "Due"
+    },
+    "history": {
+      "title": "All Loans",
+      "recordsCount": "{{count}} records"
+    },
+    "table": {
+      "operator": "Operator",
+      "description": "Description",
+      "createdBy": "Created by",
+      "total": "Total",
+      "paid": "Paid",
+      "remaining": "Remaining",
+      "status": "Status",
+      "date": "Date",
+      "progress": "Progress",
+      "totalRow": "Total ({{count}} loans)"
+    },
+    "weekly": {
+      "title": "Loans by Week",
+      "empty": "No data for this period",
+      "loanCount": "{{count}} loan",
+      "loanCount_other": "{{count}} loans"
+    },
+    "footer": {
+      "hint": "Click any operator in the <strong>Overview</strong> tab to expand their individual loan details. Use the status filter buttons to isolate unpaid, paid, or canceled loans."
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "View and edit your profile information",
+    "editButton": "Edit Profile",
+    "saveButton": "Save Changes",
+    "saving": "Saving...",
+    "cancelButton": "Cancel",
+    "tryAgain": "Try Again",
+    "errorLoading": "Error Loading Profile",
+    "errorLoadingDesc": "Could not load user profile data.",
+    "changesCancelled": "Changes cancelled",
+    "updateSuccess": "Profile updated successfully",
+    "photo": {
+      "altText": "Profile",
+      "sizeError": "Image size must be less than 5MB",
+      "viewLabel": "View photo",
+      "dialogTitle": "Profile Photo",
+      "downloadLabel": "Download photo"
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin"
+    },
+    "sections": {
+      "accountInfo": "Account Information",
+      "personalInfo": "Personal Information",
+      "security": "Account Security"
+    },
+    "fields": {
+      "username": "Username",
+      "usernamePlaceholder": "Enter username",
+      "email": "Email",
+      "emailPlaceholder": "Enter email address",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "phone": "Phone",
+      "phonePlaceholder": "Enter phone number",
+      "birthDate": "Birth Date",
+      "address": "Address",
+      "addressPlaceholder": "Enter address",
+      "idNumber": "ID Number",
+      "idNumberPlaceholder": "Enter ID number",
+      "idType": "ID Type",
+      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
+    },
+    "idTypes": {
+      "select": "Select ID Type",
+      "driversLicense": "Driver's License",
+      "stateId": "State ID",
+      "greenCard": "Green Card",
+      "passport": "Passport"
+    },
+    "security": {
+      "changePassword": "Change Password",
+      "cancelChange": "Cancel",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "requirements": "Password Requirements:",
+      "req1": "At least 6 characters long",
+      "req2": "New password must be different from current password",
+      "req3": "Current password is required to change password"
+    },
+    "errors": {
+      "currentPasswordRequired": "Current password is required to change password",
+      "newPasswordRequired": "New password is required",
+      "passwordsMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters long",
+      "updateError": "Error updating profile",
+      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
+      "emailTaken": "This email is already registered to another user",
+      "idTaken": "This ID number is already registered to another user"
+    }
+  },
+  "customers": {
+    "title": "Our Allied Companies",
+    "subtitle": "Here you can manage the list of companies we work with.",
+    "sectionTitle": "Company List",
+    "add": {
+      "label": "Name of the new company",
+      "button": "Add",
+      "emptyWarning": "Company name cannot be empty.",
+      "success": "Company added successfully.",
+      "error": "Error adding company."
+    },
+    "search": {
+      "label": "Search company"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete this company?",
+      "success": "Company deleted successfully.",
+      "error": "Error deleting company."
+    },
+    "loading": "Loading companies...",
+    "noResults": "No companies match your search.",
+    "errors": {
+      "loadError": "Unknown error loading companies.",
+      "addError": "Unknown error adding company.",
+      "deleteError": "Unknown error deleting company."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Jobs & Tools Management",
+    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
+    "jobs": {
+      "sectionTitle": "Job List",
+      "addLabel": "Name of the new job",
+      "addButton": "Add Job",
+      "searchLabel": "Search job",
+      "loading": "Loading jobs...",
+      "noResults": "No jobs found.",
+      "emptyWarning": "Job name cannot be empty.",
+      "noChanges": "No changes to save.",
+      "addSuccess": "Job added successfully.",
+      "addError": "Error adding job.",
+      "deleteSuccess": "Job deleted successfully.",
+      "deleteError": "Error deleting job.",
+      "updateSuccess": "Job updated successfully.",
+      "updateError": "Error updating job.",
+      "errors": {
+        "loadError": "Unknown error loading jobs.",
+        "addError": "Unknown error adding job.",
+        "deleteError": "Unknown error deleting job.",
+        "updateError": "Unknown error updating job."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Tools for:",
+      "dialogTitleLoading": "Loading...",
+      "sectionTitle": "Tool List",
+      "addLabel": "Name of the new tool",
+      "addButton": "Add",
+      "closeButton": "Close",
+      "loading": "Loading tools...",
+      "noResults": "No tools for this job.",
+      "noJobSelected": "No job selected to add the tool.",
+      "emptyWarning": "Tool name cannot be empty.",
+      "addSuccess": "Tool added successfully.",
+      "addError": "Error adding tool.",
+      "deleteSuccess": "Tool deleted successfully.",
+      "deleteError": "Error deleting tool.",
+      "errors": {
+        "loadError": "Unknown error loading tools.",
+        "addError": "Unknown error adding tool.",
+        "deleteError": "Unknown error deleting tool."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancel",
+      "confirmButton": "Confirm",
+      "deleteJob": {
+        "title": "Confirm job deletion",
+        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
       },
-      "header": {
-        "title": "Operator Loans",
-        "recordsLoaded": "{{count}} total records loaded",
-        "refresh": "Refresh"
+      "deleteTool": {
+        "title": "Confirm tool deletion",
+        "message": "Are you sure you want to delete this tool?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Vehicle Administration",
+    "subtitle": "Manage all fleet vehicles",
+    "addButton": "New Vehicle",
+    "search": {
+      "placeholder": "Search by plate, name, type or category..."
+    },
+    "table": {
+      "plate": "Plate",
+      "name": "Name",
+      "type": "Type",
+      "category": "Category",
+      "actions": "Actions",
+      "noResults": "No vehicles found",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "displayedRows": "{{from}}-{{to}} of {{count}}"
+    },
+    "types": {
+      "owned": "Owned",
+      "rented": "Rented"
+    },
+    "categories": {
+      "truck_26": "Truck 26",
+      "truck_49": "Truck 49",
+      "truck_001": "Truck 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "New Vehicle",
+      "titleEdit": "Edit Vehicle",
+      "plateLabel": "Plate",
+      "nameLabel": "Name",
+      "typeLabel": "Type",
+      "typeHelper": "Select whether the vehicle is owned or rented",
+      "categoryLabel": "Category",
+      "categoryHelper": "Select the vehicle category",
+      "cancelButton": "Cancel",
+      "createButton": "Create",
+      "updateButton": "Update",
+      "requiredFields": "All fields are required"
+    },
+    "deleteDialog": {
+      "title": "Confirm Deletion",
+      "message": "Are you sure you want to delete vehicle",
+      "warning": "This action cannot be undone.",
+      "cancelButton": "Cancel",
+      "deleteButton": "Delete"
+    },
+    "snackbar": {
+      "loadError": "Error loading vehicles",
+      "createSuccess": "Vehicle created successfully",
+      "createError": "Error saving vehicle",
+      "updateSuccess": "Vehicle updated successfully",
+      "updateError": "Error saving vehicle",
+      "deleteSuccess": "Vehicle deleted successfully",
+      "deleteError": "Error deleting vehicle"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "View and edit your profile information",
+    "editButton": "Edit Profile",
+    "saveButton": "Save Changes",
+    "saving": "Saving...",
+    "cancelButton": "Cancel",
+    "tryAgain": "Try Again",
+    "errorLoading": "Error Loading Profile",
+    "errorLoadingDesc": "Could not load user profile data.",
+    "changesCancelled": "Changes cancelled",
+    "updateSuccess": "Profile updated successfully",
+    "photo": {
+      "altText": "Profile",
+      "sizeError": "Image size must be less than 5MB",
+      "viewLabel": "View photo",
+      "dialogTitle": "Profile Photo",
+      "downloadLabel": "Download photo"
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin"
+    },
+    "sections": {
+      "accountInfo": "Account Information",
+      "personalInfo": "Personal Information",
+      "security": "Account Security"
+    },
+    "fields": {
+      "username": "Username",
+      "usernamePlaceholder": "Enter username",
+      "email": "Email",
+      "emailPlaceholder": "Enter email address",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "phone": "Phone",
+      "phonePlaceholder": "Enter phone number",
+      "birthDate": "Birth Date",
+      "address": "Address",
+      "addressPlaceholder": "Enter address",
+      "idNumber": "ID Number",
+      "idNumberPlaceholder": "Enter ID number",
+      "idType": "ID Type",
+      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
+    },
+    "idTypes": {
+      "select": "Select ID Type",
+      "driversLicense": "Driver's License",
+      "stateId": "State ID",
+      "greenCard": "Green Card",
+      "passport": "Passport"
+    },
+    "security": {
+      "changePassword": "Change Password",
+      "cancelChange": "Cancel",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "requirements": "Password Requirements:",
+      "req1": "At least 6 characters long",
+      "req2": "New password must be different from current password",
+      "req3": "Current password is required to change password"
+    },
+    "errors": {
+      "currentPasswordRequired": "Current password is required to change password",
+      "newPasswordRequired": "New password is required",
+      "passwordsMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters long",
+      "updateError": "Error updating profile",
+      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
+      "emailTaken": "This email is already registered to another user",
+      "idTaken": "This ID number is already registered to another user"
+    }
+  },
+  "customers": {
+    "title": "Our Allied Companies",
+    "subtitle": "Here you can manage the list of companies we work with.",
+    "sectionTitle": "Company List",
+    "add": {
+      "label": "Name of the new company",
+      "button": "Add",
+      "emptyWarning": "Company name cannot be empty.",
+      "success": "Company added successfully.",
+      "error": "Error adding company."
+    },
+    "search": {
+      "label": "Search company"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete this company?",
+      "success": "Company deleted successfully.",
+      "error": "Error deleting company."
+    },
+    "loading": "Loading companies...",
+    "noResults": "No companies match your search.",
+    "errors": {
+      "loadError": "Unknown error loading companies.",
+      "addError": "Unknown error adding company.",
+      "deleteError": "Unknown error deleting company."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Jobs & Tools Management",
+    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
+    "jobs": {
+      "sectionTitle": "Job List",
+      "addLabel": "Name of the new job",
+      "addButton": "Add Job",
+      "searchLabel": "Search job",
+      "loading": "Loading jobs...",
+      "noResults": "No jobs found.",
+      "emptyWarning": "Job name cannot be empty.",
+      "noChanges": "No changes to save.",
+      "addSuccess": "Job added successfully.",
+      "addError": "Error adding job.",
+      "deleteSuccess": "Job deleted successfully.",
+      "deleteError": "Error deleting job.",
+      "updateSuccess": "Job updated successfully.",
+      "updateError": "Error updating job.",
+      "errors": {
+        "loadError": "Unknown error loading jobs.",
+        "addError": "Unknown error adding job.",
+        "deleteError": "Unknown error deleting job.",
+        "updateError": "Unknown error updating job."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Tools for:",
+      "dialogTitleLoading": "Loading...",
+      "sectionTitle": "Tool List",
+      "addLabel": "Name of the new tool",
+      "addButton": "Add",
+      "closeButton": "Close",
+      "loading": "Loading tools...",
+      "noResults": "No tools for this job.",
+      "noJobSelected": "No job selected to add the tool.",
+      "emptyWarning": "Tool name cannot be empty.",
+      "addSuccess": "Tool added successfully.",
+      "addError": "Error adding tool.",
+      "deleteSuccess": "Tool deleted successfully.",
+      "deleteError": "Error deleting tool.",
+      "errors": {
+        "loadError": "Unknown error loading tools.",
+        "addError": "Unknown error adding tool.",
+        "deleteError": "Unknown error deleting tool."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancel",
+      "confirmButton": "Confirm",
+      "deleteJob": {
+        "title": "Confirm job deletion",
+        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
       },
-      "filters": {
-        "quickPeriods": "Quick Periods",
-        "customWeek": "Custom Week"
+      "deleteTool": {
+        "title": "Confirm tool deletion",
+        "message": "Are you sure you want to delete this tool?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Vehicle Administration",
+    "subtitle": "Manage all fleet vehicles",
+    "addButton": "New Vehicle",
+    "search": {
+      "placeholder": "Search by plate, name, type or category..."
+    },
+    "table": {
+      "plate": "Plate",
+      "name": "Name",
+      "type": "Type",
+      "category": "Category",
+      "actions": "Actions",
+      "noResults": "No vehicles found",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "displayedRows": "{{from}}-{{to}} of {{count}}"
+    },
+    "types": {
+      "owned": "Owned",
+      "rented": "Rented"
+    },
+    "categories": {
+      "truck_26": "Truck 26",
+      "truck_49": "Truck 49",
+      "truck_001": "Truck 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "New Vehicle",
+      "titleEdit": "Edit Vehicle",
+      "plateLabel": "Plate",
+      "nameLabel": "Name",
+      "typeLabel": "Type",
+      "typeHelper": "Select whether the vehicle is owned or rented",
+      "categoryLabel": "Category",
+      "categoryHelper": "Select the vehicle category",
+      "cancelButton": "Cancel",
+      "createButton": "Create",
+      "updateButton": "Update",
+      "requiredFields": "All fields are required"
+    },
+    "deleteDialog": {
+      "title": "Confirm Deletion",
+      "message": "Are you sure you want to delete vehicle",
+      "warning": "This action cannot be undone.",
+      "cancelButton": "Cancel",
+      "deleteButton": "Delete"
+    },
+    "snackbar": {
+      "loadError": "Error loading vehicles",
+      "createSuccess": "Vehicle created successfully",
+      "createError": "Error saving vehicle",
+      "updateSuccess": "Vehicle updated successfully",
+      "updateError": "Error saving vehicle",
+      "deleteSuccess": "Vehicle deleted successfully",
+      "deleteError": "Error deleting vehicle"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "View and edit your profile information",
+    "editButton": "Edit Profile",
+    "saveButton": "Save Changes",
+    "saving": "Saving...",
+    "cancelButton": "Cancel",
+    "tryAgain": "Try Again",
+    "errorLoading": "Error Loading Profile",
+    "errorLoadingDesc": "Could not load user profile data.",
+    "changesCancelled": "Changes cancelled",
+    "updateSuccess": "Profile updated successfully",
+    "photo": {
+      "altText": "Profile",
+      "sizeError": "Image size must be less than 5MB",
+      "viewLabel": "View photo",
+      "dialogTitle": "Profile Photo",
+      "downloadLabel": "Download photo"
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin"
+    },
+    "sections": {
+      "accountInfo": "Account Information",
+      "personalInfo": "Personal Information",
+      "security": "Account Security"
+    },
+    "fields": {
+      "username": "Username",
+      "usernamePlaceholder": "Enter username",
+      "email": "Email",
+      "emailPlaceholder": "Enter email address",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "phone": "Phone",
+      "phonePlaceholder": "Enter phone number",
+      "birthDate": "Birth Date",
+      "address": "Address",
+      "addressPlaceholder": "Enter address",
+      "idNumber": "ID Number",
+      "idNumberPlaceholder": "Enter ID number",
+      "idType": "ID Type",
+      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
+    },
+    "idTypes": {
+      "select": "Select ID Type",
+      "driversLicense": "Driver's License",
+      "stateId": "State ID",
+      "greenCard": "Green Card",
+      "passport": "Passport"
+    },
+    "security": {
+      "changePassword": "Change Password",
+      "cancelChange": "Cancel",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "requirements": "Password Requirements:",
+      "req1": "At least 6 characters long",
+      "req2": "New password must be different from current password",
+      "req3": "Current password is required to change password"
+    },
+    "errors": {
+      "currentPasswordRequired": "Current password is required to change password",
+      "newPasswordRequired": "New password is required",
+      "passwordsMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters long",
+      "updateError": "Error updating profile",
+      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
+      "emailTaken": "This email is already registered to another user",
+      "idTaken": "This ID number is already registered to another user"
+    }
+  },
+  "customers": {
+    "title": "Our Allied Companies",
+    "subtitle": "Here you can manage the list of companies we work with.",
+    "sectionTitle": "Company List",
+    "add": {
+      "label": "Name of the new company",
+      "button": "Add",
+      "emptyWarning": "Company name cannot be empty.",
+      "success": "Company added successfully.",
+      "error": "Error adding company."
+    },
+    "search": {
+      "label": "Search company"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete this company?",
+      "success": "Company deleted successfully.",
+      "error": "Error deleting company."
+    },
+    "loading": "Loading companies...",
+    "noResults": "No companies match your search.",
+    "errors": {
+      "loadError": "Unknown error loading companies.",
+      "addError": "Unknown error adding company.",
+      "deleteError": "Unknown error deleting company."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Jobs & Tools Management",
+    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
+    "jobs": {
+      "sectionTitle": "Job List",
+      "addLabel": "Name of the new job",
+      "addButton": "Add Job",
+      "searchLabel": "Search job",
+      "loading": "Loading jobs...",
+      "noResults": "No jobs found.",
+      "emptyWarning": "Job name cannot be empty.",
+      "noChanges": "No changes to save.",
+      "addSuccess": "Job added successfully.",
+      "addError": "Error adding job.",
+      "deleteSuccess": "Job deleted successfully.",
+      "deleteError": "Error deleting job.",
+      "updateSuccess": "Job updated successfully.",
+      "updateError": "Error updating job.",
+      "errors": {
+        "loadError": "Unknown error loading jobs.",
+        "addError": "Unknown error adding job.",
+        "deleteError": "Unknown error deleting job.",
+        "updateError": "Unknown error updating job."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Tools for:",
+      "dialogTitleLoading": "Loading...",
+      "sectionTitle": "Tool List",
+      "addLabel": "Name of the new tool",
+      "addButton": "Add",
+      "closeButton": "Close",
+      "loading": "Loading tools...",
+      "noResults": "No tools for this job.",
+      "noJobSelected": "No job selected to add the tool.",
+      "emptyWarning": "Tool name cannot be empty.",
+      "addSuccess": "Tool added successfully.",
+      "addError": "Error adding tool.",
+      "deleteSuccess": "Tool deleted successfully.",
+      "deleteError": "Error deleting tool.",
+      "errors": {
+        "loadError": "Unknown error loading tools.",
+        "addError": "Unknown error adding tool.",
+        "deleteError": "Unknown error deleting tool."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancel",
+      "confirmButton": "Confirm",
+      "deleteJob": {
+        "title": "Confirm job deletion",
+        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
       },
-      "periods": {
-        "lastWeek": "Last Week",
-        "lastMonth": "Last Month",
-        "lastQuarter": "Last Quarter",
-        "last6Months": "Last 6 Months",
-        "lastYear": "Last Year",
-        "allTime": "All Time"
+      "deleteTool": {
+        "title": "Confirm tool deletion",
+        "message": "Are you sure you want to delete this tool?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Vehicle Administration",
+    "subtitle": "Manage all fleet vehicles",
+    "addButton": "New Vehicle",
+    "search": {
+      "placeholder": "Search by plate, name, type or category..."
+    },
+    "table": {
+      "plate": "Plate",
+      "name": "Name",
+      "type": "Type",
+      "category": "Category",
+      "actions": "Actions",
+      "noResults": "No vehicles found",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "displayedRows": "{{from}}-{{to}} of {{count}}"
+    },
+    "types": {
+      "owned": "Owned",
+      "rented": "Rented"
+    },
+    "categories": {
+      "truck_26": "Truck 26",
+      "truck_49": "Truck 49",
+      "truck_001": "Truck 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "New Vehicle",
+      "titleEdit": "Edit Vehicle",
+      "plateLabel": "Plate",
+      "nameLabel": "Name",
+      "typeLabel": "Type",
+      "typeHelper": "Select whether the vehicle is owned or rented",
+      "categoryLabel": "Category",
+      "categoryHelper": "Select the vehicle category",
+      "cancelButton": "Cancel",
+      "createButton": "Create",
+      "updateButton": "Update",
+      "requiredFields": "All fields are required"
+    },
+    "deleteDialog": {
+      "title": "Confirm Deletion",
+      "message": "Are you sure you want to delete vehicle",
+      "warning": "This action cannot be undone.",
+      "cancelButton": "Cancel",
+      "deleteButton": "Delete"
+    },
+    "snackbar": {
+      "loadError": "Error loading vehicles",
+      "createSuccess": "Vehicle created successfully",
+      "createError": "Error saving vehicle",
+      "updateSuccess": "Vehicle updated successfully",
+      "updateError": "Error saving vehicle",
+      "deleteSuccess": "Vehicle deleted successfully",
+      "deleteError": "Error deleting vehicle"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "View and edit your profile information",
+    "editButton": "Edit Profile",
+    "saveButton": "Save Changes",
+    "saving": "Saving...",
+    "cancelButton": "Cancel",
+    "tryAgain": "Try Again",
+    "errorLoading": "Error Loading Profile",
+    "errorLoadingDesc": "Could not load user profile data.",
+    "changesCancelled": "Changes cancelled",
+    "updateSuccess": "Profile updated successfully",
+    "photo": {
+      "altText": "Profile",
+      "sizeError": "Image size must be less than 5MB",
+      "viewLabel": "View photo",
+      "dialogTitle": "Profile Photo",
+      "downloadLabel": "Download photo"
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin"
+    },
+    "sections": {
+      "accountInfo": "Account Information",
+      "personalInfo": "Personal Information",
+      "security": "Account Security"
+    },
+    "fields": {
+      "username": "Username",
+      "usernamePlaceholder": "Enter username",
+      "email": "Email",
+      "emailPlaceholder": "Enter email address",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "phone": "Phone",
+      "phonePlaceholder": "Enter phone number",
+      "birthDate": "Birth Date",
+      "address": "Address",
+      "addressPlaceholder": "Enter address",
+      "idNumber": "ID Number",
+      "idNumberPlaceholder": "Enter ID number",
+      "idType": "ID Type",
+      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
+    },
+    "idTypes": {
+      "select": "Select ID Type",
+      "driversLicense": "Driver's License",
+      "stateId": "State ID",
+      "greenCard": "Green Card",
+      "passport": "Passport"
+    },
+    "security": {
+      "changePassword": "Change Password",
+      "cancelChange": "Cancel",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "requirements": "Password Requirements:",
+      "req1": "At least 6 characters long",
+      "req2": "New password must be different from current password",
+      "req3": "Current password is required to change password"
+    },
+    "errors": {
+      "currentPasswordRequired": "Current password is required to change password",
+      "newPasswordRequired": "New password is required",
+      "passwordsMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters long",
+      "updateError": "Error updating profile",
+      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
+      "emailTaken": "This email is already registered to another user",
+      "idTaken": "This ID number is already registered to another user"
+    }
+  },
+  "customers": {
+    "title": "Our Allied Companies",
+    "subtitle": "Here you can manage the list of companies we work with.",
+    "sectionTitle": "Company List",
+    "add": {
+      "label": "Name of the new company",
+      "button": "Add",
+      "emptyWarning": "Company name cannot be empty.",
+      "success": "Company added successfully.",
+      "error": "Error adding company."
+    },
+    "search": {
+      "label": "Search company"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete this company?",
+      "success": "Company deleted successfully.",
+      "error": "Error deleting company."
+    },
+    "loading": "Loading companies...",
+    "noResults": "No companies match your search.",
+    "errors": {
+      "loadError": "Unknown error loading companies.",
+      "addError": "Unknown error adding company.",
+      "deleteError": "Unknown error deleting company."
+    }
+  },
+  "jobsAndTools": {
+    "title": "Jobs & Tools Management",
+    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
+    "jobs": {
+      "sectionTitle": "Job List",
+      "addLabel": "Name of the new job",
+      "addButton": "Add Job",
+      "searchLabel": "Search job",
+      "loading": "Loading jobs...",
+      "noResults": "No jobs found.",
+      "emptyWarning": "Job name cannot be empty.",
+      "noChanges": "No changes to save.",
+      "addSuccess": "Job added successfully.",
+      "addError": "Error adding job.",
+      "deleteSuccess": "Job deleted successfully.",
+      "deleteError": "Error deleting job.",
+      "updateSuccess": "Job updated successfully.",
+      "updateError": "Error updating job.",
+      "errors": {
+        "loadError": "Unknown error loading jobs.",
+        "addError": "Unknown error adding job.",
+        "deleteError": "Unknown error deleting job.",
+        "updateError": "Unknown error updating job."
+      }
+    },
+    "tools": {
+      "dialogTitle": "Tools for:",
+      "dialogTitleLoading": "Loading...",
+      "sectionTitle": "Tool List",
+      "addLabel": "Name of the new tool",
+      "addButton": "Add",
+      "closeButton": "Close",
+      "loading": "Loading tools...",
+      "noResults": "No tools for this job.",
+      "noJobSelected": "No job selected to add the tool.",
+      "emptyWarning": "Tool name cannot be empty.",
+      "addSuccess": "Tool added successfully.",
+      "addError": "Error adding tool.",
+      "deleteSuccess": "Tool deleted successfully.",
+      "deleteError": "Error deleting tool.",
+      "errors": {
+        "loadError": "Unknown error loading tools.",
+        "addError": "Unknown error adding tool.",
+        "deleteError": "Unknown error deleting tool."
+      }
+    },
+    "confirmDialog": {
+      "cancelButton": "Cancel",
+      "confirmButton": "Confirm",
+      "deleteJob": {
+        "title": "Confirm job deletion",
+        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
       },
-      "status": {
-        "all": "All statuses",
+      "deleteTool": {
+        "title": "Confirm tool deletion",
+        "message": "Are you sure you want to delete this tool?"
+      }
+    }
+  },
+  "trucks": {
+    "title": "Vehicle Administration",
+    "subtitle": "Manage all fleet vehicles",
+    "addButton": "New Vehicle",
+    "search": {
+      "placeholder": "Search by plate, name, type or category..."
+    },
+    "table": {
+      "plate": "Plate",
+      "name": "Name",
+      "type": "Type",
+      "category": "Category",
+      "actions": "Actions",
+      "noResults": "No vehicles found",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "displayedRows": "{{from}}-{{to}} of {{count}}"
+    },
+    "types": {
+      "owned": "Owned",
+      "rented": "Rented"
+    },
+    "categories": {
+      "truck_26": "Truck 26",
+      "truck_49": "Truck 49",
+      "truck_001": "Truck 001",
+      "vans": "Vans",
+      "trailer": "Trailer"
+    },
+    "modal": {
+      "titleCreate": "New Vehicle",
+      "titleEdit": "Edit Vehicle",
+      "plateLabel": "Plate",
+      "nameLabel": "Name",
+      "typeLabel": "Type",
+      "typeHelper": "Select whether the vehicle is owned or rented",
+      "categoryLabel": "Category",
+      "categoryHelper": "Select the vehicle category",
+      "cancelButton": "Cancel",
+      "createButton": "Create",
+      "updateButton": "Update",
+      "requiredFields": "All fields are required"
+    },
+    "deleteDialog": {
+      "title": "Confirm Deletion",
+      "message": "Are you sure you want to delete vehicle",
+      "warning": "This action cannot be undone.",
+      "cancelButton": "Cancel",
+      "deleteButton": "Delete"
+    },
+    "snackbar": {
+      "loadError": "Error loading vehicles",
+      "createSuccess": "Vehicle created successfully",
+      "createError": "Error saving vehicle",
+      "updateSuccess": "Vehicle updated successfully",
+      "updateError": "Error saving vehicle",
+      "deleteSuccess": "Vehicle deleted successfully",
+      "deleteError": "Error deleting vehicle"
+    }
+  },
+  "operators": {
+    "tabs": {
+      "operators": "Operators",
+      "freelancers": "Freelancers"
+    },
+    "error": {
+      "title": "Error Loading Data"
+    },
+    "freelancers": {
+      "title": "Freelancers Directory",
+      "subtitle": "Manage and view freelancer information",
+      "totalLabel": "Total Freelancers",
+      "createButton": "Create Freelancer",
+      "searchPlaceholder": "Search freelancers by name, code, phone, or ID number...",
+      "tableTitle": "Freelancers",
+      "tableResultsSuffix": "results",
+      "stats": {
+        "total": "Total Freelancers",
+        "active": "Active Status",
+        "searchResults": "Search Results"
+      },
+      "pagination": {
+        "showing": "Showing {{from}} - {{to}} of {{total}} freelancers",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {{page}}"
+      }
+    },
+    "snackbar": {
+      "loadError": "Error loading operators",
+      "activateSuccess": "Operator activated successfully",
+      "activateError": "Error activating operator",
+      "updateSuccess": "Operator updated successfully",
+      "updateError": "Error updating operator",
+      "deleteSuccess": "Operator deactivated successfully",
+      "deleteError": "Error deactivating operator",
+      "addChildSuccess": "Child added successfully",
+      "addChildError": "Error adding child",
+      "freelancerCreated": "Freelancer created successfully",
+      "freelancerCreatedWarning": "Freelancer created, but error updating list"
+    },
+    "header": {
+      "title": "Operators Directory",
+      "subtitle": "Manage and view operator information",
+      "totalLabel": "Total Operators",
+      "registerButton": "Register Operator",
+      "searchPlaceholder": "Search operators by name, code, email, phone, or license...",
+      "stats": {
+        "active": "Active Operators",
+        "inactive": "Inactive Operators",
+        "withChildren": "With Children",
+        "searchResults": "Search Results"
+      },
+      "tabs": {
+        "active": "Active Operators",
+        "inactive": "Inactive Operators"
+      }
+    },
+    "table": {
+      "activeTitle": "Active Operators",
+      "inactiveTitle": "Inactive Operators",
+      "resultsSuffix": "results",
+      "columns": {
+        "operator": "Operator",
+        "contact": "Contact",
+        "license": "License",
+        "salaryInfo": "Salary Info",
+        "family": "Family",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "salary": {
+        "perHour": "per hour",
+        "perDay": "per day"
+      },
+      "children": "children",
+      "noResults": {
+        "title": "No operators found",
+        "subtitle": "Try adjusting your search terms"
+      },
+      "code": "Code",
+      "loading": "Loading inactive operators...",
+      "activateButton": "Activate",
+      "menu": {
+        "viewDetails": "View Details",
+        "edit": "Edit",
+        "manageChildren": "Manage Children",
+        "viewLoans": "View Loans",
+        "createLoan": "Create Loan",
+        "sendEmail": "Send Email",
+        "deactivate": "Deactivate"
+      }
+    },
+    "registerModal": {
+      "title": "Register New Operator",
+      "stepIndicator": "Step {{current}} of {{total}}",
+      "steps": {
+        "personalData": "Personal Data",
+        "contactInfo": "Contact Info",
+        "operatorData": "Operator Data",
+        "documents": "Documents",
+        "children": "Children"
+      },
+      "stepTooltip": "Go to {{name}}",
+      "confirmClose": {
+        "title": "Discard Changes?",
+        "subtitle": "You have unsaved data",
+        "message": "All the information you've entered will be lost. Are you sure you want to close?",
+        "keepEditing": "Keep Editing",
+        "discard": "Discard & Close"
+      },
+      "footer": {
+        "previous": "Previous",
+        "next": "Next",
+        "cancel": "Cancel",
+        "register": "Register Operator",
+        "saving": "Saving..."
+      },
+      "validation": {
+        "fixErrors": "Please fix validation errors in this step",
+        "fixBeforeSubmit": "Please fix validation errors before submitting",
+        "firstName": "First name is required",
+        "lastName": "Last name is required",
+        "birthDate": "Birth date is required",
+        "typeId": "ID type is required",
+        "idNumber": "ID number is required",
+        "phone": "Phone is required",
+        "email": "Email is required",
+        "emailInvalid": "Invalid email format",
+        "code": "Code is required",
+        "numberLicence": "License number is required",
+        "tShirtSize": "T-shirt size is required",
+        "salaryType": "Salary type is required",
+        "salary": "Valid daily salary is required",
+        "hourlySalary": "Valid hourly salary is required"
+      },
+      "snackbar": {
+        "success": "Operator registered successfully",
+        "fallbackError": "Server validation error"
+      }
+    },
+    "loansDialog": {
+      "title": "Loans - {{name}}",
+      "loanCount": "{{count}} loan(s) | {{unpaid}} unpaid",
+      "totalUnpaid": "Total Unpaid: {{amount}}",
+      "allPaid": "All Paid",
+      "statusFilter": {
+        "label": "Status Filter",
+        "all": "All",
         "unpaid": "Unpaid",
         "paid": "Paid",
         "canceled": "Canceled"
       },
-      "kpi": {
-        "totalReceivable": "Total Receivable",
-        "totalReceivableSub": "Accounts pending collection",
-        "totalLoaned": "Total Loaned",
-        "totalLoanedSub": "Total disbursed",
-        "totalCollected": "Total Collected",
-        "totalCollectedSub": "Payments received",
-        "unpaidLoans": "Unpaid Loans",
-        "unpaidLoansSub": "Loans still pending"
-      },
-      "recovery": {
-        "title": "Overall Recovery Rate",
-        "collected": "Collected",
-        "pending": "Pending"
-      },
-      "tabs": {
-        "overview": "Overview",
-        "loans": "Loan History",
-        "weekly": "Weekly"
-      },
-      "overview": {
-        "title": "Debt Breakdown by Operator",
-        "operatorsCount": "{{count}} operators",
-        "empty": "No loans match the current filters",
-        "loanCount": "{{count}} loan",
-        "loanCount_other": "{{count}} loans",
-        "loaned": "Loaned",
+      "status": {
+        "unpaid": "Unpaid",
         "paid": "Paid",
-        "pending": "Pending",
-        "loansOf": "Loans — {{name}}"
-      },
-      "loan": {
-        "noDescription": "No description",
-        "created": "Created",
-        "by": "By",
-        "updated": "Updated",
-        "paid": "Paid",
-        "due": "Due"
-      },
-      "history": {
-        "title": "All Loans",
-        "recordsCount": "{{count}} records"
+        "canceled": "Canceled"
       },
       "table": {
-        "operator": "Operator",
         "description": "Description",
-        "createdBy": "Created by",
-        "total": "Total",
+        "totalAmount": "Total Amount",
         "paid": "Paid",
         "remaining": "Remaining",
-        "status": "Status",
-        "date": "Date",
         "progress": "Progress",
-        "totalRow": "Total ({{count}} loans)"
+        "status": "Status",
+        "created": "Created",
+        "actions": "Actions",
+        "createdBy": "Created by: {{name}}",
+        "updated": "Updated: {{date}}"
       },
-      "weekly": {
-        "title": "Loans by Week",
-        "empty": "No data for this period",
-        "loanCount": "{{count}} loan",
-        "loanCount_other": "{{count}} loans"
+      "empty": "No loans found for this operator",
+      "tooltips": {
+        "registerPayment": "Register Payment",
+        "cancelLoan": "Cancel Loan"
       },
-      "footer": {
-        "hint": "Click any operator in the <strong>Overview</strong> tab to expand their individual loan details. Use the status filter buttons to isolate unpaid, paid, or canceled loans."
+      "menu": {
+        "registerPayment": "Register Payment",
+        "cancelLoan": "Cancel Loan",
+        "noActions": "No actions available"
+      },
+      "snackbar": {
+        "statusUpdated": "Loan status updated to {{status}}",
+        "statusError": "Error updating status"
+      },
+      "closeButton": "Close"
+    },
+    "detailsModal": {
+      "title": "Operator Details",
+      "closeButton": "Close",
+      "sections": {
+        "personal": "Personal Information",
+        "contact": "Contact Information",
+        "work": "Work Information",
+        "family": "Family Information",
+        "license": "License Images"
+      },
+      "fields": {
+        "code": "Code",
+        "birthDate": "Birth Date",
+        "idType": "ID Type",
+        "idNumber": "ID Number",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "licenseNumber": "License Number",
+        "shiftName": "Shift Name",
+        "shiftSize": "Shift Size",
+        "salaryType": "Salary Type",
+        "hourlySalary": "Hourly Salary",
+        "dailySalary": "Daily Salary",
+        "status": "Status",
+        "numChildren": "Number of Children"
+      },
+      "salaryType": {
+        "hour": "Per Hour",
+        "day": "Per Day"
+      },
+      "children": {
+        "detailsTitle": "Children Details",
+        "name": "Name",
+        "birthDate": "Birth Date",
+        "gender": "Gender"
+      },
+      "license": {
+        "front": "Front",
+        "back": "Back",
+        "frontAlt": "License Front",
+        "backAlt": "License Back",
+        "viewFull": "View full image",
+        "download": "Download",
+        "downloading": "Downloading...",
+        "close": "Close",
+        "photo": "Profile Photo",
+        "photoAlt": "Profile Photo",
+        "viewPhoto": "View photo"
+      }
+    },
+    "editModal": {
+      "title": "Edit Operator - {{name}}",
+      "sections": {
+        "personal": "Personal Information",
+        "contact": "Contact Information",
+        "work": "Work Information",
+        "files": "Photos and Documents"
+      },
+      "fields": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "birthDate": "Birth Date",
+        "idType": "ID Type",
+        "idTypePlaceholder": "Select ID Type",
+        "idNumber": "ID Number",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "operatorCode": "Operator Code",
+        "licenseNumber": "License Number",
+        "shiftName": "Shift Name",
+        "shiftSize": "Shift Size",
+        "shiftSizePlaceholder": "Select Size",
+        "salaryType": "Salary Type",
+        "dailySalary": "Daily Salary",
+        "hourlySalary": "Hourly Salary",
+        "status": "Status",
+        "profilePhoto": "Profile Photo",
+        "licenseFront": "License Front",
+        "licenseBack": "License Back"
+      },
+      "idTypes": {
+        "greenCard": "Green Card",
+        "passport": "Passport",
+        "driversLicense": "Driver's License",
+        "stateId": "State ID",
+        "nationalId": "National ID"
+      },
+      "shiftSizes": {
+        "s": "Small",
+        "m": "Medium",
+        "l": "Large",
+        "xl": "Extra Large"
+      },
+      "salaryTypes": {
+        "day": "Per Day",
+        "hour": "Per Hour"
+      },
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "freelance": "Freelance"
+      },
+      "currentPhoto": "Current photo",
+      "currentFront": "Current front",
+      "currentBack": "Current back",
+      "buttons": {
+        "cancel": "Cancel",
+        "save": "Save Changes",
+        "saving": "Saving..."
+      },
+      "errors": {
+        "unknown": "Unknown error saving operator"
+      }
+    },
+    "createLoanDialog": {
+      "title": "Create Loan",
+      "forOperator": "For: {{name}}",
+      "fields": {
+        "amount": "Loan Amount",
+        "amountHelper": "Enter the total amount to be paid",
+        "amountPlaceholder": "0.00",
+        "description": "Description",
+        "descriptionHelper": "Provide a description for this loan",
+        "descriptionPlaceholder": "e.g., Emergency loan for medical expenses"
+      },
+      "note": "<strong>Note:</strong> The loan will be created with status \"unpaid\". The operator will be able to make payments towards this loan over time.",
+      "validation": {
+        "amountRequired": "Amount is required",
+        "amountPositive": "Amount must be greater than 0",
+        "descriptionRequired": "Description is required",
+        "descriptionMinLength": "Description must be at least 5 characters"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "create": "Create Loan",
+        "creating": "Creating..."
+      },
+      "snackbar": {
+        "success": "Loan created successfully",
+        "error": "Error creating loan"
+      }
+    },
+    "createFreelancer": {
+      "title": "Create Freelancer",
+      "subtitle": "Quick registration for freelance operators",
+      "fields": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "idNumber": "ID Number",
+        "idType": "ID Type",
+        "phone": "Phone",
+        "address": "Address",
+        "licenseNumber": "License Number",
+        "salary": "Salary"
+      },
+      "idTypes": {
+        "id_number": "ID Number",
+        "passport": "Passport",
+        "drivers_license": "Driver's License",
+        "green_card": "Green Card"
+      },
+      "validation": {
+        "firstName": "First name is required",
+        "lastName": "Last name is required",
+        "idNumber": "ID number is required",
+        "idType": "ID type is required",
+        "phone": "Phone is required",
+        "salary": "Salary must be a number",
+        "fixErrors": "Please fix the validation errors"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "create": "Create Freelancer",
+        "creating": "Creating..."
+      },
+      "snackbar": {
+        "success": "Freelancer created successfully",
+        "error": "Error creating freelancer"
       }
     }
+  },
+  "company": {
+    "title": "My Company",
+    "subtitle": "Manage your company information",
+    "createdAt": "Created: {{date}}",
+    "notFound": {
+      "title": "Company Not Found",
+      "message": "Unable to load company information."
+    },
+    "logo": {
+      "alt": "Company Logo",
+      "upload": "Upload logo",
+      "remove": "Remove logo",
+      "errorFormat": "Invalid image format. Allowed: JPEG, PNG, GIF, WebP",
+      "errorSize": "Logo image must be less than 5MB",
+      "fieldErrorFormat": "Invalid image format",
+      "fieldErrorSize": "Image size must be less than 5MB",
+      "viewFull": "View full image",
+      "download": "Download",
+      "downloading": "Downloading...",
+      "close": "Close"
+    },
+    "buttons": {
+      "edit": "Edit Company",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "validating": "Validating..."
+    },
+    "sections": {
+      "info": "Company Information",
+      "subscription": "Subscription Details",
+      "additional": "Additional Details"
+    },
+    "fields": {
+      "name": "Company Name",
+      "namePlaceholder": "Enter company name",
+      "license": "License Number (MC Number)",
+      "licensePlaceholder": "e.g., MC-123456",
+      "address": "Address",
+      "addressPlaceholder": "Enter company address",
+      "zipCode": "ZIP Code",
+      "zipCodePlaceholder": "Enter ZIP code",
+      "subscriptionPlan": "Subscription Plan"
+    },
+    "subscription": {
+      "plan": "Plan",
+      "status": "Status",
+      "price": "Price",
+      "priceValue": "${{amount}}/mo",
+      "duration": "Duration",
+      "durationValue": "{{months}} month(s)",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "noSubscription": "No subscription"
+    },
+    "additional": {
+      "createdAt": "Created At"
+    },
+    "snackbar": {
+      "loadError": "Error loading company data",
+      "nameRequired": "Company name is required",
+      "licenseRequired": "License number is required",
+      "noChanges": "No changes detected",
+      "licenseExists": "License number \"{{license}}\" is already registered to another company: {{company}}",
+      "updateSuccess": "Company updated successfully",
+      "updateError": "Error updating company",
+      "cancelInfo": "Changes cancelled"
+    },
+    "validation": {
+      "nameRequired": "Company name is required",
+      "licenseRequired": "License number is required",
+      "licenseExists": "Already registered to: {{company}}"
+    },
+    "na": "N/A"
+  },
+  "admins": {
+    "title": "Company Administrators",
+    "subtitle": "Manage your company's admin users",
+    "companyId": "Company ID: {{id}}",
+    "totalUsers": "Total Users: {{count}}",
+    "addAdmin": "Add New Admin",
+    "createFirstAdmin": "Create First Admin",
+    "filters": {
+      "searchPlaceholder": "Search by username, name, or email...",
+      "statusAll": "All Users",
+      "statusActive": "Active Only",
+      "statusInactive": "Inactive Only"
+    },
+    "card": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "superuser": "SuperUser",
+      "born": "Born: {{date}}",
+      "created": "Created: {{date}}"
+    },
+    "idTypes": {
+      "DL": "Driver's License",
+      "SI": "State ID",
+      "GC": "Green Card",
+      "PA": "Passport",
+      "driver license": "Driver's License",
+      "Passport": "Passport"
+    },
+    "actions": {
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "reactivating": "Reactivating...",
+      "grantSuperuser": "Grant SuperUser",
+      "granting": "Granting...",
+      "revokeSuperuser": "Revoke SuperUser",
+      "revoking": "Revoking...",
+      "tooltipSelf": "Cannot perform this action on your own account"
+    },
+    "empty": {
+      "title": "No users found",
+      "withFilter": "Try adjusting your search or filter criteria.",
+      "noAdmins": "No administrators have been created yet."
+    },
+    "deactivationModal": {
+      "titleDeactivate": "Deactivate Admin",
+      "titleVerify": "Enter Verification Code",
+      "sendingCode": "Sending verification code...",
+      "confirmQuestion": "Are you sure you want to deactivate this administrator?",
+      "codeSentNote": "A verification code will be sent to their email.",
+      "codeReceivedNote": "A 4-digit verification code has been sent to the admin's email.",
+      "codeLabel": "Verification Code",
+      "codePlaceholder": "Enter 4-digit code",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "deactivating": "Deactivating..."
+    },
+    "snackbar": {
+      "loadError": "Error loading users",
+      "codeSent": "Verification code sent to admin email",
+      "deactivateRequestError": "Error requesting deactivation",
+      "codeRequired": "Please enter the verification code",
+      "deactivateConfirmError": "Error confirming deactivation",
+      "deactivateSuccess": "Admin deactivated successfully",
+      "reactivateError": "Error reactivating admin",
+      "reactivateSuccess": "Admin reactivated successfully",
+      "alreadySuperuser": "User is already a superuser",
+      "notSuperuser": "User is not a superuser",
+      "grantError": "Error granting superuser permission",
+      "grantSuccess": "Superuser permission granted successfully",
+      "revokeError": "Error revoking superuser permission",
+      "revokeSuccess": "Superuser permission revoked successfully"
+    }
+  }
 }

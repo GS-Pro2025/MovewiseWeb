@@ -1,51 +1,28 @@
 // trucks/ui/TrucksPage.tsx
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Paper, Button, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, IconButton, Dialog,
-  DialogTitle, DialogContent, DialogActions, TextField, Chip,
-  CircularProgress, Alert, Tooltip, TablePagination, InputAdornment,
-  Select, MenuItem, FormControl, InputLabel, FormHelperText
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  LocalShipping as TruckIcon
-} from '@mui/icons-material';
+  Search,
+  X,
+  Plus,
+  Pencil,
+  Trash2,
+  Truck,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { useSnackbar } from 'notistack';
-import { 
-  fetchTrucks, 
-  createTruck, 
-  updateTruck, 
+import { useTranslation } from 'react-i18next';
+import {
+  fetchTrucks,
+  createTruck,
+  updateTruck,
   deleteTruck,
-  Truck, 
+  Truck as TruckType,
   TruckFormData,
-  TruckResponse 
+  TruckResponse
 } from '../data/repositoryTrucks';
 
-const COLORS = {
-  primary: '#092961',
-  secondary: '#FE9844',
-  background: '#f5f5f5'
-};
-
-// Opciones para el select de tipo
-const TRUCK_TYPES = [
-  { value: 'owned', label: 'Propio' },
-  { value: 'rented', label: 'Rentado' }
-];
-
-// Opciones para categorías basadas en los datos que vimos
-const TRUCK_CATEGORIES = [
-  { value: 'truck_26', label: 'Camión 26' },
-  { value: 'truck_49', label: 'Camión 49' },
-  { value: 'truck_001', label: 'Camión 001' },
-  { value: 'vans', label: 'Vans' },
-  { value: 'trailer', label: 'Trailer' }
-];
+// ─── Constants ─────────────────────────────────────────────────────────────────
 
 const initialFormData: TruckFormData = {
   number_truck: '',
@@ -54,37 +31,123 @@ const initialFormData: TruckFormData = {
   category: 'truck_26'
 };
 
+// ─── Reusable primitives ───────────────────────────────────────────────────────
+
+const InputField: React.FC<{
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  uppercase?: boolean;
+}> = ({ label, value, onChange, placeholder, required, uppercase }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-sm font-semibold text-slate-700">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    <input
+      type="text"
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(uppercase ? e.target.value.toUpperCase() : e.target.value)}
+      className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:border-[#092961] focus:outline-none transition-colors"
+    />
+  </div>
+);
+
+const SelectField: React.FC<{
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  helper?: string;
+  required?: boolean;
+}> = ({ label, value, onChange, options, helper, required }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-sm font-semibold text-slate-700">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:border-[#092961] focus:outline-none transition-colors bg-white appearance-none"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+    {helper && <p className="text-xs text-slate-500 mt-0.5">{helper}</p>}
+  </div>
+);
+
+// ─── Modal overlay ─────────────────────────────────────────────────────────────
+
+const Modal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  maxWidth?: string;
+}> = ({ open, onClose, children, maxWidth = 'max-w-lg' }) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+      onClick={onClose}
+    >
+      <div
+        className={`bg-white rounded-2xl shadow-2xl w-full ${maxWidth} overflow-hidden`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+
 const TrucksPage: React.FC = () => {
-  const [trucks, setTrucks] = useState<Truck[]>([]);
+  const { t } = useTranslation();
+
+  const TRUCK_TYPES = [
+    { value: 'owned',  label: t('trucks.types.owned') },
+    { value: 'rented', label: t('trucks.types.rented') }
+  ];
+
+  const TRUCK_CATEGORIES = [
+    { value: 'truck_26',  label: t('trucks.categories.truck_26') },
+    { value: 'truck_49',  label: t('trucks.categories.truck_49') },
+    { value: 'truck_001', label: t('trucks.categories.truck_001') },
+    { value: 'vans',      label: t('trucks.categories.vans') },
+    { value: 'trailer',   label: t('trucks.categories.trailer') }
+  ];
+
+  const [trucks, setTrucks] = useState<TruckType[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedTruck, setSelectedTruck] = useState<Truck | null>(null);
+  const [selectedTruck, setSelectedTruck] = useState<TruckType | null>(null);
   const [formData, setFormData] = useState<TruckFormData>(initialFormData);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
-  
+
   const { enqueueSnackbar } = useSnackbar();
 
   const loadTrucks = async () => {
     try {
       setLoading(true);
       const response: TruckResponse = await fetchTrucks(page + 1, rowsPerPage);
-      
-      // ✅ IMPORTANTE: Accedemos a response.results.data que es donde están los camiones
       if (response?.results?.data && Array.isArray(response.results.data)) {
         setTrucks(response.results.data);
         setTotalCount(response.count || response.results.data.length);
       } else {
-        console.error('Estructura de respuesta inesperada:', response);
         setTrucks([]);
         setTotalCount(0);
       }
-    } catch (error) {
-      enqueueSnackbar('Error al cargar los vehículos', { variant: 'error' });
-      console.error('Error loading trucks:', error);
+    } catch {
+      enqueueSnackbar(t('trucks.snackbar.loadError'), { variant: 'error' });
       setTrucks([]);
       setTotalCount(0);
     } finally {
@@ -92,16 +155,14 @@ const TrucksPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadTrucks();
-  }, [page, rowsPerPage]);
+  useEffect(() => { loadTrucks(); }, [page, rowsPerPage]);
 
-  const handleOpenModal = (truck?: Truck) => {
+  const handleOpenModal = (truck?: TruckType) => {
     if (truck) {
       setSelectedTruck(truck);
       setFormData({
         number_truck: truck.number_truck,
-        type: truck.type.toLowerCase(), // Asegurar minúsculas
+        type: truck.type.toLowerCase(),
         name: truck.name,
         category: truck.category
       });
@@ -118,7 +179,7 @@ const TrucksPage: React.FC = () => {
     setFormData(initialFormData);
   };
 
-  const handleOpenDeleteDialog = (truck: Truck) => {
+  const handleOpenDeleteDialog = (truck: TruckType) => {
     setSelectedTruck(truck);
     setDeleteDialogOpen(true);
   };
@@ -129,25 +190,25 @@ const TrucksPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Validación básica
     if (!formData.number_truck || !formData.name || !formData.type || !formData.category) {
-      enqueueSnackbar('Todos los campos son requeridos', { variant: 'warning' });
+      enqueueSnackbar(t('trucks.modal.requiredFields'), { variant: 'warning' });
       return;
     }
-
     try {
       if (selectedTruck) {
         await updateTruck(selectedTruck.id_truck, formData);
-        enqueueSnackbar('Vehículo actualizado correctamente', { variant: 'success' });
+        enqueueSnackbar(t('trucks.snackbar.updateSuccess'), { variant: 'success' });
       } else {
         await createTruck(formData);
-        enqueueSnackbar('Vehículo creado correctamente', { variant: 'success' });
+        enqueueSnackbar(t('trucks.snackbar.createSuccess'), { variant: 'success' });
       }
       handleCloseModal();
       loadTrucks();
-    } catch (error) {
-      enqueueSnackbar('Error al guardar el vehículo', { variant: 'error' });
-      console.error('Error saving truck:', error);
+    } catch {
+      enqueueSnackbar(
+        selectedTruck ? t('trucks.snackbar.updateError') : t('trucks.snackbar.createError'),
+        { variant: 'error' }
+      );
     }
   };
 
@@ -155,377 +216,279 @@ const TrucksPage: React.FC = () => {
     if (!selectedTruck) return;
     try {
       await deleteTruck(selectedTruck.id_truck);
-      enqueueSnackbar('Vehículo eliminado correctamente', { variant: 'success' });
+      enqueueSnackbar(t('trucks.snackbar.deleteSuccess'), { variant: 'success' });
       handleCloseDeleteDialog();
       loadTrucks();
-    } catch (error) {
-      enqueueSnackbar('Error al eliminar el vehículo', { variant: 'error' });
-      console.error('Error deleting truck:', error);
+    } catch {
+      enqueueSnackbar(t('trucks.snackbar.deleteError'), { variant: 'error' });
     }
   };
 
-  // Función para obtener el label del tipo
-  const getTypeLabel = (type: string) => {
-    const typeLower = type.toLowerCase();
-    const found = TRUCK_TYPES.find(t => t.value === typeLower);
-    return found ? found.label : type;
-  };
+  const getTypeLabel = (type: string) =>
+    TRUCK_TYPES.find(tp => tp.value === type.toLowerCase())?.label ?? type;
 
-  // Función para obtener el label de la categoría
-  const getCategoryLabel = (category: string) => {
-    const found = TRUCK_CATEGORIES.find(c => c.value === category);
-    return found ? found.label : category;
-  };
+  const getCategoryLabel = (category: string) =>
+    TRUCK_CATEGORIES.find(c => c.value === category)?.label ?? category;
 
-  // Filtrado con búsqueda
-  const filteredTrucks = trucks.filter(truck => 
-    truck.number_truck.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    truck.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    truck.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    truck.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTrucks = trucks.filter(truck =>
+    [truck.number_truck, truck.name, truck.type, truck.category]
+      .some(v => v.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const totalPages = Math.ceil(totalCount / rowsPerPage);
+  const from = page * rowsPerPage + 1;
+  const to = Math.min((page + 1) * rowsPerPage, totalCount);
+  const isFormValid = !!(formData.number_truck && formData.name && formData.type && formData.category);
+
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box
-            sx={{
-              width: 50,
-              height: 50,
-              borderRadius: 2,
-              backgroundColor: COLORS.primary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <TruckIcon sx={{ color: 'white', fontSize: 30 }} />
-          </Box>
-          <Box>
-            <Typography variant="h4" sx={{ color: COLORS.primary, fontWeight: 'bold' }}>
-              Administración de Vehículos
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Gestiona todos los vehículos de la flota
-            </Typography>
-          </Box>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
+    <div className="p-6 min-h-screen bg-slate-50">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-[#092961] flex items-center justify-center shadow-md">
+            <Truck className="text-white w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-[#092961]">{t('trucks.title')}</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{t('trucks.subtitle')}</p>
+          </div>
+        </div>
+        <button
           onClick={() => handleOpenModal()}
-          sx={{
-            backgroundColor: COLORS.primary,
-            '&:hover': { backgroundColor: '#051f47' },
-            textTransform: 'none',
-            px: 3,
-            py: 1
-          }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#092961] hover:bg-[#051f47] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm hover:shadow-md"
         >
-          Nuevo Vehículo
-        </Button>
-      </Box>
+          <Plus className="w-4 h-4" />
+          {t('trucks.addButton')}
+        </button>
+      </div>
 
-      {/* Search Bar */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Buscar por placa, nombre, tipo o categoría..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: COLORS.primary }} />
-              </InputAdornment>
-            ),
-            endAdornment: searchTerm && (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setSearchTerm('')} size="small">
-                  <ClearIcon />
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              '&:hover fieldset': { borderColor: COLORS.primary },
-              '&.Mui-focused fieldset': { borderColor: COLORS.primary }
-            }
-          }}
-        />
-      </Paper>
+      {/* ── Search ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#092961]" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={t('trucks.search.placeholder')}
+            className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg text-sm focus:border-[#092961] focus:outline-none transition-colors"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
 
-      {/* Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
-        <Table>
-          <TableHead sx={{ backgroundColor: COLORS.primary }}>
-            <TableRow>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Placa</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nombre</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Categoría</TableCell>
-              <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="center">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
-                  <CircularProgress sx={{ color: COLORS.primary }} />
-                </TableCell>
-              </TableRow>
-            ) : filteredTrucks.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
-                  <Alert severity="info">No se encontraron vehículos</Alert>
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTrucks.map((truck) => (
-                <TableRow key={truck.id_truck} hover>
-                  <TableCell>
-                    <Chip
-                      label={truck.number_truck}
-                      size="small"
-                      sx={{
-                        backgroundColor: COLORS.secondary,
-                        color: 'white',
-                        fontWeight: 'bold'
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>{truck.name}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={getTypeLabel(truck.type)}
-                      size="small"
-                      sx={{
-                        backgroundColor: truck.type.toLowerCase() === 'owned' ? '#22c55e' : '#f97316',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        textTransform: 'capitalize'
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>{getCategoryLabel(truck.category)}</TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Editar">
-                      <IconButton
-                        onClick={() => handleOpenModal(truck)}
-                        sx={{ color: COLORS.primary, mr: 1 }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton
-                        onClick={() => handleOpenDeleteDialog(truck)}
-                        sx={{ color: '#ef4444' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* ── Table ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[#092961] text-white">
+                <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.plate')}</th>
+                <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.name')}</th>
+                <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.type')}</th>
+                <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.category')}</th>
+                <th className="text-center px-5 py-3.5 font-semibold">{t('trucks.table.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-16">
+                    <div className="inline-block w-8 h-8 border-4 border-[#092961] border-t-transparent rounded-sm animate-spin" />
+                  </td>
+                </tr>
+              ) : filteredTrucks.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-12">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+                      {t('trucks.table.noResults')}
+                    </span>
+                  </td>
+                </tr>
+              ) : (
+                filteredTrucks.map((truck, idx) => (
+                  <tr
+                    key={truck.id_truck}
+                    className={`border-t border-slate-100 hover:bg-slate-50 transition-colors ${idx % 2 !== 0 ? 'bg-slate-50/50' : ''}`}
+                  >
+                    {/* Plate */}
+                    <td className="px-5 py-3.5">
+                      <span className="inline-block px-2.5 py-0.5 bg-[#FE9844] text-white text-xs font-bold rounded-sm">
+                        {truck.number_truck}
+                      </span>
+                    </td>
 
-      {/* Pagination */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-        <TablePagination
-          component="div"
-          count={totalCount}
-          page={page}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          labelRowsPerPage="Filas por página"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
-      </Box>
+                    {/* Name */}
+                    <td className="px-5 py-3.5 font-medium text-slate-800">{truck.name}</td>
 
-      {/* Create/Edit Modal */}
-      <Dialog 
-        open={modalOpen} 
-        onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 3 }
-        }}
-      >
-        <DialogTitle sx={{ 
-          backgroundColor: COLORS.primary, 
-          color: 'white',
-          py: 2
-        }}>
-          {selectedTruck ? 'Editar Vehículo' : 'Nuevo Vehículo'}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, mt: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Placa */}
-            <TextField
-              label="Placa"
-              fullWidth
-              value={formData.number_truck}
-              onChange={(e) => setFormData({ ...formData, number_truck: e.target.value.toUpperCase() })}
-              required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': { borderColor: COLORS.primary }
-                },
-                '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary }
-              }}
-            />
+                    {/* Type */}
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-block px-2.5 py-0.5 text-white text-xs font-bold rounded-sm capitalize ${
+                        truck.type.toLowerCase() === 'owned' ? 'bg-green-500' : 'bg-orange-500'
+                      }`}>
+                        {getTypeLabel(truck.type)}
+                      </span>
+                    </td>
 
-            {/* Nombre */}
-            <TextField
-              label="Nombre"
-              fullWidth
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '&.Mui-focused fieldset': { borderColor: COLORS.primary }
-                },
-                '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary }
-              }}
-            />
+                    {/* Category */}
+                    <td className="px-5 py-3.5 text-slate-700">{getCategoryLabel(truck.category)}</td>
 
-            {/* Tipo (Select) */}
-            <FormControl fullWidth required>
-              <InputLabel id="truck-type-label">Tipo</InputLabel>
-              <Select
-                labelId="truck-type-label"
-                value={formData.type}
-                label="Tipo"
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                sx={{
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: COLORS.primary
-                  }
-                }}
+                    {/* Actions */}
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          title={t('trucks.table.editTooltip')}
+                          onClick={() => handleOpenModal(truck)}
+                          className="p-2 rounded-lg text-[#092961] hover:bg-blue-50 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          title={t('trucks.table.deleteTooltip')}
+                          onClick={() => handleOpenDeleteDialog(truck)}
+                          className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Pagination ── */}
+        {!loading && totalCount > 0 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/50 text-sm text-slate-600 flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <span>{t('trucks.pagination.rowsPerPage')}:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+                className="border border-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[#092961] bg-white"
               >
-                {TRUCK_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
+                {[5, 10, 25, 50].map(n => (
+                  <option key={n} value={n}>{n}</option>
                 ))}
-              </Select>
-              <FormHelperText>Selecciona si el vehículo es propio o rentado</FormHelperText>
-            </FormControl>
+              </select>
+            </div>
 
-            {/* Categoría (Select) */}
-            <FormControl fullWidth required>
-              <InputLabel id="truck-category-label">Categoría</InputLabel>
-              <Select
-                labelId="truck-category-label"
-                value={formData.category}
-                label="Categoría"
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                sx={{
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: COLORS.primary
-                  }
-                }}
-              >
-                {TRUCK_CATEGORIES.map((category) => (
-                  <MenuItem key={category.value} value={category.value}>
-                    {category.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              <FormHelperText>Selecciona la categoría del vehículo</FormHelperText>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button 
+            <div className="flex items-center gap-3">
+              <span>{t('trucks.pagination.displayedRows', { from, to, count: totalCount })}</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  className="p-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="p-1.5 rounded-lg hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Create / Edit Modal ── */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <div className="bg-[#092961] px-6 py-4">
+          <h2 className="text-white font-semibold text-lg">
+            {selectedTruck ? t('trucks.modal.titleEdit') : t('trucks.modal.titleCreate')}
+          </h2>
+        </div>
+        <div className="p-6 flex flex-col gap-4">
+          <InputField
+            label={t('trucks.modal.plateLabel')}
+            value={formData.number_truck}
+            onChange={(v) => setFormData({ ...formData, number_truck: v })}
+            placeholder="ABC-1234"
+            required
+            uppercase
+          />
+          <InputField
+            label={t('trucks.modal.nameLabel')}
+            value={formData.name}
+            onChange={(v) => setFormData({ ...formData, name: v })}
+            required
+          />
+          <SelectField
+            label={t('trucks.modal.typeLabel')}
+            value={formData.type}
+            onChange={(v) => setFormData({ ...formData, type: v })}
+            options={TRUCK_TYPES}
+            helper={t('trucks.modal.typeHelper')}
+            required
+          />
+          <SelectField
+            label={t('trucks.modal.categoryLabel')}
+            value={formData.category}
+            onChange={(v) => setFormData({ ...formData, category: v })}
+            options={TRUCK_CATEGORIES}
+            helper={t('trucks.modal.categoryHelper')}
+            required
+          />
+        </div>
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+          <button
             onClick={handleCloseModal}
-            variant="outlined"
-            sx={{
-              borderColor: COLORS.primary,
-              color: COLORS.primary,
-              '&:hover': {
-                borderColor: COLORS.primary,
-                backgroundColor: 'rgba(9, 41, 97, 0.04)'
-              }
-            }}
+            className="px-4 py-2 border-2 border-[#092961] text-[#092961] text-sm font-semibold rounded-xl hover:bg-blue-50 transition-colors"
           >
-            Cancelar
-          </Button>
-          <Button 
+            {t('trucks.modal.cancelButton')}
+          </button>
+          <button
             onClick={handleSubmit}
-            variant="contained"
-            disabled={!formData.number_truck || !formData.name || !formData.type || !formData.category}
-            sx={{
-              backgroundColor: COLORS.primary,
-              '&:hover': { backgroundColor: '#051f47' },
-              '&.Mui-disabled': { backgroundColor: '#ccc' }
-            }}
+            disabled={!isFormValid}
+            className="px-4 py-2 bg-[#092961] hover:bg-[#051f47] disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors"
           >
-            {selectedTruck ? 'Actualizar' : 'Crear'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            {selectedTruck ? t('trucks.modal.updateButton') : t('trucks.modal.createButton')}
+          </button>
+        </div>
+      </Modal>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleCloseDeleteDialog}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 3 }
-        }}
-      >
-        <DialogTitle sx={{ color: COLORS.primary, fontWeight: 'bold' }}>
-          Confirmar Eliminación
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            ¿Estás seguro de que deseas eliminar el vehículo{' '}
-            <strong>{selectedTruck?.number_truck} - {selectedTruck?.name}</strong>?
-          </Typography>
-          <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-            Esta acción no se puede deshacer.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button 
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal open={deleteDialogOpen} onClose={handleCloseDeleteDialog} maxWidth="max-w-sm">
+        <div className="p-6">
+          <h2 className="text-lg font-bold text-[#092961] mb-3">{t('trucks.deleteDialog.title')}</h2>
+          <p className="text-slate-700 text-sm">
+            {t('trucks.deleteDialog.message')}{' '}
+            <strong>{selectedTruck?.number_truck} – {selectedTruck?.name}</strong>?
+          </p>
+          <p className="text-xs text-red-500 mt-2">{t('trucks.deleteDialog.warning')}</p>
+        </div>
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+          <button
             onClick={handleCloseDeleteDialog}
-            variant="outlined"
-            sx={{
-              borderColor: COLORS.primary,
-              color: COLORS.primary
-            }}
+            className="px-4 py-2 border-2 border-[#092961] text-[#092961] text-sm font-semibold rounded-sm hover:bg-blue-50 transition-colors"
           >
-            Cancelar
-          </Button>
-          <Button 
+            {t('trucks.deleteDialog.cancelButton')}
+          </button>
+          <button
             onClick={handleDelete}
-            variant="contained"
-            sx={{
-              backgroundColor: '#ef4444',
-              '&:hover': { backgroundColor: '#dc2626' }
-            }}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-sm transition-colors"
           >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            {t('trucks.deleteDialog.deleteButton')}
+          </button>
+        </div>
+      </Modal>
+
+    </div>
   );
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, UserX, Baby, Filter, Search, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Operator, InactiveOperator } from '../../domain/OperatorsModels';
 
 interface OperatorsHeaderProps {
@@ -33,20 +34,22 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
   onSearchChange,
   onRegisterOperator
 }) => {
+  const { t } = useTranslation();
+
   return (
     <>
-      {/* Header with Search */}
+      {/* ── Header with Search ── */}
       <div className="bg-white rounded-xl shadow-sm border p-4" style={{ borderColor: COLORS.primary }}>
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
               <Users size={20} />
-              Operators Directory
+              {t('operators.header.title')}
             </h2>
-            <p className="text-xs text-gray-600">Manage and view operator information</p>
+            <p className="text-xs text-gray-600">{t('operators.header.subtitle')}</p>
           </div>
+
           <div className="flex items-center gap-3">
-            {/* Botón de Registro */}
             {activeTab === 'active' && (
               <button
                 onClick={onRegisterOperator}
@@ -54,11 +57,11 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
                 style={{ backgroundColor: COLORS.primary }}
               >
                 <UserPlus size={16} />
-                <span>Register Operator</span>
+                <span>{t('operators.header.registerButton')}</span>
               </button>
             )}
             <div className="text-right">
-              <div className="text-xs text-gray-500">Total Operators</div>
+              <div className="text-xs text-gray-500">{t('operators.header.totalLabel')}</div>
               <div className="text-xl font-bold" style={{ color: COLORS.primary }}>
                 {operators.length + inactiveOperators.length}
               </div>
@@ -69,32 +72,29 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
         {/* Search Bar */}
         <div className="mb-3">
           <div className="relative">
-            <Search 
-              size={14} 
+            <Search
+              size={14}
               className="absolute left-3 top-1/2 transform -translate-y-1/2"
               style={{ color: COLORS.gray }}
             />
             <input
               type="text"
-              placeholder="Search operators by name, code, email, phone, or license..."
+              placeholder={t('operators.header.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               autoComplete="off"
               className="block w-full pl-10 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
               style={{ borderColor: COLORS.primary }}
-              onFocus={(e) => {
-                e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-              }}
-              onBlur={(e) => {
-                e.target.style.boxShadow = 'none';
-              }}
+              onFocus={(e) => { e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`; }}
+              onBlur={(e) => { e.target.style.boxShadow = 'none'; }}
             />
           </div>
         </div>
 
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div 
+          {/* Active */}
+          <div
             className="rounded-lg p-3 border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
             style={{ borderColor: COLORS.success }}
             onClick={() => onTabChange('active')}
@@ -102,7 +102,7 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold" style={{ color: COLORS.success }}>
-                  Active Operators
+                  {t('operators.header.stats.active')}
                 </p>
                 <p className="text-xl font-bold" style={{ color: COLORS.success }}>
                   {operators.length}
@@ -111,8 +111,9 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
               <Users size={24} style={{ color: COLORS.success }} />
             </div>
           </div>
-          
-          <div 
+
+          {/* Inactive */}
+          <div
             className="rounded-lg p-3 border-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
             style={{ borderColor: COLORS.error }}
             onClick={() => onTabChange('inactive')}
@@ -120,7 +121,7 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold" style={{ color: COLORS.error }}>
-                  Inactive Operators
+                  {t('operators.header.stats.inactive')}
                 </p>
                 <p className="text-xl font-bold" style={{ color: COLORS.error }}>
                   {inactiveOperators.length}
@@ -129,15 +130,16 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
               <UserX size={24} style={{ color: COLORS.error }} />
             </div>
           </div>
-          
-          <div 
+
+          {/* With Children */}
+          <div
             className="rounded-lg p-3 border-2 transition-all duration-200 hover:shadow-md"
             style={{ borderColor: COLORS.secondary }}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold" style={{ color: COLORS.secondary }}>
-                  With Children
+                  {t('operators.header.stats.withChildren')}
                 </p>
                 <p className="text-xl font-bold" style={{ color: COLORS.secondary }}>
                   {operators.filter(op => op.n_children > 0).length}
@@ -147,14 +149,15 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
             </div>
           </div>
 
-          <div 
+          {/* Search Results */}
+          <div
             className="rounded-lg p-3 border-2 transition-all duration-200 hover:shadow-md"
             style={{ borderColor: COLORS.primary }}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold" style={{ color: COLORS.primary }}>
-                  Search Results
+                  {t('operators.header.stats.searchResults')}
                 </p>
                 <p className="text-xl font-bold" style={{ color: COLORS.primary }}>
                   {activeTab === 'active' ? filteredOperators.length : filteredInactiveOperators.length}
@@ -166,32 +169,28 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <div className="bg-white rounded-xl shadow-sm border p-3" style={{ borderColor: COLORS.primary }}>
         <div className="flex space-x-2">
           <button
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'active'
-                ? 'text-white shadow-md'
-                : 'text-gray-700 hover:bg-gray-100'
+              activeTab === 'active' ? 'text-white shadow-md' : 'text-gray-700 hover:bg-gray-100'
             }`}
             style={{ backgroundColor: activeTab === 'active' ? COLORS.success : 'transparent' }}
             onClick={() => onTabChange('active')}
           >
             <Users size={16} />
-            Active Operators
+            {t('operators.header.tabs.active')}
           </button>
           <button
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'inactive'
-                ? 'text-white shadow-md'
-                : 'text-gray-700 hover:bg-gray-100'
+              activeTab === 'inactive' ? 'text-white shadow-md' : 'text-gray-700 hover:bg-gray-100'
             }`}
             style={{ backgroundColor: activeTab === 'inactive' ? COLORS.error : 'transparent' }}
             onClick={() => onTabChange('inactive')}
           >
             <UserX size={16} />
-            Inactive Operators
+            {t('operators.header.tabs.inactive')}
           </button>
         </div>
       </div>
