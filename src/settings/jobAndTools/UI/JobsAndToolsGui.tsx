@@ -17,16 +17,25 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Pagination 
+    Pagination
 } from '@mui/material';
-import { AddCircleOutline, DeleteOutline, SearchOutlined, BuildOutlined, EditOutlined, CheckCircleOutline, CancelOutlined } from '@mui/icons-material'; // Added Edit, Check, Cancel icons
+import {
+    AddCircleOutline,
+    DeleteOutline,
+    SearchOutlined,
+    BuildOutlined,
+    EditOutlined,
+    CheckCircleOutline,
+    CancelOutlined
+} from '@mui/icons-material';
 import { TransitionGroup } from 'react-transition-group';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { JobModel, JobsAndToolRepository, ToolModel } from '../data/JobsAndToolsRepository';
-
 
 const jobsAndToolRepository = new JobsAndToolRepository();
 
+// ─── Confirmation Dialog ───────────────────────────────────────────────────────
 
 interface ConfirmationDialogProps {
     open: boolean;
@@ -36,7 +45,10 @@ interface ConfirmationDialogProps {
     onCancel: () => void;
 }
 
-const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ open, title, message, onConfirm, onCancel }) => {
+const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
+    open, title, message, onConfirm, onCancel
+}) => {
+    const { t } = useTranslation();
     return (
         <Dialog open={open} onClose={onCancel}>
             <DialogTitle>{title}</DialogTitle>
@@ -45,23 +57,26 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ open, title, me
             </DialogContent>
             <DialogActions>
                 <Button onClick={onCancel} color="primary">
-                    Cancelar
+                    {t('jobsAndTools.confirmDialog.cancelButton')}
                 </Button>
                 <Button onClick={onConfirm} color="error" variant="contained">
-                    Confirmar
+                    {t('jobsAndTools.confirmDialog.confirmButton')}
                 </Button>
             </DialogActions>
         </Dialog>
     );
 };
 
+// ─── Tools Dialog ──────────────────────────────────────────────────────────────
+
 interface ToolsDialogProps {
     open: boolean;
-    job: JobModel | null; 
+    job: JobModel | null;
     onClose: () => void;
 }
 
 const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
+    const { t } = useTranslation();
     const [tools, setTools] = useState<ToolModel[]>([]);
     const [newToolName, setNewToolName] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
@@ -69,7 +84,7 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
     const { enqueueSnackbar } = useSnackbar();
 
     const [currentPage, setCurrentPage] = useState(1);
-    const toolsPerPage = 5; 
+    const toolsPerPage = 5;
 
     const [openToolConfirmDialog, setOpenToolConfirmDialog] = useState(false);
     const [toolToDelete, setToolToDelete] = useState<number | null>(null);
@@ -82,20 +97,19 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
         return tools.slice(indexOfFirstTool, indexOfLastTool);
     }, [tools, currentPage, toolsPerPage]);
 
-
     useEffect(() => {
         const fetchTools = async () => {
-            if (!job) return; 
+            if (!job) return;
             setLoading(true);
             setError(null);
             try {
                 const response = await jobsAndToolRepository.listToolsByJob(job.id);
                 setTools(Array.isArray(response.results) ? response.results : []);
-                setCurrentPage(1); 
+                setCurrentPage(1);
             } catch (err) {
                 console.error('Error loading tools:', err);
-                setError(err instanceof Error ? err.message : 'Error desconocido al cargar herramientas.');
-                enqueueSnackbar('Error al cargar herramientas.', { variant: 'error' });
+                setError(err instanceof Error ? err.message : t('jobsAndTools.tools.errors.loadError'));
+                enqueueSnackbar(t('jobsAndTools.tools.deleteError'), { variant: 'error' });
             } finally {
                 setLoading(false);
             }
@@ -106,15 +120,15 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
             setNewToolName('');
             setError(null);
         }
-    }, [open, job, enqueueSnackbar]); 
+    }, [open, job, enqueueSnackbar, t]);
 
     const handleAddTool = async () => {
         if (!job) {
-            enqueueSnackbar('No se ha seleccionado un trabajo para añadir la herramienta.', { variant: 'error' });
+            enqueueSnackbar(t('jobsAndTools.tools.noJobSelected'), { variant: 'error' });
             return;
         }
         if (newToolName.trim() === '') {
-            enqueueSnackbar('El nombre de la herramienta no puede estar vacío.', { variant: 'warning' });
+            enqueueSnackbar(t('jobsAndTools.tools.emptyWarning'), { variant: 'warning' });
             return;
         }
 
@@ -124,12 +138,12 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
             const addedTool = await jobsAndToolRepository.createTool(newToolName.trim(), job.id);
             setTools((prev) => [...prev, addedTool]);
             setNewToolName('');
-            enqueueSnackbar('Herramienta añadida con éxito.', { variant: 'success' });
+            enqueueSnackbar(t('jobsAndTools.tools.addSuccess'), { variant: 'success' });
             setCurrentPage(Math.ceil((tools.length + 1) / toolsPerPage));
         } catch (err) {
             console.error('Error adding tool:', err);
-            setError(err instanceof Error ? err.message : 'Error desconocido al añadir herramienta.');
-            enqueueSnackbar('Error al añadir herramienta.', { variant: 'error' });
+            setError(err instanceof Error ? err.message : t('jobsAndTools.tools.errors.addError'));
+            enqueueSnackbar(t('jobsAndTools.tools.addError'), { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -145,25 +159,25 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
 
         setLoading(true);
         setError(null);
-        setOpenToolConfirmDialog(false); 
+        setOpenToolConfirmDialog(false);
         try {
             await jobsAndToolRepository.deleteTool(toolToDelete);
             const updatedTools = tools.filter((tool) => tool.id !== toolToDelete);
             setTools(updatedTools);
-            enqueueSnackbar('Herramienta eliminada con éxito.', { variant: 'success' });
+            enqueueSnackbar(t('jobsAndTools.tools.deleteSuccess'), { variant: 'success' });
 
             if (currentTools.length === 1 && currentPage > 1 && updatedTools.length > 0 && currentPage === totalPages) {
                 setCurrentPage(prev => prev - 1);
-            } else if (updatedTools.length === 0 && currentPage > 1) { 
+            } else if (updatedTools.length === 0 && currentPage > 1) {
                 setCurrentPage(1);
             }
         } catch (err) {
             console.error('Error deleting tool:', err);
-            setError(err instanceof Error ? err.message : 'Error desconocido al eliminar herramienta.');
-            enqueueSnackbar('Error al eliminar herramienta.', { variant: 'error' });
+            setError(err instanceof Error ? err.message : t('jobsAndTools.tools.errors.deleteError'));
+            enqueueSnackbar(t('jobsAndTools.tools.deleteError'), { variant: 'error' });
         } finally {
             setLoading(false);
-            setToolToDelete(null); 
+            setToolToDelete(null);
         }
     };
 
@@ -179,7 +193,7 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>
-                Herramientas para: {job?.name || 'Cargando...'}
+                {t('jobsAndTools.tools.dialogTitle')} {job?.name || t('jobsAndTools.tools.dialogTitleLoading')}
                 <IconButton
                     aria-label="close"
                     onClick={onClose}
@@ -193,6 +207,7 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
                     &times;
                 </IconButton>
             </DialogTitle>
+
             <DialogContent dividers>
                 {error && (
                     <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
@@ -200,26 +215,22 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
                     </Alert>
                 )}
 
-                {/* Section to add new tool */}
+                {/* Add new tool */}
                 <Box sx={{ mb: 4, display: 'flex', gap: 2, alignItems: 'center' }}>
                     <TextField
-                        label="Nombre de la nueva herramienta"
+                        label={t('jobsAndTools.tools.addLabel')}
                         variant="outlined"
                         fullWidth
                         value={newToolName}
                         onChange={(e) => setNewToolName(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !loading) {
-                                handleAddTool();
-                            }
+                            if (e.key === 'Enter' && !loading) handleAddTool();
                         }}
                         disabled={loading}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 2,
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#007bff',
-                                },
+                                '&.Mui-focused fieldset': { borderColor: '#007bff' },
                             },
                         }}
                     />
@@ -230,28 +241,28 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
                         disabled={loading}
                         sx={{
                             backgroundColor: '#007bff',
-                            '&:hover': {
-                                backgroundColor: '#0056b3',
-                            },
+                            '&:hover': { backgroundColor: '#0056b3' },
                             borderRadius: 2,
                             py: 1.5,
                             px: 3,
                             fontWeight: 'bold',
-                            whiteSpace: 'nowrap', 
+                            whiteSpace: 'nowrap',
                         }}
                     >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Añadir'}
+                        {loading ? <CircularProgress size={24} color="inherit" /> : t('jobsAndTools.tools.addButton')}
                     </Button>
                 </Box>
 
                 <Typography variant="h6" sx={{ mb: 2, color: '#444' }}>
-                    Lista de Herramientas
+                    {t('jobsAndTools.tools.sectionTitle')}
                 </Typography>
 
                 {loading && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                         <CircularProgress />
-                        <Typography sx={{ ml: 2, color: 'text.secondary' }}>Cargando herramientas...</Typography>
+                        <Typography sx={{ ml: 2, color: 'text.secondary' }}>
+                            {t('jobsAndTools.tools.loading')}
+                        </Typography>
                     </Box>
                 )}
 
@@ -266,51 +277,29 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
                             backgroundColor: '#f0f0f0',
                         }}
                     >
-                        <Typography variant="body1">No hay herramientas para este trabajo.</Typography>
+                        <Typography variant="body1">{t('jobsAndTools.tools.noResults')}</Typography>
                     </Box>
                 )}
 
                 {!loading && tools.length > 0 && (
-                    <List
-                        sx={{
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            backgroundColor: '#fdfdfd',
-                            border: '1px solid #eee',
-                        }}
-                    >
+                    <List sx={{ borderRadius: 2, overflow: 'hidden', backgroundColor: '#fdfdfd', border: '1px solid #eee' }}>
                         <TransitionGroup>
-                            {currentTools.map((tool) => ( 
+                            {currentTools.map((tool) => (
                                 <Collapse key={tool.id}>
                                     <ListItem
                                         divider
-                                        sx={{
-                                            py: 1.5,
-                                            px: 3,
-                                            '&:hover': {
-                                                backgroundColor: '#e6f7ff',
-                                            },
-                                        }}
+                                        sx={{ py: 1.5, px: 3, '&:hover': { backgroundColor: '#e6f7ff' } }}
                                     >
                                         <ListItemText
                                             primary={tool.name}
-                                            primaryTypographyProps={{
-                                                variant: 'body1',
-                                                fontWeight: 'medium',
-                                                color: '#333',
-                                            }}
+                                            primaryTypographyProps={{ variant: 'body1', fontWeight: 'medium', color: '#333' }}
                                         />
                                         <IconButton
                                             edge="end"
                                             aria-label="delete"
                                             onClick={() => handleDeleteToolClick(tool.id)}
                                             disabled={loading}
-                                            sx={{
-                                                color: '#dc3545',
-                                                '&:hover': {
-                                                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                                                },
-                                            }}
+                                            sx={{ color: '#dc3545', '&:hover': { backgroundColor: 'rgba(220,53,69,0.1)' } }}
                                         >
                                             <DeleteOutline />
                                         </IconButton>
@@ -321,30 +310,26 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
                     </List>
                 )}
             </DialogContent>
+
             <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
                 <Button onClick={onClose} sx={{ color: '#007bff' }}>
-                    Cerrar
+                    {t('jobsAndTools.tools.closeButton')}
                 </Button>
-                {totalPages > 1 && ( 
+                {totalPages > 1 && (
                     <Pagination
                         count={totalPages}
                         page={currentPage}
                         onChange={handlePageChange}
                         color="primary"
-                        sx={{
-                            '& .MuiPaginationItem-root': {
-                                borderRadius: 1.5,
-                            },
-                        }}
+                        sx={{ '& .MuiPaginationItem-root': { borderRadius: 1.5 } }}
                     />
                 )}
             </DialogActions>
 
-            {/* Confirmation Dialog for Tool Deletion */}
             <ConfirmationDialog
                 open={openToolConfirmDialog}
-                title="Confirmar eliminación de herramienta"
-                message="¿Estás seguro de que quieres eliminar esta herramienta?"
+                title={t('jobsAndTools.confirmDialog.deleteTool.title')}
+                message={t('jobsAndTools.confirmDialog.deleteTool.message')}
                 onConfirm={handleDeleteToolConfirm}
                 onCancel={handleDeleteToolCancel}
             />
@@ -352,7 +337,10 @@ const ToolsDialog: React.FC<ToolsDialogProps> = ({ open, job, onClose }) => {
     );
 };
 
+// ─── Main Component ────────────────────────────────────────────────────────────
+
 const JobsAndToolsGUI: React.FC = () => {
+    const { t } = useTranslation();
     const [jobs, setJobs] = useState<JobModel[]>([]);
     const [newJobName, setNewJobName] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -369,7 +357,6 @@ const JobsAndToolsGUI: React.FC = () => {
     const [openJobConfirmDialog, setOpenJobConfirmDialog] = useState(false);
     const [jobToDelete, setJobToDelete] = useState<number | null>(null);
 
-
     useEffect(() => {
         const fetchJobs = async () => {
             setLoading(true);
@@ -379,17 +366,17 @@ const JobsAndToolsGUI: React.FC = () => {
                 setJobs(data);
             } catch (err) {
                 console.error('Error loading jobs:', err);
-                setError(err instanceof Error ? err.message : 'Error desconocido al cargar trabajos.');
+                setError(err instanceof Error ? err.message : t('jobsAndTools.jobs.errors.loadError'));
             } finally {
                 setLoading(false);
             }
         };
         fetchJobs();
-    }, []);
+    }, [t]);
 
     const handleAddJob = async () => {
         if (newJobName.trim() === '') {
-            enqueueSnackbar('El nombre del trabajo no puede estar vacío.', { variant: 'warning' });
+            enqueueSnackbar(t('jobsAndTools.jobs.emptyWarning'), { variant: 'warning' });
             return;
         }
 
@@ -399,11 +386,11 @@ const JobsAndToolsGUI: React.FC = () => {
             const addedJob = await jobsAndToolRepository.createJob(newJobName.trim());
             setJobs((prev) => [...prev, addedJob]);
             setNewJobName('');
-            enqueueSnackbar('Trabajo añadido con éxito.', { variant: 'success' });
+            enqueueSnackbar(t('jobsAndTools.jobs.addSuccess'), { variant: 'success' });
         } catch (err) {
             console.error('Error adding job:', err);
-            setError(err instanceof Error ? err.message : 'Error desconocido al añadir trabajo.');
-            enqueueSnackbar('Error al añadir trabajo.', { variant: 'error' });
+            setError(err instanceof Error ? err.message : t('jobsAndTools.jobs.errors.addError'));
+            enqueueSnackbar(t('jobsAndTools.jobs.addError'), { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -419,18 +406,18 @@ const JobsAndToolsGUI: React.FC = () => {
 
         setLoading(true);
         setError(null);
-        setOpenJobConfirmDialog(false); 
+        setOpenJobConfirmDialog(false);
         try {
             await jobsAndToolRepository.deleteJob(jobToDelete);
             setJobs((prev) => prev.filter((job) => job.id !== jobToDelete));
-            enqueueSnackbar('Trabajo eliminado con éxito.', { variant: 'success' });
+            enqueueSnackbar(t('jobsAndTools.jobs.deleteSuccess'), { variant: 'success' });
         } catch (err) {
             console.error('Error deleting job:', err);
-            setError(err instanceof Error ? err.message : 'Error desconocido al eliminar trabajo.');
-            enqueueSnackbar('Error al eliminar trabajo.', { variant: 'error' });
+            setError(err instanceof Error ? err.message : t('jobsAndTools.jobs.errors.deleteError'));
+            enqueueSnackbar(t('jobsAndTools.jobs.deleteError'), { variant: 'error' });
         } finally {
             setLoading(false);
-            setJobToDelete(null); 
+            setJobToDelete(null);
         }
     };
 
@@ -446,7 +433,7 @@ const JobsAndToolsGUI: React.FC = () => {
 
     const handleCloseToolsDialog = () => {
         setOpenToolsDialog(false);
-        setSelectedJob(null); 
+        setSelectedJob(null);
     };
 
     const handleEditJobClick = (job: JobModel) => {
@@ -456,13 +443,13 @@ const JobsAndToolsGUI: React.FC = () => {
 
     const handleSaveJobEdit = async (jobId: number) => {
         if (editedJobName.trim() === '') {
-            enqueueSnackbar('El nombre del trabajo no puede estar vacío.', { variant: 'warning' });
+            enqueueSnackbar(t('jobsAndTools.jobs.emptyWarning'), { variant: 'warning' });
             return;
         }
 
         const originalJob = jobs.find(j => j.id === jobId);
         if (originalJob && originalJob.name === editedJobName.trim()) {
-            enqueueSnackbar('No hay cambios para guardar.', { variant: 'info' });
+            enqueueSnackbar(t('jobsAndTools.jobs.noChanges'), { variant: 'info' });
             setEditingJobId(null);
             setEditedJobName('');
             return;
@@ -472,83 +459,63 @@ const JobsAndToolsGUI: React.FC = () => {
         setError(null);
         try {
             const updatedJob = await jobsAndToolRepository.editJob(jobId, editedJobName.trim());
-            setJobs((prev) =>
-                prev.map((job) => (job.id === updatedJob.id ? updatedJob : job))
-            );
-            enqueueSnackbar('Trabajo actualizado con éxito.', { variant: 'success' });
+            setJobs((prev) => prev.map((job) => (job.id === updatedJob.id ? updatedJob : job)));
+            enqueueSnackbar(t('jobsAndTools.jobs.updateSuccess'), { variant: 'success' });
         } catch (err) {
             console.error('Error updating job:', err);
-            setError(err instanceof Error ? err.message : 'Error desconocido al actualizar trabajo.');
-            enqueueSnackbar('Error al actualizar trabajo.', { variant: 'error' });
+            setError(err instanceof Error ? err.message : t('jobsAndTools.jobs.errors.updateError'));
+            enqueueSnackbar(t('jobsAndTools.jobs.updateError'), { variant: 'error' });
         } finally {
             setLoading(false);
-            setEditingJobId(null); 
-            setEditedJobName(''); 
+            setEditingJobId(null);
+            setEditedJobName('');
         }
     };
 
     const handleCancelJobEdit = () => {
-        setEditingJobId(null); 
-        setEditedJobName(''); 
+        setEditingJobId(null);
+        setEditedJobName('');
     };
-
 
     const filteredJobs = jobs.filter((job) =>
         job.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <Box
-            sx={{
-                flexGrow: 1,
-                p: 4,
-                backgroundColor: '#f8f9fa',
-                minHeight: '100vh',
-            }}
-        >
+        <Box sx={{ flexGrow: 1, p: 4, backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#333', fontWeight: 'bold' }}>
-                Gestión de Trabajos y Herramientas
+                {t('jobsAndTools.title')}
             </Typography>
             <Typography variant="body1" color="text.secondary" gutterBottom sx={{ mb: 4 }}>
-                Aquí puedes gestionar la lista de trabajos y las herramientas asociadas a cada uno.
+                {t('jobsAndTools.subtitle')}
             </Typography>
 
             <Paper
                 elevation={3}
-                sx={{
-                    p: 4,
-                    borderRadius: 3,
-                    boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',
-                    backgroundColor: '#fff',
-                }}
+                sx={{ p: 4, borderRadius: 3, boxShadow: '0 8px 30px rgba(0,0,0,0.08)', backgroundColor: '#fff' }}
             >
-                {/* Global error messages */}
                 {error && (
                     <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
                         {error}
                     </Alert>
                 )}
 
-                {/* Section to add new job */}
+                {/* Add new job */}
                 <Box sx={{ mb: 4, display: 'flex', gap: 2, alignItems: 'center' }}>
                     <TextField
-                        label="Nombre del nuevo trabajo"
+                        label={t('jobsAndTools.jobs.addLabel')}
                         variant="outlined"
                         fullWidth
                         value={newJobName}
                         onChange={(e) => setNewJobName(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !loading) {
-                                handleAddJob();
-                            }
+                            if (e.key === 'Enter' && !loading) handleAddJob();
                         }}
-                        disabled={loading || editingJobId !== null} 
+                        disabled={loading || editingJobId !== null}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 2,
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#007bff',
-                                },
+                                '&.Mui-focused fieldset': { borderColor: '#007bff' },
                             },
                         }}
                     />
@@ -556,12 +523,10 @@ const JobsAndToolsGUI: React.FC = () => {
                         variant="contained"
                         onClick={handleAddJob}
                         startIcon={<AddCircleOutline />}
-                        disabled={loading || editingJobId !== null} 
+                        disabled={loading || editingJobId !== null}
                         sx={{
                             backgroundColor: '#007bff',
-                            '&:hover': {
-                                backgroundColor: '#0056b3',
-                            },
+                            '&:hover': { backgroundColor: '#0056b3' },
                             borderRadius: 2,
                             py: 1.5,
                             px: 3,
@@ -569,20 +534,20 @@ const JobsAndToolsGUI: React.FC = () => {
                             whiteSpace: 'nowrap',
                         }}
                     >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Añadir Trabajo'}
+                        {loading ? <CircularProgress size={24} color="inherit" /> : t('jobsAndTools.jobs.addButton')}
                     </Button>
                 </Box>
 
-                {/* Search section */}
+                {/* Search */}
                 <Box sx={{ mb: 3 }}>
                     <TextField
-                        label="Buscar trabajo"
+                        label={t('jobsAndTools.jobs.searchLabel')}
                         variant="outlined"
                         fullWidth
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        disabled={loading || editingJobId !== null} 
-                        InputProps={{ 
+                        disabled={loading || editingJobId !== null}
+                        InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
                                     <SearchOutlined color="action" />
@@ -592,23 +557,23 @@ const JobsAndToolsGUI: React.FC = () => {
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 2,
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#007bff',
-                                },
+                                '&.Mui-focused fieldset': { borderColor: '#007bff' },
                             },
                         }}
                     />
                 </Box>
 
-                {/* Job list */}
+                {/* Section title */}
                 <Typography variant="h6" sx={{ mb: 2, color: '#444' }}>
-                    Lista de Trabajos
+                    {t('jobsAndTools.jobs.sectionTitle')}
                 </Typography>
 
                 {loading && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                         <CircularProgress />
-                        <Typography sx={{ ml: 2, color: 'text.secondary' }}>Cargando trabajos...</Typography>
+                        <Typography sx={{ ml: 2, color: 'text.secondary' }}>
+                            {t('jobsAndTools.jobs.loading')}
+                        </Typography>
                     </Box>
                 )}
 
@@ -623,35 +588,21 @@ const JobsAndToolsGUI: React.FC = () => {
                             backgroundColor: '#f0f0f0',
                         }}
                     >
-                        <Typography variant="body1">No se encontraron trabajos.</Typography>
+                        <Typography variant="body1">{t('jobsAndTools.jobs.noResults')}</Typography>
                     </Box>
                 )}
 
                 {!loading && filteredJobs.length > 0 && (
-                    <List
-                        sx={{
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            backgroundColor: '#fdfdfd',
-                            border: '1px solid #eee',
-                        }}
-                    >
+                    <List sx={{ borderRadius: 2, overflow: 'hidden', backgroundColor: '#fdfdfd', border: '1px solid #eee' }}>
                         <TransitionGroup>
                             {filteredJobs.map((job) => (
                                 <Collapse key={job.id}>
                                     <ListItem
                                         divider
-                                        sx={{
-                                            py: 1.5,
-                                            px: 3,
-                                            '&:hover': {
-                                                backgroundColor: '#e6f7ff',
-                                            },
-                                        }}
+                                        sx={{ py: 1.5, px: 3, '&:hover': { backgroundColor: '#e6f7ff' } }}
                                         secondaryAction={
                                             <Box>
                                                 {editingJobId === job.id ? (
-                                            
                                                     <>
                                                         <IconButton
                                                             edge="end"
@@ -673,18 +624,15 @@ const JobsAndToolsGUI: React.FC = () => {
                                                         </IconButton>
                                                     </>
                                                 ) : (
-                                                    
                                                     <>
                                                         <IconButton
                                                             edge="end"
                                                             aria-label="view tools"
                                                             onClick={() => handleOpenToolsDialog(job)}
-                                                            disabled={loading || editingJobId !== null} // Disable if loading or another job is being edited
+                                                            disabled={loading || editingJobId !== null}
                                                             sx={{
                                                                 color: '#007bff',
-                                                                '&:hover': {
-                                                                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                                                                },
+                                                                '&:hover': { backgroundColor: 'rgba(0,123,255,0.1)' },
                                                                 mr: 1,
                                                             }}
                                                         >
@@ -694,13 +642,11 @@ const JobsAndToolsGUI: React.FC = () => {
                                                             edge="end"
                                                             aria-label="edit"
                                                             onClick={() => handleEditJobClick(job)}
-                                                            disabled={loading || editingJobId !== null} // Disable if loading or another job is being edited
+                                                            disabled={loading || editingJobId !== null}
                                                             sx={{
                                                                 color: '#6c757d',
-                                                                '&:hover': {
-                                                                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                                                                },
-                                                                mr: 1, // Margin to separate from delete button
+                                                                '&:hover': { backgroundColor: 'rgba(108,117,125,0.1)' },
+                                                                mr: 1,
                                                             }}
                                                         >
                                                             <EditOutlined />
@@ -711,12 +657,10 @@ const JobsAndToolsGUI: React.FC = () => {
                                                     edge="end"
                                                     aria-label="delete"
                                                     onClick={() => handleDeleteJobClick(job.id)}
-                                                    disabled={loading || editingJobId !== null} // Disable if loading or another job is being edited
+                                                    disabled={loading || editingJobId !== null}
                                                     sx={{
                                                         color: '#dc3545',
-                                                        '&:hover': {
-                                                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                                                        },
+                                                        '&:hover': { backgroundColor: 'rgba(220,53,69,0.1)' },
                                                     }}
                                                 >
                                                     <DeleteOutline />
@@ -728,33 +672,21 @@ const JobsAndToolsGUI: React.FC = () => {
                                             <TextField
                                                 value={editedJobName}
                                                 onChange={(e) => setEditedJobName(e.target.value)}
-                                                onBlur={() => handleSaveJobEdit(job.id)} // Save on blur
+                                                onBlur={() => handleSaveJobEdit(job.id)}
                                                 onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        handleSaveJobEdit(job.id);
-                                                    } else if (e.key === 'Escape') {
-                                                        handleCancelJobEdit();
-                                                    }
+                                                    if (e.key === 'Enter') handleSaveJobEdit(job.id);
+                                                    else if (e.key === 'Escape') handleCancelJobEdit();
                                                 }}
                                                 variant="standard"
                                                 fullWidth
-                                                autoFocus // Focus the TextField when it appears
+                                                autoFocus
                                                 disabled={loading}
-                                                sx={{
-                                                    '& .MuiInputBase-input': {
-                                                        fontWeight: 'medium',
-                                                        color: '#333',
-                                                    },
-                                                }}
+                                                sx={{ '& .MuiInputBase-input': { fontWeight: 'medium', color: '#333' } }}
                                             />
                                         ) : (
                                             <ListItemText
                                                 primary={job.name}
-                                                primaryTypographyProps={{
-                                                    variant: 'body1',
-                                                    fontWeight: 'medium',
-                                                    color: '#333',
-                                                }}
+                                                primaryTypographyProps={{ variant: 'body1', fontWeight: 'medium', color: '#333' }}
                                             />
                                         )}
                                     </ListItem>
@@ -765,18 +697,16 @@ const JobsAndToolsGUI: React.FC = () => {
                 )}
             </Paper>
 
-            {/* Tools Dialog */}
             <ToolsDialog
                 open={openToolsDialog}
                 job={selectedJob}
                 onClose={handleCloseToolsDialog}
             />
 
-            {/* Confirmation Dialog for Job Deletion */}
             <ConfirmationDialog
                 open={openJobConfirmDialog}
-                title="Confirmar eliminación de trabajo"
-                message="¿Estás seguro de que quieres eliminar este trabajo? Se eliminarán también las herramientas asociadas."
+                title={t('jobsAndTools.confirmDialog.deleteJob.title')}
+                message={t('jobsAndTools.confirmDialog.deleteJob.message')}
                 onConfirm={handleDeleteJobConfirm}
                 onCancel={handleDeleteJobCancel}
             />
