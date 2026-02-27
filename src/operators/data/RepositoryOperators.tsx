@@ -293,3 +293,45 @@ export const createOperator = async (formData: FormData): Promise<Operator> => {
     throw error;
   }
 };
+
+export const changeOperatorPassword = async (
+  code: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/operator/change-password/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code,
+        new_password: newPassword,
+      }),
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || data.messDev || 'Error changing operator password');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error changing operator password:', error);
+    throw error;
+  }
+};
