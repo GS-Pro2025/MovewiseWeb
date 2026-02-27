@@ -7,10 +7,11 @@ import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle } from 'lucide-react';
+import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle, KeyRound } from 'lucide-react';
 import SendEmailDialog from './SendEmailDialog';
 import OperatorLoansDialog from './OperatorLoansDialog';
 import CreateLoanDialog from './CreateLoanDialog';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 interface OperatorsTableProps {
   activeTab: 'active' | 'inactive';
@@ -41,6 +42,7 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isLoansDialogOpen, setIsLoansDialogOpen] = useState(false);
   const [isCreateLoanDialogOpen, setIsCreateLoanDialogOpen] = useState(false);
+  const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
   
   // Menu state
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -113,6 +115,10 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
         setSelectedOperator(menuOperator);
         setIsCreateLoanDialogOpen(true);
         break;
+      case 'changePassword':
+        setSelectedOperator(menuOperator);
+        setIsChangePasswordDialogOpen(true);
+        break;
     }
     handleMenuClose();
   };
@@ -129,6 +135,11 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
 
   const handleCloseCreateLoanDialog = () => {
     setIsCreateLoanDialogOpen(false);
+    setSelectedOperator(null);
+  };
+
+  const handleCloseChangePasswordDialog = () => {
+    setIsChangePasswordDialogOpen(false);
     setSelectedOperator(null);
   };
 
@@ -202,6 +213,13 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
         </MenuItem>
         
         <Divider />
+
+        <MenuItem onClick={() => handleAction('changePassword')}>
+          <ListItemIcon>
+            <KeyRound size={18} color="#0B2863" />
+          </ListItemIcon>
+          <ListItemText>Change Password</ListItemText>
+        </MenuItem>
         
         <MenuItem onClick={() => handleAction('delete')}>
           <ListItemIcon>
@@ -459,6 +477,16 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
           open={isCreateLoanDialogOpen}
           onClose={handleCloseCreateLoanDialog}
           operatorId={selectedOperator.id_operator}
+          operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
+        />
+      )}
+
+      {/* Change Password Dialog */}
+      {selectedOperator && (
+        <ChangePasswordDialog
+          open={isChangePasswordDialogOpen}
+          onClose={handleCloseChangePasswordDialog}
+          operatorCode={selectedOperator.code}
           operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
         />
       )}
