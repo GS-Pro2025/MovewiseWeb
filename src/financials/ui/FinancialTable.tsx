@@ -29,6 +29,10 @@ interface FinancialTableProps {
   onViewOperators: (orderId: string) => void;
 }
 
+// ── FIX: Currency formatter — always 2 decimal places, en-US locale ──────────
+const fmt = (value: number) =>
+  value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const FinancialTable: React.FC<FinancialTableProps> = ({
   data, sortBy, sortOrder, expandedRows,
   onSort, onToggleExpand, onAddIncome, onAddExpense,
@@ -44,7 +48,6 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
     mouseX: number; mouseY: number; row: SuperOrder | null;
   } | null>(null);
 
-  // Columns defined inside component so labels can be translated
   const columns = [
     { key: null,                                  label: '',                                              sortable: false },
     { key: 'key_ref' as keyof SuperOrder,         label: t('financialTable.columns.reference'),          sortable: true },
@@ -71,7 +74,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
 
   const ProfitChip = ({ profit }: { profit: number }) => (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold text-white min-w-[80px] justify-center shadow-md ${profit >= 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} transition-colors duration-200`}>
-      ${profit.toLocaleString()}
+      ${fmt(profit)}
     </span>
   );
 
@@ -163,16 +166,16 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
 
         <div className="grid grid-cols-3 gap-2 mb-4">
           {[
-            { label: t('financialTable.columns.expense'), value: superOrder.expense, bg: '#fef2f2', border: '#000000', color: '#000000' },
-            { label: t('financialTable.columns.fuelCost'), value: superOrder.fuelCost, bg: '#fef2f2', border: '#000000', color: '#000000' },
-            { label: t('financialTable.columns.bonus'), value: superOrder.bonus, bg: '#fef2f2', border: '#000000', color: '#000000' },
+            { label: t('financialTable.columns.expense'),        value: superOrder.expense,        bg: '#fef2f2', border: '#000000', color: '#000000' },
+            { label: t('financialTable.columns.fuelCost'),       value: superOrder.fuelCost,       bg: '#fef2f2', border: '#000000', color: '#000000' },
+            { label: t('financialTable.columns.bonus'),          value: superOrder.bonus,           bg: '#fef2f2', border: '#000000', color: '#000000' },
             { label: t('financialTable.columns.driverSalaries'), value: superOrder.driverSalaries, bg: '#f0fdf4', border: '#22c55e', color: '#22c55e' },
-            { label: t('financialTable.columns.workCost'), value: superOrder.workCost, bg: '#eff6ff', border: '#0B2863', color: '#0B2863' },
-            { label: t('financialTable.columns.totalDiscount'), value: superOrder.totalCost, bg: '#fefce8', border: '#f59e0b', color: '#f59e0b' },
+            { label: t('financialTable.columns.workCost'),       value: superOrder.workCost,       bg: '#eff6ff', border: '#0B2863', color: '#0B2863' },
+            { label: t('financialTable.columns.totalDiscount'),  value: superOrder.totalCost,      bg: '#fefce8', border: '#f59e0b', color: '#f59e0b' },
           ].map(({ label, value, bg, border, color }) => (
             <div key={label} className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: bg, borderColor: border }}>
               <Typography variant="caption" className="!block !text-gray-600 !font-semibold">{label}</Typography>
-              <Typography variant="body2" className="!font-bold" style={{ color }}>${value.toLocaleString()}</Typography>
+              <Typography variant="body2" className="!font-bold" style={{ color }}>${fmt(value)}</Typography>
             </div>
           ))}
         </div>
@@ -197,16 +200,16 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
             </Typography>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { Icon: Fuel,      label: t('financialTable.fuel'),      value: superOrder.fuelCost,      bg: '#fff7ed', color: '#0B2863' },
-                { Icon: Wrench,    label: t('financialTable.work'),      value: superOrder.workCost,      bg: '#eff6ff', color: '#0B2863' },
-                { Icon: UserCheck, label: t('financialTable.drivers'),   value: superOrder.driverSalaries, bg: '#f0fdf4', color: '#22c55e' },
-                { Icon: Users,     label: t('financialTable.operators'), value: superOrder.otherSalaries, bg: '#fefce8', color: '#0B2863' },
-                { Icon: Users,     label: t('financialTable.columns.bonus'), value: superOrder.bonus,    bg: '#f5f3ff', color: '#8b5cf6' },
+                { Icon: Fuel,      label: t('financialTable.fuel'),           value: superOrder.fuelCost,       bg: '#fff7ed', color: '#0B2863' },
+                { Icon: Wrench,    label: t('financialTable.work'),           value: superOrder.workCost,       bg: '#eff6ff', color: '#0B2863' },
+                { Icon: UserCheck, label: t('financialTable.drivers'),        value: superOrder.driverSalaries, bg: '#f0fdf4', color: '#22c55e' },
+                { Icon: Users,     label: t('financialTable.operators'),      value: superOrder.otherSalaries,  bg: '#fefce8', color: '#0B2863' },
+                { Icon: Users,     label: t('financialTable.columns.bonus'),  value: superOrder.bonus,          bg: '#f5f3ff', color: '#8b5cf6' },
               ].map(({ Icon, label, value, bg, color }) => (
                 <div key={label} className="text-center p-2 rounded border" style={{ backgroundColor: bg }}>
                   <Icon size={16} className="mx-auto mb-1" style={{ color }} />
                   <Typography variant="caption" className="!block !font-semibold">{label}</Typography>
-                  <Typography variant="caption" className="!block">${value.toLocaleString()}</Typography>
+                  <Typography variant="caption" className="!block">${fmt(value)}</Typography>
                 </div>
               ))}
             </div>
@@ -285,14 +288,14 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
                           <Typography variant="body2" className="truncate" style={{ color: '#0B2863', maxWidth: isTablet ? '120px' : '180px' }} title={superOrder.client}>{superOrder.client}</Typography>
                         </TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${superOrder.expense.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${superOrder.fuelCost.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${superOrder.bonus.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${superOrder.otherSalaries.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${superOrder.workCost.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${superOrder.driverSalaries.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-bold" style={{ color: '#000000' }}>${superOrder.totalCost.toLocaleString()}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>${superOrder.totalIncome.toLocaleString()}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.expense)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.fuelCost)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.bonus)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.otherSalaries)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.workCost)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.driverSalaries)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-bold" style={{ color: '#000000' }}>${fmt(superOrder.totalCost)}</Typography></TableCell>
+                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>${fmt(superOrder.totalIncome)}</Typography></TableCell>
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><ProfitChip profit={superOrder.totalProfit} /></TableCell>
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><PayStatusChip paid={superOrder.payStatus === 1} /></TableCell>
                         <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
@@ -320,7 +323,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                                 ].map(({ label, value, color }) => (
                                   <span key={label} className="whitespace-nowrap">
                                     <span className="text-gray-400">{label}: </span>
-                                    <span className="font-semibold" style={{ color }}>${value.toLocaleString()}</span>
+                                    <span className="font-semibold" style={{ color }}>${fmt(value)}</span>
                                   </span>
                                 ))}
                               </div>
@@ -358,18 +361,18 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       data.reduce((s, o) => s + o.totalCost, 0),
                     ].map((total, i) => (
                       <TableCell key={i} className="!py-4 !px-4 !border-b-0">
-                        <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>${total.toLocaleString()}</Typography>
+                        <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>${fmt(total)}</Typography>
                       </TableCell>
                     ))}
                     <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>${data.reduce((s, o) => s + o.totalIncome, 0).toLocaleString()}</Typography>
+                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>${fmt(data.reduce((s, o) => s + o.totalIncome, 0))}</Typography>
                     </TableCell>
                     <TableCell className="!py-4 !px-4 !border-b-0">
                       {(() => {
                         const totalProfit = data.reduce((s, o) => s + o.totalProfit, 0);
                         return (
                           <span className={`inline-flex items-center px-4 py-2 rounded-full text-lg font-bold text-white min-w-[100px] justify-center shadow-md ${totalProfit >= 0 ? 'bg-green-600' : 'bg-red-600'}`}>
-                            ${totalProfit.toLocaleString()}
+                            ${fmt(totalProfit)}
                           </span>
                         );
                       })()}
