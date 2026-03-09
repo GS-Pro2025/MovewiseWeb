@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, UserX, Baby, Filter, Search, UserPlus } from 'lucide-react';
+import { Users, UserX, Baby, Filter, Search, UserPlus, Link } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Operator, InactiveOperator } from '../../domain/OperatorsModels';
 
@@ -13,6 +13,7 @@ interface OperatorsHeaderProps {
   onTabChange: (tab: 'active' | 'inactive') => void;
   onSearchChange: (term: string) => void;
   onRegisterOperator: () => void;
+  onInviteLink: () => void;
 }
 
 const COLORS = {
@@ -32,7 +33,8 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
   filteredInactiveOperators,
   onTabChange,
   onSearchChange,
-  onRegisterOperator
+  onRegisterOperator,
+  onInviteLink,  // ← desestructurado
 }) => {
   const { t } = useTranslation();
 
@@ -50,6 +52,17 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Invite Link button — visible siempre */}
+            <button
+              onClick={onInviteLink}
+              className="flex items-center gap-2 px-4 py-2 text-white text-sm font-bold rounded-lg transition-all shadow-sm hover:shadow-md"
+              style={{ backgroundColor: COLORS.secondary }}
+            >
+              <Link size={16} />
+              <span>{t('operators.header.inviteLinkButton')}</span>
+            </button>
+
+            {/* Register button — solo en tab activos */}
             {activeTab === 'active' && (
               <button
                 onClick={onRegisterOperator}
@@ -60,6 +73,7 @@ const OperatorsHeader: React.FC<OperatorsHeaderProps> = ({
                 <span>{t('operators.header.registerButton')}</span>
               </button>
             )}
+
             <div className="text-right">
               <div className="text-xs text-gray-500">{t('operators.header.totalLabel')}</div>
               <div className="text-xl font-bold" style={{ color: COLORS.primary }}>

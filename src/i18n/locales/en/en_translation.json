@@ -1977,85 +1977,7 @@
       "deleteError": "Error deleting vehicle"
     }
   },
-  "profile": {
-    "title": "My Profile",
-    "subtitle": "View and edit your profile information",
-    "editButton": "Edit Profile",
-    "saveButton": "Save Changes",
-    "saving": "Saving...",
-    "cancelButton": "Cancel",
-    "tryAgain": "Try Again",
-    "errorLoading": "Error Loading Profile",
-    "errorLoadingDesc": "Could not load user profile data.",
-    "changesCancelled": "Changes cancelled",
-    "updateSuccess": "Profile updated successfully",
-    "photo": {
-      "altText": "Profile",
-      "sizeError": "Image size must be less than 5MB",
-      "viewLabel": "View photo",
-      "dialogTitle": "Profile Photo",
-      "downloadLabel": "Download photo"
-    },
-    "roles": {
-      "superAdmin": "Super Admin",
-      "admin": "Admin"
-    },
-    "sections": {
-      "accountInfo": "Account Information",
-      "personalInfo": "Personal Information",
-      "security": "Account Security"
-    },
-    "fields": {
-      "username": "Username",
-      "usernamePlaceholder": "Enter username",
-      "email": "Email",
-      "emailPlaceholder": "Enter email address",
-      "firstName": "First Name",
-      "firstNamePlaceholder": "Enter first name",
-      "lastName": "Last Name",
-      "lastNamePlaceholder": "Enter last name",
-      "phone": "Phone",
-      "phonePlaceholder": "Enter phone number",
-      "birthDate": "Birth Date",
-      "address": "Address",
-      "addressPlaceholder": "Enter address",
-      "idNumber": "ID Number",
-      "idNumberPlaceholder": "Enter ID number",
-      "idType": "ID Type",
-      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
-    },
-    "idTypes": {
-      "select": "Select ID Type",
-      "driversLicense": "Driver's License",
-      "stateId": "State ID",
-      "greenCard": "Green Card",
-      "passport": "Passport"
-    },
-    "security": {
-      "changePassword": "Change Password",
-      "cancelChange": "Cancel",
-      "currentPassword": "Current Password",
-      "currentPasswordPlaceholder": "Enter current password",
-      "newPassword": "New Password",
-      "newPasswordPlaceholder": "Enter new password",
-      "confirmPassword": "Confirm New Password",
-      "confirmPasswordPlaceholder": "Confirm new password",
-      "requirements": "Password Requirements:",
-      "req1": "At least 6 characters long",
-      "req2": "New password must be different from current password",
-      "req3": "Current password is required to change password"
-    },
-    "errors": {
-      "currentPasswordRequired": "Current password is required to change password",
-      "newPasswordRequired": "New password is required",
-      "passwordsMismatch": "Passwords do not match",
-      "passwordTooShort": "Password must be at least 6 characters long",
-      "updateError": "Error updating profile",
-      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
-      "emailTaken": "This email is already registered to another user",
-      "idTaken": "This ID number is already registered to another user"
-    }
-  },
+
   "customers": {
     "title": "Our Allied Companies",
     "subtitle": "Here you can manage the list of companies we work with.",
@@ -2669,6 +2591,21 @@
     "error": {
       "title": "Error Loading Data"
     },
+  "inviteLink": {
+    "title": "Generate Invitation Link",
+    "subtitle": "Share this link so a new operator can register",
+    "description": "The generated link allows a new operator to self-register. It expires after 24 hours and can only be used once.",
+    "generate": "Generate Link",
+    "regenerate": "Generate New Link",
+    "generating": "Generating...",
+    "registrationLink": "Registration Link",
+    "expiresIn": "Expires in",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "showToken": "Show token",
+    "close": "Close",
+    "error": "Error generating link"
+  },
     "freelancers": {
       "title": "Freelancers Directory",
       "subtitle": "Manage and view freelancer information",
@@ -2703,6 +2640,7 @@
       "freelancerCreatedWarning": "Freelancer created, but error updating list"
     },
     "header": {
+      "inviteLinkButton": "Invite Operator",
       "title": "Operators Directory",
       "subtitle": "Manage and view operator information",
       "totalLabel": "Total Operators",
