@@ -4,10 +4,17 @@ import LoaderSpinner from "../../components/Login_Register/LoadingSpinner";
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
 import { Users, UserPlus, Search, Filter, CheckCircle, AlertCircle } from 'lucide-react';
-import { fetchOperators, fetchInactiveOperators, activateOperator, updateOperator, deleteOperator, addChildToOperator, createOperator } from '../data/RepositoryOperators';
+import {
+  fetchOperators,
+  fetchInactiveOperators,
+  activateOperator,
+  updateOperator,
+  deleteOperator,
+  addChildToOperator,
+  createOperator,
+} from '../data/RepositoryOperators';
 import { fetchFreelanceOperators, FreelanceOperator } from '../data/RepositoryFreelancer';
-import { Operator } from '../domain/OperatorsModels';
-import { InactiveOperator } from '../domain/OperatorsModels';
+import { Operator, InactiveOperator } from '../domain/OperatorsModels';
 import OperatorsHeader from './components/OperatorsHeader';
 import OperatorsTable from './components/OperatorsTable';
 import EditOperatorModal from './components/EditOperatorModal';
@@ -16,6 +23,7 @@ import OperatorDetailsModal from './components/OperatorDetailsModal';
 import ConfirmDeleteDialog from './components/ConfirmDeleteDialog';
 import RegisterOperatorModal from './components/RegisterOperatorModal';
 import CreateFreelancer from './components/CreateFreelancer';
+import InviteLinkModal from './components/Invitelinkmodal';
 
 const COLORS = {
   primary: '#0B2863',
@@ -29,7 +37,7 @@ const OperatorsPage: React.FC = () => {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
 
-  // States
+  // ── States ──────────────────────────────────────────────────────────────────
   const [operators, setOperators] = useState<Operator[]>([]);
   const [inactiveOperators, setInactiveOperators] = useState<InactiveOperator[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -46,9 +54,10 @@ const OperatorsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState<boolean>(false);
+  const [isInviteLinkModalOpen, setIsInviteLinkModalOpen] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'operators' | 'freelancers'>('operators');
 
-  // Freelancers states
+  // ── Freelancers states ───────────────────────────────────────────────────────
   const [freelancers, setFreelancers] = useState<FreelanceOperator[]>([]);
   const [freelancersLoading, setFreelancersLoading] = useState<boolean>(false);
   const [freelancersPage, setFreelancersPage] = useState<number>(1);
@@ -56,6 +65,61 @@ const OperatorsPage: React.FC = () => {
   const [freelancersTotal, setFreelancersTotal] = useState<number>(0);
   const [isCreateFreelancerOpen, setIsCreateFreelancerOpen] = useState<boolean>(false);
 
+  // ── Effects ─────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const loadOperators = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetchOperators();
+        setOperators(response.results);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : t('operators.snackbar.loadError');
+        setError(msg);
+        enqueueSnackbar(msg, { variant: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (viewMode === 'operators') loadOperators();
+  }, [enqueueSnackbar, viewMode, t]);
+
+  useEffect(() => {
+    const loadInactiveOperators = async () => {
+      try {
+        setInactiveLoading(true);
+        const response = await fetchInactiveOperators();
+        setInactiveOperators(response.results);
+      } catch (err) {
+        console.error('Error loading inactive operators:', err);
+      } finally {
+        setInactiveLoading(false);
+      }
+    };
+    if (viewMode === 'operators') loadInactiveOperators();
+  }, [viewMode]);
+
+  useEffect(() => {
+    const loadFreelancers = async () => {
+      try {
+        setFreelancersLoading(true);
+        const response = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
+        setFreelancers(response.results);
+        setFreelancersTotal(response.count);
+      } catch (err) {
+        console.error('Error loading freelancers:', err);
+        enqueueSnackbar(
+          err instanceof Error ? err.message : t('operators.snackbar.loadError'),
+          { variant: 'error' }
+        );
+      } finally {
+        setFreelancersLoading(false);
+      }
+    };
+    if (viewMode === 'freelancers') loadFreelancers();
+  }, [viewMode, freelancersPage, freelancersPageSize, enqueueSnackbar, t]);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleFreelancerCreated = useCallback(async (created?: FreelanceOperator) => {
     try {
       const resp = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
@@ -73,60 +137,6 @@ const OperatorsPage: React.FC = () => {
       setIsCreateFreelancerOpen(false);
     }
   }, [enqueueSnackbar, freelancersPage, freelancersPageSize, t]);
-
-  // Load operators
-  useEffect(() => {
-    const loadOperators = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetchOperators();
-        setOperators(response.results);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : t('operators.snackbar.loadError');
-        setError(msg);
-        enqueueSnackbar(msg, { variant: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (viewMode === 'operators') loadOperators();
-  }, [enqueueSnackbar, viewMode, t]);
-
-  useEffect(() => {
-    const loadInactiveOperators = async () => {
-      try {
-        setInactiveLoading(true);
-        const response = await fetchInactiveOperators();
-        setInactiveOperators(response.results);
-      } catch (err) {
-        console.error('Error loading inactive operators:', err);
-      } finally {
-        setInactiveLoading(false);
-      }
-    };
-
-    if (viewMode === 'operators') loadInactiveOperators();
-  }, [viewMode]);
-
-  useEffect(() => {
-    const loadFreelancers = async () => {
-      try {
-        setFreelancersLoading(true);
-        const response = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
-        setFreelancers(response.results);
-        setFreelancersTotal(response.count);
-      } catch (err) {
-        console.error('Error loading freelancers:', err);
-        enqueueSnackbar(err instanceof Error ? err.message : t('operators.snackbar.loadError'), { variant: 'error' });
-      } finally {
-        setFreelancersLoading(false);
-      }
-    };
-
-    if (viewMode === 'freelancers') loadFreelancers();
-  }, [viewMode, freelancersPage, freelancersPageSize, enqueueSnackbar, t]);
 
   const createOperatorFormData = useCallback((operatorData: any): FormData => {
     const formData = new FormData();
@@ -191,6 +201,10 @@ const OperatorsPage: React.FC = () => {
     setOperators(response.results);
   }, []);
 
+  const handleOpenInviteLink = useCallback(() => {
+    setIsInviteLinkModalOpen(true);
+  }, []);
+
   const handleEditOperator = useCallback((operator: Operator) => {
     setOperatorToEdit(operator);
     setIsEditDialogOpen(true);
@@ -198,14 +212,11 @@ const OperatorsPage: React.FC = () => {
 
   const handleSaveEdit = useCallback(async (operatorData: Partial<Operator> | FormData) => {
     if (!operatorToEdit) return;
-
     try {
       const dataToSend = operatorData instanceof FormData
         ? operatorData
         : createOperatorFormData(operatorData);
-
       await updateOperator(operatorToEdit.id_operator, dataToSend);
-
       const response = await fetchOperators();
       setOperators(response.results);
       setIsEditDialogOpen(false);
@@ -214,7 +225,6 @@ const OperatorsPage: React.FC = () => {
     } catch (error: any) {
       const apiError = error?.response?.data || error?.data || error;
       let errorMessage = t('operators.snackbar.updateError');
-
       if (apiError?.errors) {
         const errorMessages: string[] = [];
         Object.entries(apiError.errors).forEach(([field, msgs]) => {
@@ -228,7 +238,6 @@ const OperatorsPage: React.FC = () => {
       } else if (apiError?.message && apiError.message !== 'Validation error') {
         errorMessage = apiError.message;
       }
-
       enqueueSnackbar(errorMessage, { variant: 'error' });
       throw error;
     }
@@ -241,12 +250,11 @@ const OperatorsPage: React.FC = () => {
 
   const handleConfirmDelete = useCallback(async () => {
     if (!operatorToDelete) return;
-
     try {
       await deleteOperator(operatorToDelete.id_operator);
       const [operatorsResponse, inactiveResponse] = await Promise.all([
         fetchOperators(),
-        fetchInactiveOperators()
+        fetchInactiveOperators(),
       ]);
       setOperators(operatorsResponse.results);
       setInactiveOperators(inactiveResponse.results);
@@ -270,18 +278,15 @@ const OperatorsPage: React.FC = () => {
 
   const handleAddChild = useCallback(async (childData: { name: string; birth_date: string; gender: string }) => {
     if (!operatorForChildren) return;
-
     try {
       await addChildToOperator({
         operator: operatorForChildren.id_operator,
         name: childData.name,
         birth_date: childData.birth_date,
-        gender: childData.gender
+        gender: childData.gender,
       });
-
       const response = await fetchOperators();
       setOperators(response.results);
-
       const updatedOperator = response.results.find(op => op.id_operator === operatorForChildren.id_operator);
       if (updatedOperator) {
         setOperatorForChildren(updatedOperator);
@@ -289,13 +294,13 @@ const OperatorsPage: React.FC = () => {
           setSelectedOperator(updatedOperator);
         }
       }
-
       enqueueSnackbar(t('operators.snackbar.addChildSuccess'), { variant: 'success' });
     } catch {
       enqueueSnackbar(t('operators.snackbar.addChildError'), { variant: 'error' });
     }
   }, [operatorForChildren, selectedOperator, enqueueSnackbar, t]);
 
+  // ── Memos ────────────────────────────────────────────────────────────────────
   const mapFreelanceToOperator = useCallback((freelancer: FreelanceOperator): Operator => ({
     id_operator: freelancer.id_operator,
     code: freelancer.code || '',
@@ -317,7 +322,7 @@ const OperatorsPage: React.FC = () => {
     id_number: freelancer.id_number || '',
     address: freelancer.address || '',
     id_company: freelancer.id_company || null,
-    sons: freelancer.sons || []
+    sons: freelancer.sons || [],
   } as Operator), []);
 
   const filteredOperators = useMemo(() => {
@@ -355,10 +360,10 @@ const OperatorsPage: React.FC = () => {
     [filteredFreelancers, mapFreelanceToOperator]
   );
 
-  // Pagination values
   const freelancerFrom = (freelancersPage - 1) * freelancersPageSize + 1;
   const freelancerTo = Math.min(freelancersPage * freelancersPageSize, freelancersTotal);
 
+  // ── Early returns ────────────────────────────────────────────────────────────
   if (loading && viewMode === 'operators') return <LoaderSpinner />;
   if (freelancersLoading && viewMode === 'freelancers') return <LoaderSpinner />;
 
@@ -369,7 +374,10 @@ const OperatorsPage: React.FC = () => {
           className="text-center p-8 rounded-xl border-2 shadow-lg max-w-md"
           style={{ borderColor: COLORS.error, backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
         >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: COLORS.error }}>
+          <div
+            className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: COLORS.error }}
+          >
             <AlertCircle size={32} className="text-white" />
           </div>
           <h3 className="text-xl font-bold mb-2" style={{ color: COLORS.error }}>
@@ -381,6 +389,7 @@ const OperatorsPage: React.FC = () => {
     );
   }
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
 
@@ -423,6 +432,7 @@ const OperatorsPage: React.FC = () => {
             onTabChange={setActiveTab}
             onSearchChange={setSearchTerm}
             onRegisterOperator={handleRegisterOperator}
+            onInviteLink={handleOpenInviteLink}
           />
 
           <OperatorsTable
@@ -443,7 +453,6 @@ const OperatorsPage: React.FC = () => {
       {/* ── Freelancers View ── */}
       {viewMode === 'freelancers' && (
         <>
-          {/* Freelancers Header */}
           <div className="bg-white rounded-xl shadow-sm border p-4" style={{ borderColor: COLORS.primary }}>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -467,7 +476,6 @@ const OperatorsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Search Bar */}
             <div className="mb-4">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2" style={{ color: COLORS.gray }} />
@@ -485,7 +493,6 @@ const OperatorsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.secondary }}>
                 <div className="flex items-center justify-between">
@@ -496,7 +503,6 @@ const OperatorsPage: React.FC = () => {
                   <UserPlus size={24} style={{ color: COLORS.secondary }} />
                 </div>
               </div>
-
               <div className="rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.success }}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -506,7 +512,6 @@ const OperatorsPage: React.FC = () => {
                   <CheckCircle size={24} style={{ color: COLORS.success }} />
                 </div>
               </div>
-
               <div className="rounded-lg p-3 border-2 shadow-sm" style={{ borderColor: COLORS.primary }}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -519,7 +524,6 @@ const OperatorsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Freelancers Table */}
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: COLORS.primary }}>
             <div className="px-4 py-3 border-b" style={{ borderColor: COLORS.primary }}>
               <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: COLORS.primary }}>
@@ -528,7 +532,6 @@ const OperatorsPage: React.FC = () => {
                 {searchTerm && `(${mappedFreelancers.length} ${t('operators.freelancers.tableResultsSuffix')})`}
               </h3>
             </div>
-
             <OperatorsTable
               activeTab="active"
               operators={mappedFreelancers}
@@ -543,14 +546,13 @@ const OperatorsPage: React.FC = () => {
             />
           </div>
 
-          {/* Pagination */}
           <div className="bg-white rounded-xl shadow-sm border p-3" style={{ borderColor: COLORS.primary }}>
             <div className="flex items-center justify-between">
               <div className="text-xs text-gray-700">
                 {t('operators.freelancers.pagination.showing', {
                   from: freelancerFrom,
                   to: freelancerTo,
-                  total: freelancersTotal
+                  total: freelancersTotal,
                 })}
               </div>
               <div className="flex items-center space-x-2">
@@ -614,6 +616,13 @@ const OperatorsPage: React.FC = () => {
               isOpen={isRegisterModalOpen}
               onClose={() => setIsRegisterModalOpen(false)}
               onSave={handleSaveNewOperator}
+            />
+          )}
+
+          {isInviteLinkModalOpen && (
+            <InviteLinkModal
+              isOpen={isInviteLinkModalOpen}
+              onClose={() => setIsInviteLinkModalOpen(false)}
             />
           )}
         </>

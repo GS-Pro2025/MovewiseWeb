@@ -335,3 +335,43 @@ export const changeOperatorPassword = async (
     throw error;
   }
 };
+export interface InviteLinkResponse {
+  link: string;
+  token: string;
+  expires_in: string; // e.g. "24 hours"
+}
+
+export const generateOperatorInviteLink = async (): Promise<InviteLinkResponse> => {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/operators/generate-invite-link/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || data.messDev || 'Error generating invite link');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error generating operator invite link:', error);
+    throw error;
+  }
+};

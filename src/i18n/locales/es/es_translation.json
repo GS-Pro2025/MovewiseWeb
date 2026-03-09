@@ -2485,7 +2485,23 @@
       "freelancerCreated": "Freelancer creado exitosamente",
       "freelancerCreatedWarning": "Freelancer creado, pero hubo un error al actualizar la lista"
     },
+    "inviteLink": {
+    "title": "Generar Enlace de Invitación",
+    "subtitle": "Comparte este enlace para que un nuevo operador pueda registrarse",
+    "description": "El enlace generado permite que un nuevo operador se registre por su cuenta. Expira en 24 horas y solo puede usarse una vez.",
+    "generate": "Generar Enlace",
+    "regenerate": "Generar Nuevo Enlace",
+    "generating": "Generando...",
+    "registrationLink": "Enlace de Registro",
+    "expiresIn": "Expira en",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "showToken": "Ver token",
+    "close": "Cerrar",
+    "error": "Error al generar el enlace"
+  },
     "header": {
+      "inviteLinkButton": "Invitar Operador",
       "title": "Directorio de Operadores",
       "subtitle": "Gestiona y visualiza la información de los operadores",
       "totalLabel": "Total Operadores",
