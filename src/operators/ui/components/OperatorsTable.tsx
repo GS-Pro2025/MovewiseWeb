@@ -8,7 +8,7 @@ import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle, KeyRound } from 'lucide-react';
+import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle, KeyRound, AlertTriangle } from 'lucide-react';
 import SendEmailDialog from './SendEmailDialog';
 import OperatorLoansDialog from './OperatorLoansDialog';
 import CreateLoanDialog from './CreateLoanDialog';
@@ -26,6 +26,19 @@ interface OperatorsTableProps {
   onManageChildren: (operator: Operator) => void;
   onActivateOperator: (id: number) => void;
 }
+
+// ── Helper: detecta si un operador tiene salario faltante o en cero ──────────
+const toNumber = (val: string | number | null | undefined): number =>
+  parseFloat(String(val ?? '0'));
+
+const isMissingSalary = (operator: Operator): boolean => {
+  if (operator.salary_type === 'hour') {
+    const hourly = toNumber(operator.hourly_salary);
+    return operator.hourly_salary == null || isNaN(hourly) || hourly === 0;
+  }
+  const salary = toNumber(operator.salary);
+  return operator.salary == null || isNaN(salary) || salary === 0;
+};
 
 const OperatorsTable: React.FC<OperatorsTableProps> = ({
   activeTab,
@@ -62,7 +75,6 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
   );
 
   // ── Menu handlers ──────────────────────────────────────────────────────────
-
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, operator: Operator) => {
     event.stopPropagation();
     setMenuAnchorEl(event.currentTarget);
@@ -86,10 +98,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
 
   const handleAction = (action: string) => {
     if (!menuOperator) return;
-
     switch (action) {
-      case 'view':       onViewDetails(menuOperator);   break;
-      case 'edit':       onEditOperator(menuOperator);  break;
+      case 'view':       onViewDetails(menuOperator);    break;
+      case 'edit':       onEditOperator(menuOperator);   break;
       case 'children':   onManageChildren(menuOperator); break;
       case 'delete':     onDeleteOperator(menuOperator); break;
       case 'email':
@@ -115,16 +126,54 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
   const handleCloseEmailDialog      = () => { setIsEmailDialogOpen(false);      setSelectedOperator(null); };
   const handleCloseLoansDialog      = () => { setIsLoansDialogOpen(false);      setSelectedOperator(null); };
   const handleCloseCreateLoanDialog = () => { setIsCreateLoanDialogOpen(false); setSelectedOperator(null); };
+  const handleCloseChangePasswordDialog = () => { setIsChangePasswordDialogOpen(false); setSelectedOperator(null); };
 
-  // ── Shared context/dot menu ────────────────────────────────────────────────
-  const handleCloseChangePasswordDialog = () => {
-    setIsChangePasswordDialogOpen(false);
-    setSelectedOperator(null);
+  // ── Salary cell ────────────────────────────────────────────────────────────
+  const renderSalaryCell = (operator: Operator) => {
+    if (isMissingSalary(operator)) {
+      return (
+        <div className="flex flex-col gap-1">
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full"
+            style={{
+              backgroundColor: '#FEF3C7',
+              color: '#92400E',
+              border: '1.5px solid #FCD34D',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            }}
+          >
+            <AlertTriangle size={11} />
+            {t('operators.table.salary.missing', 'Sin salario')}
+          </span>
+          <span className="text-xs text-gray-400">
+            {operator.salary_type === 'hour'
+              ? t('operators.table.salary.perHour')
+              : t('operators.table.salary.perDay')}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-sm text-gray-900">
+        {operator.salary_type === 'hour' ? (
+          <>
+            <div className="font-medium">${operator.hourly_salary}/hr</div>
+            <div className="text-xs text-gray-500">{t('operators.table.salary.perHour')}</div>
+          </>
+        ) : (
+          <>
+            <div className="font-medium">${operator.salary}/day</div>
+            <div className="text-xs text-gray-500">{t('operators.table.salary.perDay')}</div>
+          </>
+        )}
+      </div>
+    );
   };
-  // Render the actions menu (shared between 3-dot and context menu)
+
+  // ── Actions menu ───────────────────────────────────────────────────────────
   const renderActionsMenu = () => {
     const isOpen = Boolean(menuAnchorEl) || Boolean(contextMenuPosition);
-
     return (
       <Menu
         open={isOpen}
@@ -153,6 +202,19 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
           <ListItemText>{t('operators.table.menu.edit')}</ListItemText>
         </MenuItem>
 
+        {/* Si le falta salario, resalta la opción de editar con una nota */}
+        {menuOperator && isMissingSalary(menuOperator) && (
+          <MenuItem
+            onClick={() => handleAction('edit')}
+            sx={{ backgroundColor: '#FEF9C3', '&:hover': { backgroundColor: '#FEF08A' } }}
+          >
+            <ListItemIcon><AlertTriangle size={18} color="#B45309" /></ListItemIcon>
+            <ListItemText sx={{ color: '#92400E', fontWeight: 700 }}>
+              {t('operators.table.menu.setSalary', 'Configurar salario')}
+            </ListItemText>
+          </MenuItem>
+        )}
+
         <MenuItem onClick={() => handleAction('children')}>
           <ListItemIcon><Baby size={18} color="#a855f7" /></ListItemIcon>
           <ListItemText>{t('operators.table.menu.manageChildren')}</ListItemText>
@@ -170,21 +232,18 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
           <ListItemText>{t('operators.table.menu.createLoan')}</ListItemText>
         </MenuItem>
 
-        <MenuItem
-          onClick={() => handleAction('email')}
-          disabled={!menuOperator?.email}
-        >
+        <MenuItem onClick={() => handleAction('email')} disabled={!menuOperator?.email}>
           <ListItemIcon><Mail size={18} color="#6366f1" /></ListItemIcon>
           <ListItemText>{t('operators.table.menu.sendEmail')}</ListItemText>
         </MenuItem>
 
         <Divider />
+
         <MenuItem onClick={() => handleAction('changePassword')}>
-          <ListItemIcon>
-            <KeyRound size={18} color="#0B2863" />
-          </ListItemIcon>
+          <ListItemIcon><KeyRound size={18} color="#0B2863" /></ListItemIcon>
           <ListItemText>Change Password</ListItemText>
         </MenuItem>
+
         <MenuItem onClick={() => handleAction('delete')}>
           <ListItemIcon><Trash2 size={18} color="#ef4444" /></ListItemIcon>
           <ListItemText sx={{ color: '#ef4444' }}>{t('operators.table.menu.deactivate')}</ListItemText>
@@ -192,8 +251,6 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
       </Menu>
     );
   };
-
-  // ── Shared column header helper ────────────────────────────────────────────
 
   const Th: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -231,13 +288,25 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                   <tr
                     key={operator.id_operator}
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    // Fila con fondo amarillo suave si le falta salario
+                    style={isMissingSalary(operator) ? { backgroundColor: '#FFFBEB' } : undefined}
                     onContextMenu={(e) => handleContextMenu(e, operator)}
                   >
                     {/* Operator */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
+                        <div className="flex-shrink-0 h-12 w-12 relative">
                           <OperatorAvatar operator={operator} />
+                          {/* Dot indicador si falta salario */}
+                          {isMissingSalary(operator) && (
+                            <span
+                              className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5"
+                              title="Salario no configurado"
+                            >
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#F09F52]" />
+                            </span>
+                          )}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{getFullName(operator)}</div>
@@ -259,21 +328,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                       <div className="text-sm text-gray-900">{operator.number_licence}</div>
                     </td>
 
-                    {/* Salary */}
+                    {/* Salary — usa el helper de render */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {operator.salary_type === 'hour' ? (
-                          <>
-                            <div className="font-medium">${operator.hourly_salary}/hr</div>
-                            <div className="text-xs text-gray-500">{t('operators.table.salary.perHour')}</div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="font-medium">${operator.salary}/day</div>
-                            <div className="text-xs text-gray-500">{t('operators.table.salary.perDay')}</div>
-                          </>
-                        )}
-                      </div>
+                      {renderSalaryCell(operator)}
                     </td>
 
                     {/* Family */}
@@ -314,7 +371,6 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
             </table>
           </div>
 
-          {/* Empty state */}
           {operators.length === 0 && searchTerm && (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium text-gray-600 mb-2">
@@ -358,7 +414,6 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                 <tbody className="bg-white divide-y divide-gray-200">
                   {inactiveOperators.map((operator) => (
                     <tr key={operator.id_operator} className="hover:bg-gray-50 transition-colors">
-                      {/* Operator */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12">
@@ -371,13 +426,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                           </div>
                         </div>
                       </td>
-
-                      {/* Contact */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{operator.email}</div>
                       </td>
-
-                      {/* Salary */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
                           {operator.salary_type === 'hour' ? (
@@ -393,15 +444,11 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
                           )}
                         </div>
                       </td>
-
-                      {/* Status */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                           {operator.status}
                         </span>
                       </td>
-
-                      {/* Activate */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => onActivateOperator(operator.id_operator)}
@@ -440,17 +487,15 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
             operatorId={selectedOperator.id_operator}
             operatorName={getFullName(selectedOperator)}
           />
+          <ChangePasswordDialog
+            open={isChangePasswordDialogOpen}
+            onClose={handleCloseChangePasswordDialog}
+            operatorCode={selectedOperator.code}
+            operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
+          />
         </>
       )}
-      {selectedOperator && (
-        <ChangePasswordDialog
-          open={isChangePasswordDialogOpen}
-          onClose={handleCloseChangePasswordDialog}
-          operatorCode={selectedOperator.code}
-          operatorName={`${selectedOperator.first_name} ${selectedOperator.last_name}`}
-        />
-      )}
-      {/* Actions Menu (3-dot and context menu) */}
+
       {renderActionsMenu()}
     </>
   );

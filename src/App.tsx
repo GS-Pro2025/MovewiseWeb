@@ -27,6 +27,8 @@ import LoansSummary from './statistics/ui/LoansSummary';
 import StatementPage from './statement/ui/StatementPage';
 import MyCompanyPage from './myCompanyPage/ui/MyCompanyPage';
 import TrucksPage from './Truck/ui/TrucksPage';
+import { OperatorsAlertProvider } from './operators/ui/components/context/Operatorsalertcontext'; 
+
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
@@ -84,31 +86,35 @@ const App = () => {
 
         <Route
           path="/app"
-          element={authenticated ? <Layout /> : <Navigate to="/login" replace />}
+          element={
+            authenticated
+              ? <OperatorsAlertProvider><Layout /></OperatorsAlertProvider>
+              : <Navigate to="/login" replace />
+          }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"                   element={<Home />} />
-          <Route path="resume-fuel"                 element={<ResumeFuel />} />
-          <Route path="summary-cost"                element={<SummaryCost />} />
-          <Route path="operators"                   element={<OperatorsPage />} />
-          <Route path="payroll"                     element={<PayrollPage />} />
-          <Route path="extra-cost"                  element={<ExtraCost />} />
+          <Route path="dashboard"                        element={<Home />} />
+          <Route path="resume-fuel"                      element={<ResumeFuel />} />
+          <Route path="summary-cost"                     element={<SummaryCost />} />
+          <Route path="operators"                        element={<OperatorsPage />} />
+          <Route path="payroll"                          element={<PayrollPage />} />
+          <Route path="extra-cost"                       element={<ExtraCost />} />
           <Route path="add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
-          <Route path="create-daily"                element={<CreateOrder />} />
-          <Route path="create-warehouse"            element={<CreateWarehouseView />} />
-          <Route path="customers"                   element={<CustomersView />} />
-          <Route path="admins"                      element={<AdminsPage />} />
-          <Route path="create-admin"                element={<CreateAdminView />} />
-          <Route path="jobs-tools"                  element={<JobsAndToolsGUI />} />
-          <Route path="statistics"                  element={<Statistics />} />
-          <Route path="order-breakdown"             element={<OrderBreakdownPage />} />
-          <Route path="profile"                     element={<ProfilePage />} />
-          <Route path="statements"                  element={<StatementPage />} />
-          <Route path="my-company"                  element={<MyCompanyPage />} />
-          <Route path="financials"                  element={<FinancialView />} />
-          <Route path="expense-breakdown"           element={<FinancialExpenseBreakdownView />} />
-          <Route path="operator-loans"              element={<LoansSummary />} />
-          <Route path="trucks" element={<TrucksPage />} />
+          <Route path="create-daily"                     element={<CreateOrder />} />
+          <Route path="create-warehouse"                 element={<CreateWarehouseView />} />
+          <Route path="customers"                        element={<CustomersView />} />
+          <Route path="admins"                           element={<AdminsPage />} />
+          <Route path="create-admin"                     element={<CreateAdminView />} />
+          <Route path="jobs-tools"                       element={<JobsAndToolsGUI />} />
+          <Route path="statistics"                       element={<Statistics />} />
+          <Route path="order-breakdown"                  element={<OrderBreakdownPage />} />
+          <Route path="profile"                          element={<ProfilePage />} />
+          <Route path="statements"                       element={<StatementPage />} />
+          <Route path="my-company"                       element={<MyCompanyPage />} />
+          <Route path="financials"                       element={<FinancialView />} />
+          <Route path="expense-breakdown"                element={<FinancialExpenseBreakdownView />} />
+          <Route path="operator-loans"                   element={<LoansSummary />} />
+          <Route path="trucks"                           element={<TrucksPage />} />
         </Route>
 
         <Route
