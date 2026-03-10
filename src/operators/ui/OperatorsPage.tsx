@@ -24,6 +24,7 @@ import ConfirmDeleteDialog from './components/ConfirmDeleteDialog';
 import RegisterOperatorModal from './components/RegisterOperatorModal';
 import CreateFreelancer from './components/CreateFreelancer';
 import InviteLinkModal from './components/Invitelinkmodal';
+import { useOperatorsAlert } from "../ui/components/context/Operatorsalertcontext";
 
 const COLORS = {
   primary: '#0B2863',
@@ -325,6 +326,22 @@ const OperatorsPage: React.FC = () => {
     sons: freelancer.sons || [],
   } as Operator), []);
 
+
+  const { setMissingSalaryCount } = useOperatorsAlert();
+
+  const missingSalaryCount = useMemo(() => {
+    const toNum = (val: string | number | null | undefined) => parseFloat(String(val ?? '0'));
+    return operators.filter(op => {
+      if (op.salary_type === 'hour') {
+        const h = toNum(op.hourly_salary);
+        return op.hourly_salary == null || isNaN(h) || h === 0;
+      }
+      const s = toNum(op.salary);
+      return op.salary == null || isNaN(s) || s === 0;
+    }).length;
+  }, [operators]);
+  
+
   const filteredOperators = useMemo(() => {
     if (!searchTerm.trim()) return operators;
     const term = searchTerm.toLowerCase();
@@ -363,6 +380,10 @@ const OperatorsPage: React.FC = () => {
   const freelancerFrom = (freelancersPage - 1) * freelancersPageSize + 1;
   const freelancerTo = Math.min(freelancersPage * freelancersPageSize, freelancersTotal);
 
+// CAMBIO 3: Sincroniza el context cada vez que cambie el count
+useEffect(() => {
+  setMissingSalaryCount(missingSalaryCount);
+}, [missingSalaryCount, setMissingSalaryCount]);
   // ── Early returns ────────────────────────────────────────────────────────────
   if (loading && viewMode === 'operators') return <LoaderSpinner />;
   if (freelancersLoading && viewMode === 'freelancers') return <LoaderSpinner />;
@@ -429,6 +450,7 @@ const OperatorsPage: React.FC = () => {
             searchTerm={searchTerm}
             filteredOperators={filteredOperators}
             filteredInactiveOperators={filteredInactiveOperators}
+            missingSalaryCount={missingSalaryCount}
             onTabChange={setActiveTab}
             onSearchChange={setSearchTerm}
             onRegisterOperator={handleRegisterOperator}

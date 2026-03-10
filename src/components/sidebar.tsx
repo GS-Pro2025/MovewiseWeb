@@ -8,12 +8,14 @@ import { fetchUserProfile } from "../service/userService";
 import type { UserProfile } from "../models/UserModels";
 import { decodeJWTAsync } from "../service/tokenDecoder";
 import backgroundImg from "../assets/patron_modo_claro.png";
+import { useOperatorsAlert } from "../operators/ui/components/context/Operatorsalertcontext";
 
 interface NavItemProps {
   icon: string;
   text: string;
   isCollapsed: boolean;
   to: string;
+  badge?: number;
   onClick?: () => void;
 }
 interface SidebarProps {
@@ -89,6 +91,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
   const { t, i18n } = useTranslation();
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const { missingSalaryCount } = useOperatorsAlert(); // ← consume el context
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -140,19 +143,34 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
     index: number;
     icon: string;
     label: string;
-  }> = ({ index, icon, label }) => (
+    badge?: number;
+  }> = ({ index, icon, label, badge }) => (
     <button
       className="w-full flex items-center justify-between py-2 px-5 text-white transition-all duration-700 ease-in-out relative hover:bg-[#575b8a] hover:pl-8 group"
       onClick={() => toggleDropdown(index)}
       disabled={collapsed}
     >
       <div className="flex items-center gap-3">
-        <span className="w-7 h-7 leading-7 text-center inline-block rounded-sm text-base flex-shrink-0">
+        <span className="w-7 h-7 leading-7 text-center inline-block rounded-sm text-base flex-shrink-0 relative">
           <i className={`fas ${icon}`}></i>
+          {/* Badge en el ícono cuando está colapsado */}
+          {!!badge && badge > 0 && collapsed && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#F09F52] text-[9px] font-bold text-white shadow-sm">
+              {badge > 9 ? '9+' : badge}
+            </span>
+          )}
         </span>
         <span className={labelClass}>{label}</span>
       </div>
-      <i className={chevronClass(index)}></i>
+      <div className="flex items-center gap-2">
+        {/* Badge visible cuando el sidebar está expandido */}
+        {!!badge && badge > 0 && !collapsed && (
+          <span className="inline-flex items-center justify-center h-5 min-w-[10px] px-1 rounded-full bg-[#F09F52] text-[8px] font-light text-white shadow-sm">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+        <i className={chevronClass(index)}></i>
+      </div>
       <span className="absolute left-0 top-0 w-1 h-full bg-[#6c63ff] transition-transform duration-700 ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top" />
     </button>
   );
@@ -263,9 +281,9 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
             <DropdownButton index={1} icon="fa-coins" label={t("sidebar.nav.cost")} />
             <div className={dropdownPanelClass(1)}>
               <ul className="list-none p-0 m-0 bg-[#0B2863]">
-                <DropdownLink icon="fa-calculator"       text={t("sidebar.nav.summaryCosts")} to="/app/summary-cost"   onClick={closeMobileMenu} />
-                <DropdownLink icon="fa-gas-pump"         text={t("sidebar.nav.resumeFuel")}   to="/app/resume-fuel"    onClick={closeMobileMenu} />
-                <DropdownLink icon="fa-dollar-sign"      text={t("sidebar.nav.extraCost")}    to="/app/extra-cost"     onClick={closeMobileMenu} />
+                <DropdownLink icon="fa-calculator"  text={t("sidebar.nav.summaryCosts")} to="/app/summary-cost"  onClick={closeMobileMenu} />
+                <DropdownLink icon="fa-gas-pump"    text={t("sidebar.nav.resumeFuel")}   to="/app/resume-fuel"   onClick={closeMobileMenu} />
+                <DropdownLink icon="fa-dollar-sign" text={t("sidebar.nav.extraCost")}    to="/app/extra-cost"    onClick={closeMobileMenu} />
               </ul>
             </div>
           </li>
@@ -276,25 +294,37 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
               <DropdownButton index={2} icon="fa-chart-pie" label={t("sidebar.nav.finance")} />
               <div className={dropdownPanelClass(2)}>
                 <ul className="list-none p-0 m-0 bg-[#0B2863]">
-                  <DropdownLink icon="fa-coins"               text={t("sidebar.nav.financials")}       to="/app/financials"       onClick={closeMobileMenu} />
+                  <DropdownLink icon="fa-coins"               text={t("sidebar.nav.financials")}       to="/app/financials"        onClick={closeMobileMenu} />
                   <DropdownLink icon="fa-file-invoice-dollar" text={t("sidebar.nav.expenseBreakdown")} to="/app/expense-breakdown" onClick={closeMobileMenu} />
-                  <DropdownLink icon="fa-hand-holding-usd"    text={t("sidebar.nav.operatorLoans")}    to="/app/operator-loans"   onClick={closeMobileMenu} />
+                  <DropdownLink icon="fa-hand-holding-usd"    text={t("sidebar.nav.operatorLoans")}    to="/app/operator-loans"    onClick={closeMobileMenu} />
                 </ul>
               </div>
             </li>
           )}
 
-          {/* ── Settings dropdown (index 0) ── */}
+          {/* ── Settings dropdown (index 0) — con badge en Operators ── */}
           <li className={dropdownWrapClass(0)}>
-            <DropdownButton index={0} icon="fa-cogs" label={t("sidebar.nav.settings")} />
+            {/* Badge en el botón Settings cuando está colapsado o expandido */}
+            <DropdownButton
+              index={0}
+              icon="fa-cogs"
+              label={t("sidebar.nav.settings")}
+              badge={missingSalaryCount}
+            />
             <div className={dropdownPanelClass(0)}>
-              {/* max-h-[600px] ensures all items are visible regardless of count */}
               <ul className="list-none p-0 m-0 bg-[#0B2863]">
                 <DropdownLink icon="fa-user"      text={t("sidebar.nav.myProfile")}  to="/app/profile"    onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-building"  text={t("sidebar.nav.customers")}  to="/app/customers"  onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-briefcase" text={t("sidebar.nav.jobsTools")}  to="/app/jobs-tools" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-truck"     text={t("sidebar.nav.trucks")}     to="/app/trucks"     onClick={closeMobileMenu} />
-                <DropdownLink icon="fa-users"     text={t("sidebar.nav.operators")}  to="/app/operators"  onClick={closeMobileMenu} />
+                {/* Operators con badge propio en el DropdownLink */}
+                <DropdownLinkWithBadge
+                  icon="fa-users"
+                  text={t("sidebar.nav.operators")}
+                  to="/app/operators"
+                  badge={missingSalaryCount}
+                  onClick={closeMobileMenu}
+                />
                 {user?.is_superUser && (
                   <DropdownLink icon="fa-users-cog" text={t("sidebar.nav.admins")}    to="/app/admins"     onClick={closeMobileMenu} />
                 )}
@@ -358,21 +388,31 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
 };
 
 // ─── NavItem ───────────────────────────────────────────────────────────────────
-const NavItem: FC<NavItemProps> = ({ icon, text, isCollapsed, to, onClick }) => (
+const NavItem: FC<NavItemProps> = ({ icon, text, isCollapsed, to, badge, onClick }) => (
   <li>
     <Link
       to={to}
       className="group flex items-center py-2 px-5 text-white no-underline transition-all duration-700 ease-in-out relative hover:bg-[#60A3D9] hover:pl-8"
       onClick={onClick}
     >
-      <span className="w-7 h-7 leading-7 text-center inline-block mr-3 rounded-sm text-base flex-shrink-0">
+      <span className="w-7 h-7 leading-7 text-center inline-block mr-3 rounded-sm text-base flex-shrink-0 relative">
         <i className={`fas ${icon}`}></i>
+        {badge && badge > 0 && isCollapsed && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#F09F52] text-[8px] font-light text-white">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
       </span>
-      <span className={`text-sm transition-all duration-700 ease-in-out transform ${
+      <span className={`text-sm transition-all duration-700 ease-in-out transform flex-1 ${
         isCollapsed ? "opacity-0 scale-75 w-0 overflow-hidden" : "opacity-100 scale-100 w-auto"
       }`}>
         {text}
       </span>
+      {badge && badge > 0 && !isCollapsed && (
+        <span className="inline-flex items-center justify-center h-5 min-w-[10px] px-1 rounded-full bg-[#F09F52] text-[8px] font-light text-white shadow-sm">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
       <span className="absolute left-0 top-0 w-1 h-full bg-white transition-transform duration-700 ease-in-out origin-bottom scale-y-0 group-hover:scale-y-100 group-hover:origin-top" />
     </Link>
   </li>
@@ -392,6 +432,34 @@ const DropdownLink: FC<{ icon: string; text: string; to: string; onClick?: () =>
         <i className={`fas ${icon}`}></i>
       </span>
       <span className="text-sm">{text}</span>
+    </Link>
+  </li>
+);
+
+// ─── DropdownLinkWithBadge ─────────────────────────────────────────────────────
+const DropdownLinkWithBadge: FC<{
+  icon: string;
+  text: string;
+  to: string;
+  badge?: number;
+  onClick?: () => void;
+}> = ({ icon, text, to, badge, onClick }) => (
+  <li>
+    <Link
+      to={to}
+      className="flex items-center py-2 px-5 pl-12 no-underline transition-all duration-300 ease-in-out hover:bg-[#051537] hover:pl-14 !text-white"
+      onClick={onClick}
+      style={!!badge && badge > 0 ? { backgroundColor: 'rgba(251,191,36,0.08)' } : undefined}
+    >
+      <span className="w-6 h-6 leading-6 text-center inline-block mr-2.5 rounded-sm text-sm flex-shrink-0">
+        <i className={`fas ${icon}`}></i>
+      </span>
+      <span className="text-sm flex-1">{text}</span>
+      {!!badge && badge > 0 && (
+        <span className="inline-flex items-center justify-center h-5 min-w-[10px] px-1 rounded-full bg-[#F09F52] text-[8px] font-light text-white shadow-sm">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </Link>
   </li>
 );
