@@ -39,7 +39,7 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
 
       {/* Header */}
       <div className="px-2 py-1.5 border-b flex items-center justify-between"
-        style={{ backgroundColor: COLORS.fuel, borderColor: COLORS.fuel }}>
+        style={{ backgroundColor: COLORS.primary, borderColor: COLORS.primary }}>
         <div className="flex items-center gap-1.5">
           <Fuel size={14} className="text-white" />
           <h3 className="text-xs font-bold text-white">{t('costFuels.title')}</h3>
@@ -77,7 +77,7 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
       ) : (
         <div className="overflow-x-auto">
           <table className="w-auto">
-            <thead className="text-white text-xs" style={{ backgroundColor: COLORS.fuel }}>
+            <thead className="text-white text-xs" style={{ backgroundColor: COLORS.primary }}>
               <tr>
                 <th className="px-2 py-1.5 text-left font-bold whitespace-nowrap w-16">{t('costFuels.id')}</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-16">{t('costFuels.truck')}</th>

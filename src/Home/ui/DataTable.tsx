@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy, MoreVertical } from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import CostFuelsTable from './CostFuelsTable';
+import AssignedToolsTable from './Assignedtoolstable';                                          
 import { AssignOrderToCostFuelRepository } from '../../addFuelCostToOrder/repository/AssignOrderToCostFuelRepository';
+import { AssignToolRepository } from '../data/Assigntoolrepository';                            
 import type { CostFuelByOrderData } from '../../addFuelCostToOrder/domain/AssignOrderToCostFuelModels';
+import type { AssignedTool } from '../data/Assigntoolrepository';                              
 import type { TableData } from '../domain/TableData';
 
 interface Column {
@@ -157,6 +160,7 @@ interface DataTableProps {
   onContextMenu: (event: React.MouseEvent, row: TableData) => void;
   onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void;
   onAddFuelCost?: (row: TableData) => void;
+  onAssignTools?: (row: TableData) => void;   // ← NEW
   refreshCostFuelsTrigger?: string | null;
   onRefreshData?: () => void | Promise<void>;
 }
@@ -210,6 +214,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   onContextMenu,
   onActionsMenuClick,
   onAddFuelCost,
+  onAssignTools,          // ← NEW
   refreshCostFuelsTrigger,
   onRefreshData,
 }) => {
@@ -218,6 +223,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [costFuelsByOrder, setCostFuelsByOrder] = useState<Record<string, CostFuelByOrderData[]>>({});
+  const [assignedToolsByOrder, setAssignedToolsByOrder] = useState<Record<string, AssignedTool[]>>({}); // ← NEW
 
   const sortedData = useMemo(() => sortData(data, sortConfig), [data, sortConfig]);
 
@@ -232,6 +238,18 @@ export const DataTable: React.FC<DataTableProps> = ({
     }
   }, []);
 
+  // ← NEW: fetch assigned tools when row expands
+  const fetchAssignedToolsForOrder = useCallback(async (orderKey: string) => {
+    try {
+      const response = await AssignToolRepository.getAssignedToolsByOrder(orderKey);
+      if (response.status === 'success' && response.data) {
+        setAssignedToolsByOrder(prev => ({ ...prev, [orderKey]: response.data as AssignedTool[] }));
+      }
+    } catch {
+      setAssignedToolsByOrder(prev => ({ ...prev, [orderKey]: [] as AssignedTool[] }));
+    }
+  }, []);
+
   useEffect(() => {
     if (refreshCostFuelsTrigger) fetchCostFuelsForOrder(refreshCostFuelsTrigger);
   }, [refreshCostFuelsTrigger, fetchCostFuelsForOrder]);
@@ -239,11 +257,16 @@ export const DataTable: React.FC<DataTableProps> = ({
   const handleExpandClick = useCallback(async (rowId: string) => {
     setExpandedRows(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(rowId)) { newSet.delete(rowId); }
-      else { newSet.add(rowId); fetchCostFuelsForOrder(rowId); }
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+        fetchCostFuelsForOrder(rowId);
+        fetchAssignedToolsForOrder(rowId); // ← NEW
+      }
       return newSet;
     });
-  }, [fetchCostFuelsForOrder]);
+  }, [fetchCostFuelsForOrder, fetchAssignedToolsForOrder]);
 
   const handleSort = useCallback((columnId: keyof TableData) => {
     const column = columns.find(col => col.id === columnId);
@@ -465,6 +488,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                         })}
                       </tr>
 
+                      {/* ── Expanded row ── */}
                       {isExpanded && (
                         <tr>
                           <td colSpan={columns.length + 1} className="px-0 py-0">
@@ -477,7 +501,12 @@ export const DataTable: React.FC<DataTableProps> = ({
                                 />
                                 <CostFuelsTable
                                   costFuels={costFuelsByOrder[row.id] || []}
-                                  onAddFuelCost={onAddFuelCost ? () => { onAddFuelCost(row); } : undefined}
+                                  onAddFuelCost={onAddFuelCost ? () => onAddFuelCost(row) : undefined}
+                                />
+                                {/* ← NEW */}
+                                <AssignedToolsTable
+                                  tools={assignedToolsByOrder[row.id] || []}
+                                  onAssignTools={onAssignTools ? () => onAssignTools(row) : undefined}
                                 />
                               </div>
                             </div>

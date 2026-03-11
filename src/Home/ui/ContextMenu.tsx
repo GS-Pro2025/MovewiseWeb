@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle } from 'lucide-react';
+import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle, Wrench } from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
 interface ContextMenuProps {
@@ -15,7 +15,8 @@ interface ContextMenuProps {
   onDeleteOrder: (order: TableData) => void;
   onViewDispatchTicket?: (order: TableData) => void;
   onAddFuelCost?: (order: TableData) => void;
-  onCreateExtraCost?: (order: TableData) => void; // Asegúrate de que esta línea está presente
+  onCreateExtraCost?: (order: TableData) => void;
+  onAssignTools?: (order: TableData) => void;   // ← NEW
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -29,21 +30,23 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onDeleteOrder,
   onViewDispatchTicket,
   onAddFuelCost,
-  onCreateExtraCost, // Asegúrate de que esta línea está presente en la desestructuración
+  onCreateExtraCost,
+  onAssignTools,           
 }) => {
   const { t } = useTranslation();
 
   const handleAction = (action: string) => {
     if (!row) return;
     switch (action) {
-      case 'continue':     onContinueOrder(row); break;
-      case 'finish':       if (row.status !== 'finished') onFinishOrder(row.id); break;
-      case 'edit':         onEditOrder(row); break;
-      case 'inactivate':   onInactivateOrder(row); break;
-      case 'delete':       onDeleteOrder(row); break;
-      case 'view-dispatch': if (onViewDispatchTicket) onViewDispatchTicket(row); break;
-      case 'addFuelCost':  if (onAddFuelCost) onAddFuelCost(row); break;
-      case 'createExtraCost': if (onCreateExtraCost) onCreateExtraCost(row); break; 
+      case 'continue':        onContinueOrder(row); break;
+      case 'finish':          if (row.status !== 'finished') onFinishOrder(row.id); break;
+      case 'edit':            onEditOrder(row); break;
+      case 'inactivate':      onInactivateOrder(row); break;
+      case 'delete':          onDeleteOrder(row); break;
+      case 'view-dispatch':   if (onViewDispatchTicket) onViewDispatchTicket(row); break;
+      case 'addFuelCost':     if (onAddFuelCost) onAddFuelCost(row); break;
+      case 'createExtraCost': if (onCreateExtraCost) onCreateExtraCost(row); break;
+      case 'assignTools':     if (onAssignTools) onAssignTools(row); break; 
     }
     onClose();
   };
@@ -105,12 +108,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         <ListItemText>{t('contextMenu.addFuelCost')}</ListItemText>
       </MenuItem>
 
-      {/* Nuevo menú item para Crear Costo Extra */}
       <MenuItem onClick={() => handleAction('createExtraCost')}>
-        <ListItemIcon>
-          <PlusCircle size={16} color="#0B2863" />
-        </ListItemIcon>
+        <ListItemIcon><PlusCircle size={16} color="#0B2863" /></ListItemIcon>
         <ListItemText>{t('contextMenu.createExtraCost')}</ListItemText>
+      </MenuItem>
+
+      {/* ← NEW */}
+      <MenuItem onClick={() => handleAction('assignTools')}>
+        <ListItemIcon><Wrench size={16} color="#0B2863" /></ListItemIcon>
+        <ListItemText>{t('contextMenu.assignTools')}</ListItemText>
       </MenuItem>
     </Menu>
   );

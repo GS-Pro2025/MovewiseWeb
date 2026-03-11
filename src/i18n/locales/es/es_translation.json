@@ -451,7 +451,9 @@
     "deleteOrder": "Eliminar Orden (Absoluto)",
     "viewDispatchTicket": "Ver Ticket de Despacho",
     "addFuelCost": "Agregar Costo de Combustible",
-    "createExtraCost": "Crear Costo Extra"
+    "createExtraCost": "Crear Costo Extra",
+    "assignTools": "Asignar Herramientas"
+
   },
   "costFuels": {
     "title": "Costos de Combustible",
@@ -2976,5 +2978,18 @@
       "revokeError": "Error al revocar permisos de superusuario",
       "revokeSuccess": "Permiso de superusuario revocado exitosamente"
     }
+  },
+  "assignTool": {
+    "title": "Asignar Herramientas",
+    "availableTools": "Herramientas disponibles para este trabajo",
+    "assignedToOrder": "Asignadas a esta orden",
+    "noTools": "No se encontraron herramientas para este tipo de trabajo.",
+    "noneAssigned": "Aún no hay herramientas asignadas.",
+    "alreadyAssigned": "Ya asignada a esta orden",
+    "assigned": "Asignada",
+    "assign": "Asignar",
+    "done": "Listo",
+    "qty": "Cant",
+    "describePlaceholder": "Notas (opcional)"
   }
 }
