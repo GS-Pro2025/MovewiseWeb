@@ -19,6 +19,7 @@ import DeleteOrderDialog from './deleteOrderDialog';
 import CalendarDialog from './calendarDialog';
 import AssignOrderToCostFuelDialog from '../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog';
 import CreateExtraCostDialog from '../../extraCost/ui/components/CreateExtraCostDialog';
+import { AssignToolModal } from './Assigntoolmodal';
 
 // Services
 import { fetchOrdersReport } from '../data/repositoryOrdersReport';
@@ -61,7 +62,6 @@ const getWeekRange = (year: number, week: number): { start: string; end: string 
   };
 };
 
-// Helper function to normalize status to expected union type
 const normalizeStatus = (status: string): "finished" | "pending" | "inactive" => {
   const normalized = status.toLowerCase();
   switch (normalized) {
@@ -86,22 +86,22 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   key: item.id,
   key_ref: item.key_ref,
   date: item.dateReference,
-  distance: item.distance, 
-  expense: item.expense || 0, 
-  income: item.income || 0,  
+  distance: item.distance,
+  expense: item.expense || 0,
+  income: item.income || 0,
   weight: item.weight,
   status: item.status,
   payStatus: item.payStatus,
   state_usa: item.state,
   customer_factory: typeof item.customer_factory === 'number' ? item.customer_factory : 0,
   person: {
-    email: item.email, 
+    email: item.email,
     first_name: item.firstName,
     last_name: item.lastName,
     phone: item.phone,
     address: item.city,
   },
-  job: item.job_id 
+  job: item.job_id
 });
 
 const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
@@ -128,11 +128,10 @@ const mapTableDataToCreateOrderModel = (order: TableData): unknown => ({
   customer_factory: typeof order.customer_factory === 'number' ? order.customer_factory : 0,
 });
 
-// Type for the normalized TableData with proper status type
 type NormalizedTableData = Omit<TableData, 'status'> & {
   status: "finished" | "pending" | "inactive";
   country?: string;
-  state?: string; 
+  state?: string;
   city?: string;
 };
 
@@ -142,39 +141,44 @@ const OrdersTable: React.FC = () => {
   const [filteredData, setFilteredData] = useState<NormalizedTableData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedRows, setSelectedRows] = useState<NormalizedTableData[]>([]);
-  // Añade estos nuevos estados (junto con los otros estados)
-const [createExtraCostDialogOpen, setCreateExtraCostDialogOpen] = useState(false);
-const [selectedOrderForExtraCost, setSelectedOrderForExtraCost] = useState<NormalizedTableData | null>(null);
 
-// Añade este nuevo handler
-const handleCreateExtraCost = (order: NormalizedTableData) => {
-  setSelectedOrderForExtraCost(order);
-  setCreateExtraCostDialogOpen(true);
-};
+  const [createExtraCostDialogOpen, setCreateExtraCostDialogOpen] = useState(false);
+  const [selectedOrderForExtraCost, setSelectedOrderForExtraCost] = useState<NormalizedTableData | null>(null);
 
-// Actualiza el handler de éxito para refrescar los costos
-const handleExtraCostSuccess = () => {
-  if (selectedOrderForExtraCost) {
-    handleRefreshCostFuels(selectedOrderForExtraCost.id);
-  }
-};
-  // NUEVO: Estado para year
+  const handleCreateExtraCost = (order: NormalizedTableData) => {
+    setSelectedOrderForExtraCost(order);
+    setCreateExtraCostDialogOpen(true);
+  };
+
+  const handleExtraCostSuccess = () => {
+    if (selectedOrderForExtraCost) {
+      handleRefreshCostFuels(selectedOrderForExtraCost.id);
+    }
+  };
+
+  // ── 2. ESTADO AssignTool ─────────────────────────────────────────────────────
+  const [assignToolOpen, setAssignToolOpen] = useState(false);
+  const [selectedOrderForTools, setSelectedOrderForTools] = useState<NormalizedTableData | null>(null);
+
+  // ── 3. HANDLER AssignTool ────────────────────────────────────────────────────
+  const handleAssignTools = (order: NormalizedTableData) => {
+    setSelectedOrderForTools(order);
+    setAssignToolOpen(true);
+  };
+
   const [year, setYear] = useState<number>(() => new Date().getFullYear());
-  
+
   const [week, setWeek] = useState<number>(() => {
     const now = new Date();
     return getWeekOfYear(now);
   });
-  
+
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 100 });
   const [totalRows, setTotalRows] = useState(0);
-  
-  // ACTUALIZADO: Usar year en lugar de currentYear
+
   const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
-  
-  // Filters
+
   const [weekdayFilter, setWeekdayFilter] = useState<string>('');
-  // Estados para la nueva lógica de ubicación
   const [countries, setCountries] = useState<{ country: string }[]>([]);
   const [states, setStates] = useState<{ name: string }[]>([]);
   const [cities, setCities] = useState<string[]>([]);
@@ -183,7 +187,6 @@ const handleExtraCostSuccess = () => {
   const [city, setCity] = useState("");
   const [locationStep, setLocationStep] = useState<"country" | "state" | "city">("country");
 
-  // Crear el string de ubicación compuesto
   const locationString = useMemo(() => {
     if (!country) return "";
     let loc = country;
@@ -192,7 +195,6 @@ const handleExtraCostSuccess = () => {
     return loc;
   }, [country, state, city]);
 
-  // Modals
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [finishModalOpen, setFinishModalOpen] = useState(false);
   const [finishImage, setFinishImage] = useState<File | null>(null);
@@ -211,37 +213,31 @@ const handleExtraCostSuccess = () => {
   const [assignOrderToCostFuelDialogOpen, setAssignOrderToCostFuelDialogOpen] = useState(false);
   const [selectedOrderForFuel, setSelectedOrderForFuel] = useState<NormalizedTableData | null>(null);
 
-  // Context menu - agregar estado para diferenciar el origen
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
     row: NormalizedTableData | null;
   } | null>(null);
 
-  // Hooks
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
-  // Nuevos estados para búsqueda global
   const [globalSearch, setGlobalSearch] = useState<string>('');
   const [isGlobalSearchActive, setIsGlobalSearchActive] = useState<boolean>(false);
   const [globalSearchLoading, setGlobalSearchLoading] = useState<boolean>(false);
   const [refreshCostFuelsTrigger, setRefreshCostFuelsTrigger] = useState<string | null>(null);
 
-  // Load data function - ACTUALIZADO para usar year
   const loadData = useCallback(async (searchTerm?: string) => {
     try {
       setLoading(true);
-      
-      // Si hay searchTerm, es búsqueda global, si no, usar filtros normales
       const response = await fetchOrdersReport(
         pagination.pageIndex + 1,
         searchTerm ? 1 : week,
-        searchTerm ? 2025 : year, // ACTUALIZADO: usar year
+        searchTerm ? 2025 : year,
         pagination.pageSize,
         searchTerm
       );
-      
+
       const mappedData: NormalizedTableData[] = response.results.map((item) => {
         const dateParts = item.date.split('-');
         const date = new Date(
@@ -249,9 +245,7 @@ const handleExtraCostSuccess = () => {
           Number(dateParts[1]) - 1,
           Number(dateParts[2])
         );
-        
         const calculatedWeek = getWeekOfYear(date);
-        
         return {
           id: item.key,
           status: normalizeStatus(item.status),
@@ -282,7 +276,7 @@ const handleExtraCostSuccess = () => {
           created_by: item.created_by ?? 'N/A',
         };
       });
-      
+
       setData(mappedData);
       setTotalRows(response.count);
     } catch (error) {
@@ -291,9 +285,8 @@ const handleExtraCostSuccess = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination, week, year, isGlobalSearchActive]); // ACTUALIZADO: agregar year
+  }, [pagination, week, year, isGlobalSearchActive]);
 
-  // Función separada para búsqueda global
   const handleGlobalSearch = useCallback(async () => {
     if (!globalSearch.trim()) {
       setIsGlobalSearchActive(false);
@@ -301,13 +294,10 @@ const handleExtraCostSuccess = () => {
       await loadData();
       return;
     }
-
     try {
       setGlobalSearchLoading(true);
       setIsGlobalSearchActive(true);
-      
       setPagination({ pageIndex: 0, pageSize: 100 });
-      
       await loadData(globalSearch.trim());
       enqueueSnackbar(`Search completed for "${globalSearch}"`, { variant: 'success' });
     } catch (error) {
@@ -318,23 +308,19 @@ const handleExtraCostSuccess = () => {
     }
   }, [globalSearch, loadData]);
 
-  // Función para limpiar búsqueda global
   const handleClearGlobalSearch = useCallback(async () => {
     setGlobalSearch('');
     setIsGlobalSearchActive(false);
     setGlobalSearchLoading(false);
-    
     setPagination({ pageIndex: 0, pageSize: 100 });
-    
     await loadData();
   }, [loadData]);
 
-  // Effects - ACTUALIZADO para usar year
   useEffect(() => {
     if (!isGlobalSearchActive) {
       loadData();
     }
-  }, [pagination, week, year]); // ACTUALIZADO: usar year
+  }, [pagination, week, year]);
 
   useEffect(() => {
     if (!isGlobalSearchActive) {
@@ -342,7 +328,6 @@ const handleExtraCostSuccess = () => {
     }
   }, [loadData, isGlobalSearchActive]);
 
-  // Modificar el filtrado de datos para manejar búsqueda global
   useEffect(() => {
     if (isGlobalSearchActive) {
       setFilteredData(data);
@@ -361,14 +346,12 @@ const handleExtraCostSuccess = () => {
     }
   }, [data, week, weekdayFilter, locationString, isGlobalSearchActive]);
 
-  // Cargar países al iniciar
   useEffect(() => {
     fetchCountries().then((countries) => {
       setCountries(countries.map((c) => ({ country: c.name })));
     });
   }, []);
 
-  // Cargar estados cuando se seleccione un país
   useEffect(() => {
     if (country) {
       fetchStates(country).then(setStates);
@@ -379,7 +362,6 @@ const handleExtraCostSuccess = () => {
     }
   }, [country]);
 
-  // Cargar ciudades cuando se seleccione un estado
   useEffect(() => {
     if (country && state) {
       fetchCities(country, state).then(setCities);
@@ -388,7 +370,6 @@ const handleExtraCostSuccess = () => {
     }
   }, [state, country]);
 
-  // Resetear todo si se borra el input
   useEffect(() => {
     if (!country) {
       setState("");
@@ -405,7 +386,6 @@ const handleExtraCostSuccess = () => {
     }
   }, [country, state, city]);
 
-  // Event handlers
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, pageIndex: newPage }));
   };
@@ -414,20 +394,16 @@ const handleExtraCostSuccess = () => {
     setPagination({ pageIndex: 0, pageSize: newRowsPerPage });
   };
 
-  // NUEVO: Handler para year
   const handleYearChange = useCallback((newYear: number) => {
     setYear(newYear);
-    setPagination({ pageIndex: 0, pageSize: 100 }); // Reset pagination
+    setPagination({ pageIndex: 0, pageSize: 100 });
   }, []);
 
   const handleRowSelect = (row: NormalizedTableData) => {
     setSelectedRows(prev => {
       const isSelected = prev.some(selected => selected.id === row.id);
-      if (isSelected) {
-        return prev.filter(selected => selected.id !== row.id);
-      } else {
-        return [...prev, row];
-      }
+      if (isSelected) return prev.filter(selected => selected.id !== row.id);
+      return [...prev, row];
     });
   };
 
@@ -441,28 +417,17 @@ const handleExtraCostSuccess = () => {
 
   const handleContextMenu = (event: React.MouseEvent, row: NormalizedTableData) => {
     event.preventDefault();
-    setContextMenu({
-      mouseX: event.clientX - 2,
-      mouseY: event.clientY - 4,
-      row,
-    });
+    setContextMenu({ mouseX: event.clientX - 2, mouseY: event.clientY - 4, row });
   };
 
   const handleActionsMenuClick = (event: React.MouseEvent, row: NormalizedTableData) => {
     event.preventDefault();
     event.stopPropagation();
-    
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    setContextMenu({
-      mouseX: rect.right,
-      mouseY: rect.top,
-      row,
-    });
+    setContextMenu({ mouseX: rect.right, mouseY: rect.top, row });
   };
 
-  const handleCloseContextMenu = () => {
-    setContextMenu(null);
-  };
+  const handleCloseContextMenu = () => setContextMenu(null);
 
   const handleContinueOrder = (order: NormalizedTableData) => {
     const orderData = mapTableDataToCreateOrderModel(order);
@@ -513,18 +478,9 @@ const handleExtraCostSuccess = () => {
     if (!orderToEdit) return;
     if (field.startsWith('person.')) {
       const personField = field.split('.')[1];
-      setOrderToEdit({
-        ...orderToEdit,
-        person: {
-          ...orderToEdit.person,
-          [personField]: value,
-        },
-      });
+      setOrderToEdit({ ...orderToEdit, person: { ...orderToEdit.person, [personField]: value } });
     } else {
-      setOrderToEdit({
-        ...orderToEdit,
-        [field]: value,
-      });
+      setOrderToEdit({ ...orderToEdit, [field]: value });
     }
   };
 
@@ -558,7 +514,6 @@ const handleExtraCostSuccess = () => {
     setTimeout(() => setRefreshCostFuelsTrigger(null), 100);
   };
 
-  // Export handlers
   const handleExportExcel = (data: NormalizedTableData[], filename: string) => {
     const exportData = data.map(item => ({ ...item } as TableData));
     exportToExcel(exportData, filename);
@@ -571,7 +526,6 @@ const handleExtraCostSuccess = () => {
 
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
-      {/* Filters with Statistics - ACTUALIZADO */}
       <TableFilters
         year={year}
         week={week}
@@ -589,7 +543,7 @@ const handleExtraCostSuccess = () => {
         globalSearch={globalSearch}
         onGlobalSearchChange={setGlobalSearch}
         onGlobalSearchSubmit={handleGlobalSearch}
-        onGlobalSearchClear={handleClearGlobalSearch} 
+        onGlobalSearchClear={handleClearGlobalSearch}
         globalSearchLoading={globalSearchLoading}
         isGlobalSearchActive={isGlobalSearchActive}
         locationString={locationString}
@@ -608,7 +562,6 @@ const handleExtraCostSuccess = () => {
         setStates={setStates}
       />
 
-      {/* Toolbar */}
       <TableToolbar
         data={filteredData}
         selectedRows={selectedRows}
@@ -616,7 +569,6 @@ const handleExtraCostSuccess = () => {
         onExportPDF={handleExportPDF}
       />
 
-      {/* Data Table */}
       <DataTable
         data={filteredData}
         loading={loading}
@@ -636,7 +588,7 @@ const handleExtraCostSuccess = () => {
         onRefreshData={loadData}
       />
 
-      {/* Context Menu */}
+      {/* ── 4. CONTEXT MENU con onAssignTools ──────────────────────────────── */}
       <ContextMenu
         anchorPosition={contextMenu ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : null}
         row={contextMenu?.row || null}
@@ -648,7 +600,8 @@ const handleExtraCostSuccess = () => {
         onDeleteOrder={handleDeleteOrder}
         onViewDispatchTicket={handleViewDispatchTicket}
         onAddFuelCost={handleAddFuelCost}
-        onCreateExtraCost={handleCreateExtraCost} 
+        onCreateExtraCost={handleCreateExtraCost}
+        onAssignTools={handleAssignTools}          
       />
 
       {/* Modals */}
@@ -684,7 +637,7 @@ const handleExtraCostSuccess = () => {
             ...mapTableDataToUpdateOrderData(paymentOrder),
             expense,
             income,
-            payStatus: 1, 
+            payStatus: 1,
           });
           enqueueSnackbar('Payment registered', { variant: 'success' });
           loadData();
@@ -703,14 +656,10 @@ const handleExtraCostSuccess = () => {
         }}
       />
 
-      {/* Delete Dialogs */}
       {inactivateDialogOpen && (
         <DeleteOrderDialog
           open={inactivateDialogOpen}
-          onClose={() => {
-            setInactivateDialogOpen(false);
-            setOrderToInactivate(null);
-          }}
+          onClose={() => { setInactivateDialogOpen(false); setOrderToInactivate(null); }}
           onConfirm={async () => {
             if (!orderToInactivate) return;
             const result = await deleteOrder(orderToInactivate.id);
@@ -735,10 +684,7 @@ const handleExtraCostSuccess = () => {
       {deleteAbsoluteDialogOpen && (
         <DeleteOrderDialog
           open={deleteAbsoluteDialogOpen}
-          onClose={() => {
-            setDeleteAbsoluteDialogOpen(false);
-            setOrderToDeleteAbsolute(null);
-          }}
+          onClose={() => { setDeleteAbsoluteDialogOpen(false); setOrderToDeleteAbsolute(null); }}
           onConfirm={async () => {
             if (!orderToDeleteAbsolute) return;
             const result = await deleteOrderAbsolute(orderToDeleteAbsolute.id);
@@ -760,7 +706,6 @@ const handleExtraCostSuccess = () => {
         />
       )}
 
-      {/* Dispatch Ticket Modal */}
       <Dialog
         open={dispatchTicketDialogOpen}
         onClose={() => setDispatchTicketDialogOpen(false)}
@@ -781,30 +726,36 @@ const handleExtraCostSuccess = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Order to Fuel Cost Dialog */}
       <AssignOrderToCostFuelDialog
         open={assignOrderToCostFuelDialogOpen}
-        onClose={() => {
-          setAssignOrderToCostFuelDialogOpen(false);
-          setSelectedOrderForFuel(null);
-        }}
+        onClose={() => { setAssignOrderToCostFuelDialogOpen(false); setSelectedOrderForFuel(null); }}
         orderKey={selectedOrderForFuel?.id || ''}
         orderRef={selectedOrderForFuel?.key_ref || ''}
         onSuccess={() => {
-          if (selectedOrderForFuel) {
-            handleRefreshCostFuels(selectedOrderForFuel.id);
-          }
+          if (selectedOrderForFuel) handleRefreshCostFuels(selectedOrderForFuel.id);
         }}
       />
-      {/* Create Extra Cost Dialog */}
+
       <CreateExtraCostDialog
         open={createExtraCostDialogOpen}
-        onClose={() => {
-          setCreateExtraCostDialogOpen(false);
-          setSelectedOrderForExtraCost(null);
-        }}
+        onClose={() => { setCreateExtraCostDialogOpen(false); setSelectedOrderForExtraCost(null); }}
         id_order={selectedOrderForExtraCost?.id || ''}
         onSuccess={handleExtraCostSuccess}
+      />
+
+      {/* ── 4. MODAL AssignTool ─────────────────────────────────────────────── */}
+      <AssignToolModal
+        open={assignToolOpen}
+        order={selectedOrderForTools}
+        onClose={() => {
+          setAssignToolOpen(false);
+          setSelectedOrderForTools(null);
+        }}
+        onSuccess={() => {
+          if (selectedOrderForTools) {
+            handleRefreshCostFuels(selectedOrderForTools.id);
+          }
+        }}
       />
     </Box>
   );

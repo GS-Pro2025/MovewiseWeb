@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
@@ -17,6 +17,7 @@ import {
   Search,
   Globe,
   ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import WeekPicker from "../../components/WeekPicker";
 import YearPicker from "../../components/YearPicker";
@@ -104,8 +105,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
 }) => {
   const { t } = useTranslation();
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Weekdays translated
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const weekDayOptions = [
     { label: t("weekdays.sunday"), value: "Sunday" },
     { label: t("weekdays.monday"), value: "Monday" },
@@ -144,22 +144,17 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
     if (isGlobalSearchActive) {
       return {
         totalOrders: data.length,
-        finishedOrders: data.filter((item) => item.status === "finished")
-          .length,
+        finishedOrders: data.filter((item) => item.status === "finished").length,
         pendingOrders: data.filter((item) => item.status === "pending").length,
-        inactiveOrders: data.filter((item) => item.status === "inactive")
-          .length,
+        inactiveOrders: data.filter((item) => item.status === "inactive").length,
       };
     }
     const weekData = data.filter((item) => item.week === week);
     return {
       totalOrders: weekData.length,
-      finishedOrders: weekData.filter((item) => item.status === "finished")
-        .length,
-      pendingOrders: weekData.filter((item) => item.status === "pending")
-        .length,
-      inactiveOrders: weekData.filter((item) => item.status === "inactive")
-        .length,
+      finishedOrders: weekData.filter((item) => item.status === "finished").length,
+      pendingOrders: weekData.filter((item) => item.status === "pending").length,
+      inactiveOrders: weekData.filter((item) => item.status === "inactive").length,
     };
   }, [data, week, isGlobalSearchActive]);
 
@@ -172,6 +167,30 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
       .week-dropdown-container { z-index: 9999 !important; position: relative; }
       .week-dropdown { z-index: 10000 !important; position: absolute; top: 100%; left: 0; right: 0; }
+
+      .filter-accordion-content {
+        display: grid;
+        grid-template-rows: 1fr;
+        transition: grid-template-rows 0.28s ease, opacity 0.25s ease;
+        opacity: 1;
+      }
+      .filter-accordion-content.collapsed {
+        grid-template-rows: 0fr;
+        opacity: 0;
+      }
+      .filter-accordion-inner {
+        overflow: hidden;
+      }
+
+      .accordion-chevron {
+        transition: transform 0.25s ease;
+      }
+      .accordion-chevron.open {
+        transform: rotate(0deg);
+      }
+      .accordion-chevron.closed {
+        transform: rotate(-90deg);
+      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -222,7 +241,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               ? t("filters.globalSearchResults")
               : t("filters.weekStatistics", { week })}
           </h4>
-          <span className="text-xs text-gray-600">
+          <span className="text-xl text-gray-600">
             {isGlobalSearchActive
               ? t("filters.resultsFor", { search: globalSearch })
               : `${weekRange.start} → ${weekRange.end}`}
@@ -230,10 +249,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         </div>
 
         {weeklyStats.totalOrders > 0 && (
-          <div
-            className="p-3 rounded-lg border shadow-sm"
-            style={{ borderColor: COLORS.primary }}
-          >
+          <div className="p-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-4">
                 <span
@@ -252,10 +268,7 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
                   {t("filters.complete", { percent: finishedPct })}
                 </span>
               </div>
-              <span
-                className="text-xs font-bold"
-                style={{ color: COLORS.primary }}
-              >
+              <span className="text-xs font-bold" style={{ color: COLORS.primary }}>
                 {t("filters.total", { count: weeklyStats.totalOrders })}
               </span>
             </div>
@@ -263,52 +276,34 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
               <div className="h-full flex">
                 <div
                   className="transition-all duration-500"
-                  style={{
-                    width: `${finishedPct}%`,
-                    backgroundColor: COLORS.success,
-                  }}
+                  style={{ width: `${finishedPct}%`, backgroundColor: COLORS.success }}
                 />
                 <div
                   className="transition-all duration-500"
-                  style={{
-                    width: `${pendingPct}%`,
-                    backgroundColor: COLORS.secondary,
-                  }}
+                  style={{ width: `${pendingPct}%`, backgroundColor: COLORS.secondary }}
                 />
                 <div
                   className="transition-all duration-500"
-                  style={{
-                    width: `${inactivePct}%`,
-                    backgroundColor: COLORS.error,
-                  }}
+                  style={{ width: `${inactivePct}%`, backgroundColor: COLORS.error }}
                 />
               </div>
             </div>
             <div className="flex justify-between text-xs font-semibold mt-2">
-              <span
-                className="flex items-center gap-1"
-                style={{ color: COLORS.success }}
-              >
+              <span className="flex items-center gap-1" style={{ color: COLORS.success }}>
                 <CheckCircle size={12} />
                 {t("filters.finished", {
                   count: weeklyStats.finishedOrders,
                   percent: finishedPct,
                 })}
               </span>
-              <span
-                className="flex items-center gap-1"
-                style={{ color: COLORS.secondary }}
-              >
+              <span className="flex items-center gap-1" style={{ color: COLORS.secondary }}>
                 <Clock size={12} />
                 {t("filters.pending", {
                   count: weeklyStats.pendingOrders,
                   percent: pendingPct,
                 })}
               </span>
-              <span
-                className="flex items-center gap-1"
-                style={{ color: COLORS.error }}
-              >
+              <span className="flex items-center gap-1" style={{ color: COLORS.error }}>
                 <XCircle size={12} />
                 {t("filters.inactive", {
                   count: weeklyStats.inactiveOrders,
@@ -320,484 +315,546 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         )}
       </div>
 
-      {/* Main Filter Card */}
+      {/* Main Filter Card — Accordion */}
       <div
-        className="rounded-xl shadow-md border p-3 mb-3 week-dropdown-container transition-all duration-300"
+        className="rounded-xl shadow-md border mb-3 week-dropdown-container transition-all duration-300"
         style={{ borderColor: COLORS.primary }}
         ref={dropdownRef}
       >
-        {/* Header */}
-        <div className="flex items-center space-x-2 mb-3">
-          <div
-            className="p-1.5 rounded-lg"
-            style={{ backgroundColor: COLORS.primary }}
-          >
-            <ClipboardList size={16} style={{ color: COLORS.secondary }} />
-          </div>
-          <h2 className="text-sm font-bold" style={{ color: COLORS.primary }}>
-            {t("filters.title")}
-          </h2>
-        </div>
+        {/* Accordion Header — always visible */}
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between px-2 py-2 rounded-xl focus:outline-none"
+          style={{ backgroundColor: "transparent" }}
+        >
+          <div className="flex items-center space-x-2">
+            <ClipboardList size={16} style={{ color: COLORS.primary }} />
+            <h2 className="text-sm font-bold" style={{ color: COLORS.primary }}>
+              {t("filters.title")}
+            </h2>
 
-        {/* Filters Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-3">
-          {/* Global Search */}
-          <div className="lg:col-span-2 relative">
-            <div className="flex items-center justify-between mb-2">
-              <label
-                className="block text-xs font-bold"
-                style={{ color: COLORS.primary }}
+            {/* Active filter pills summary — shown when collapsed */}
+            {!filtersOpen && activeFilterCount > 0 && (
+              <div className="flex items-center gap-1 ml-2">
+                {isGlobalSearchActive && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-sm font-bold text-white flex items-center gap-1"
+                    style={{ backgroundColor: COLORS.primary }}
+                  >
+                    <Globe size={9} />
+                    {globalSearch.length > 15
+                      ? globalSearch.substring(0, 15) + "…"
+                      : globalSearch}
+                  </span>
+                )}
+                {!isGlobalSearchActive && week && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1"
+                    style={{ borderColor: COLORS.primary, color: COLORS.primary }}
+                  >
+                    <Calendar size={9} />
+                    {t("filters.yearWeekLabel", { year, week })}
+                  </span>
+                )}
+                {weekdayFilter && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1"
+                    style={{ borderColor: COLORS.primary, color: COLORS.primary }}
+                  >
+                    <Calendar size={9} />
+                    {weekdayFilter}
+                  </span>
+                )}
+                {locationFilter && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1"
+                    style={{ borderColor: COLORS.primary, color: COLORS.primary }}
+                  >
+                    <MapPin size={9} />
+                    {locationFilter}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {!filtersOpen && activeFilterCount === 0 && (
+              <span className="text-xs text-gray-400 ml-1">
+                {t("filters.noActiveFilters")}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {activeFilterCount > 0 && (
+              <span
+                className="text-xs font-bold px-1.5 py-0.5 rounded-full text-white"
+                style={{ backgroundColor: COLORS.secondary }}
               >
-                <div className="flex items-center gap-1.5">
-                  <Globe size={12} />
-                  {t("filters.globalSearch")}
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown
+              size={16}
+              style={{ color: COLORS.primary }}
+              className={`accordion-chevron ${filtersOpen ? "open" : "closed"}`}
+            />
+          </div>
+        </button>
+
+        {/* Accordion Body */}
+        <div className={`filter-accordion-content ${filtersOpen ? "" : "collapsed"}`}>
+          <div className="filter-accordion-inner">
+            <div className="px-3 pb-3">
+              {/* Filters Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-3">
+                {/* Global Search */}
+                <div className="lg:col-span-2 relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <label
+                      className="block text-xs font-bold"
+                      style={{ color: COLORS.primary }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Globe size={12} />
+                        {t("filters.globalSearch")}
+                      </div>
+                    </label>
+                    {isGlobalSearchActive && (
+                      <button
+                        onClick={onGlobalSearchClear}
+                        className="p-0.5 rounded transition-colors"
+                        style={{ backgroundColor: COLORS.error, color: "white" }}
+                        title={t("filters.clearGlobalSearch")}
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Search
+                        size={12}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10"
+                        style={{ color: COLORS.primary }}
+                      />
+                      <input
+                        type="text"
+                        value={globalSearch}
+                        onChange={(e) => onGlobalSearchChange(e.target.value)}
+                        onKeyPress={handleGlobalSearchKeyPress}
+                        placeholder={t("filters.searchPlaceholder")}
+                        className="w-full pl-7 pr-2 py-5 border rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                        style={{
+                          borderColor: COLORS.primary,
+                          backgroundColor: "white",
+                          color: COLORS.primary,
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.boxShadow = "none";
+                        }}
+                        disabled={globalSearchLoading}
+                      />
+                    </div>
+                    <button
+                      onClick={onGlobalSearchSubmit}
+                      disabled={globalSearchLoading || !globalSearch.trim()}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1 ${
+                        globalSearchLoading || !globalSearch.trim()
+                          ? "cursor-not-allowed"
+                          : "text-white hover:shadow-md"
+                      }`}
+                      style={{
+                        backgroundColor:
+                          globalSearchLoading || !globalSearch.trim()
+                            ? "#d1d5db"
+                            : COLORS.primary,
+                        color:
+                          globalSearchLoading || !globalSearch.trim()
+                            ? COLORS.gray
+                            : "white",
+                      }}
+                    >
+                      <Search
+                        size={12}
+                        className={globalSearchLoading ? "animate-spin" : ""}
+                      />
+                    </button>
+                  </div>
                 </div>
-              </label>
-              {isGlobalSearchActive && (
-                <button
-                  onClick={onGlobalSearchClear}
-                  className="p-0.5 rounded transition-colors"
-                  style={{ backgroundColor: COLORS.error, color: "white" }}
-                  title={t("filters.clearGlobalSearch")}
+
+                {!isGlobalSearchActive && (
+                  <>
+                    {/* Year */}
+                    <div className="relative">
+                      <YearPicker
+                        year={year}
+                        onYearSelect={onYearChange}
+                        min={2015}
+                        max={new Date().getFullYear() + 2}
+                      />
+                      <div
+                        className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: year ? COLORS.success : COLORS.error,
+                        }}
+                      />
+                    </div>
+
+                    {/* Week */}
+                    <div className="relative">
+                      <WeekPicker week={week} onWeekSelect={onWeekChange} min={1} max={53} />
+                      <div
+                        className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: week ? COLORS.success : COLORS.error,
+                        }}
+                      />
+                    </div>
+
+                    {/* Weekday */}
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <label
+                          className="block text-xs font-bold"
+                          style={{ color: COLORS.primary }}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <Calendar size={14} />
+                            {t("filters.weekday")}
+                          </div>
+                        </label>
+                        {weekdayFilter && (
+                          <button
+                            onClick={() => onWeekdayChange("")}
+                            className="p-0.5 rounded transition-colors"
+                            style={{ backgroundColor: COLORS.error, color: "white" }}
+                            title={t("filters.clearWeekday")}
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
+                      </div>
+                      <Autocomplete
+                        options={weekDayOptions}
+                        getOptionLabel={(option) => option.label}
+                        value={
+                          weekDayOptions.find((o) => o.value === weekdayFilter) || null
+                        }
+                        onChange={(_, newValue) =>
+                          onWeekdayChange(newValue ? newValue.value : "")
+                        }
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder={t("filters.selectWeekday")}
+                            size="small"
+                            className="bg-white rounded-lg"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "0.5rem",
+                                backgroundColor: "white",
+                                fontSize: "0.875rem",
+                              },
+                              "& .MuiInputLabel-root": { fontSize: "0.875rem" },
+                            }}
+                          />
+                        )}
+                        isOptionEqualToValue={(option, value) =>
+                          option.value === value.value
+                        }
+                        disableClearable={false}
+                      />
+                      <div
+                        className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: weekdayFilter ? COLORS.success : COLORS.error,
+                        }}
+                      />
+                    </div>
+
+                    {/* Location */}
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <label
+                          className="block text-xs font-bold"
+                          style={{ color: COLORS.primary }}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <MapPin size={14} />
+                            {t("filters.location")}
+                          </div>
+                        </label>
+                        {locationString && (
+                          <button
+                            onClick={() => {
+                              setCountry("");
+                              setState("");
+                              setCity("");
+                              setStates([]);
+                              setCities([]);
+                              setLocationStep("country");
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200 flex items-center gap-1 px-1.5 py-0.5 hover:bg-red-50 rounded border border-red-200"
+                            title={t("filters.clearLocation")}
+                          >
+                            <X size={10} />
+                            {t("filters.clearLocation")}
+                          </button>
+                        )}
+                      </div>
+                      <Autocomplete
+                        options={options}
+                        getOptionLabel={getOptionLabel}
+                        value={value}
+                        onChange={(_, newValue) => {
+                          if (newValue === null) {
+                            if (locationStep === "city") {
+                              setCity("");
+                              setLocationStep("state");
+                            } else if (locationStep === "state") {
+                              setState("");
+                              setLocationStep("country");
+                            } else if (locationStep === "country") {
+                              setCountry("");
+                            }
+                          } else {
+                            if (
+                              locationStep === "country" &&
+                              typeof newValue === "object" &&
+                              "country" in newValue
+                            )
+                              setCountry(newValue.country);
+                            else if (
+                              locationStep === "state" &&
+                              typeof newValue === "object" &&
+                              "name" in newValue
+                            )
+                              setState(newValue.name);
+                            else if (
+                              locationStep === "city" &&
+                              typeof newValue === "string"
+                            )
+                              setCity(newValue);
+                          }
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label={label}
+                            placeholder={t("filters.selectLocation", {
+                              label: label.toLowerCase(),
+                            })}
+                            size="small"
+                            className="bg-white rounded-lg"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "0.5rem",
+                                backgroundColor: "white",
+                                fontSize: "0.875rem",
+                              },
+                              "& .MuiInputLabel-root": { fontSize: "0.875rem" },
+                            }}
+                          />
+                        )}
+                        isOptionEqualToValue={(option, value) =>
+                          getOptionLabel(option) === getOptionLabel(value)
+                        }
+                        disableClearable={false}
+                        disabled={locationStep === "state" && !country}
+                      />
+                      {locationString && (
+                        <div className="mt-2 p-1.5 bg-purple-50 rounded border border-purple-200">
+                          <p className="text-purple-700 font-medium text-xs">
+                            <span className="font-bold">{locationString}</span>
+                          </p>
+                        </div>
+                      )}
+                      <div
+                        className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: locationString ? COLORS.success : COLORS.error,
+                        }}
+                      />
+                    </div>
+
+                    {/* Calendar Button */}
+                    <div className="flex flex-col justify-end">
+                      <button
+                        onClick={onCalendarOpen}
+                        className="w-full px-3 py-1.5 border rounded-lg text-xs font-bold transition-all duration-200 hover:shadow-md flex items-center justify-center space-x-1.5"
+                        style={{
+                          borderColor: COLORS.secondary,
+                          backgroundColor: COLORS.secondary,
+                          color: "white",
+                        }}
+                      >
+                        <Calendar size={14} />
+                        <span>{t("filters.calendar")}</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Period Display */}
+              {!isGlobalSearchActive && (
+                <div
+                  className="rounded-lg p-2 border flex items-center justify-between"
+                  style={{ borderColor: COLORS.primary }}
                 >
-                  <X size={10} />
-                </button>
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className="p-1 rounded-lg"
+                      style={{ backgroundColor: COLORS.primary }}
+                    >
+                      <Calendar size={12} className="text-white" />
+                    </div>
+                    <span className="font-bold text-xs" style={{ color: COLORS.primary }}>
+                      {t("filters.yearWeek", { year, week })}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div
+                      className="px-2 py-1 rounded-lg border font-bold text-xs"
+                      style={{ borderColor: COLORS.secondary, color: COLORS.primary }}
+                    >
+                      {weekRange.start}
+                    </div>
+                    <ArrowRight size={12} style={{ color: COLORS.primary }} />
+                    <div
+                      className="px-2 py-1 rounded-lg border font-bold text-xs"
+                      style={{ borderColor: COLORS.secondary, color: COLORS.primary }}
+                    >
+                      {weekRange.end}
+                    </div>
+                  </div>
+                </div>
               )}
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Search
-                  size={12}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10"
-                  style={{ color: COLORS.primary }}
-                />
-                <input
-                  type="text"
-                  value={globalSearch}
-                  onChange={(e) => onGlobalSearchChange(e.target.value)}
-                  onKeyPress={handleGlobalSearchKeyPress}
-                  placeholder={t("filters.searchPlaceholder")}
-                  className="w-full pl-7 pr-2 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+
+              {/* Active Search Indicator */}
+              {isGlobalSearchActive && (
+                <div
+                  className="mt-3 rounded-lg p-2 border"
                   style={{
                     borderColor: COLORS.primary,
-                    backgroundColor: "white",
-                    color: COLORS.primary,
+                    background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
                   }}
-                  onFocus={(e) => {
-                    e.target.style.boxShadow = `0 0 0 3px rgba(11, 40, 99, 0.3)`;
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = "none";
-                  }}
-                  disabled={globalSearchLoading}
-                />
-              </div>
-              <button
-                onClick={onGlobalSearchSubmit}
-                disabled={globalSearchLoading || !globalSearch.trim()}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1 ${
-                  globalSearchLoading || !globalSearch.trim()
-                    ? "cursor-not-allowed"
-                    : "text-white hover:shadow-md"
-                }`}
-                style={{
-                  backgroundColor:
-                    globalSearchLoading || !globalSearch.trim()
-                      ? "#d1d5db"
-                      : COLORS.primary,
-                  color:
-                    globalSearchLoading || !globalSearch.trim()
-                      ? COLORS.gray
-                      : "white",
-                }}
-              >
-                <Search
-                  size={12}
-                  className={globalSearchLoading ? "animate-spin" : ""}
-                />
-              </button>
-            </div>
-          </div>
-
-          {!isGlobalSearchActive && (
-            <>
-              {/* Year */}
-              <div className="relative">
-                <YearPicker
-                  year={year}
-                  onYearSelect={onYearChange}
-                  min={2015}
-                  max={new Date().getFullYear() + 2}
-                />
-                <div
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor: year ? COLORS.success : COLORS.error,
-                  }}
-                />
-              </div>
-
-              {/* Week */}
-              <div className="relative">
-                <WeekPicker
-                  week={week}
-                  onWeekSelect={onWeekChange}
-                  min={1}
-                  max={53}
-                />
-                <div
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor: week ? COLORS.success : COLORS.error,
-                  }}
-                />
-              </div>
-
-              {/* Weekday */}
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2">
-                  <label
-                    className="block text-xs font-bold"
-                    style={{ color: COLORS.primary }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={14} />
-                      {t("filters.weekday")}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="p-1 rounded-lg"
+                        style={{ backgroundColor: COLORS.primary }}
+                      >
+                        <Globe size={12} className="text-white" />
+                      </div>
+                      <div>
+                        <h3
+                          className="font-bold text-xs"
+                          style={{ color: COLORS.primary }}
+                        >
+                          {t("filters.globalSearchResults")}
+                        </h3>
+                        <p className="text-xs text-gray-600">"{globalSearch}"</p>
+                      </div>
                     </div>
-                  </label>
-                  {weekdayFilter && (
-                    <button
-                      onClick={() => onWeekdayChange("")}
-                      className="p-0.5 rounded transition-colors"
-                      style={{ backgroundColor: COLORS.error, color: "white" }}
-                      title={t("filters.clearWeekday")}
-                    >
-                      <X size={10} />
-                    </button>
-                  )}
-                </div>
-                <Autocomplete
-                  options={weekDayOptions}
-                  getOptionLabel={(option) => option.label}
-                  value={
-                    weekDayOptions.find((o) => o.value === weekdayFilter) ||
-                    null
-                  }
-                  onChange={(_, newValue) =>
-                    onWeekdayChange(newValue ? newValue.value : "")
-                  }
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder={t("filters.selectWeekday")}
-                      size="small"
-                      className="bg-white rounded-lg"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "0.5rem",
-                          backgroundColor: "white",
-                          fontSize: "0.875rem",
-                        },
-                        "& .MuiInputLabel-root": { fontSize: "0.875rem" },
+                    <div
+                      className="px-2 py-1 rounded-lg border font-bold text-xs"
+                      style={{
+                        borderColor: COLORS.primary,
+                        backgroundColor: COLORS.primary,
+                        color: "white",
                       }}
-                    />
-                  )}
-                  isOptionEqualToValue={(option, value) =>
-                    option.value === value.value
-                  }
-                  disableClearable={false}
-                />
-                <div
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor: weekdayFilter
-                      ? COLORS.success
-                      : COLORS.error,
-                  }}
-                />
-              </div>
-
-              {/* Location */}
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2">
-                  <label
-                    className="block text-xs font-bold"
-                    style={{ color: COLORS.primary }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <MapPin size={14} />
-                      {t("filters.location")}
+                    >
+                      {t("filters.results", { count: weeklyStats.totalOrders })}
                     </div>
-                  </label>
-                  {locationString && (
-                    <button
-                      onClick={() => {
-                        setCountry("");
-                        setState("");
-                        setCity("");
-                        setStates([]);
-                        setCities([]);
-                        setLocationStep("country");
-                      }}
-                      className="text-xs text-red-500 hover:text-red-700 transition-colors duration-200 flex items-center gap-1 px-1.5 py-0.5 hover:bg-red-50 rounded border border-red-200"
-                      title={t("filters.clearLocation")}
-                    >
-                      <X size={10} />
-                      {t("filters.clearLocation")}
-                    </button>
-                  )}
-                </div>
-                <Autocomplete
-                  options={options}
-                  getOptionLabel={getOptionLabel}
-                  value={value}
-                  onChange={(_, newValue) => {
-                    if (newValue === null) {
-                      if (locationStep === "city") {
-                        setCity("");
-                        setLocationStep("state");
-                      } else if (locationStep === "state") {
-                        setState("");
-                        setLocationStep("country");
-                      } else if (locationStep === "country") {
-                        setCountry("");
-                      }
-                    } else {
-                      if (
-                        locationStep === "country" &&
-                        typeof newValue === "object" &&
-                        "country" in newValue
-                      )
-                        setCountry(newValue.country);
-                      else if (
-                        locationStep === "state" &&
-                        typeof newValue === "object" &&
-                        "name" in newValue
-                      )
-                        setState(newValue.name);
-                      else if (
-                        locationStep === "city" &&
-                        typeof newValue === "string"
-                      )
-                        setCity(newValue);
-                    }
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label={label}
-                      placeholder={t("filters.selectLocation", {
-                        label: label.toLowerCase(),
-                      })}
-                      size="small"
-                      className="bg-white rounded-lg"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "0.5rem",
-                          backgroundColor: "white",
-                          fontSize: "0.875rem",
-                        },
-                        "& .MuiInputLabel-root": { fontSize: "0.875rem" },
-                      }}
-                    />
-                  )}
-                  isOptionEqualToValue={(option, value) =>
-                    getOptionLabel(option) === getOptionLabel(value)
-                  }
-                  disableClearable={false}
-                  disabled={locationStep === "state" && !country}
-                />
-                {locationString && (
-                  <div className="mt-2 p-1.5 bg-purple-50 rounded border border-purple-200">
-                    <p className="text-purple-700 font-medium text-xs">
-                      <span className="font-bold">{locationString}</span>
-                    </p>
                   </div>
-                )}
-                <div
-                  className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor: locationString
-                      ? COLORS.success
-                      : COLORS.error,
-                  }}
-                />
-              </div>
-
-              {/* Calendar Button */}
-              <div className="flex flex-col justify-end">
-                <button
-                  onClick={onCalendarOpen}
-                  className="w-full px-3 py-1.5 border rounded-lg text-xs font-bold transition-all duration-200 hover:shadow-md flex items-center justify-center space-x-1.5"
-                  style={{
-                    borderColor: COLORS.secondary,
-                    backgroundColor: COLORS.secondary,
-                    color: "white",
-                  }}
-                >
-                  <Calendar size={14} />
-                  <span>{t("filters.calendar")}</span>
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Period Display */}
-        {!isGlobalSearchActive && (
-          <div
-            className="rounded-lg p-2 border flex items-center justify-between"
-            style={{ borderColor: COLORS.primary }}
-          >
-            <div className="flex items-center space-x-2">
-              <div
-                className="p-1 rounded-lg"
-                style={{ backgroundColor: COLORS.primary }}
-              >
-                <Calendar size={12} className="text-white" />
-              </div>
-              <span
-                className="font-bold text-xs"
-                style={{ color: COLORS.primary }}
-              >
-                {t("filters.yearWeek", { year, week })}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div
-                className="px-2 py-1 rounded-lg border font-bold text-xs"
-                style={{ borderColor: COLORS.secondary, color: COLORS.primary }}
-              >
-                {weekRange.start}
-              </div>
-              <ArrowRight size={12} style={{ color: COLORS.primary }} />
-              <div
-                className="px-2 py-1 rounded-lg border font-bold text-xs"
-                style={{ borderColor: COLORS.secondary, color: COLORS.primary }}
-              >
-                {weekRange.end}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Active Search Indicator */}
-        {isGlobalSearchActive && (
-          <div
-            className="mt-3 rounded-lg p-2 border"
-            style={{
-              borderColor: COLORS.primary,
-              background: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div
-                  className="p-1 rounded-lg"
-                  style={{ backgroundColor: COLORS.primary }}
-                >
-                  <Globe size={12} className="text-white" />
-                </div>
-                <div>
-                  <h3
-                    className="font-bold text-xs"
-                    style={{ color: COLORS.primary }}
-                  >
-                    {t("filters.globalSearchResults")}
-                  </h3>
-                  <p className="text-xs text-gray-600">"{globalSearch}"</p>
-                </div>
-              </div>
-              <div
-                className="px-2 py-1 rounded-lg border font-bold text-xs"
-                style={{
-                  borderColor: COLORS.primary,
-                  backgroundColor: COLORS.primary,
-                  color: "white",
-                }}
-              >
-                {t("filters.results", { count: weeklyStats.totalOrders })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Active Filters Summary */}
-        <div className="mt-2">
-          <div className="flex items-center justify-between mb-1">
-            <h4
-              className="text-xs font-bold flex items-center gap-1"
-              style={{ color: COLORS.primary }}
-            >
-              <Filter size={12} />
-              {t("filters.activeFilters")}
-            </h4>
-            <span className="text-xs text-gray-500">
-              {t("filters.activeCount", { count: activeFilterCount })}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {isGlobalSearchActive && (
-              <div
-                className="px-2 py-1 rounded-full text-xs font-bold text-white border shadow-sm flex items-center gap-1"
-                style={{
-                  backgroundColor: COLORS.primary,
-                  borderColor: COLORS.primary,
-                }}
-              >
-                <Globe size={10} />
-                {t("filters.globalLabel", {
-                  search:
-                    globalSearch.length > 20
-                      ? globalSearch.substring(0, 20) + "..."
-                      : globalSearch,
-                })}
-              </div>
-            )}
-            {!isGlobalSearchActive && week && (
-              <div
-                className="px-2 py-1 rounded-full text-xs font-bold text-[#0B2863] border shadow-sm flex items-center gap-1"
-                style={{ borderColor: COLORS.primary }}
-              >
-                <Calendar size={10} />
-                {t("filters.yearWeekLabel", { year, week })}
-              </div>
-            )}
-            {weekdayFilter && (
-              <div
-                className="px-2 py-1 rounded-full text-xs font-bold text-[#0B2863] border shadow-sm flex items-center gap-1"
-                style={{ borderColor: COLORS.primary }}
-              >
-                <Calendar size={10} />
-                {weekdayFilter}
-              </div>
-            )}
-            {locationFilter && (
-              <div
-                className="px-2 py-1 rounded-full text-xs font-bold text-[#0B2863] border shadow-sm flex items-center gap-1"
-                style={{ borderColor: COLORS.primary }}
-              >
-                <MapPin size={10} />
-                {locationFilter}
-              </div>
-            )}
-            {!isGlobalSearchActive &&
-              !week &&
-              !weekdayFilter &&
-              !locationFilter && (
-                <div
-                  className="px-2 py-1 rounded-full text-xs font-semibold border flex items-center gap-1"
-                  style={{
-                    backgroundColor: COLORS.grayBg,
-                    borderColor: "#d1d5db",
-                    color: COLORS.gray,
-                  }}
-                >
-                  <Activity size={10} />
-                  {t("filters.noActiveFilters")}
                 </div>
               )}
+
+              {/* Active Filters Summary */}
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <h4
+                    className="text-xs font-bold flex items-center gap-1"
+                    style={{ color: COLORS.primary }}
+                  >
+                    <Filter size={12} />
+                    {t("filters.activeFilters")}
+                  </h4>
+                  <span className="text-xs text-gray-500">
+                    {t("filters.activeCount", { count: activeFilterCount })}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {isGlobalSearchActive && (
+                    <div
+                      className="px-2 py-1 rounded-full text-xs font-bold text-white border shadow-sm flex items-center gap-1"
+                      style={{
+                        backgroundColor: COLORS.primary,
+                        borderColor: COLORS.primary,
+                      }}
+                    >
+                      <Globe size={10} />
+                      {t("filters.globalLabel", {
+                        search:
+                          globalSearch.length > 20
+                            ? globalSearch.substring(0, 20) + "..."
+                            : globalSearch,
+                      })}
+                    </div>
+                  )}
+                  {!isGlobalSearchActive && week && (
+                    <div
+                      className="px-2 py-1 rounded-full text-xs font-bold text-[#0B2863] border shadow-sm flex items-center gap-1"
+                      style={{ borderColor: COLORS.primary }}
+                    >
+                      <Calendar size={10} />
+                      {t("filters.yearWeekLabel", { year, week })}
+                    </div>
+                  )}
+                  {weekdayFilter && (
+                    <div
+                      className="px-2 py-1 rounded-full text-xs font-bold text-[#0B2863] border shadow-sm flex items-center gap-1"
+                      style={{ borderColor: COLORS.primary }}
+                    >
+                      <Calendar size={10} />
+                      {weekdayFilter}
+                    </div>
+                  )}
+                  {locationFilter && (
+                    <div
+                      className="px-2 py-1 rounded-full text-xs font-bold text-[#0B2863] border shadow-sm flex items-center gap-1"
+                      style={{ borderColor: COLORS.primary }}
+                    >
+                      <MapPin size={10} />
+                      {locationFilter}
+                    </div>
+                  )}
+                  {!isGlobalSearchActive &&
+                    !week &&
+                    !weekdayFilter &&
+                    !locationFilter && (
+                      <div
+                        className="px-2 py-1 rounded-full text-xs font-semibold border flex items-center gap-1"
+                        style={{
+                          backgroundColor: COLORS.grayBg,
+                          borderColor: "#d1d5db",
+                          color: COLORS.gray,
+                        }}
+                      >
+                        <Activity size={10} />
+                        {t("filters.noActiveFilters")}
+                      </div>
+                    )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

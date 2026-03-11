@@ -451,7 +451,8 @@
     "deleteOrder": "Delete Order (Absolute)",
     "viewDispatchTicket": "View Dispatch Ticket",
     "addFuelCost": "Add Fuel Cost",
-    "createExtraCost": "Create Extra Cost"
+    "createExtraCost": "Create Extra Cost",
+    "assignTools": "Assign Tools"
   },
   "costFuels": {
     "title": "Fuel Costs",
@@ -3115,5 +3116,18 @@
       "revokeError": "Error revoking superuser permission",
       "revokeSuccess": "Superuser permission revoked successfully"
     }
+  },
+  "assignTool": {
+    "title": "Assign Tools",
+    "availableTools": "Available tools for this job",
+    "assignedToOrder": "Assigned to this order",
+    "noTools": "No tools found for this job type.",
+    "noneAssigned": "No tools assigned yet.",
+    "alreadyAssigned": "Already assigned to this order",
+    "assigned": "Assigned",
+    "assign": "Assign",
+    "done": "Done",
+    "qty": "Qty",
+    "describePlaceholder": "Notes (optional)"
   }
 }
