@@ -8,7 +8,8 @@ import {
   Trash2,
   Truck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Fuel,                    // ← nuevo
 } from 'lucide-react';
 import { useSnackbar } from 'notistack';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,7 @@ import {
   TruckFormData,
   TruckResponse
 } from '../data/repositoryTrucks';
+import TruckFuelHistoryModal from './Truckfuelhistorymodal'; // ← nuevo
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -132,6 +134,16 @@ const TrucksPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+
+  // ── Fuel History Modal state ──────────────────────────────────────────────────
+  const [fuelModalOpen, setFuelModalOpen] = useState(false);
+  const [fuelTruck, setFuelTruck] = useState<TruckType | null>(null);
+
+  const handleOpenFuelHistory = (truck: TruckType) => {
+    setFuelTruck(truck);
+    setFuelModalOpen(true);
+  };
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -295,19 +307,21 @@ const TrucksPage: React.FC = () => {
                 <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.name')}</th>
                 <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.type')}</th>
                 <th className="text-left px-5 py-3.5 font-semibold">{t('trucks.table.category')}</th>
+                {/* ← nueva columna */}
+                <th className="text-center px-5 py-3.5 font-semibold">Fuel</th>
                 <th className="text-center px-5 py-3.5 font-semibold">{t('trucks.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-16">
+                  <td colSpan={6} className="text-center py-16">
                     <div className="inline-block w-8 h-8 border-4 border-[#092961] border-t-transparent rounded-sm animate-spin" />
                   </td>
                 </tr>
               ) : filteredTrucks.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12">
+                  <td colSpan={6} className="text-center py-12">
                     <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
                       {t('trucks.table.noResults')}
                     </span>
@@ -340,6 +354,18 @@ const TrucksPage: React.FC = () => {
 
                     {/* Category */}
                     <td className="px-5 py-3.5 text-slate-700">{getCategoryLabel(truck.category)}</td>
+
+                    {/* ← Fuel history button */}
+                    <td className="px-5 py-3.5 text-center">
+                      <button
+                        title="View fuel history"
+                        onClick={() => handleOpenFuelHistory(truck)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#092961]/8 hover:bg-[#092961] text-[#092961] hover:text-white text-xs font-semibold rounded-lg transition-all border border-[#092961]/20 hover:border-[#092961]"
+                      >
+                        <Fuel className="w-3.5 h-3.5" />
+                        History
+                      </button>
+                    </td>
 
                     {/* Actions */}
                     <td className="px-5 py-3.5">
@@ -487,6 +513,15 @@ const TrucksPage: React.FC = () => {
           </button>
         </div>
       </Modal>
+
+      {/* ── Fuel History Modal ── */}
+      <TruckFuelHistoryModal
+        open={fuelModalOpen}
+        onClose={() => { setFuelModalOpen(false); setFuelTruck(null); }}
+        truckId={fuelTruck?.id_truck ?? 0}
+        truckName={fuelTruck?.name ?? ''}
+        truckPlate={fuelTruck?.number_truck ?? ''}
+      />
 
     </div>
   );

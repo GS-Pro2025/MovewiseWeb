@@ -1,37 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  CircularProgress,
-  Alert,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  Box,
-  IconButton,
-  Tooltip,
-  Menu,
-  ListItemIcon,
-  ListItemText,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button,
+  CircularProgress, Alert, Chip, FormControl, InputLabel, Select, MenuItem,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  Typography, Box, IconButton, Tooltip, Menu, ListItemIcon, ListItemText,
 } from '@mui/material';
-import { DollarSign, Ban } from 'lucide-react';
+import { DollarSign, Ban, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Loan, LoanStatus } from '../../domain/LoanModels';
 import { fetchLoansByOperator, updateLoanStatus } from '../../data/RepositoryLoans';
 import RegisterPaymentDialog from './RegisterPaymentDialog';
+import LoanPaymentsDialog from './Loanpaymentsdialog';
 import { useSnackbar } from 'notistack';
 
 interface OperatorLoansDialogProps {
@@ -39,27 +18,27 @@ interface OperatorLoansDialogProps {
   onClose: () => void;
   operatorId: number;
   operatorName: string;
+  onLoanUpdated?: () => void;
 }
 
 const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
-  open,
-  onClose,
-  operatorId,
-  operatorName,
+  open, onClose, operatorId, operatorName, onLoanUpdated,
 }) => {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
 
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<LoanStatus | ''>('');
+  const [loans, setLoans]                                   = useState<Loan[]>([]);
+  const [loading, setLoading]                               = useState<boolean>(false);
+  const [error, setError]                                   = useState<string | null>(null);
+  const [statusFilter, setStatusFilter]                     = useState<LoanStatus | ''>('');
+  const [isRefreshing, setIsRefreshing]                     = useState(false);
   const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<Loan | null>(null);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedLoanForStatus, setSelectedLoanForStatus] = useState<Loan | null>(null);
-  const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen]       = useState(false);
+  const [selectedLoanForHistory, setSelectedLoanForHistory] = useState<Loan | null>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen]       = useState(false);
+  const [statusMenuAnchor, setStatusMenuAnchor]             = useState<null | HTMLElement>(null);
+  const [selectedLoanForStatus, setSelectedLoanForStatus]   = useState<Loan | null>(null);
+  const [contextMenuPosition, setContextMenuPosition]       = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (open && operatorId) loadLoans();
@@ -84,9 +63,7 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
   };
 
   const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-    });
+    new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
   const getStatusChip = (status: LoanStatus) => {
     const config: Record<LoanStatus, { color: 'error' | 'success' | 'default'; labelKey: string }> = {
@@ -102,22 +79,21 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
     .filter(l => parseFloat(l.remaining_amount) > 0)
     .reduce((sum, l) => sum + parseFloat(l.remaining_amount), 0);
 
-  const handleOpenPaymentDialog = (loan: Loan) => {
-    setSelectedLoanForPayment(loan);
-    setIsPaymentDialogOpen(true);
-  };
-
-  const handleClosePaymentDialog = () => {
-    setIsPaymentDialogOpen(false);
-    setSelectedLoanForPayment(null);
-  };
-
-  const handlePaymentRegistered = () => {
+  /* ── Payment handlers ── */
+  const handleOpenPaymentDialog  = (loan: Loan) => { setSelectedLoanForPayment(loan); setIsPaymentDialogOpen(true); };
+  const handleClosePaymentDialog = () => { setIsPaymentDialogOpen(false); setSelectedLoanForPayment(null); };
+  const handlePaymentRegistered  = () => {
     setIsRefreshing(true);
     loadLoans();
+    onLoanUpdated?.();
     setTimeout(() => setIsRefreshing(false), 800);
   };
 
+  /* ── History handlers ── */
+  const handleOpenHistory  = (loan: Loan) => { setSelectedLoanForHistory(loan); setIsHistoryDialogOpen(true); };
+  const handleCloseHistory = () => { setIsHistoryDialogOpen(false); setSelectedLoanForHistory(null); };
+
+  /* ── Context menu handlers ── */
   const handleContextMenu = (event: React.MouseEvent, loan: Loan) => {
     event.preventDefault();
     event.stopPropagation();
@@ -125,24 +101,20 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
     setSelectedLoanForStatus(loan);
     setStatusMenuAnchor(null);
   };
-
   const handleCloseStatusMenu = () => {
     setStatusMenuAnchor(null);
     setContextMenuPosition(null);
     setSelectedLoanForStatus(null);
   };
-
   const handleUpdateStatus = async (newStatus: LoanStatus) => {
     if (!selectedLoanForStatus) return;
     try {
       await updateLoanStatus(selectedLoanForStatus.id_loan, newStatus);
-      enqueueSnackbar(
-        t('operators.loansDialog.snackbar.statusUpdated', { status: newStatus }),
-        { variant: 'success' }
-      );
+      enqueueSnackbar(t('operators.loansDialog.snackbar.statusUpdated', { status: newStatus }), { variant: 'success' });
       handleCloseStatusMenu();
       setIsRefreshing(true);
       loadLoans();
+      onLoanUpdated?.();
       setTimeout(() => setIsRefreshing(false), 800);
     } catch (err) {
       enqueueSnackbar(
@@ -152,34 +124,19 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
     }
   };
 
-  const canCancelLoan = (loan: Loan): boolean =>
-    parseFloat(loan.total_paid) === 0 && loan.status !== 'canceled';
+  const canCancelLoan = (loan: Loan) => parseFloat(loan.total_paid) === 0 && loan.status !== 'canceled';
+  const hasPayments   = (loan: Loan) => parseFloat(loan.total_paid) > 0;
 
   return (
     <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
+      open={open} onClose={onClose} maxWidth="md" fullWidth
       PaperProps={{ sx: { borderRadius: 2 } }}
-      BackdropProps={{
-        sx: { backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.5)' },
-      }}
+      BackdropProps={{ sx: { backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.5)' } }}
     >
       {/* ── Title ── */}
-      <DialogTitle
-        sx={{
-          backgroundColor: '#0B2863',
-          color: 'white',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+      <DialogTitle sx={{ backgroundColor: '#0B2863', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="h6">
-            {t('operators.loansDialog.title', { name: operatorName })}
-          </Typography>
+          <Typography variant="h6">{t('operators.loansDialog.title', { name: operatorName })}</Typography>
           {loans.length > 0 && (
             <Typography variant="caption" sx={{ opacity: 0.9 }}>
               {t('operators.loansDialog.loanCount', {
@@ -189,20 +146,15 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
             </Typography>
           )}
         </Box>
-        {totalUnpaid > 0 ? (
-          <Chip
-            label={t('operators.loansDialog.totalUnpaid', { amount: formatCurrency(totalUnpaid) })}
-            color="error"
-            sx={{ fontWeight: 'bold' }}
-          />
-        ) : loans.length > 0 ? (
-          <Chip label={t('operators.loansDialog.allPaid')} color="success" sx={{ fontWeight: 'bold' }} />
-        ) : null}
+        {totalUnpaid > 0
+          ? <Chip label={t('operators.loansDialog.totalUnpaid', { amount: formatCurrency(totalUnpaid) })} color="error" sx={{ fontWeight: 'bold' }} />
+          : loans.length > 0
+          ? <Chip label={t('operators.loansDialog.allPaid')} color="success" sx={{ fontWeight: 'bold' }} />
+          : null}
       </DialogTitle>
 
       {/* ── Content ── */}
       <DialogContent sx={{ mt: 2 }}>
-        {/* Status filter */}
         <Box sx={{ mb: 2 }}>
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>{t('operators.loansDialog.statusFilter.label')}</InputLabel>
@@ -220,9 +172,7 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
         </Box>
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
         ) : error ? (
           <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
         ) : loans.length === 0 ? (
@@ -246,9 +196,9 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
               </TableHead>
               <TableBody>
                 {loans.map((loan, index) => {
-                  const isPaid = parseFloat(loan.remaining_amount) === 0;
-                  const hasPayments = parseFloat(loan.total_paid) > 0;
-                  const actualStatus = isPaid ? 'paid' : hasPayments ? 'unpaid' : loan.status;
+                  const isPaid       = parseFloat(loan.remaining_amount) === 0;
+                  const hasPaid      = parseFloat(loan.total_paid) > 0;
+                  const actualStatus = isPaid ? 'paid' : hasPaid ? 'unpaid' : loan.status;
 
                   return (
                     <TableRow
@@ -271,7 +221,6 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
                         transition: 'all 0.3s ease',
                       }}
                     >
-                      {/* Description */}
                       <TableCell>
                         <Box>
                           <Typography variant="body2">{loan.description}</Typography>
@@ -280,41 +229,24 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
                           </Typography>
                         </Box>
                       </TableCell>
-
-                      {/* Amounts */}
-                      <TableCell align="right" sx={{ fontWeight: 'medium' }}>
-                        {formatCurrency(loan.total_amount_to_pay)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ color: '#22c55e', fontWeight: 'medium' }}>
-                        {formatCurrency(loan.total_paid)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ color: '#ef4444', fontWeight: 'medium' }}>
-                        {formatCurrency(loan.remaining_amount)}
-                      </TableCell>
-
-                      {/* Progress bar */}
+                      <TableCell align="right" sx={{ fontWeight: 'medium' }}>{formatCurrency(loan.total_amount_to_pay)}</TableCell>
+                      <TableCell align="right" sx={{ color: '#22c55e', fontWeight: 'medium' }}>{formatCurrency(loan.total_paid)}</TableCell>
+                      <TableCell align="right" sx={{ color: '#ef4444', fontWeight: 'medium' }}>{formatCurrency(loan.remaining_amount)}</TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Box sx={{ width: 60, height: 6, backgroundColor: '#e5e7eb', borderRadius: 1, overflow: 'hidden' }}>
-                            <Box
-                              sx={{
-                                width: `${parseFloat(loan.payment_percentage)}%`,
-                                height: '100%',
-                                backgroundColor: isPaid ? '#22c55e' : '#3b82f6',
-                                transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
-                              }}
-                            />
+                            <Box sx={{
+                              width: `${parseFloat(loan.payment_percentage)}%`, height: '100%',
+                              backgroundColor: isPaid ? '#22c55e' : '#3b82f6',
+                              transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
+                            }} />
                           </Box>
                           <Typography variant="caption" sx={{ minWidth: 35 }}>
                             {parseFloat(loan.payment_percentage).toFixed(1)}%
                           </Typography>
                         </Box>
                       </TableCell>
-
-                      {/* Status */}
                       <TableCell>{getStatusChip(actualStatus as LoanStatus)}</TableCell>
-
-                      {/* Dates */}
                       <TableCell>
                         <Box>
                           <Typography variant="body2">{formatDate(loan.created_at)}</Typography>
@@ -326,9 +258,24 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
                         </Box>
                       </TableCell>
 
-                      {/* Actions */}
+                      {/* ── Actions ── */}
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+
+                          {/* Historial — visible si tiene al menos un pago */}
+                          {hasPayments(loan) && (
+                            <Tooltip title={t('operators.loansDialog.tooltips.viewHistory', 'View payment history')}>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenHistory(loan)}
+                                sx={{ color: '#6366f1', '&:hover': { backgroundColor: '#eef2ff' } }}
+                              >
+                                <History size={18} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+
+                          {/* Registrar pago */}
                           {!isPaid && loan.status !== 'canceled' && loan.status !== 'paid' && (
                             <>
                               <Tooltip title={t('operators.loansDialog.tooltips.registerPayment')}>
@@ -357,7 +304,8 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
                               )}
                             </>
                           )}
-                          {(isPaid || loan.status === 'paid' || loan.status === 'canceled') && (
+
+                          {!hasPayments(loan) && (isPaid || loan.status === 'paid' || loan.status === 'canceled') && (
                             <Typography variant="caption" color="text.secondary">—</Typography>
                           )}
                         </Box>
@@ -371,7 +319,6 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
         )}
       </DialogContent>
 
-      {/* ── Actions ── */}
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} variant="outlined" color="primary">
           {t('operators.loansDialog.closeButton')}
@@ -388,6 +335,15 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
         />
       )}
 
+      {/* ── Payment History Dialog ── */}
+      {selectedLoanForHistory && (
+        <LoanPaymentsDialog
+          open={isHistoryDialogOpen}
+          onClose={handleCloseHistory}
+          loan={selectedLoanForHistory}
+        />
+      )}
+
       {/* ── Context / Status Menu ── */}
       <Menu
         anchorEl={statusMenuAnchor}
@@ -395,47 +351,44 @@ const OperatorLoansDialog: React.FC<OperatorLoansDialogProps> = ({
         onClose={handleCloseStatusMenu}
         anchorReference={contextMenuPosition ? 'anchorPosition' : 'anchorEl'}
         anchorPosition={contextMenuPosition || undefined}
-        slotProps={{
-          paper: {
-            sx: {
-              minWidth: 200,
-              boxShadow: '0px 8px 32px rgba(0,0,0,0.12)',
-              border: '1px solid #e0e0e0',
-              borderRadius: 2,
-            },
-          },
-        }}
+        slotProps={{ paper: { sx: { minWidth: 200, boxShadow: '0px 8px 32px rgba(0,0,0,0.12)', border: '1px solid #e0e0e0', borderRadius: 2 } } }}
       >
-        {selectedLoanForStatus &&
-          selectedLoanForStatus.status !== 'canceled' &&
-          selectedLoanForStatus.status !== 'paid' &&
-          parseFloat(selectedLoanForStatus.remaining_amount) > 0 && (
-            <>
-              <MenuItem onClick={() => {
-                handleCloseStatusMenu();
-                handleOpenPaymentDialog(selectedLoanForStatus);
-              }}>
-                <ListItemIcon><DollarSign size={18} color="#10b981" /></ListItemIcon>
-                <ListItemText>{t('operators.loansDialog.menu.registerPayment')}</ListItemText>
+        {selectedLoanForStatus && (
+          <>
+            {hasPayments(selectedLoanForStatus) && (
+              <MenuItem onClick={() => { handleCloseStatusMenu(); handleOpenHistory(selectedLoanForStatus); }}>
+                <ListItemIcon><History size={18} color="#6366f1" /></ListItemIcon>
+                <ListItemText>{t('operators.loansDialog.menu.viewHistory', 'View history')}</ListItemText>
               </MenuItem>
-              {canCancelLoan(selectedLoanForStatus) && (
-                <MenuItem onClick={() => handleUpdateStatus('canceled')}>
-                  <ListItemIcon><Ban size={18} color="#ef4444" /></ListItemIcon>
-                  <ListItemText sx={{ color: '#ef4444' }}>
-                    {t('operators.loansDialog.menu.cancelLoan')}
-                  </ListItemText>
+            )}
+
+            {selectedLoanForStatus.status !== 'canceled' &&
+             selectedLoanForStatus.status !== 'paid' &&
+             parseFloat(selectedLoanForStatus.remaining_amount) > 0 && (
+              <>
+                <MenuItem onClick={() => { handleCloseStatusMenu(); handleOpenPaymentDialog(selectedLoanForStatus); }}>
+                  <ListItemIcon><DollarSign size={18} color="#10b981" /></ListItemIcon>
+                  <ListItemText>{t('operators.loansDialog.menu.registerPayment')}</ListItemText>
                 </MenuItem>
-              )}
-            </>
-          )}
-        {selectedLoanForStatus &&
-          (selectedLoanForStatus.status === 'paid' ||
-            selectedLoanForStatus.status === 'canceled' ||
-            parseFloat(selectedLoanForStatus.remaining_amount) === 0) && (
-            <MenuItem disabled>
-              <ListItemText>{t('operators.loansDialog.menu.noActions')}</ListItemText>
-            </MenuItem>
-          )}
+                {canCancelLoan(selectedLoanForStatus) && (
+                  <MenuItem onClick={() => handleUpdateStatus('canceled')}>
+                    <ListItemIcon><Ban size={18} color="#ef4444" /></ListItemIcon>
+                    <ListItemText sx={{ color: '#ef4444' }}>{t('operators.loansDialog.menu.cancelLoan')}</ListItemText>
+                  </MenuItem>
+                )}
+              </>
+            )}
+
+            {!hasPayments(selectedLoanForStatus) &&
+             (selectedLoanForStatus.status === 'paid' ||
+              selectedLoanForStatus.status === 'canceled' ||
+              parseFloat(selectedLoanForStatus.remaining_amount) === 0) && (
+              <MenuItem disabled>
+                <ListItemText>{t('operators.loansDialog.menu.noActions')}</ListItemText>
+              </MenuItem>
+            )}
+          </>
+        )}
       </Menu>
     </Dialog>
   );

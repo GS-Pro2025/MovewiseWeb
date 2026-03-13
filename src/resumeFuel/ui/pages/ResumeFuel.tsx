@@ -6,16 +6,18 @@ import { WeeklyFuelDataResponse } from '../../domain/CostFuelWithOrders';
 import YearPicker from '../../../components/YearPicker';
 import WeekPicker from '../../../components/WeekPicker';
 import CreateCostFuelDialog from '../../../addFuelCostToOrder/ui/CreateCostFuelDialog';
-import { Plus } from 'lucide-react';
+import { Plus, Truck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ResumeFuel: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [resumeFuel, setResumeFuel] = useState<WeeklyFuelDataResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentWeek, setCurrentWeek] = useState<number>(1);
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
   const [createDialogOpen, setCreateDialogOpen] = useState<boolean>(false);
-  
+
   const resumeFuelServices = new ResumeFuelService();
 
   const fetchResumeFuel = useCallback(async (week?: number, year?: number) => {
@@ -38,7 +40,6 @@ const ResumeFuel: React.FC = () => {
     const now = new Date();
     const yearStart = new Date(now.getFullYear(), 0, 1);
     const weekNumber = Math.ceil(((now.getTime() - yearStart.getTime()) / 86400000 + yearStart.getDay() + 1) / 7);
-    
     setCurrentWeek(weekNumber);
     fetchResumeFuel(weekNumber, now.getFullYear());
   }, []);
@@ -62,28 +63,40 @@ const ResumeFuel: React.FC = () => {
     });
     return acc;
   }, { totalFuelCost: 0, totalFuelQty: 0, totalDistance: 0, totalCostFuels: 0 });
-  
+
   return (
     <div className="container mx-auto p-4">
       {/* Week/Year selector */}
       <div className="mb-6 bg-white rounded-xl p-4 shadow-md border" style={{ borderColor: '#0B2863' }}>
         <div className="flex items-center gap-4 flex-wrap justify-between">
 
-          {/* Create Button */}
-          <button
-            onClick={() => setCreateDialogOpen(true)}
-            className="px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2"
-            style={{ backgroundColor: '#0B2863', color: 'white' }}
-          >
-            <Plus size={18} />
-            {t('resumeFuel.createButton')}
-          </button>
+          {/* Left buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCreateDialogOpen(true)}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2"
+              style={{ backgroundColor: '#0B2863', color: 'white' }}
+            >
+              <Plus size={18} />
+              {t('resumeFuel.createButton')}
+            </button>
+
+            {/* Botón navigate a TrucksPage */}
+            <button
+              onClick={() => navigate('/app/trucks')}
+              className="px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2 border-2"
+              style={{ borderColor: '#0B2863', color: '#0B2863', backgroundColor: 'white' }}
+            >
+              <Truck size={18} />
+              {t('resumeFuel.trucksButton', { defaultValue: 'Trucks' })}
+            </button>
+          </div>
 
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">{t('resumeFuel.filterBy')}</span>
             </div>
-            
+
             <div className="flex items-center gap-4 flex-wrap">
               <div className="min-w-[140px]">
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t('resumeFuel.year')}</label>
@@ -96,7 +109,7 @@ const ResumeFuel: React.FC = () => {
                   className="w-full"
                 />
               </div>
-              
+
               <div className="min-w-[160px]">
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t('resumeFuel.week')}</label>
                 <WeekPicker
@@ -109,7 +122,6 @@ const ResumeFuel: React.FC = () => {
               </div>
             </div>
 
-            {/* Loading indicator */}
             {isLoading && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: '#0B2863' }}></div>
@@ -149,8 +161,8 @@ const ResumeFuel: React.FC = () => {
         </div>
       </div>
 
-      <ResumeFuelTable 
-        data={resumeFuel} 
+      <ResumeFuelTable
+        data={resumeFuel}
         isLoading={isLoading}
       />
 
@@ -163,6 +175,7 @@ const ResumeFuel: React.FC = () => {
           fetchResumeFuel(currentWeek, currentYear);
         }}
       />
+
     </div>
   );
 };

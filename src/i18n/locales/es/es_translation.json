@@ -1669,6 +1669,11 @@
   },
   "loansSummary": {
     "loading": "Cargando préstamos…",
+    "actions": {
+      "registerPayment": "Registrar pago",
+      "viewLoans": "Ver préstamos",
+      "viewHistory": "Historial"
+    },
     "error": {
       "title": "No se pudieron cargar los datos",
       "loading": "Error al cargar los préstamos",
@@ -1750,7 +1755,8 @@
       "status": "Estado",
       "date": "Fecha",
       "progress": "Progreso",
-      "totalRow": "Total ({{count}} préstamos)"
+      "totalRow": "Total ({{count}} préstamos)",
+      "actions": "Acciones"
     },
     "weekly": {
       "title": "Préstamos por Semana",
@@ -1760,462 +1766,6 @@
     },
     "footer": {
       "hint": "Haz clic en cualquier operador en la pestaña <strong>Resumen</strong> para ver sus préstamos individuales. Usa los botones de filtro de estado para aislar préstamos impagos, pagados o cancelados."
-    }
-  },
-  "profile": {
-    "title": "Mi Perfil",
-    "subtitle": "Ver y editar tu información de perfil",
-    "editButton": "Editar Perfil",
-    "saveButton": "Guardar Cambios",
-    "saving": "Guardando...",
-    "cancelButton": "Cancelar",
-    "tryAgain": "Intentar de nuevo",
-    "errorLoading": "Error al cargar el perfil",
-    "errorLoadingDesc": "No se pudo cargar la información del perfil de usuario.",
-    "changesCancelled": "Cambios cancelados",
-    "updateSuccess": "Perfil actualizado exitosamente",
-    "photo": {
-      "altText": "Perfil",
-      "sizeError": "El tamaño de la imagen debe ser menor a 5MB",
-      "viewLabel": "Ver foto",
-      "dialogTitle": "Foto de Perfil",
-      "downloadLabel": "Descargar foto"
-    },
-    "roles": {
-      "superAdmin": "Super Administrador",
-      "admin": "Administrador"
-    },
-    "sections": {
-      "accountInfo": "Información de Cuenta",
-      "personalInfo": "Información Personal",
-      "security": "Seguridad de la Cuenta"
-    },
-    "fields": {
-      "username": "Usuario",
-      "usernamePlaceholder": "Ingresa el nombre de usuario",
-      "email": "Correo Electrónico",
-      "emailPlaceholder": "Ingresa el correo electrónico",
-      "firstName": "Nombre",
-      "firstNamePlaceholder": "Ingresa el nombre",
-      "lastName": "Apellido",
-      "lastNamePlaceholder": "Ingresa el apellido",
-      "phone": "Teléfono",
-      "phonePlaceholder": "Ingresa el número de teléfono",
-      "birthDate": "Fecha de Nacimiento",
-      "address": "Dirección",
-      "addressPlaceholder": "Ingresa la dirección",
-      "idNumber": "Número de Identificación",
-      "idNumberPlaceholder": "Ingresa el número de identificación",
-      "idType": "Tipo de Identificación",
-      "idTypePlaceholder": "Ej. Licencia de conducir, Pasaporte, etc."
-    },
-    "idTypes": {
-      "select": "Selecciona el tipo de ID",
-      "driversLicense": "Licencia de Conducir",
-      "stateId": "Cédula de Ciudadanía",
-      "greenCard": "Tarjeta de Residencia",
-      "passport": "Pasaporte"
-    },
-    "security": {
-      "changePassword": "Cambiar Contraseña",
-      "cancelChange": "Cancelar",
-      "currentPassword": "Contraseña Actual",
-      "currentPasswordPlaceholder": "Ingresa la contraseña actual",
-      "newPassword": "Nueva Contraseña",
-      "newPasswordPlaceholder": "Ingresa la nueva contraseña",
-      "confirmPassword": "Confirmar Nueva Contraseña",
-      "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
-      "requirements": "Requisitos de la contraseña:",
-      "req1": "Al menos 6 caracteres de longitud",
-      "req2": "La nueva contraseña debe ser diferente a la actual",
-      "req3": "Se requiere la contraseña actual para cambiarla"
-    },
-    "errors": {
-      "currentPasswordRequired": "Se requiere la contraseña actual para cambiar la contraseña",
-      "newPasswordRequired": "Se requiere una nueva contraseña",
-      "passwordsMismatch": "Las contraseñas no coinciden",
-      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
-      "updateError": "Error al actualizar el perfil",
-      "incorrectPassword": "La contraseña actual es incorrecta. Por favor verifica e intenta de nuevo.",
-      "emailTaken": "Este correo electrónico ya está registrado a otro usuario",
-      "idTaken": "Este número de identificación ya está registrado a otro usuario"
-    }
-  },
-  "customers": {
-    "title": "Nuestras Empresas Aliadas",
-    "subtitle": "Aquí puedes gestionar la lista de empresas con las que trabajamos.",
-    "sectionTitle": "Lista de Empresas",
-    "add": {
-      "label": "Nombre de la nueva empresa",
-      "button": "Agregar",
-      "emptyWarning": "El nombre de la empresa no puede estar vacío.",
-      "success": "Empresa agregada exitosamente.",
-      "error": "Error al agregar la empresa."
-    },
-    "search": {
-      "label": "Buscar empresa"
-    },
-    "delete": {
-      "confirm": "¿Estás seguro de que deseas eliminar esta empresa?",
-      "success": "Empresa eliminada exitosamente.",
-      "error": "Error al eliminar la empresa."
-    },
-    "loading": "Cargando empresas...",
-    "noResults": "No hay empresas que coincidan con tu búsqueda.",
-    "errors": {
-      "loadError": "Error desconocido al cargar las empresas.",
-      "addError": "Error desconocido al agregar la empresa.",
-      "deleteError": "Error desconocido al eliminar la empresa."
-    }
-  },
-  "jobsAndTools": {
-    "title": "Gestión de Trabajos y Herramientas",
-    "subtitle": "Aquí puedes gestionar la lista de trabajos y las herramientas asociadas a cada uno.",
-    "jobs": {
-      "sectionTitle": "Lista de Trabajos",
-      "addLabel": "Nombre del nuevo trabajo",
-      "addButton": "Añadir Trabajo",
-      "searchLabel": "Buscar trabajo",
-      "loading": "Cargando trabajos...",
-      "noResults": "No se encontraron trabajos.",
-      "emptyWarning": "El nombre del trabajo no puede estar vacío.",
-      "noChanges": "No hay cambios para guardar.",
-      "addSuccess": "Trabajo añadido con éxito.",
-      "addError": "Error al añadir trabajo.",
-      "deleteSuccess": "Trabajo eliminado con éxito.",
-      "deleteError": "Error al eliminar trabajo.",
-      "updateSuccess": "Trabajo actualizado con éxito.",
-      "updateError": "Error al actualizar trabajo.",
-      "errors": {
-        "loadError": "Error desconocido al cargar trabajos.",
-        "addError": "Error desconocido al añadir trabajo.",
-        "deleteError": "Error desconocido al eliminar trabajo.",
-        "updateError": "Error desconocido al actualizar trabajo."
-      }
-    },
-    "tools": {
-      "dialogTitle": "Herramientas para:",
-      "dialogTitleLoading": "Cargando...",
-      "sectionTitle": "Lista de Herramientas",
-      "addLabel": "Nombre de la nueva herramienta",
-      "addButton": "Añadir",
-      "closeButton": "Cerrar",
-      "loading": "Cargando herramientas...",
-      "noResults": "No hay herramientas para este trabajo.",
-      "noJobSelected": "No se ha seleccionado un trabajo para añadir la herramienta.",
-      "emptyWarning": "El nombre de la herramienta no puede estar vacío.",
-      "addSuccess": "Herramienta añadida con éxito.",
-      "addError": "Error al añadir herramienta.",
-      "deleteSuccess": "Herramienta eliminada con éxito.",
-      "deleteError": "Error al eliminar herramienta.",
-      "errors": {
-        "loadError": "Error desconocido al cargar herramientas.",
-        "addError": "Error desconocido al añadir herramienta.",
-        "deleteError": "Error desconocido al eliminar herramienta."
-      }
-    },
-    "confirmDialog": {
-      "cancelButton": "Cancelar",
-      "confirmButton": "Confirmar",
-      "deleteJob": {
-        "title": "Confirmar eliminación de trabajo",
-        "message": "¿Estás seguro de que quieres eliminar este trabajo? Se eliminarán también las herramientas asociadas."
-      },
-      "deleteTool": {
-        "title": "Confirmar eliminación de herramienta",
-        "message": "¿Estás seguro de que quieres eliminar esta herramienta?"
-      }
-    }
-  },
-  "trucks": {
-    "title": "Administración de Vehículos",
-    "subtitle": "Gestiona todos los vehículos de la flota",
-    "addButton": "Nuevo Vehículo",
-    "search": {
-      "placeholder": "Buscar por placa, nombre, tipo o categoría..."
-    },
-    "table": {
-      "plate": "Placa",
-      "name": "Nombre",
-      "type": "Tipo",
-      "category": "Categoría",
-      "actions": "Acciones",
-      "noResults": "No se encontraron vehículos",
-      "editTooltip": "Editar",
-      "deleteTooltip": "Eliminar"
-    },
-    "pagination": {
-      "rowsPerPage": "Filas por página",
-      "displayedRows": "{{from}}-{{to}} de {{count}}"
-    },
-    "types": {
-      "owned": "Propio",
-      "rented": "Rentado"
-    },
-    "categories": {
-      "truck_26": "Camión 26",
-      "truck_49": "Camión 49",
-      "truck_001": "Camión 001",
-      "vans": "Vans",
-      "trailer": "Trailer"
-    },
-    "modal": {
-      "titleCreate": "Nuevo Vehículo",
-      "titleEdit": "Editar Vehículo",
-      "plateLabel": "Placa",
-      "nameLabel": "Nombre",
-      "typeLabel": "Tipo",
-      "typeHelper": "Selecciona si el vehículo es propio o rentado",
-      "categoryLabel": "Categoría",
-      "categoryHelper": "Selecciona la categoría del vehículo",
-      "cancelButton": "Cancelar",
-      "createButton": "Crear",
-      "updateButton": "Actualizar",
-      "requiredFields": "Todos los campos son requeridos"
-    },
-    "deleteDialog": {
-      "title": "Confirmar Eliminación",
-      "message": "¿Estás seguro de que deseas eliminar el vehículo",
-      "warning": "Esta acción no se puede deshacer.",
-      "cancelButton": "Cancelar",
-      "deleteButton": "Eliminar"
-    },
-    "snackbar": {
-      "loadError": "Error al cargar los vehículos",
-      "createSuccess": "Vehículo creado correctamente",
-      "createError": "Error al guardar el vehículo",
-      "updateSuccess": "Vehículo actualizado correctamente",
-      "updateError": "Error al guardar el vehículo",
-      "deleteSuccess": "Vehículo eliminado correctamente",
-      "deleteError": "Error al eliminar el vehículo"
-    }
-  },
-  "profile": {
-    "title": "Mi Perfil",
-    "subtitle": "Ver y editar tu información de perfil",
-    "editButton": "Editar Perfil",
-    "saveButton": "Guardar Cambios",
-    "saving": "Guardando...",
-    "cancelButton": "Cancelar",
-    "tryAgain": "Intentar de nuevo",
-    "errorLoading": "Error al cargar el perfil",
-    "errorLoadingDesc": "No se pudo cargar la información del perfil de usuario.",
-    "changesCancelled": "Cambios cancelados",
-    "updateSuccess": "Perfil actualizado exitosamente",
-    "photo": {
-      "altText": "Perfil",
-      "sizeError": "El tamaño de la imagen debe ser menor a 5MB",
-      "viewLabel": "Ver foto",
-      "dialogTitle": "Foto de Perfil",
-      "downloadLabel": "Descargar foto"
-    },
-    "roles": {
-      "superAdmin": "Super Administrador",
-      "admin": "Administrador"
-    },
-    "sections": {
-      "accountInfo": "Información de Cuenta",
-      "personalInfo": "Información Personal",
-      "security": "Seguridad de la Cuenta"
-    },
-    "fields": {
-      "username": "Usuario",
-      "usernamePlaceholder": "Ingresa el nombre de usuario",
-      "email": "Correo Electrónico",
-      "emailPlaceholder": "Ingresa el correo electrónico",
-      "firstName": "Nombre",
-      "firstNamePlaceholder": "Ingresa el nombre",
-      "lastName": "Apellido",
-      "lastNamePlaceholder": "Ingresa el apellido",
-      "phone": "Teléfono",
-      "phonePlaceholder": "Ingresa el número de teléfono",
-      "birthDate": "Fecha de Nacimiento",
-      "address": "Dirección",
-      "addressPlaceholder": "Ingresa la dirección",
-      "idNumber": "Número de Identificación",
-      "idNumberPlaceholder": "Ingresa el número de identificación",
-      "idType": "Tipo de Identificación",
-      "idTypePlaceholder": "Ej. Licencia de conducir, Pasaporte, etc."
-    },
-    "idTypes": {
-      "select": "Selecciona el tipo de ID",
-      "driversLicense": "Licencia de Conducir",
-      "stateId": "Cédula de Ciudadanía",
-      "greenCard": "Tarjeta de Residencia",
-      "passport": "Pasaporte"
-    },
-    "security": {
-      "changePassword": "Cambiar Contraseña",
-      "cancelChange": "Cancelar",
-      "currentPassword": "Contraseña Actual",
-      "currentPasswordPlaceholder": "Ingresa la contraseña actual",
-      "newPassword": "Nueva Contraseña",
-      "newPasswordPlaceholder": "Ingresa la nueva contraseña",
-      "confirmPassword": "Confirmar Nueva Contraseña",
-      "confirmPasswordPlaceholder": "Confirma la nueva contraseña",
-      "requirements": "Requisitos de la contraseña:",
-      "req1": "Al menos 6 caracteres de longitud",
-      "req2": "La nueva contraseña debe ser diferente a la actual",
-      "req3": "Se requiere la contraseña actual para cambiarla"
-    },
-    "errors": {
-      "currentPasswordRequired": "Se requiere la contraseña actual para cambiar la contraseña",
-      "newPasswordRequired": "Se requiere una nueva contraseña",
-      "passwordsMismatch": "Las contraseñas no coinciden",
-      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
-      "updateError": "Error al actualizar el perfil",
-      "incorrectPassword": "La contraseña actual es incorrecta. Por favor verifica e intenta de nuevo.",
-      "emailTaken": "Este correo electrónico ya está registrado a otro usuario",
-      "idTaken": "Este número de identificación ya está registrado a otro usuario"
-    }
-  },
-  "customers": {
-    "title": "Nuestras Empresas Aliadas",
-    "subtitle": "Aquí puedes gestionar la lista de empresas con las que trabajamos.",
-    "sectionTitle": "Lista de Empresas",
-    "add": {
-      "label": "Nombre de la nueva empresa",
-      "button": "Agregar",
-      "emptyWarning": "El nombre de la empresa no puede estar vacío.",
-      "success": "Empresa agregada exitosamente.",
-      "error": "Error al agregar la empresa."
-    },
-    "search": {
-      "label": "Buscar empresa"
-    },
-    "delete": {
-      "confirm": "¿Estás seguro de que deseas eliminar esta empresa?",
-      "success": "Empresa eliminada exitosamente.",
-      "error": "Error al eliminar la empresa."
-    },
-    "loading": "Cargando empresas...",
-    "noResults": "No hay empresas que coincidan con tu búsqueda.",
-    "errors": {
-      "loadError": "Error desconocido al cargar las empresas.",
-      "addError": "Error desconocido al agregar la empresa.",
-      "deleteError": "Error desconocido al eliminar la empresa."
-    }
-  },
-  "jobsAndTools": {
-    "title": "Gestión de Trabajos y Herramientas",
-    "subtitle": "Aquí puedes gestionar la lista de trabajos y las herramientas asociadas a cada uno.",
-    "jobs": {
-      "sectionTitle": "Lista de Trabajos",
-      "addLabel": "Nombre del nuevo trabajo",
-      "addButton": "Añadir Trabajo",
-      "searchLabel": "Buscar trabajo",
-      "loading": "Cargando trabajos...",
-      "noResults": "No se encontraron trabajos.",
-      "emptyWarning": "El nombre del trabajo no puede estar vacío.",
-      "noChanges": "No hay cambios para guardar.",
-      "addSuccess": "Trabajo añadido con éxito.",
-      "addError": "Error al añadir trabajo.",
-      "deleteSuccess": "Trabajo eliminado con éxito.",
-      "deleteError": "Error al eliminar trabajo.",
-      "updateSuccess": "Trabajo actualizado con éxito.",
-      "updateError": "Error al actualizar trabajo.",
-      "errors": {
-        "loadError": "Error desconocido al cargar trabajos.",
-        "addError": "Error desconocido al añadir trabajo.",
-        "deleteError": "Error desconocido al eliminar trabajo.",
-        "updateError": "Error desconocido al actualizar trabajo."
-      }
-    },
-    "tools": {
-      "dialogTitle": "Herramientas para:",
-      "dialogTitleLoading": "Cargando...",
-      "sectionTitle": "Lista de Herramientas",
-      "addLabel": "Nombre de la nueva herramienta",
-      "addButton": "Añadir",
-      "closeButton": "Cerrar",
-      "loading": "Cargando herramientas...",
-      "noResults": "No hay herramientas para este trabajo.",
-      "noJobSelected": "No se ha seleccionado un trabajo para añadir la herramienta.",
-      "emptyWarning": "El nombre de la herramienta no puede estar vacío.",
-      "addSuccess": "Herramienta añadida con éxito.",
-      "addError": "Error al añadir herramienta.",
-      "deleteSuccess": "Herramienta eliminada con éxito.",
-      "deleteError": "Error al eliminar herramienta.",
-      "errors": {
-        "loadError": "Error desconocido al cargar herramientas.",
-        "addError": "Error desconocido al añadir herramienta.",
-        "deleteError": "Error desconocido al eliminar herramienta."
-      }
-    },
-    "confirmDialog": {
-      "cancelButton": "Cancelar",
-      "confirmButton": "Confirmar",
-      "deleteJob": {
-        "title": "Confirmar eliminación de trabajo",
-        "message": "¿Estás seguro de que quieres eliminar este trabajo? Se eliminarán también las herramientas asociadas."
-      },
-      "deleteTool": {
-        "title": "Confirmar eliminación de herramienta",
-        "message": "¿Estás seguro de que quieres eliminar esta herramienta?"
-      }
-    }
-  },
-  "trucks": {
-    "title": "Administración de Vehículos",
-    "subtitle": "Gestiona todos los vehículos de la flota",
-    "addButton": "Nuevo Vehículo",
-    "search": {
-      "placeholder": "Buscar por placa, nombre, tipo o categoría..."
-    },
-    "table": {
-      "plate": "Placa",
-      "name": "Nombre",
-      "type": "Tipo",
-      "category": "Categoría",
-      "actions": "Acciones",
-      "noResults": "No se encontraron vehículos",
-      "editTooltip": "Editar",
-      "deleteTooltip": "Eliminar"
-    },
-    "pagination": {
-      "rowsPerPage": "Filas por página",
-      "displayedRows": "{{from}}-{{to}} de {{count}}"
-    },
-    "types": {
-      "owned": "Propio",
-      "rented": "Rentado"
-    },
-    "categories": {
-      "truck_26": "Camión 26",
-      "truck_49": "Camión 49",
-      "truck_001": "Camión 001",
-      "vans": "Vans",
-      "trailer": "Trailer"
-    },
-    "modal": {
-      "titleCreate": "Nuevo Vehículo",
-      "titleEdit": "Editar Vehículo",
-      "plateLabel": "Placa",
-      "nameLabel": "Nombre",
-      "typeLabel": "Tipo",
-      "typeHelper": "Selecciona si el vehículo es propio o rentado",
-      "categoryLabel": "Categoría",
-      "categoryHelper": "Selecciona la categoría del vehículo",
-      "cancelButton": "Cancelar",
-      "createButton": "Crear",
-      "updateButton": "Actualizar",
-      "requiredFields": "Todos los campos son requeridos"
-    },
-    "deleteDialog": {
-      "title": "Confirmar Eliminación",
-      "message": "¿Estás seguro de que deseas eliminar el vehículo",
-      "warning": "Esta acción no se puede deshacer.",
-      "cancelButton": "Cancelar",
-      "deleteButton": "Eliminar"
-    },
-    "snackbar": {
-      "loadError": "Error al cargar los vehículos",
-      "createSuccess": "Vehículo creado correctamente",
-      "createError": "Error al guardar el vehículo",
-      "updateSuccess": "Vehículo actualizado correctamente",
-      "updateError": "Error al guardar el vehículo",
-      "deleteSuccess": "Vehículo eliminado correctamente",
-      "deleteError": "Error al eliminar el vehículo"
     }
   },
   "profile": {
@@ -2608,6 +2158,7 @@
       "loanCount": "{{count}} préstamo(s) | {{unpaid}} sin pagar",
       "totalUnpaid": "Total sin pagar: {{amount}}",
       "allPaid": "Todo Pagado",
+      "viewHistory": "Ver historial de pagos",
       "statusFilter": {
         "label": "Filtrar por Estado",
         "all": "Todos",
@@ -2640,7 +2191,8 @@
       "menu": {
         "registerPayment": "Registrar Pago",
         "cancelLoan": "Cancelar Préstamo",
-        "noActions": "Sin acciones disponibles"
+        "noActions": "Sin acciones disponibles",
+        "viewHistory": "Ver historial"
       },
       "snackbar": {
         "statusUpdated": "Estado del préstamo actualizado a {{status}}",
@@ -2991,5 +2543,27 @@
     "done": "Listo",
     "qty": "Cant",
     "describePlaceholder": "Notas (opcional)"
+  },
+  "loanPayments": {
+  "title": "Historial de pagos",
+  "noDescription": "Sin descripción",
+  "close": "Cerrar",
+  "empty": "Este préstamo aún no tiene pagos registrados.",
+  "summary": {
+    "total": "Total préstamo",
+    "paid": "Total pagado",
+    "remaining": "Pendiente",
+    "payments": "Pagos",
+    "recovery": "Tasa de recuperación"
+  },
+  "table": {
+    "date": "Fecha",
+    "amount": "Monto",
+    "method": "Método",
+    "by": "Registrado por",
+    "remaining": "Pendiente después",
+    "notes": "Notas",
+    "latest": "Último"
   }
+}
 }

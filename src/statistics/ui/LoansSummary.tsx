@@ -5,6 +5,10 @@ import LoaderSpinner from '../../components/Login_Register/LoadingSpinner';
 import WeekPicker from '../../components/WeekPicker';
 import YearPicker from '../../components/YearPicker';
 import { useTranslation } from 'react-i18next';
+import { DollarSign, History } from 'lucide-react';
+import RegisterPaymentDialog from '../../operators/ui/components/RegisterPaymentDialog'; 
+import OperatorLoansDialog from '../../operators/ui/components/OperatorLoansDialog';     
+import LoanPaymentsDialog from '../../operators/ui/components/Loanpaymentsdialog';      
 
 /* ─────────────────────────── helpers ─────────────────────────── */
 const fmt = (amount: string | number): string => {
@@ -103,6 +107,11 @@ const LoansSummary = () => {
   const [activeTab, setActiveTab]           = useState<Tab>('overview');
   const [statusFilter, setStatusFilter]     = useState<string>('all');
 
+  // ── Dialog states ──────────────────────────────────────────────
+  const [paymentLoan, setPaymentLoan]         = useState<LoanRecord | null>(null);
+  const [loansDialogOp, setLoansDialogOp]     = useState<{ id: number; name: string } | null>(null);
+  const [historyLoan, setHistoryLoan]         = useState<LoanRecord | null>(null);
+
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedWeek, setSelectedWeek] = useState(() => {
@@ -178,6 +187,13 @@ const LoansSummary = () => {
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [loans]);
+
+  // ── Helpers de acciones ────────────────────────────────────────
+  const canRegisterPayment = (loan: LoanRecord) =>
+    loan.status === 'unpaid' && parseFloat(loan.remaining_amount) > 0;
+
+  const canViewHistory = (loan: LoanRecord) =>
+    parseFloat(loan.total_paid) > 0;
 
   /* ── loading / error ── */
   if (loading)
@@ -357,7 +373,17 @@ const LoansSummary = () => {
                       </div>
                       <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-1 items-center">
                         <div className="col-span-2 md:col-span-1">
-                          <div className="font-semibold text-gray-800 text-sm">{op.operator_name}</div>
+                          {/* Nombre del operador — abre OperatorLoansDialog */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLoansDialogOp({ id: op.operator_id, name: op.operator_name });
+                            }}
+                            className="font-semibold text-blue-900 text-sm hover:underline text-left leading-tight"
+                            title={t('loansSummary.actions.viewLoans')}
+                          >
+                            {op.operator_name}
+                          </button>
                           <div className="text-xs text-gray-400">
                             {t('loansSummary.overview.loanCount', { count: op.loans.length })}
                           </div>
@@ -417,6 +443,29 @@ const LoansSummary = () => {
                               <div className="mt-2">
                                 <ProgressBar pct={parseFloat(loan.payment_percentage)} />
                               </div>
+                              {/* ── Botones de acción ── */}
+                              {(canRegisterPayment(loan) || canViewHistory(loan)) && (
+                                <div className="mt-2.5 flex justify-end gap-2">
+                                  {canViewHistory(loan) && (
+                                    <button
+                                      onClick={() => setHistoryLoan(loan)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition"
+                                    >
+                                      <History size={13} />
+                                      {t('loansSummary.actions.viewHistory', 'History')}
+                                    </button>
+                                  )}
+                                  {canRegisterPayment(loan) && (
+                                    <button
+                                      onClick={() => setPaymentLoan(loan)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition"
+                                    >
+                                      <DollarSign size={13} />
+                                      {t('loansSummary.actions.registerPayment')}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -467,6 +516,7 @@ const LoansSummary = () => {
                       <th className="text-left py-3 px-4 font-semibold">{t('loansSummary.table.status')}</th>
                       <th className="text-left py-3 px-4 font-semibold">{t('loansSummary.table.date')}</th>
                       <th className="text-left py-3 px-4 font-semibold min-w-[120px]">{t('loansSummary.table.progress')}</th>
+                      <th className="text-center py-3 px-4 font-semibold">{t('loansSummary.table.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -480,7 +530,14 @@ const LoansSummary = () => {
                               <div className="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                                 {initials(loan.operator_name)}
                               </div>
-                              <span className="font-medium text-gray-800 text-xs whitespace-nowrap">{loan.operator_name}</span>
+                              {/* Nombre clickeable → OperatorLoansDialog */}
+                              <button
+                                onClick={() => setLoansDialogOp({ id: loan.operator, name: loan.operator_name })}
+                                className="font-medium text-blue-900 text-xs whitespace-nowrap hover:underline"
+                                title={t('loansSummary.actions.viewLoans')}
+                              >
+                                {loan.operator_name}
+                              </button>
                             </div>
                           </td>
                           <td className="py-3 px-4 text-gray-600 text-xs">{loan.description || '—'}</td>
@@ -496,6 +553,33 @@ const LoansSummary = () => {
                           </td>
                           <td className="py-3 px-4 text-xs text-gray-400 whitespace-nowrap">{fmtDate(loan.created_at)}</td>
                           <td className="py-3 px-4 min-w-[120px]"><ProgressBar pct={parseFloat(loan.payment_percentage)} /></td>
+                          {/* ── Acción registrar pago + historial ── */}
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {canViewHistory(loan) && (
+                                <button
+                                  onClick={() => setHistoryLoan(loan)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition"
+                                  title={t('loansSummary.actions.viewHistory', 'History')}
+                                >
+                                  <History size={12} />
+                                  <span className="hidden sm:inline">{t('loansSummary.actions.viewHistory', 'History')}</span>
+                                </button>
+                              )}
+                              {canRegisterPayment(loan) ? (
+                                <button
+                                  onClick={() => setPaymentLoan(loan)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition"
+                                  title={t('loansSummary.actions.registerPayment')}
+                                >
+                                  <DollarSign size={12} />
+                                  <span className="hidden sm:inline">{t('loansSummary.actions.registerPayment')}</span>
+                                </button>
+                              ) : (
+                                !canViewHistory(loan) && <span className="text-gray-300 text-xs">—</span>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -508,7 +592,7 @@ const LoansSummary = () => {
                       <td className="py-3 px-4 text-right">{fmt(filteredLoans.reduce((s, l) => s + parseFloat(l.total_amount_to_pay), 0))}</td>
                       <td className="py-3 px-4 text-right text-emerald-700">{fmt(filteredLoans.reduce((s, l) => s + parseFloat(l.total_paid), 0))}</td>
                       <td className="py-3 px-4 text-right text-red-700">{fmt(filteredLoans.reduce((s, l) => s + parseFloat(l.remaining_amount), 0))}</td>
-                      <td colSpan={3} />
+                      <td colSpan={4} />
                     </tr>
                   </tfoot>
                 </table>
@@ -556,6 +640,42 @@ const LoansSummary = () => {
         <i className="fas fa-info-circle text-blue-400 mt-0.5 flex-shrink-0" />
         <p className="text-xs text-blue-700" dangerouslySetInnerHTML={{ __html: t('loansSummary.footer.hint') }} />
       </div>
+
+      {/* ═══════ DIALOGS ═══════ */}
+
+      {/* Register Payment */}
+      {paymentLoan && (
+        <RegisterPaymentDialog
+          open={Boolean(paymentLoan)}
+          onClose={() => setPaymentLoan(null)}
+          loan={paymentLoan}
+          onPaymentRegistered={() => {
+            setPaymentLoan(null);
+            loadData(buildFilters());
+          }}
+        />
+      )}
+
+      {/* Payment History */}
+      {historyLoan && (
+        <LoanPaymentsDialog
+          open={Boolean(historyLoan)}
+          onClose={() => setHistoryLoan(null)}
+          loan={historyLoan}
+        />
+      )}
+
+      {/* Operator Loans Dialog */}
+      {loansDialogOp && (
+        <OperatorLoansDialog
+          open={Boolean(loansDialogOp)}
+          onClose={() => setLoansDialogOp(null)}
+          operatorId={loansDialogOp.id}
+          operatorName={loansDialogOp.name}
+          onLoanUpdated={() => loadData(buildFilters())}
+        />
+      )}
+
     </div>
   );
 };
