@@ -16,15 +16,14 @@ import {
   TextField,
   Pagination,
   Chip,
+  Alert,
 } from '@mui/material';
-import { Fuel, Calendar, ChevronRight, X } from 'lucide-react';
+import { Fuel, Calendar, ChevronRight, X, AlertCircle, Clock } from 'lucide-react';
 import { LocalGasStation } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { fetchActiveTrucks, TruckByOrder } from '../repository/RepositoryTruck';
 import AssignOrderToCostFuelRepository from '../repository/AssignOrderToCostFuelRepository';
-import {
-  RecentCostFuelData,
-} from '../domain/AssignOrderToCostFuelModels';
+import { RecentCostFuelData } from '../domain/AssignOrderToCostFuelModels';
 
 interface AssignOrderToCostFuelDialogProps {
   open: boolean;
@@ -32,9 +31,12 @@ interface AssignOrderToCostFuelDialogProps {
   orderKey: string;
   orderRef: string;
   onSuccess?: () => void;
+  onCreateFuel?: () => void; // nuevo: callback para abrir CreateCostFuelDialog
 }
 
 type Step = 'trucks' | 'costfuels' | 'date';
+
+const RECENT_DAYS = 7;
 
 const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = ({
   open,
@@ -42,10 +44,10 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
   orderKey,
   orderRef,
   onSuccess,
+  onCreateFuel,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  // States
   const [step, setStep] = useState<Step>('trucks');
   const [loading, setLoading] = useState(false);
   const [trucks, setTrucks] = useState<TruckByOrder[]>([]);
@@ -56,24 +58,24 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
   const [loadingCostFuels, setLoadingCostFuels] = useState(false);
   const [selectedCostFuel, setSelectedCostFuel] = useState<RecentCostFuelData | null>(null);
 
+  // true cuando existen registros en BD pero todos superan RECENT_DAYS
+  const [hasOlderRecords, setHasOlderRecords] = useState(false);
+
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [assignedDate, setAssignedDate] = useState<string>('');
 
-  // Load active trucks when dialog opens
   useEffect(() => {
-    if (open) {
-      loadActiveTrucks();
-    }
+    if (open) loadActiveTrucks();
   }, [open]);
 
   const loadActiveTrucks = async () => {
     setLoadingTrucks(true);
     try {
-      const trucks = await fetchActiveTrucks();
-      if (trucks.length === 0) {
+      const data = await fetchActiveTrucks();
+      if (data.length === 0) {
         enqueueSnackbar('No active trucks available', { variant: 'warning' });
       } else {
-        setTrucks(trucks);
+        setTrucks(data);
       }
     } catch (error) {
       console.error('Error loading trucks:', error);
@@ -92,21 +94,50 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
 
   const loadCostFuels = async (truckId: number, page: number) => {
     setLoadingCostFuels(true);
+    setHasOlderRecords(false);
     try {
+      // Traemos bastantes para poder filtrar y detectar registros viejos
       const response = await AssignOrderToCostFuelRepository.getRecentCostFuelsByTruck(
         truckId,
-        5,
+        50,
         page
       );
-      setCostFuels(response.data);
-      setPagination({
-        page: response.pagination.page,
-        totalPages: response.pagination.total_pages,
-      });
 
-      if (response.data.length === 0) {
-        enqueueSnackbar('No cost fuels available for this truck', { variant: 'info' });
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - RECENT_DAYS);
+      oneWeekAgo.setHours(0, 0, 0, 0);
+
+      const recentFuels = response.data.filter((cf) => new Date(cf.date) >= oneWeekAgo);
+      const olderFuels  = response.data.filter((cf) => new Date(cf.date) <  oneWeekAgo);
+
+      // Caso 1: existen registros pero todos son viejos → mostrar aviso + botón crear
+      if (recentFuels.length === 0 && olderFuels.length > 0) {
+        setHasOlderRecords(true);
+        setCostFuels([]);
+        setPagination({ page: 1, totalPages: 1 });
+        return;
       }
+
+      // Caso 2: no hay ningún registro → auto-redirigir a crear
+      if (recentFuels.length === 0 && olderFuels.length === 0) {
+        enqueueSnackbar(
+          'Este vehículo no tiene gastos registrados. Redirigiendo a crear...',
+          { variant: 'info', autoHideDuration: 2500 }
+        );
+        setTimeout(() => {
+          handleClose();
+          onCreateFuel?.();
+        }, 1800);
+        return;
+      }
+
+      // Caso 3: hay registros recientes → paginar en frontend (5 por página)
+      const pageSize   = 5;
+      const totalPages = Math.ceil(recentFuels.length / pageSize);
+      const paginated  = recentFuels.slice((page - 1) * pageSize, page * pageSize);
+
+      setCostFuels(paginated);
+      setPagination({ page, totalPages });
     } catch (error) {
       console.error('Error loading cost fuels:', error);
       enqueueSnackbar('Error loading cost fuels', { variant: 'error' });
@@ -117,28 +148,23 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
 
   const handleCostFuelSelect = (costFuel: RecentCostFuelData) => {
     setSelectedCostFuel(costFuel);
-    enqueueSnackbar(`Fuel cost selected: $${costFuel.cost_fuel.toFixed(2)} - ${costFuel.fuel_qty.toFixed(1)} gallons`, { variant: 'info' });
+    enqueueSnackbar(
+      `Fuel cost selected: $${costFuel.cost_fuel.toFixed(2)} - ${costFuel.fuel_qty.toFixed(1)} gallons`,
+      { variant: 'info' }
+    );
     setStep('date');
   };
 
   const handleAssign = async () => {
     if (!selectedCostFuel) return;
-
     setLoading(true);
     enqueueSnackbar('Processing assignment...', { variant: 'info' });
     try {
       const response = await AssignOrderToCostFuelRepository.assignOrderToCostFuel(
         selectedCostFuel.id_fuel,
-        {
-          order_key: orderKey,
-          assigned_date: assignedDate || undefined,
-        }
+        { order_key: orderKey, assigned_date: assignedDate || undefined }
       );
-
-      enqueueSnackbar(response.messUser || 'Order assigned successfully! 🎉', {
-        variant: 'success',
-      });
-
+      enqueueSnackbar(response.messUser || 'Order assigned successfully! 🎉', { variant: 'success' });
       onSuccess?.();
       handleClose();
     } catch (error: any) {
@@ -154,6 +180,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
       setStep('trucks');
       setSelectedTruck(null);
       setCostFuels([]);
+      setHasOlderRecords(false);
     } else if (step === 'date') {
       setStep('costfuels');
       setSelectedCostFuel(null);
@@ -167,10 +194,16 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
       setSelectedTruck(null);
       setSelectedCostFuel(null);
       setCostFuels([]);
+      setHasOlderRecords(false);
       setAssignedDate('');
       setPagination({ page: 1, totalPages: 1 });
       onClose();
     }
+  };
+
+  const handleGoCreateFuel = () => {
+    handleClose();
+    onCreateFuel?.();
   };
 
   return (
@@ -179,14 +212,9 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
       onClose={handleClose}
       maxWidth="md"
       fullWidth
-      sx={{
-        '& .MuiDialog-paper': {
-          borderRadius: '16px',
-          boxShadow: '0 24px 48px rgba(0, 0, 0, 0.15)',
-        },
-      }}
+      sx={{ '& .MuiDialog-paper': { borderRadius: '16px', boxShadow: '0 24px 48px rgba(0,0,0,0.15)' } }}
     >
-      {/* Custom Header */}
+      {/* ── Header ── */}
       <DialogTitle sx={{ p: 0 }}>
         <Box
           sx={{
@@ -194,30 +222,20 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
             p: 3,
             borderRadius: '16px 16px 0 0',
             color: 'white',
-            position: 'relative',
           }}
         >
           <Box display="flex" alignItems="center" justifyContent="space-between">
             <Box display="flex" alignItems="center" gap={2}>
               <Fuel size={28} />
               <Box>
-                <Typography variant="h5" fontWeight="bold">
-                  Assign Order to Fuel Cost
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  Order: {orderRef}
-                </Typography>
+                <Typography variant="h5" fontWeight="bold">Assign Order to Fuel Cost</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>Order: {orderRef}</Typography>
               </Box>
             </Box>
             <Button
               onClick={handleClose}
               disabled={loading || loadingTrucks || loadingCostFuels}
-              sx={{
-                color: 'white',
-                minWidth: 'auto',
-                p: 1,
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-              }}
+              sx={{ color: 'white', minWidth: 'auto', p: 1, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
             >
               <X size={24} />
             </Button>
@@ -227,7 +245,8 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
 
       <DialogContent sx={{ p: 0 }}>
         <Box sx={{ p: 3 }}>
-          {/* STEP 1: Select Truck */}
+
+          {/* ══ STEP 1: Select Truck ══ */}
           {step === 'trucks' && (
             <Box>
               <Typography variant="h6" gutterBottom sx={{ color: '#0B2863', fontWeight: 'bold' }}>
@@ -243,7 +262,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                   <Typography sx={{ ml: 2 }}>Loading trucks...</Typography>
                 </Box>
               ) : trucks.length === 0 ? (
-                <Paper elevation={0} sx={{ p: 3, bgcolor: '#f8fafc', textAlign: 'center' }}>
+                <Paper elevation={0} sx={{ p: 3, bgcolor: '#f8fafc', textAlign: 'center', borderRadius: 2 }}>
                   <LocalGasStation sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
                   <Typography color="text.secondary">No active trucks available</Typography>
                 </Paper>
@@ -254,26 +273,13 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                       <ListItemButton
                         onClick={() => handleTruckSelect(truck)}
                         sx={{
-                          py: 2,
-                          px: 2,
+                          py: 2, px: 2,
                           borderBottom: index < trucks.length - 1 ? '1px solid #e2e8f0' : 'none',
                           '&:hover': { bgcolor: '#e0e7ff' },
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: '50%',
-                              bgcolor: '#0B2863',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              mr: 2,
-                              flexShrink: 0,
-                            }}
-                          >
+                          <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#0B2863', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, flexShrink: 0 }}>
                             <LocalGasStation sx={{ color: 'white', fontSize: 20 }} />
                           </Box>
                           <Box sx={{ flex: 1 }}>
@@ -294,7 +300,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
             </Box>
           )}
 
-          {/* STEP 2: Select Cost Fuel */}
+          {/* ══ STEP 2: Select Cost Fuel ══ */}
           {step === 'costfuels' && (
             <Box>
               <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
@@ -306,12 +312,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                     Recent fuel costs for {selectedTruck?.number_truck}
                   </Typography>
                 </Box>
-                <Button
-                  size="small"
-                  onClick={handleBack}
-                  disabled={loading || loadingCostFuels}
-                  sx={{ color: '#0B2863' }}
-                >
+                <Button size="small" onClick={handleBack} disabled={loading || loadingCostFuels} sx={{ color: '#0B2863' }}>
                   ← Change Truck
                 </Button>
               </Box>
@@ -321,21 +322,81 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                   <CircularProgress sx={{ color: '#0B2863' }} />
                   <Typography sx={{ ml: 2 }}>Loading fuel costs...</Typography>
                 </Box>
-              ) : costFuels.length === 0 ? (
-                <Paper elevation={0} sx={{ p: 3, bgcolor: '#f8fafc', textAlign: 'center' }}>
-                  <Fuel size={48} style={{ color: '#ccc', marginBottom: 16 }} />
-                  <Typography color="text.secondary">No fuel costs available for this truck</Typography>
-                </Paper>
-              ) : (
+
+              ) : hasOlderRecords ? (
+                /* ── Registros existen pero son todos viejos (> 7 días) ── */
                 <Box>
+                  <Alert
+                    severity="warning"
+                    icon={<Clock size={20} />}
+                    sx={{ mb: 3, borderRadius: 2, '& .MuiAlert-message': { width: '100%' } }}
+                  >
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                      Filtro activo: últimos {RECENT_DAYS} días
+                    </Typography>
+                    <Typography variant="body2">
+                      Este vehículo tiene gastos registrados, pero el más reciente supera
+                      los <strong>{RECENT_DAYS} días</strong>. Para asignar esta orden
+                      necesitas un gasto reciente.
+                    </Typography>
+                  </Alert>
+
+                  <Paper
+                    elevation={0}
+                    sx={{ p: 4, bgcolor: '#f8fafc', borderRadius: 2, textAlign: 'center', border: '2px dashed #cbd5e1' }}
+                  >
+                    <AlertCircle size={48} style={{ color: '#f59e0b', marginBottom: 12 }} />
+                    <Typography variant="h6" gutterBottom sx={{ color: '#0B2863' }}>
+                      No hay gastos recientes
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      Registra un nuevo gasto de gasolina para {selectedTruck?.number_truck} y
+                      podrás asignarle esta orden.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={handleGoCreateFuel}
+                      startIcon={<LocalGasStation />}
+                      sx={{ bgcolor: '#0B2863', '&:hover': { bgcolor: '#1e3a8a' }, borderRadius: 2, px: 4 }}
+                    >
+                      Crear gasto de gasolina
+                    </Button>
+                  </Paper>
+                </Box>
+
+              ) : costFuels.length === 0 ? (
+                /* ── Sin ningún registro en BD ── */
+                <Paper elevation={0} sx={{ p: 4, bgcolor: '#f8fafc', textAlign: 'center', borderRadius: 2 }}>
+                  <Fuel size={48} style={{ color: '#ccc', marginBottom: 16 }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    Sin gastos registrados
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Redirigiendo para crear el primer gasto...
+                  </Typography>
+                  <CircularProgress size={24} sx={{ color: '#0B2863' }} />
+                </Paper>
+
+              ) : (
+                /* ── Lista de gastos recientes ── */
+                <Box>
+                  <Alert
+                    severity="info"
+                    icon={<Clock size={18} />}
+                    sx={{ mb: 2, borderRadius: 2, py: 0.5 }}
+                  >
+                    <Typography variant="caption">
+                      Mostrando únicamente gastos de los últimos <strong>{RECENT_DAYS} días</strong>
+                    </Typography>
+                  </Alert>
+
                   <List sx={{ bgcolor: '#f8fafc', borderRadius: 2, mb: 2 }}>
                     {costFuels.map((costFuel, index) => (
                       <ListItem key={costFuel.id_fuel} disablePadding>
                         <ListItemButton
                           onClick={() => handleCostFuelSelect(costFuel)}
                           sx={{
-                            py: 2,
-                            px: 2,
+                            py: 2, px: 2,
                             borderBottom: index < costFuels.length - 1 ? '1px solid #e2e8f0' : 'none',
                             '&:hover': { bgcolor: '#e0e7ff' },
                           }}
@@ -376,20 +437,14 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                       <Pagination
                         count={pagination.totalPages}
                         page={pagination.page}
-                        onChange={(event, page) => {
-                            console.log(event, page);
-                          if (selectedTruck) {
-                            loadCostFuels(selectedTruck.id_truck, page);
-                          }
+                        onChange={(_event, page) => {
+                          if (selectedTruck) loadCostFuels(selectedTruck.id_truck, page);
                         }}
                         color="primary"
                         sx={{
                           '& .MuiPaginationItem-root': {
                             color: '#0B2863',
-                            '&.Mui-selected': {
-                              bgcolor: '#0B2863',
-                              color: 'white',
-                            },
+                            '&.Mui-selected': { bgcolor: '#0B2863', color: 'white' },
                           },
                         }}
                       />
@@ -400,7 +455,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
             </Box>
           )}
 
-          {/* STEP 3: Optional Date */}
+          {/* ══ STEP 3: Confirm ══ */}
           {step === 'date' && (
             <Box>
               <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
@@ -412,12 +467,7 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                     Selected fuel cost: {new Date(selectedCostFuel?.date || '').toLocaleDateString()}
                   </Typography>
                 </Box>
-                <Button
-                  size="small"
-                  onClick={handleBack}
-                  disabled={loading}
-                  sx={{ color: '#0B2863' }}
-                >
+                <Button size="small" onClick={handleBack} disabled={loading} sx={{ color: '#0B2863' }}>
                   ← Change Fuel
                 </Button>
               </Box>
@@ -425,25 +475,19 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
               <Paper elevation={0} sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 2, mb: 3 }}>
                 <Box display="flex" gap={3}>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      TOTAL COST
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">TOTAL COST</Typography>
                     <Typography variant="h6" sx={{ color: '#0B2863', fontWeight: 'bold' }}>
                       ${selectedCostFuel?.cost_fuel.toFixed(2)}
                     </Typography>
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      FUEL QUANTITY
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">FUEL QUANTITY</Typography>
                     <Typography variant="h6" sx={{ color: '#0B2863', fontWeight: 'bold' }}>
                       {selectedCostFuel?.fuel_qty.toFixed(1)} gl
                     </Typography>
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      ORDERS COUNT
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">ORDERS COUNT</Typography>
                     <Typography variant="h6" sx={{ color: '#0B2863', fontWeight: 'bold' }}>
                       {selectedCostFuel?.orders_count}
                     </Typography>
@@ -460,18 +504,12 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
                 value={assignedDate}
                 onChange={(e) => setAssignedDate(e.target.value)}
                 disabled={loading}
-                InputProps={{
-                  startAdornment: <Calendar size={20} style={{ marginRight: 8, color: '#0B2863' }} />,
-                }}
+                InputProps={{ startAdornment: <Calendar size={20} style={{ marginRight: 8, color: '#0B2863' }} /> }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
-                    '&:hover fieldset': {
-                      borderColor: '#0B2863',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#0B2863',
-                    },
+                    '&:hover fieldset': { borderColor: '#0B2863' },
+                    '&.Mui-focused fieldset': { borderColor: '#0B2863' },
                   },
                 }}
               />
@@ -487,17 +525,27 @@ const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = 
         <Button onClick={handleClose} disabled={loading || loadingTrucks || loadingCostFuels}>
           Cancel
         </Button>
+
+        {/* Botón crear en footer cuando hay registros viejos */}
+        {step === 'costfuels' && hasOlderRecords && (
+          <Button
+            variant="outlined"
+            onClick={handleGoCreateFuel}
+            startIcon={<LocalGasStation />}
+            sx={{ borderColor: '#0B2863', color: '#0B2863', '&:hover': { borderColor: '#1e3a8a' } }}
+          >
+            Crear gasto
+          </Button>
+        )}
+
         {step === 'date' && (
           <Button
             variant="contained"
             onClick={handleAssign}
             disabled={loading || !selectedCostFuel}
-            sx={{
-              bgcolor: '#0B2863',
-              '&:hover': { bgcolor: '#0a1f47' },
-            }}
+            sx={{ bgcolor: '#0B2863', '&:hover': { bgcolor: '#0a1f47' } }}
           >
-            {loading ? <CircularProgress size={20} sx={{ color: 'white', mr: 1 }} /> : null}
+            {loading && <CircularProgress size={20} sx={{ color: 'white', mr: 1 }} />}
             {loading ? 'Assigning...' : 'Confirm Assignment'}
           </Button>
         )}

@@ -160,7 +160,7 @@ interface DataTableProps {
   onContextMenu: (event: React.MouseEvent, row: TableData) => void;
   onActionsMenuClick?: (event: React.MouseEvent, row: TableData) => void;
   onAddFuelCost?: (row: TableData) => void;
-  onAssignTools?: (row: TableData) => void;   // ← NEW
+  onAssignTools?: (row: TableData) => void;   
   refreshCostFuelsTrigger?: string | null;
   onRefreshData?: () => void | Promise<void>;
 }
@@ -214,7 +214,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   onContextMenu,
   onActionsMenuClick,
   onAddFuelCost,
-  onAssignTools,          // ← NEW
+  onAssignTools,          
   refreshCostFuelsTrigger,
   onRefreshData,
 }) => {
@@ -223,7 +223,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [costFuelsByOrder, setCostFuelsByOrder] = useState<Record<string, CostFuelByOrderData[]>>({});
-  const [assignedToolsByOrder, setAssignedToolsByOrder] = useState<Record<string, AssignedTool[]>>({}); // ← NEW
+  const [assignedToolsByOrder, setAssignedToolsByOrder] = useState<Record<string, AssignedTool[]>>({});
 
   const sortedData = useMemo(() => sortData(data, sortConfig), [data, sortConfig]);
 
@@ -262,7 +262,7 @@ export const DataTable: React.FC<DataTableProps> = ({
       } else {
         newSet.add(rowId);
         fetchCostFuelsForOrder(rowId);
-        fetchAssignedToolsForOrder(rowId); // ← NEW
+        fetchAssignedToolsForOrder(rowId); 
       }
       return newSet;
     });

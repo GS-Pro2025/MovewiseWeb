@@ -1,21 +1,10 @@
-// domain/LoansSummaryModels.ts
+import { Loan } from '../../operators/domain/LoanModels';
 
-/** Exactly what the API returns per loan */
-export interface LoanRecord {
-  id_loan: number;
-  operator: number;
-  operator_name: string;
-  total_amount_to_pay: string;
-  description: string;
-  status: 'unpaid' | 'paid' | 'canceled' | string;
-  created_by: number;
-  created_by_name: string;
-  created_at: string;
-  updated_at: string;
-  total_paid: string;
-  remaining_amount: string;
-  payment_percentage: string;
-}
+/**
+ * LoanRecord extends Loan directly — same shape, no duplication.
+ * This allows passing LoanRecord to components that expect Loan without casting.
+ */
+export type LoanRecord = Loan;
 
 /** Aggregated per operator (built in the frontend) */
 export interface OperatorGroup {

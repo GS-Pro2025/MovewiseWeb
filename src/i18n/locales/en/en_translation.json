@@ -1657,6 +1657,11 @@
   },
   "loansSummary": {
     "loading": "Loading loans…",
+    "actions": {
+      "registerPayment": "Register Payment",
+      "viewLoans": "View loans",
+      "viewHistory": "History"
+    },
     "error": {
       "title": "Could not load data",
       "loading": "Error loading loans",
@@ -1738,7 +1743,8 @@
       "status": "Status",
       "date": "Date",
       "progress": "Progress",
-      "totalRow": "Total ({{count}} loans)"
+      "totalRow": "Total ({{count}} loans)",
+      "actions": "Actions"
     },
     "weekly": {
       "title": "Loans by Week",
@@ -1748,612 +1754,6 @@
     },
     "footer": {
       "hint": "Click any operator in the <strong>Overview</strong> tab to expand their individual loan details. Use the status filter buttons to isolate unpaid, paid, or canceled loans."
-    }
-  },
-  "profile": {
-    "title": "My Profile",
-    "subtitle": "View and edit your profile information",
-    "editButton": "Edit Profile",
-    "saveButton": "Save Changes",
-    "saving": "Saving...",
-    "cancelButton": "Cancel",
-    "tryAgain": "Try Again",
-    "errorLoading": "Error Loading Profile",
-    "errorLoadingDesc": "Could not load user profile data.",
-    "changesCancelled": "Changes cancelled",
-    "updateSuccess": "Profile updated successfully",
-    "photo": {
-      "altText": "Profile",
-      "sizeError": "Image size must be less than 5MB",
-      "viewLabel": "View photo",
-      "dialogTitle": "Profile Photo",
-      "downloadLabel": "Download photo"
-    },
-    "roles": {
-      "superAdmin": "Super Admin",
-      "admin": "Admin"
-    },
-    "sections": {
-      "accountInfo": "Account Information",
-      "personalInfo": "Personal Information",
-      "security": "Account Security"
-    },
-    "fields": {
-      "username": "Username",
-      "usernamePlaceholder": "Enter username",
-      "email": "Email",
-      "emailPlaceholder": "Enter email address",
-      "firstName": "First Name",
-      "firstNamePlaceholder": "Enter first name",
-      "lastName": "Last Name",
-      "lastNamePlaceholder": "Enter last name",
-      "phone": "Phone",
-      "phonePlaceholder": "Enter phone number",
-      "birthDate": "Birth Date",
-      "address": "Address",
-      "addressPlaceholder": "Enter address",
-      "idNumber": "ID Number",
-      "idNumberPlaceholder": "Enter ID number",
-      "idType": "ID Type",
-      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
-    },
-    "idTypes": {
-      "select": "Select ID Type",
-      "driversLicense": "Driver's License",
-      "stateId": "State ID",
-      "greenCard": "Green Card",
-      "passport": "Passport"
-    },
-    "security": {
-      "changePassword": "Change Password",
-      "cancelChange": "Cancel",
-      "currentPassword": "Current Password",
-      "currentPasswordPlaceholder": "Enter current password",
-      "newPassword": "New Password",
-      "newPasswordPlaceholder": "Enter new password",
-      "confirmPassword": "Confirm New Password",
-      "confirmPasswordPlaceholder": "Confirm new password",
-      "requirements": "Password Requirements:",
-      "req1": "At least 6 characters long",
-      "req2": "New password must be different from current password",
-      "req3": "Current password is required to change password"
-    },
-    "errors": {
-      "currentPasswordRequired": "Current password is required to change password",
-      "newPasswordRequired": "New password is required",
-      "passwordsMismatch": "Passwords do not match",
-      "passwordTooShort": "Password must be at least 6 characters long",
-      "updateError": "Error updating profile",
-      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
-      "emailTaken": "This email is already registered to another user",
-      "idTaken": "This ID number is already registered to another user"
-    }
-  },
-  "customers": {
-    "title": "Our Allied Companies",
-    "subtitle": "Here you can manage the list of companies we work with.",
-    "sectionTitle": "Company List",
-    "add": {
-      "label": "Name of the new company",
-      "button": "Add",
-      "emptyWarning": "Company name cannot be empty.",
-      "success": "Company added successfully.",
-      "error": "Error adding company."
-    },
-    "search": {
-      "label": "Search company"
-    },
-    "delete": {
-      "confirm": "Are you sure you want to delete this company?",
-      "success": "Company deleted successfully.",
-      "error": "Error deleting company."
-    },
-    "loading": "Loading companies...",
-    "noResults": "No companies match your search.",
-    "errors": {
-      "loadError": "Unknown error loading companies.",
-      "addError": "Unknown error adding company.",
-      "deleteError": "Unknown error deleting company."
-    }
-  },
-  "jobsAndTools": {
-    "title": "Jobs & Tools Management",
-    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
-    "jobs": {
-      "sectionTitle": "Job List",
-      "addLabel": "Name of the new job",
-      "addButton": "Add Job",
-      "searchLabel": "Search job",
-      "loading": "Loading jobs...",
-      "noResults": "No jobs found.",
-      "emptyWarning": "Job name cannot be empty.",
-      "noChanges": "No changes to save.",
-      "addSuccess": "Job added successfully.",
-      "addError": "Error adding job.",
-      "deleteSuccess": "Job deleted successfully.",
-      "deleteError": "Error deleting job.",
-      "updateSuccess": "Job updated successfully.",
-      "updateError": "Error updating job.",
-      "errors": {
-        "loadError": "Unknown error loading jobs.",
-        "addError": "Unknown error adding job.",
-        "deleteError": "Unknown error deleting job.",
-        "updateError": "Unknown error updating job."
-      }
-    },
-    "tools": {
-      "dialogTitle": "Tools for:",
-      "dialogTitleLoading": "Loading...",
-      "sectionTitle": "Tool List",
-      "addLabel": "Name of the new tool",
-      "addButton": "Add",
-      "closeButton": "Close",
-      "loading": "Loading tools...",
-      "noResults": "No tools for this job.",
-      "noJobSelected": "No job selected to add the tool.",
-      "emptyWarning": "Tool name cannot be empty.",
-      "addSuccess": "Tool added successfully.",
-      "addError": "Error adding tool.",
-      "deleteSuccess": "Tool deleted successfully.",
-      "deleteError": "Error deleting tool.",
-      "errors": {
-        "loadError": "Unknown error loading tools.",
-        "addError": "Unknown error adding tool.",
-        "deleteError": "Unknown error deleting tool."
-      }
-    },
-    "confirmDialog": {
-      "cancelButton": "Cancel",
-      "confirmButton": "Confirm",
-      "deleteJob": {
-        "title": "Confirm job deletion",
-        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
-      },
-      "deleteTool": {
-        "title": "Confirm tool deletion",
-        "message": "Are you sure you want to delete this tool?"
-      }
-    }
-  },
-  "trucks": {
-    "title": "Vehicle Administration",
-    "subtitle": "Manage all fleet vehicles",
-    "addButton": "New Vehicle",
-    "search": {
-      "placeholder": "Search by plate, name, type or category..."
-    },
-    "table": {
-      "plate": "Plate",
-      "name": "Name",
-      "type": "Type",
-      "category": "Category",
-      "actions": "Actions",
-      "noResults": "No vehicles found",
-      "editTooltip": "Edit",
-      "deleteTooltip": "Delete"
-    },
-    "pagination": {
-      "rowsPerPage": "Rows per page",
-      "displayedRows": "{{from}}-{{to}} of {{count}}"
-    },
-    "types": {
-      "owned": "Owned",
-      "rented": "Rented"
-    },
-    "categories": {
-      "truck_26": "Truck 26",
-      "truck_49": "Truck 49",
-      "truck_001": "Truck 001",
-      "vans": "Vans",
-      "trailer": "Trailer"
-    },
-    "modal": {
-      "titleCreate": "New Vehicle",
-      "titleEdit": "Edit Vehicle",
-      "plateLabel": "Plate",
-      "nameLabel": "Name",
-      "typeLabel": "Type",
-      "typeHelper": "Select whether the vehicle is owned or rented",
-      "categoryLabel": "Category",
-      "categoryHelper": "Select the vehicle category",
-      "cancelButton": "Cancel",
-      "createButton": "Create",
-      "updateButton": "Update",
-      "requiredFields": "All fields are required"
-    },
-    "deleteDialog": {
-      "title": "Confirm Deletion",
-      "message": "Are you sure you want to delete vehicle",
-      "warning": "This action cannot be undone.",
-      "cancelButton": "Cancel",
-      "deleteButton": "Delete"
-    },
-    "snackbar": {
-      "loadError": "Error loading vehicles",
-      "createSuccess": "Vehicle created successfully",
-      "createError": "Error saving vehicle",
-      "updateSuccess": "Vehicle updated successfully",
-      "updateError": "Error saving vehicle",
-      "deleteSuccess": "Vehicle deleted successfully",
-      "deleteError": "Error deleting vehicle"
-    }
-  },
-
-  "customers": {
-    "title": "Our Allied Companies",
-    "subtitle": "Here you can manage the list of companies we work with.",
-    "sectionTitle": "Company List",
-    "add": {
-      "label": "Name of the new company",
-      "button": "Add",
-      "emptyWarning": "Company name cannot be empty.",
-      "success": "Company added successfully.",
-      "error": "Error adding company."
-    },
-    "search": {
-      "label": "Search company"
-    },
-    "delete": {
-      "confirm": "Are you sure you want to delete this company?",
-      "success": "Company deleted successfully.",
-      "error": "Error deleting company."
-    },
-    "loading": "Loading companies...",
-    "noResults": "No companies match your search.",
-    "errors": {
-      "loadError": "Unknown error loading companies.",
-      "addError": "Unknown error adding company.",
-      "deleteError": "Unknown error deleting company."
-    }
-  },
-  "jobsAndTools": {
-    "title": "Jobs & Tools Management",
-    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
-    "jobs": {
-      "sectionTitle": "Job List",
-      "addLabel": "Name of the new job",
-      "addButton": "Add Job",
-      "searchLabel": "Search job",
-      "loading": "Loading jobs...",
-      "noResults": "No jobs found.",
-      "emptyWarning": "Job name cannot be empty.",
-      "noChanges": "No changes to save.",
-      "addSuccess": "Job added successfully.",
-      "addError": "Error adding job.",
-      "deleteSuccess": "Job deleted successfully.",
-      "deleteError": "Error deleting job.",
-      "updateSuccess": "Job updated successfully.",
-      "updateError": "Error updating job.",
-      "errors": {
-        "loadError": "Unknown error loading jobs.",
-        "addError": "Unknown error adding job.",
-        "deleteError": "Unknown error deleting job.",
-        "updateError": "Unknown error updating job."
-      }
-    },
-    "tools": {
-      "dialogTitle": "Tools for:",
-      "dialogTitleLoading": "Loading...",
-      "sectionTitle": "Tool List",
-      "addLabel": "Name of the new tool",
-      "addButton": "Add",
-      "closeButton": "Close",
-      "loading": "Loading tools...",
-      "noResults": "No tools for this job.",
-      "noJobSelected": "No job selected to add the tool.",
-      "emptyWarning": "Tool name cannot be empty.",
-      "addSuccess": "Tool added successfully.",
-      "addError": "Error adding tool.",
-      "deleteSuccess": "Tool deleted successfully.",
-      "deleteError": "Error deleting tool.",
-      "errors": {
-        "loadError": "Unknown error loading tools.",
-        "addError": "Unknown error adding tool.",
-        "deleteError": "Unknown error deleting tool."
-      }
-    },
-    "confirmDialog": {
-      "cancelButton": "Cancel",
-      "confirmButton": "Confirm",
-      "deleteJob": {
-        "title": "Confirm job deletion",
-        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
-      },
-      "deleteTool": {
-        "title": "Confirm tool deletion",
-        "message": "Are you sure you want to delete this tool?"
-      }
-    }
-  },
-  "trucks": {
-    "title": "Vehicle Administration",
-    "subtitle": "Manage all fleet vehicles",
-    "addButton": "New Vehicle",
-    "search": {
-      "placeholder": "Search by plate, name, type or category..."
-    },
-    "table": {
-      "plate": "Plate",
-      "name": "Name",
-      "type": "Type",
-      "category": "Category",
-      "actions": "Actions",
-      "noResults": "No vehicles found",
-      "editTooltip": "Edit",
-      "deleteTooltip": "Delete"
-    },
-    "pagination": {
-      "rowsPerPage": "Rows per page",
-      "displayedRows": "{{from}}-{{to}} of {{count}}"
-    },
-    "types": {
-      "owned": "Owned",
-      "rented": "Rented"
-    },
-    "categories": {
-      "truck_26": "Truck 26",
-      "truck_49": "Truck 49",
-      "truck_001": "Truck 001",
-      "vans": "Vans",
-      "trailer": "Trailer"
-    },
-    "modal": {
-      "titleCreate": "New Vehicle",
-      "titleEdit": "Edit Vehicle",
-      "plateLabel": "Plate",
-      "nameLabel": "Name",
-      "typeLabel": "Type",
-      "typeHelper": "Select whether the vehicle is owned or rented",
-      "categoryLabel": "Category",
-      "categoryHelper": "Select the vehicle category",
-      "cancelButton": "Cancel",
-      "createButton": "Create",
-      "updateButton": "Update",
-      "requiredFields": "All fields are required"
-    },
-    "deleteDialog": {
-      "title": "Confirm Deletion",
-      "message": "Are you sure you want to delete vehicle",
-      "warning": "This action cannot be undone.",
-      "cancelButton": "Cancel",
-      "deleteButton": "Delete"
-    },
-    "snackbar": {
-      "loadError": "Error loading vehicles",
-      "createSuccess": "Vehicle created successfully",
-      "createError": "Error saving vehicle",
-      "updateSuccess": "Vehicle updated successfully",
-      "updateError": "Error saving vehicle",
-      "deleteSuccess": "Vehicle deleted successfully",
-      "deleteError": "Error deleting vehicle"
-    }
-  },
-  "profile": {
-    "title": "My Profile",
-    "subtitle": "View and edit your profile information",
-    "editButton": "Edit Profile",
-    "saveButton": "Save Changes",
-    "saving": "Saving...",
-    "cancelButton": "Cancel",
-    "tryAgain": "Try Again",
-    "errorLoading": "Error Loading Profile",
-    "errorLoadingDesc": "Could not load user profile data.",
-    "changesCancelled": "Changes cancelled",
-    "updateSuccess": "Profile updated successfully",
-    "photo": {
-      "altText": "Profile",
-      "sizeError": "Image size must be less than 5MB",
-      "viewLabel": "View photo",
-      "dialogTitle": "Profile Photo",
-      "downloadLabel": "Download photo"
-    },
-    "roles": {
-      "superAdmin": "Super Admin",
-      "admin": "Admin"
-    },
-    "sections": {
-      "accountInfo": "Account Information",
-      "personalInfo": "Personal Information",
-      "security": "Account Security"
-    },
-    "fields": {
-      "username": "Username",
-      "usernamePlaceholder": "Enter username",
-      "email": "Email",
-      "emailPlaceholder": "Enter email address",
-      "firstName": "First Name",
-      "firstNamePlaceholder": "Enter first name",
-      "lastName": "Last Name",
-      "lastNamePlaceholder": "Enter last name",
-      "phone": "Phone",
-      "phonePlaceholder": "Enter phone number",
-      "birthDate": "Birth Date",
-      "address": "Address",
-      "addressPlaceholder": "Enter address",
-      "idNumber": "ID Number",
-      "idNumberPlaceholder": "Enter ID number",
-      "idType": "ID Type",
-      "idTypePlaceholder": "e.g. Driver License, Passport, etc."
-    },
-    "idTypes": {
-      "select": "Select ID Type",
-      "driversLicense": "Driver's License",
-      "stateId": "State ID",
-      "greenCard": "Green Card",
-      "passport": "Passport"
-    },
-    "security": {
-      "changePassword": "Change Password",
-      "cancelChange": "Cancel",
-      "currentPassword": "Current Password",
-      "currentPasswordPlaceholder": "Enter current password",
-      "newPassword": "New Password",
-      "newPasswordPlaceholder": "Enter new password",
-      "confirmPassword": "Confirm New Password",
-      "confirmPasswordPlaceholder": "Confirm new password",
-      "requirements": "Password Requirements:",
-      "req1": "At least 6 characters long",
-      "req2": "New password must be different from current password",
-      "req3": "Current password is required to change password"
-    },
-    "errors": {
-      "currentPasswordRequired": "Current password is required to change password",
-      "newPasswordRequired": "New password is required",
-      "passwordsMismatch": "Passwords do not match",
-      "passwordTooShort": "Password must be at least 6 characters long",
-      "updateError": "Error updating profile",
-      "incorrectPassword": "Current password is incorrect. Please verify and try again.",
-      "emailTaken": "This email is already registered to another user",
-      "idTaken": "This ID number is already registered to another user"
-    }
-  },
-  "customers": {
-    "title": "Our Allied Companies",
-    "subtitle": "Here you can manage the list of companies we work with.",
-    "sectionTitle": "Company List",
-    "add": {
-      "label": "Name of the new company",
-      "button": "Add",
-      "emptyWarning": "Company name cannot be empty.",
-      "success": "Company added successfully.",
-      "error": "Error adding company."
-    },
-    "search": {
-      "label": "Search company"
-    },
-    "delete": {
-      "confirm": "Are you sure you want to delete this company?",
-      "success": "Company deleted successfully.",
-      "error": "Error deleting company."
-    },
-    "loading": "Loading companies...",
-    "noResults": "No companies match your search.",
-    "errors": {
-      "loadError": "Unknown error loading companies.",
-      "addError": "Unknown error adding company.",
-      "deleteError": "Unknown error deleting company."
-    }
-  },
-  "jobsAndTools": {
-    "title": "Jobs & Tools Management",
-    "subtitle": "Here you can manage the list of jobs and the tools associated with each one.",
-    "jobs": {
-      "sectionTitle": "Job List",
-      "addLabel": "Name of the new job",
-      "addButton": "Add Job",
-      "searchLabel": "Search job",
-      "loading": "Loading jobs...",
-      "noResults": "No jobs found.",
-      "emptyWarning": "Job name cannot be empty.",
-      "noChanges": "No changes to save.",
-      "addSuccess": "Job added successfully.",
-      "addError": "Error adding job.",
-      "deleteSuccess": "Job deleted successfully.",
-      "deleteError": "Error deleting job.",
-      "updateSuccess": "Job updated successfully.",
-      "updateError": "Error updating job.",
-      "errors": {
-        "loadError": "Unknown error loading jobs.",
-        "addError": "Unknown error adding job.",
-        "deleteError": "Unknown error deleting job.",
-        "updateError": "Unknown error updating job."
-      }
-    },
-    "tools": {
-      "dialogTitle": "Tools for:",
-      "dialogTitleLoading": "Loading...",
-      "sectionTitle": "Tool List",
-      "addLabel": "Name of the new tool",
-      "addButton": "Add",
-      "closeButton": "Close",
-      "loading": "Loading tools...",
-      "noResults": "No tools for this job.",
-      "noJobSelected": "No job selected to add the tool.",
-      "emptyWarning": "Tool name cannot be empty.",
-      "addSuccess": "Tool added successfully.",
-      "addError": "Error adding tool.",
-      "deleteSuccess": "Tool deleted successfully.",
-      "deleteError": "Error deleting tool.",
-      "errors": {
-        "loadError": "Unknown error loading tools.",
-        "addError": "Unknown error adding tool.",
-        "deleteError": "Unknown error deleting tool."
-      }
-    },
-    "confirmDialog": {
-      "cancelButton": "Cancel",
-      "confirmButton": "Confirm",
-      "deleteJob": {
-        "title": "Confirm job deletion",
-        "message": "Are you sure you want to delete this job? Associated tools will also be deleted."
-      },
-      "deleteTool": {
-        "title": "Confirm tool deletion",
-        "message": "Are you sure you want to delete this tool?"
-      }
-    }
-  },
-  "trucks": {
-    "title": "Vehicle Administration",
-    "subtitle": "Manage all fleet vehicles",
-    "addButton": "New Vehicle",
-    "search": {
-      "placeholder": "Search by plate, name, type or category..."
-    },
-    "table": {
-      "plate": "Plate",
-      "name": "Name",
-      "type": "Type",
-      "category": "Category",
-      "actions": "Actions",
-      "noResults": "No vehicles found",
-      "editTooltip": "Edit",
-      "deleteTooltip": "Delete"
-    },
-    "pagination": {
-      "rowsPerPage": "Rows per page",
-      "displayedRows": "{{from}}-{{to}} of {{count}}"
-    },
-    "types": {
-      "owned": "Owned",
-      "rented": "Rented"
-    },
-    "categories": {
-      "truck_26": "Truck 26",
-      "truck_49": "Truck 49",
-      "truck_001": "Truck 001",
-      "vans": "Vans",
-      "trailer": "Trailer"
-    },
-    "modal": {
-      "titleCreate": "New Vehicle",
-      "titleEdit": "Edit Vehicle",
-      "plateLabel": "Plate",
-      "nameLabel": "Name",
-      "typeLabel": "Type",
-      "typeHelper": "Select whether the vehicle is owned or rented",
-      "categoryLabel": "Category",
-      "categoryHelper": "Select the vehicle category",
-      "cancelButton": "Cancel",
-      "createButton": "Create",
-      "updateButton": "Update",
-      "requiredFields": "All fields are required"
-    },
-    "deleteDialog": {
-      "title": "Confirm Deletion",
-      "message": "Are you sure you want to delete vehicle",
-      "warning": "This action cannot be undone.",
-      "cancelButton": "Cancel",
-      "deleteButton": "Delete"
-    },
-    "snackbar": {
-      "loadError": "Error loading vehicles",
-      "createSuccess": "Vehicle created successfully",
-      "createError": "Error saving vehicle",
-      "updateSuccess": "Vehicle updated successfully",
-      "updateError": "Error saving vehicle",
-      "deleteSuccess": "Vehicle deleted successfully",
-      "deleteError": "Error deleting vehicle"
     }
   },
   "profile": {
@@ -2746,6 +2146,7 @@
       "loanCount": "{{count}} loan(s) | {{unpaid}} unpaid",
       "totalUnpaid": "Total Unpaid: {{amount}}",
       "allPaid": "All Paid",
+      "viewHistory": "View payment history",
       "statusFilter": {
         "label": "Status Filter",
         "all": "All",
@@ -2778,7 +2179,8 @@
       "menu": {
         "registerPayment": "Register Payment",
         "cancelLoan": "Cancel Loan",
-        "noActions": "No actions available"
+        "noActions": "No actions available",
+         "viewHistory": "View history"
       },
       "snackbar": {
         "statusUpdated": "Loan status updated to {{status}}",
@@ -3129,5 +2531,26 @@
     "done": "Done",
     "qty": "Qty",
     "describePlaceholder": "Notes (optional)"
+  },"loanPayments": {
+  "title": "Payment History",
+  "noDescription": "No description",
+  "close": "Close",
+  "empty": "No payments registered for this loan yet.",
+  "summary": {
+    "total": "Total Loan",
+    "paid": "Total Paid",
+    "remaining": "Remaining",
+    "payments": "Payments",
+    "recovery": "Recovery rate"
+  },
+  "table": {
+    "date": "Date",
+    "amount": "Amount",
+    "method": "Method",
+    "by": "Registered by",
+    "remaining": "Remaining after",
+    "notes": "Notes",
+    "latest": "Latest"
   }
+}
 }
