@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy, MoreVertical } from 'lucide-react';
 import { OrderSummary, PaginatedOrderSummaryResult } from '../../domain/OrderSummaryModel';
@@ -27,6 +28,48 @@ const getNestedValue = (obj: any, path: string): any => {
   return path.split('.').reduce((current, key) => current?.[key], obj);
 };
 
+// Parses a YYYY-MM-DD string as local time to avoid UTC offset shifting the date
+const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+const fmtCurrency = (n: number) =>
+  `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** Portal-based tooltip — mounts at document.body to escape overflow:hidden/auto ancestors */
+const CostBreakdownTooltip: React.FC<{
+  children: React.ReactNode;
+  content: React.ReactNode;
+}> = ({ children, content }) => {
+  const [visible, setVisible] = useState(false);
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  return (
+    <span
+      className="cursor-default"
+      onMouseEnter={(e) => { setVisible(true); setCoords({ x: e.clientX, y: e.clientY }); }}
+      onMouseMove={(e) => setCoords({ x: e.clientX, y: e.clientY })}
+      onMouseLeave={() => setVisible(false)}
+    >
+      {children}
+      {visible && createPortal(
+        <div
+          className="fixed pointer-events-none"
+          style={{ top: coords.y + 14, left: coords.x + 10, zIndex: 9999 }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl border text-xs min-w-[220px] max-w-xs overflow-hidden"
+            style={{ borderColor: '#0B2863' }}
+          >
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </span>
+  );
+};
+
 const sortData = (data: OrderSummary[], sortConfig: SortConfig): OrderSummary[] => {
   if (!sortConfig.key || !sortConfig.direction) return data;
 
@@ -38,7 +81,7 @@ const sortData = (data: OrderSummary[], sortConfig: SortConfig): OrderSummary[] 
       case 'key_ref':
         aValue = a.key_ref; bValue = b.key_ref; break;
       case 'date':
-        aValue = new Date(a.date).getTime(); bValue = new Date(b.date).getTime(); break;
+        aValue = parseLocalDate(a.date).getTime(); bValue = parseLocalDate(b.date).getTime(); break;
       case 'state':
         aValue = a.state; bValue = b.state; break;
       case 'status':
@@ -128,7 +171,46 @@ export const SummaryCostDataTable: React.FC<{
       id: 'totalCost', label: t('summaryCostTable.columns.totalCost'), minWidth: 140, sortable: true,
       format: (_v, row) => {
         const num = row?.summary?.totalCost ?? 0;
-        return <span className="font-bold text-sm" style={{ color: '#0B2863' }}>${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+        const lines: { label: string; value: number; sub?: number }[] = [
+          { label: t('summaryCostTable.details.fuelCost'),       value: row?.summary?.fuelCost ?? 0,       sub: row?.summary?.fuel_costs?.length ?? 0 },
+          { label: t('summaryCostTable.details.workCost'),       value: row?.summary?.workCost ?? 0,       sub: row?.summary?.work_costs?.length ?? 0 },
+          { label: t('summaryCostTable.details.driverSalaries'), value: row?.summary?.driverSalaries ?? 0 },
+          { label: t('summaryCostTable.details.otherSalaries'),  value: row?.summary?.otherSalaries ?? 0 },
+          { label: t('summaryCostTable.details.bonus'),          value: row?.summary?.bonus ?? 0 },
+        ];
+        const breakdown = (
+          <div>
+            <div className="px-3 py-2 border-b font-semibold text-xs" style={{ borderColor: '#e5e7eb', color: '#0B2863' }}>
+              {t('summaryCostTable.details.summaryBreakdown')}
+            </div>
+            <div className="px-3 py-2 space-y-1.5">
+              {lines.map(item => (
+                <div key={item.label} className="flex items-center justify-between gap-4">
+                  <span className="text-gray-600">
+                    {item.label}
+                    {(item.sub ?? 0) > 0 && <span className="ml-1 text-gray-400 text-[10px]">({item.sub})</span>}
+                  </span>
+                  <span className="font-medium tabular-nums" style={{ color: '#374151' }}>{fmtCurrency(item.value)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-2 border-t flex items-center justify-between gap-4 bg-gray-50" style={{ borderColor: '#e5e7eb' }}>
+              <span className="font-bold" style={{ color: '#0B2863' }}>{t('summaryCostTable.details.totalCost')}</span>
+              <span className="font-bold tabular-nums" style={{ color: '#0B2863' }}>{fmtCurrency(num)}</span>
+            </div>
+          </div>
+        );
+        return (
+          <CostBreakdownTooltip content={breakdown}>
+            <span className="font-bold text-sm inline-flex items-center gap-1" style={{ color: '#0B2863' }}>
+              {fmtCurrency(num)}
+              <span
+                className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-white text-[9px] font-bold"
+                style={{ backgroundColor: '#0B2863' }}
+              >i</span>
+            </span>
+          </CostBreakdownTooltip>
+        );
       }
     },
   ], [t]);
@@ -282,7 +364,7 @@ export const SummaryCostDataTable: React.FC<{
                                 <div className="bg-white p-4 rounded-lg border">
                                   <h4 className="font-semibold text-sm mb-2" style={{ color: '#0B2863' }}>{t('summaryCostTable.details.order')}</h4>
                                   <p className="text-xs"><strong>{t('summaryCostTable.details.reference')}:</strong> {row.key_ref}</p>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.date')}:</strong> {new Date(row.date).toLocaleDateString()}</p>
+                                  <p className="text-xs"><strong>{t('summaryCostTable.details.date')}:</strong> {parseLocalDate(row.date).toLocaleDateString()}</p>
                                   <p className="text-xs"><strong>{t('summaryCostTable.details.location')}:</strong> {row.state}</p>
                                   <p className="text-xs"><strong>{t('summaryCostTable.details.status')}:</strong> {row.status}</p>
                                   <p className="text-xs"><strong>{t('summaryCostTable.details.customer')}:</strong> {row.client}</p>
@@ -291,18 +373,109 @@ export const SummaryCostDataTable: React.FC<{
                                 </div>
 
                                 <div className="bg-white p-4 rounded-lg border">
-                                  <h4 className="font-semibold text-sm mb-2" style={{ color: '#0B2863' }}>{t('summaryCostTable.details.summaryBreakdown')}</h4>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.fuelCost')}:</strong> ${((row.summary?.fuelCost) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.workCost')}:</strong> ${((row.summary?.workCost) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.driverSalaries')}:</strong> ${((row.summary?.driverSalaries) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.otherSalaries')}:</strong> ${((row.summary?.otherSalaries) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                  <h4 className="font-semibold text-sm mb-3" style={{ color: '#0B2863' }}>{t('summaryCostTable.details.summaryBreakdown')}</h4>
+
+                                  {/* Fuel Cost */}
+                                  <div className="mb-3">
+                                    <p className="text-xs flex items-center justify-between">
+                                      <strong>{t('summaryCostTable.details.fuelCost')}</strong>
+                                      <span className="tabular-nums" style={{ color: '#0B2863' }}>{fmtCurrency(row.summary?.fuelCost ?? 0)}</span>
+                                    </p>
+                                    {(row.summary?.fuel_costs?.length ?? 0) > 0 && (
+                                      <div className="mt-1.5 ml-2 rounded border border-gray-100 overflow-hidden">
+                                        <table className="w-full text-[10px]">
+                                          <thead className="bg-gray-50">
+                                            <tr className="text-gray-500">
+                                              <th className="px-2 py-1 text-left font-medium">Truck</th>
+                                              <th className="px-2 py-1 text-left font-medium">Date</th>
+                                              <th className="px-2 py-1 text-right font-medium">Distributed</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {row.summary.fuel_costs!.map(fc => (
+                                              <tr key={fc.id_order_cost_fuel} className="border-t border-gray-100">
+                                                <td className="px-2 py-1 text-gray-700">{fc.truck}</td>
+                                                <td className="px-2 py-1 text-gray-500">{parseLocalDate(fc.date).toLocaleDateString()}</td>
+                                                <td className="px-2 py-1 text-right font-semibold tabular-nums" style={{ color: '#0B2863' }}>
+                                                  {fmtCurrency(fc.cost_fuel_distributed)}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Work / Extra Costs */}
+                                  <div className="mb-3">
+                                    <p className="text-xs flex items-center justify-between">
+                                      <strong>{t('summaryCostTable.details.workCost')}</strong>
+                                      <span className="tabular-nums" style={{ color: '#0B2863' }}>{fmtCurrency(row.summary?.workCost ?? 0)}</span>
+                                    </p>
+                                    {(row.summary?.work_costs?.length ?? 0) > 0 && (
+                                      <div className="mt-1.5 ml-2 rounded border border-gray-100 overflow-hidden">
+                                        <table className="w-full text-[10px]">
+                                          <thead className="bg-gray-50">
+                                            <tr className="text-gray-500">
+                                              <th className="px-2 py-1 text-left font-medium">Name</th>
+                                              <th className="px-2 py-1 text-left font-medium">Type</th>
+                                              <th className="px-2 py-1 text-right font-medium">Cost</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {row.summary.work_costs!.map(wc => (
+                                              <tr key={wc.id_workCost} className="border-t border-gray-100">
+                                                <td className="px-2 py-1 text-gray-700">{wc.name}</td>
+                                                <td className="px-2 py-1 text-gray-500">{wc.type}</td>
+                                                <td className="px-2 py-1 text-right font-semibold tabular-nums" style={{ color: '#0B2863' }}>
+                                                  {fmtCurrency(wc.cost)}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <p className="text-xs flex items-center justify-between">
+                                    <strong>{t('summaryCostTable.details.driverSalaries')}</strong>
+                                    <span className="tabular-nums">{fmtCurrency(row.summary?.driverSalaries ?? 0)}</span>
+                                  </p>
+                                  <p className="text-xs flex items-center justify-between mt-1">
+                                    <strong>{t('summaryCostTable.details.otherSalaries')}</strong>
+                                    <span className="tabular-nums">{fmtCurrency(row.summary?.otherSalaries ?? 0)}</span>
+                                  </p>
                                 </div>
 
                                 <div className="bg-white p-4 rounded-lg border">
-                                  <h4 className="font-semibold text-sm mb-2" style={{ color: '#0B2863' }}>{t('summaryCostTable.details.additional')}</h4>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.customerFactory')}:</strong> {row.summary?.customer_factory ?? row.customer_factory_id ?? 'N/A'}</p>
-                                  <p className="text-xs"><strong>{t('summaryCostTable.details.bonus')}:</strong> ${((row.summary?.bonus) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                  <p className="text-xs mt-2 font-bold" style={{ color: '#0B2863' }}><strong>{t('summaryCostTable.details.totalCost')}:</strong> ${((row.summary?.totalCost) ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                  <h4 className="font-semibold text-sm mb-3" style={{ color: '#0B2863' }}>{t('summaryCostTable.details.additional')}</h4>
+                                  <p className="text-xs flex items-center justify-between">
+                                    <strong>{t('summaryCostTable.details.customerFactory')}</strong>
+                                    <span>{row.customer_name ?? 'N/A'}</span>
+                                  </p>
+                                  <p className="text-xs flex items-center justify-between mt-1">
+                                    <strong>{t('summaryCostTable.details.bonus')}</strong>
+                                    <span className="tabular-nums">{fmtCurrency(row.summary?.bonus ?? 0)}</span>
+                                  </p>
+                                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                                    <p className="text-xs flex items-center justify-between font-bold" style={{ color: '#0B2863' }}>
+                                      <strong>{t('summaryCostTable.details.totalCost')}</strong>
+                                      <span className="tabular-nums">{fmtCurrency(row.summary?.totalCost ?? 0)}</span>
+                                    </p>
+                                    {row.summary?.net_profit !== undefined && (
+                                      <p className="text-xs flex items-center justify-between font-semibold">
+                                        <strong>{t('summaryCostTable.details.netProfit')}</strong>
+                                        <span
+                                          className="tabular-nums"
+                                          style={{ color: (row.summary.net_profit ?? 0) >= 0 ? '#16a34a' : '#dc2626' }}
+                                        >
+                                          {fmtCurrency(row.summary.net_profit ?? 0)}
+                                        </span>
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>

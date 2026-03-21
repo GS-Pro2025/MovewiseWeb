@@ -1236,7 +1236,8 @@
       "additional": "Adicional",
       "customerFactory": "Fábrica del Cliente",
       "bonus": "Bono",
-      "totalCost": "Costo Total"
+      "totalCost": "Costo Total",
+      "netProfit": "Utilidad Neta"
     }
   },
   "resumeFuelTable": {
