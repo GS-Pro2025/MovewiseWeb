@@ -1167,7 +1167,8 @@
       "additional": "Additional",
       "customerFactory": "Customer Factory",
       "bonus": "Bonus",
-      "totalCost": "Total Cost"
+      "totalCost": "Total Cost",
+      "netProfit": "Net Profit"
     }
   },
   "resumeFuel": {
