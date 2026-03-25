@@ -9,30 +9,41 @@ export interface ExtraCost {
     weight: string;
     status: string;
     state_usa: string;
+    address: string;
     person: {
-      email: string;
+      email: string | null;
       first_name: string;
       last_name: string;
+      phone: string;
+      address: string;
     };
     job: number;
+    job_name: string;
+    customer_factory: number;
+    customer_factory_name: string;
     distance: number | null;
-    expense: number | null;
-    income: number | null;
-    payStatus: string | null;
+    expense: string | null;
+    income: string | null;
+    payStatus: number | null;
     evidence: string | null;
     dispatch_ticket: string | null;
     dispatch_ticket_url: string | null;
+    created_by: string | null;
   };
   name: string;
   cost: string;
   type: string;
   id_order: string;
+  // ✅ Campos que faltaban — vienen en la respuesta del backend
+  image: string | null;
+  image_url: string | null;
 }
 export interface CreateExtraCostDTO {
   name: string;
   cost: number;
   type: string;
   id_order: string;
+  image?: string | null; 
 }
 export interface ExtraCostResponse {
   current_company_id: number;

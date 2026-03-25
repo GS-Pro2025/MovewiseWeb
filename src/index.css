@@ -18,3 +18,19 @@ html {
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
 }
+
+/* En tu archivo CSS global */
+@keyframes pulse {
+  0%, 100% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+  }
+  50% {
+    background-color: #fde68a;
+    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) 2;
+}
