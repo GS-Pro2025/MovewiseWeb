@@ -67,7 +67,6 @@ const SummaryCost: React.FC = () => {
   const handleRowsPerPageChange = useCallback((r: number) => { setRowsPerPage(r); setPage(0); fetchSummaryCost(0, r, searchTerm); }, [searchTerm, fetchSummaryCost]);
 
   const handleContextMenu     = (event: React.MouseEvent, row: any) => { event.preventDefault(); console.log('Context menu for:', row); };
-  const handleActionsMenuClick = (event: React.MouseEvent, row: any) => { event.stopPropagation(); console.log('Actions menu for:', row); };
 
   const totalPages   = summaryCost ? Math.ceil(summaryCost.count / rowsPerPage) : 0;
   const isLastPage   = page >= totalPages - 1;
@@ -188,7 +187,6 @@ const SummaryCost: React.FC = () => {
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         onContextMenu={handleContextMenu}
-        onActionsMenuClick={handleActionsMenuClick}
       />
 
       {/* Pagination */}
