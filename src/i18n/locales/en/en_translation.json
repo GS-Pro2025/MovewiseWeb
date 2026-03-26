@@ -373,6 +373,11 @@
     "saturday": "Saturday"
   },
   "table": {
+    "alert": {
+      "noOperatorsTitle": "order(s) without assigned operators",
+      "noOperatorsMessage": "These orders don't have operators assigned. Please assign operators to process them correctly.",
+      "noOperators": "No operators"
+    },
     "actions": "Actions",
     "status": "Status",
     "reference": "Reference",
@@ -1123,6 +1128,10 @@
     "today": "Today"
   },
   "summaryCostTable": {
+    "loading": "Loading data...",
+    "copyToClipboard": "Copy to clipboard",
+    "copied": "Copied!",
+    "moreActions": "More actions",
     "columns": {
       "actions": "Actions",
       "reference": "Reference",
@@ -1134,21 +1143,14 @@
       "expense": "Expense",
       "totalCost": "Total Cost"
     },
-    "loading": "Loading summary costs...",
-    "empty": {
-      "title": "No Summary Data Found",
-      "desc": "There are no summary costs available for the selected filters. Try adjusting your search criteria.",
-      "tip": "Tip: Check your week and filter settings above"
-    },
     "expand": {
-      "collapse": "Collapse Details",
-      "expand": "Expand Details"
+      "expand": "Expand row",
+      "collapse": "Collapse row"
     },
-    "moreActions": "More actions",
-    "copyToClipboard": "Copy to clipboard",
-    "footer": {
-      "total": "Total: {{count}} orders | Selected: {{selected}}",
-      "showing": "Showing {{count}} results"
+    "empty": {
+      "title": "No records found",
+      "desc": "There are no orders matching the current filters.",
+      "tip": "Try adjusting the week, year, or search term."
     },
     "details": {
       "order": "Order",
@@ -1157,18 +1159,35 @@
       "location": "Location",
       "status": "Status",
       "customer": "Customer",
+      "customerFactory": "Customer factory",
       "income": "Income",
       "expense": "Expense",
-      "summaryBreakdown": "Summary Breakdown",
-      "fuelCost": "Fuel Cost",
-      "workCost": "Work Cost",
-      "driverSalaries": "Driver Salaries",
-      "otherSalaries": "Other Salaries",
-      "additional": "Additional",
-      "customerFactory": "Customer Factory",
+      "netProfit": "Net profit",
+      "summaryBreakdown": "Cost breakdown",
+      "fuelCost": "Fuel cost",
+      "workCost": "Extra costs",
+      "driverSalaries": "Driver salaries",
+      "otherSalaries": "Operators Salaries",
       "bonus": "Bonus",
-      "totalCost": "Total Cost",
-      "netProfit": "Net Profit"
+      "totalCost": "Total cost",
+      "additional": "Detail"
+    },
+    "weeklySummary": {
+      "title": "Weekly summary",
+      "orders": "orders",
+      "fuelDetail": "Fuel cost detail",
+      "workDetail": "Extra costs detail",
+      "ref": "Ref",
+      "truck": "Truck",
+      "date": "Date",
+      "distributed": "Distributed",
+      "name": "Name",
+      "type": "Type",
+      "cost": "Cost"
+    },
+    "footer": {
+      "total": "Total: {{count}} records · {{selected}} selected",
+      "showing": "Showing {{count}} rows"
     }
   },
   "resumeFuel": {
@@ -1303,7 +1322,9 @@
       "orderReference": "Order Reference",
       "date": "Date",
       "orderStatus": "Order Status",
-      "location": "Location"
+      "location": "Location",
+      "client":"Name client",
+      "week":"Week"
     },
     "loading": "Loading extra costs...",
     "empty": {
@@ -1332,7 +1353,11 @@
       "name": "Name",
       "type": "Type",
       "cost": "Cost",
-      "dispatchTicket": "Dispatch Ticket"
+      "dispatchTicket": "Dispatch Ticket",
+      "client":"Name client",
+      "week":"Week",
+      "receiptImage": "Receipt Image",
+      "phone":"Phone"
     },
     "footer": {
       "total": "Total: {{count}} extra costs | Selected: {{selected}}",
