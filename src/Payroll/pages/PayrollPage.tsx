@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
-import { payrollService, WeekInfo, getPaymentById } from "../../service/PayrollService";
+import { payrollService, WeekInfo } from "../../service/PayrollService";
 import { PayrollModal } from "../components/PayrollModal";
 import {
   fetchCountries,
@@ -162,9 +162,9 @@ export default function PayrollPage() {
       setWeekDates(dates);
 
       const map = new Map<string, OperatorRow>();
-      const paymentCache = new Map<string, number>();
 
       // PASO 1: Crear la estructura básica de cada operador y agrupar assignments por día
+      // payment_expense, id_payment y payment_status vienen directamente en cada assignment
       response.data.forEach((d, index) => {
         if (index === 0) {
           console.log('👤 [SAMPLE] Ejemplo de registro raw:', d);
@@ -185,10 +185,12 @@ export default function PayrollPage() {
             pay: payId ? payId.toString() : null,
             total: 0,
             additionalBonuses: 0,
-            expense: 0,
+            expense: d.payment_expense != null ? Number(d.payment_expense) : 0,
             grandTotal: 0,
             assignmentIds: [assignId],
             paymentIds: payId != null ? [payId] : [],
+            draftPaymentId: d.payment_status === 'draft' && payId != null ? payId : null,
+            paymentStatus: d.payment_status ?? null,
             assignmentsByDay: {},
             operator_phone: d.operator_phone,
             _bonusDaysAdded: new Set<string>(),
@@ -231,64 +233,6 @@ export default function PayrollPage() {
       });
 
       console.log(`✅ [STEP 1] Total de operadores únicos: ${map.size}`);
-
-      // PASO 1.5: OBTENER EXPENSES DE LOS PAYMENTS
-      console.log('💸 [STEP 1.5] Obteniendo expenses de payments...');
-      const paymentPromises: Promise<void>[] = [];
-      
-      // Recopilar todos los payment_ids únicos
-      const uniquePaymentIds = new Set<string>();
-      Array.from(map.values()).forEach(operator => {
-        operator.paymentIds.forEach(payId => {
-          if (payId && !uniquePaymentIds.has(payId.toString())) {
-            uniquePaymentIds.add(payId.toString());
-          }
-        });
-      });
-
-      console.log(`💳 [PAYMENTS] Total de payment IDs únicos: ${uniquePaymentIds.size}`);
-      console.log('💳 [PAYMENTS] IDs:', Array.from(uniquePaymentIds));
-
-      // Hacer llamadas para obtener expenses
-      for (const paymentId of uniquePaymentIds) {
-        paymentPromises.push(
-          getPaymentById(paymentId)
-            .then(paymentData => {
-              const expense = Number(paymentData.expense) || 0;
-              console.log(`✅ [EXPENSE] Payment ${paymentId}: $${expense}`);
-              paymentCache.set(paymentId, expense);
-            })
-            .catch(error => {
-              console.error(`❌ [ERROR] Error obteniendo payment ${paymentId}:`, error);
-              paymentCache.set(paymentId, 0);
-            })
-        );
-      }
-
-      // Esperar a que todas las llamadas de payment terminen
-      await Promise.all(paymentPromises);
-      console.log('✅ [EXPENSES] Todos los expenses obtenidos');
-
-      // Asignar expenses a los operadores basado en sus payments
-      console.log('🔄 [STEP 2] Asignando expenses a operadores...');
-      Array.from(map.values()).forEach(operator => {
-        let totalExpense = 0;
-        const processedPayments = new Set<string>();
-        
-        operator.paymentIds.forEach(payId => {
-          const paymentIdStr = payId.toString();
-          if (!processedPayments.has(paymentIdStr)) {
-            const expense = paymentCache.get(paymentIdStr) || 0;
-            totalExpense += expense;
-            processedPayments.add(paymentIdStr);
-          }
-        });
-        
-        operator.expense = totalExpense;
-        if (totalExpense > 0) {
-          console.log(`💸 [OPERATOR EXPENSE] ${operator.code}: $${totalExpense}`);
-        }
-      });
 
       // PASO 3: Calcular earnings por día según salary_type
       console.log('🔄 [STEP 3] Calculando earnings por día...');
@@ -598,6 +542,8 @@ export default function PayrollPage() {
             assignmentIds: selectedOperator.assignmentIds || [], 
             paymentIds: selectedOperator.paymentIds || [],
             expense: selectedOperator.expense || 0,
+            draftPaymentId: selectedOperator.draftPaymentId ?? null,
+            paymentStatus: selectedOperator.paymentStatus ?? null,
             operator_phone: selectedOperator.operator_phone || null,
           }}
           periodStart={weekInfo.start_date}

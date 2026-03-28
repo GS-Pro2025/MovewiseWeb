@@ -168,6 +168,53 @@ export async function bulkUpdateStatementStates(
 }
 
 /**
+ * PUT /statements/{pk}/
+ * Editable fields: keyref, date, week, shipper_name, income, expense
+ */
+export async function updateStatement(
+  pk: number,
+  payload: Partial<Pick<StatementRecord, 'keyref' | 'date' | 'week' | 'shipper_name' | 'income' | 'expense'>>
+): Promise<StatementRecord> {
+  const url = `${BASE_URL_API}/statements/${pk}/`;
+  try {
+    const res = await fetchWithAuth(url, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401 || res.status === 403) { logout(); throw new Error('Session expired'); }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      let messUser = `Error ${res.status}`;
+      try { const json = JSON.parse(txt); messUser = json.messUser || json.detail || messUser; } catch { /* raw */ }
+      throw new Error(messUser);
+    }
+    const payload2 = await res.json().catch(() => null);
+    return (payload2?.data ?? payload2) as StatementRecord;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
+ * DELETE /statements/{pk}/
+ */
+export async function deleteStatement(pk: number): Promise<void> {
+  const url = `${BASE_URL_API}/statements/${pk}/`;
+  try {
+    const res = await fetchWithAuth(url, { method: 'DELETE' });
+    if (res.status === 401 || res.status === 403) { logout(); throw new Error('Session expired'); }
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      let messUser = `Error ${res.status}`;
+      try { const json = JSON.parse(txt); messUser = json.messUser || json.detail || messUser; } catch { /* raw */ }
+      throw new Error(messUser);
+    }
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(String(error));
+  }
+}
+
+/**
  * Apply Statement amounts to Orders
  * POST {{BASE_URL_API}}/statements/apply-to-orders/
  * Note: company_id is automatically extracted from JWT token
@@ -215,6 +262,8 @@ export async function applyStatementToOrders(
 export default {
   fetchStatementsByWeek,
   updateStatementState,
+  updateStatement,
+  deleteStatement,
   verifyStatementRecords,
   bulkUpdateStatementStates,
   applyStatementToOrders,
