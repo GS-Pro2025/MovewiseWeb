@@ -28,6 +28,8 @@ export interface WeekInfo {
     grandTotal?: number;
     assignmentIds: (number | string)[];
     paymentIds: (number | string)[];
+    draftPaymentId?: number | null;
+    paymentStatus?: string | null;
     operator_phone?: string | null;
     assignmentsByDay?: {
       [key in keyof WeekAmounts]?: {

@@ -11,7 +11,9 @@ export interface AssignmentData {
   email: string; 
   bonus: number | null;
   role: string;
-  id_payment: string | null;
+  id_payment: number | null;
+  payment_expense: number | null;
+  payment_status: string | null;
   operator_phone: string | null;
   start_time: string | null;
   end_time: string | null;
@@ -93,6 +95,26 @@ export interface DailyBonusItem {
   assign_ids: number[];
 }
 
+// Payload for creating a draft payment (Step 1)
+export interface CreateDraftPaymentPayload {
+  status: 'draft';
+  expense: number;
+  bonus: number;
+}
+
+// Response from POST /payments/
+export interface DraftPaymentResponse {
+  id_pay: number;
+  status: string;
+  value: number | null;
+}
+
+// Payload for updating a draft payment (Step 2)
+export interface UpdateDraftPaymentPayload {
+  expense?: number;
+  bonus?: number;
+}
+
 // Payload for creating a payment
 export interface CreatePaymentPayload {
   value: number;
@@ -102,6 +124,7 @@ export interface CreatePaymentPayload {
   date_payment?: string;
   expense?: number;
   daily_bonuses: DailyBonusItem[];
+  payment_id?: number;
 }
 
 /**
@@ -127,6 +150,88 @@ export async function createPayment(
   }
 
   return (await res.json()) as ApiResponse;
+}
+
+/**
+ * POST /payments/
+ * Creates a draft payment with only expense and bonus, before assigns are linked.
+ */
+export async function createDraftPayment(
+  payload: CreateDraftPaymentPayload,
+): Promise<DraftPaymentResponse> {
+  const url = `${API_BASE}/payments/`;
+  const res: Response = await fetchWithAuth(url, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`API ${res.status}: ${msg || res.statusText}`);
+  }
+
+  return (await res.json()) as DraftPaymentResponse;
+}
+
+/**
+ * PATCH /payments/{id}/
+ * Updates expense and/or bonus on an existing draft payment.
+ */
+export async function updatePaymentDraft(
+  id: number,
+  payload: UpdateDraftPaymentPayload,
+): Promise<void> {
+  const url = `${API_BASE}/payments/${id}/`;
+  const res: Response = await fetchWithAuth(url, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`API ${res.status}: ${msg || res.statusText}`);
+  }
+}
+
+export interface SetExpenseData {
+  created: boolean;
+  assign_id: number;
+  payment_id: number;
+  expense: number;
+  payment_status: string;
+}
+
+/**
+ * PATCH /assigns/<assign_id>/set-expense/
+ * Upserts a draft payment expense linked to a single assignment.
+ * Creates a new draft if none exists, or updates the existing draft expense.
+ */
+export async function setAssignExpense(
+  assignId: number,
+  expense: number,
+): Promise<SetExpenseData> {
+  const url = `${API_BASE}/assigns/${assignId}/set-expense/`;
+  const res: Response = await fetchWithAuth(url, {
+    method: 'PATCH',
+    body: JSON.stringify({ expense }),
+  });
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      logout();
+    }
+    const json = await res.json().catch(() => null);
+    throw new Error(json?.messUser || `API ${res.status}`);
+  }
+
+  const json = await res.json();
+  return json.data as SetExpenseData;
 }
 
 /**
