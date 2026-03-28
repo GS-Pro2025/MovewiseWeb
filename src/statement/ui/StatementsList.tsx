@@ -8,6 +8,8 @@ import { StatementToolbar } from './StatementToolbar';
 import { StatementDataTable } from './StatementDataTable';
 import { fetchStatementsByWeek } from '../data/StatementRepository';
 import { StatementRecord, StatementsByWeekResponse, WeekSummary } from '../domain/StatementModels';
+import EditStatementDialog from './EditStatementDialog';
+import DeleteStatementDialog from './DeleteStatementDialog';
 
 const getWeekOfYear = (date: Date): number => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -43,10 +45,27 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
   const [searchQuery, setSearchQuery] = useState<string>('');
   const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
 
+  const [editRecord, setEditRecord] = useState<StatementRecord | null>(null);
+  const [deleteRecord, setDeleteRecord] = useState<StatementRecord | null>(null);
+
   const handleStateUpdated = (updated: StatementRecord) => {
     setData(prev => prev.map(d => d.id === updated.id ? updated : d));
     setFilteredData(prev => prev.map(d => d.id === updated.id ? updated : d));
     enqueueSnackbar(t('statementsList.stateUpdated', { keyref: updated.keyref, state: updated.state }), { variant: 'success' });
+  };
+
+  const handleRecordUpdated = (updated: StatementRecord) => {
+    setData(prev => prev.map(d => d.id === updated.id ? updated : d));
+    setFilteredData(prev => prev.map(d => d.id === updated.id ? updated : d));
+    setEditRecord(null);
+  };
+
+  const handleRecordDeleted = (id: number) => {
+    setData(prev => prev.filter(d => d.id !== id));
+    setFilteredData(prev => prev.filter(d => d.id !== id));
+    setSelectedRows(prev => prev.filter(d => d.id !== id));
+    setTotalRows(prev => Math.max(0, prev - 1));
+    setDeleteRecord(null);
   };
 
   const loadData = useCallback(async () => {
@@ -105,6 +124,19 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
         onRowsPerPageChange={(rpp) => setPagination({ pageIndex: 0, pageSize: rpp })}
         onRowSelect={handleRowSelect} onSelectAll={handleSelectAll}
         onStateUpdated={handleStateUpdated}
+        onEditRecord={setEditRecord}
+        onDeleteRecord={setDeleteRecord}
+      />
+
+      <EditStatementDialog
+        record={editRecord}
+        onClose={() => setEditRecord(null)}
+        onSaved={handleRecordUpdated}
+      />
+      <DeleteStatementDialog
+        record={deleteRecord}
+        onClose={() => setDeleteRecord(null)}
+        onDeleted={handleRecordDeleted}
       />
     </Box>
   );

@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer'; // Quitamos PDFDownloadLink
-import { cancelPayments, createPayment } from '../../service/PayrollService';
+import { cancelPayments, createPayment, setAssignExpense } from '../../service/PayrollService';
 import { updateAssign } from '../../service/AssignService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -76,6 +76,8 @@ interface PayrollModalProps {
     additionalBonuses: number; grandTotal?: number;
     assignmentIds: (number | string)[];
     paymentIds: (number | string)[];
+    draftPaymentId?: number | null;
+    paymentStatus?: string | null;
     expense?: number;
     assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] };
     operator_phone?: string | null;
@@ -270,7 +272,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const [grandTotal, setGrandTotal]           = useState(operatorData.grandTotal || 0);
   const [loading, setLoading]                 = useState(false);
   const [error, setError]                     = useState<string | null>(null);
-  const [isPaid, setIsPaid]                   = useState<boolean>(!!operatorData.paymentIds?.length);
+  const [isPaid, setIsPaid]                   = useState<boolean>(
+    !!operatorData.paymentIds?.length && operatorData.paymentStatus !== 'draft'
+  );
   const [cancelLoading, setCancelLoading]     = useState(false);
   const [expense, setExpense]                 = useState<number>(operatorData.expense || 0);
   const [sendingEmail, setSendingEmail]       = useState(false);
@@ -279,6 +283,12 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const [company, setCompany]                 = useState<CompanyInfo | null>(null);
   const [logoBase64, setLogoBase64]           = useState<string | null>(null);
   const [downloadingPDF, setDownloadingPDF]   = useState(false);
+  const [draftPaymentId, setDraftPaymentId]   = useState<number | null>(
+    operatorData.paymentStatus === 'draft' && operatorData.draftPaymentId != null
+      ? operatorData.draftPaymentId
+      : null
+  );
+  const [savingExpense, setSavingExpense]     = useState(false);
 
   const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
     const init: WeekAmounts = {};
@@ -330,6 +340,21 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
 
   const handleDailyBonusChange = (day: keyof WeekAmounts, value: number) =>
     setDailyBonuses(p => ({ ...p, [day]: value }));
+
+  const handleSaveExpense = async () => {
+    const firstAssignId = operatorData.assignmentIds?.[0];
+    if (firstAssignId == null) { toast.error('No hay asignación para guardar el gasto'); return; }
+    setSavingExpense(true);
+    try {
+      const result = await setAssignExpense(Number(firstAssignId), expense);
+      setDraftPaymentId(result.payment_id);
+      toast.success(result.created ? 'Gasto guardado como borrador' : 'Gasto actualizado');
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    } finally {
+      setSavingExpense(false);
+    }
+  };
 
   const handleSaveDailyBonus = async (day: keyof WeekAmounts) => {
     const assigns = assignmentsByDay?.[day];
@@ -385,7 +410,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
         value: grandTotal, status: 'paid',
         date_start: periodStart, date_end: periodEnd,
         expense: expense || 0, daily_bonuses: dailyBonusesArray,
+        ...(draftPaymentId !== null && { payment_id: draftPaymentId }),
       });
+      setDraftPaymentId(null);
       setIsPaid(true);
       toast.success('¡Pago guardado! 🎉');
       onPaymentComplete?.({ ...operatorData, pay: '' });
@@ -633,10 +660,22 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                   <input
                     type="number" value={expense || ''} min="0" step="0.01" placeholder="0.00"
                     onChange={e => setExpense(parseFloat(e.target.value) || 0)}
-                    disabled={loading || isPaid}
+                    disabled={loading || isPaid || savingExpense}
                     className="w-24 px-2 py-1 text-right border rounded-md text-sm font-semibold disabled:opacity-50 outline-none focus:ring-1"
                     style={{ borderColor: '#f5c6cb', color: '#c0392b', backgroundColor: '#fdecea' }}
                   />
+                  <button
+                    type="button"
+                    onClick={handleSaveExpense}
+                    disabled={loading || isPaid || savingExpense}
+                    className="ml-1 text-red-600 hover:text-red-800 disabled:opacity-40"
+                    title="Guardar gasto"
+                  >
+                    {savingExpense
+                      ? <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                      : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
+                    }
+                  </button>
                 </div>
               </div>
               <div className="flex justify-between items-center px-4 py-4 rounded-xl text-white" style={{ background: 'linear-gradient(135deg, #0B2863 0%, #1a4a9e 100%)' }}>
