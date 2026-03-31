@@ -269,10 +269,10 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
           <NavItem icon="fa-solid fa-box"        text={t("sidebar.nav.createDaily")}     isCollapsed={collapsed} to="/app/create-daily"     onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-money-bill" text={t("sidebar.nav.payroll")}         isCollapsed={collapsed} to="/app/payroll"           onClick={closeMobileMenu} />
           <NavItem icon="fa-warehouse"           text={t("sidebar.nav.createWarehouse")} isCollapsed={collapsed} to="/app/create-warehouse"  onClick={closeMobileMenu} />
-          {user?.is_superUser && (
+          {!!user?.is_superUser && (
             <NavItem icon="fa-file-invoice-dollar" text={t("sidebar.nav.statements")}   isCollapsed={collapsed} to="/app/statements"        onClick={closeMobileMenu} />
           )}
-          {user?.is_superUser && (
+          {!!user?.is_superUser && (
             <NavItem icon="fa-chart-bar"         text={t("sidebar.nav.statistics")}      isCollapsed={collapsed} to="/app/statistics"       onClick={closeMobileMenu} />
           )}
 
@@ -289,7 +289,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
           </li>
 
           {/* ── Finance dropdown (index 2) ── */}
-          {user?.is_superUser && (
+          {!!user?.is_superUser && (
             <li className={dropdownWrapClass(2)}>
               <DropdownButton index={2} icon="fa-chart-pie" label={t("sidebar.nav.finance")} />
               <div className={dropdownPanelClass(2)}>
@@ -325,10 +325,10 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                   badge={missingSalaryCount}
                   onClick={closeMobileMenu}
                 />
-                {user?.is_superUser && (
+                {!!user?.is_superUser && (
                   <DropdownLink icon="fa-users-cog" text={t("sidebar.nav.admins")}    to="/app/admins"     onClick={closeMobileMenu} />
                 )}
-                {user?.is_superUser && (
+                {!!user?.is_superUser && (
                   <DropdownLink icon="fa-city"      text={t("sidebar.nav.myCompany")} to="/app/my-company" onClick={closeMobileMenu} />
                 )}
               </ul>
