@@ -191,6 +191,7 @@ export default function PayrollPage() {
             paymentIds: payId != null ? [payId] : [],
             draftPaymentId: d.payment_status === 'draft' && payId != null ? payId : null,
             paymentStatus: d.payment_status ?? null,
+            paymentDescription: d.payment_description ?? null,
             assignmentsByDay: {},
             operator_phone: d.operator_phone,
             _bonusDaysAdded: new Set<string>(),
@@ -544,6 +545,7 @@ export default function PayrollPage() {
             expense: selectedOperator.expense || 0,
             draftPaymentId: selectedOperator.draftPaymentId ?? null,
             paymentStatus: selectedOperator.paymentStatus ?? null,
+            paymentDescription: selectedOperator.paymentDescription ?? null,
             operator_phone: selectedOperator.operator_phone || null,
           }}
           periodStart={weekInfo.start_date}

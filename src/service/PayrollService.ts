@@ -14,6 +14,7 @@ export interface AssignmentData {
   id_payment: number | null;
   payment_expense: number | null;
   payment_status: string | null;
+  payment_description: string | null;
   operator_phone: string | null;
   start_time: string | null;
   end_time: string | null;
@@ -123,6 +124,7 @@ export interface CreatePaymentPayload {
   date_end: string;
   date_payment?: string;
   expense?: number;
+  description?: string;
   daily_bonuses: DailyBonusItem[];
   payment_id?: number;
 }
@@ -205,6 +207,7 @@ export interface SetExpenseData {
   payment_id: number;
   expense: number;
   payment_status: string;
+  description: string | null;
 }
 
 /**
@@ -215,11 +218,12 @@ export interface SetExpenseData {
 export async function setAssignExpense(
   assignId: number,
   expense: number,
+  description?: string | null,
 ): Promise<SetExpenseData> {
   const url = `${API_BASE}/assigns/${assignId}/set-expense/`;
   const res: Response = await fetchWithAuth(url, {
     method: 'PATCH',
-    body: JSON.stringify({ expense }),
+    body: JSON.stringify({ expense, ...(description != null ? { description } : {}) }),
   });
 
   if (!res.ok) {
