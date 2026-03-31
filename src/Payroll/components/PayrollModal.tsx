@@ -78,6 +78,7 @@ interface PayrollModalProps {
     paymentIds: (number | string)[];
     draftPaymentId?: number | null;
     paymentStatus?: string | null;
+    paymentDescription?: string | null;
     expense?: number;
     assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] };
     operator_phone?: string | null;
@@ -289,6 +290,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       : null
   );
   const [savingExpense, setSavingExpense]     = useState(false);
+  const [description, setDescription]         = useState<string>(operatorData.paymentDescription || '');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [savingDescription, setSavingDescription]   = useState(false);
 
   const [dailyBonuses, setDailyBonuses] = useState<WeekAmounts>(() => {
     const init: WeekAmounts = {};
@@ -346,13 +350,31 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     if (firstAssignId == null) { toast.error('No hay asignación para guardar el gasto'); return; }
     setSavingExpense(true);
     try {
-      const result = await setAssignExpense(Number(firstAssignId), expense);
+      const result = await setAssignExpense(Number(firstAssignId), expense, description || null);
       setDraftPaymentId(result.payment_id);
+      if (result.description != null) setDescription(result.description);
       toast.success(result.created ? 'Gasto guardado como borrador' : 'Gasto actualizado');
     } catch (e: any) {
       toast.error(`Error: ${e.message}`);
     } finally {
       setSavingExpense(false);
+    }
+  };
+
+  const handleSaveDescription = async () => {
+    const firstAssignId = operatorData.assignmentIds?.[0];
+    if (firstAssignId == null) { toast.error('No hay asignación disponible'); return; }
+    setSavingDescription(true);
+    try {
+      const result = await setAssignExpense(Number(firstAssignId), expense || 0, description || null);
+      setDraftPaymentId(result.payment_id);
+      if (result.description != null) setDescription(result.description);
+      setEditingDescription(false);
+      toast.success('Nota actualizada');
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    } finally {
+      setSavingDescription(false);
     }
   };
 
@@ -406,11 +428,22 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
         }))
         .filter(i => i.assign_ids.length > 0);
 
+      // Ensure expense + description are persisted on the draft before confirming,
+      // so the description survives after the modal is closed and reopened.
+      let resolvedPaymentId = draftPaymentId;
+      const firstAssignId = operatorData.assignmentIds[0];
+      if (firstAssignId != null) {
+        const saved = await setAssignExpense(Number(firstAssignId), expense || 0, description || null);
+        resolvedPaymentId = saved.payment_id;
+        setDraftPaymentId(saved.payment_id);
+      }
+
       await createPayment({
         value: grandTotal, status: 'paid',
         date_start: periodStart, date_end: periodEnd,
         expense: expense || 0, daily_bonuses: dailyBonusesArray,
-        ...(draftPaymentId !== null && { payment_id: draftPaymentId }),
+        ...(description ? { description } : {}),
+        ...(resolvedPaymentId !== null && { payment_id: resolvedPaymentId }),
       });
       setDraftPaymentId(null);
       setIsPaid(true);
@@ -678,6 +711,83 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                   </button>
                 </div>
               </div>
+              {isPaid && !editingDescription ? (
+                description ? (
+                  <div className="px-4 py-3 rounded-lg border border-blue-100" style={{ backgroundColor: '#eff6ff' }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Nota del pago</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingDescription(true)}
+                        className="text-blue-400 hover:text-blue-600 transition-colors"
+                        title="Editar nota"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="text-sm text-blue-800 leading-relaxed">{description}</p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEditingDescription(true)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-dashed border-slate-300 text-slate-400 text-xs flex items-center justify-center gap-1.5 hover:border-blue-300 hover:text-blue-400 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Agregar nota al pago
+                  </button>
+                )
+              ) : (
+                <div className="px-4 py-3 rounded-lg border" style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nota del pago</span>
+                  </div>
+                  <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    disabled={loading || savingDescription}
+                    placeholder="Ej: Deducción combustible semana 12..."
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-slate-200 rounded-lg resize-none disabled:opacity-50 focus:outline-none focus:ring-1 focus:ring-blue-200 placeholder-slate-300 transition-colors"
+                  />
+                  {isPaid && (
+                    <div className="flex justify-end gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => { setDescription(operatorData.paymentDescription || ''); setEditingDescription(false); }}
+                        disabled={savingDescription}
+                        className="px-3 py-1 text-xs text-slate-500 hover:text-slate-700 disabled:opacity-40 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveDescription}
+                        disabled={savingDescription}
+                        className="px-3 py-1.5 text-xs font-semibold text-white rounded-md flex items-center gap-1.5 disabled:opacity-60 transition-opacity hover:opacity-90"
+                        style={{ backgroundColor: '#0B2863' }}
+                      >
+                        {savingDescription
+                          ? <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando...</>
+                          : <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>Guardar nota</>
+                        }
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex justify-between items-center px-4 py-4 rounded-xl text-white" style={{ background: 'linear-gradient(135deg, #0B2863 0%, #1a4a9e 100%)' }}>
                 <span className="font-bold text-lg">PAGO NETO</span>
                 <span className="font-bold text-2xl" style={{ color: '#93c5fd' }}>{formatCurrency(grandTotal)}</span>
