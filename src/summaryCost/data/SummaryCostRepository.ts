@@ -43,6 +43,9 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
 
         // Always set only_paid to false as requested by backend contract
         queryParams.append('only_paid', String(params.onlyPaid === true));
+        
+        // Add include_table_costs parameter
+        queryParams.append('include_table_costs', 'false');
 
         try {
             const response = await fetch(`${this.baseUrl}/summary-list/?${queryParams.toString()}`, {

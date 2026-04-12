@@ -6,21 +6,26 @@ import { fetchWithAuth, logout } from '../../service/authService';
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
 /**
- * Fetch statements by week with optional year and pagination.
+ * Fetch statements by week with optional year, pagination and search.
+ * - When `search` is provided and `week` is undefined: searches across all weeks for the year.
+ * - At least one of `week` or `search` must be present (backend enforces this).
+ * GET {{BASE_URL_API}}/statements/by-week/?year=2025&search=ACME
  * GET {{BASE_URL_API}}/statements/by-week/?week=30&year=2025&page_size=20&page=1
  */
 export async function fetchStatementsByWeek(
-  week: number,
+  week: number | undefined,
   year?: number,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
+  search?: string
 ): Promise<StatementsByWeekResponse> {
   try {
     const params = new URLSearchParams();
-    params.append('week', String(week));
+    if (week !== undefined) params.append('week', String(week));
     if (year !== undefined) params.append('year', String(year));
     params.append('page', String(page));
     params.append('page_size', String(pageSize));
+    if (search && search.trim()) params.append('search', search.trim());
 
     const url = `${BASE_URL_API}/statements/by-week/?${params.toString()}`;
     console.log('Fetching statements by week from URL:', url);

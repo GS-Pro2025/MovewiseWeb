@@ -34,7 +34,6 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
   const { enqueueSnackbar } = useSnackbar();
 
   const [data, setData] = useState<StatementRecord[]>([]);
-  const [filteredData, setFilteredData] = useState<StatementRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedRows, setSelectedRows] = useState<StatementRecord[]>([]);
   const [weekSummary, setWeekSummary] = useState<WeekSummary | null>(null);
@@ -43,6 +42,7 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [totalRows, setTotalRows] = useState(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchMode, setSearchMode] = useState<'global' | 'local'>('global');
   const weekRange = useMemo(() => getWeekRange(year, week), [year, week]);
 
   const [editRecord, setEditRecord] = useState<StatementRecord | null>(null);
@@ -50,19 +50,16 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
 
   const handleStateUpdated = (updated: StatementRecord) => {
     setData(prev => prev.map(d => d.id === updated.id ? updated : d));
-    setFilteredData(prev => prev.map(d => d.id === updated.id ? updated : d));
     enqueueSnackbar(t('statementsList.stateUpdated', { keyref: updated.keyref, state: updated.state }), { variant: 'success' });
   };
 
   const handleRecordUpdated = (updated: StatementRecord) => {
     setData(prev => prev.map(d => d.id === updated.id ? updated : d));
-    setFilteredData(prev => prev.map(d => d.id === updated.id ? updated : d));
     setEditRecord(null);
   };
 
   const handleRecordDeleted = (id: number) => {
     setData(prev => prev.filter(d => d.id !== id));
-    setFilteredData(prev => prev.filter(d => d.id !== id));
     setSelectedRows(prev => prev.filter(d => d.id !== id));
     setTotalRows(prev => Math.max(0, prev - 1));
     setDeleteRecord(null);
@@ -71,7 +68,15 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response: StatementsByWeekResponse = await fetchStatementsByWeek(week, year, pagination.pageIndex + 1, pagination.pageSize);
+      // In global mode with a search query, omit week so the backend searches across all weeks
+      const weekParam = (searchMode === 'global' && searchQuery.trim()) ? undefined : week;
+      const response: StatementsByWeekResponse = await fetchStatementsByWeek(
+        weekParam,
+        year,
+        pagination.pageIndex + 1,
+        pagination.pageSize,
+        searchMode === 'global' ? searchQuery : undefined
+      );
       setData(response.results);
       setWeekSummary(response.week_summary || null);
       setTotalRows(response.count);
@@ -80,45 +85,46 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
     } finally {
       setLoading(false);
     }
-  }, [enqueueSnackbar, pagination.pageIndex, pagination.pageSize, week, year, t]);
+  }, [enqueueSnackbar, pagination.pageIndex, pagination.pageSize, week, year, searchMode, searchQuery, t]);
+
+  const displayData = useMemo(() => {
+    if (searchMode !== 'local' || !searchQuery.trim()) return data;
+    const q = searchQuery.trim().toLowerCase();
+    return data.filter(item =>
+      (item.keyref        && item.keyref.toLowerCase().includes(q))        ||
+      (item.shipper_name  && item.shipper_name.toLowerCase().includes(q)) ||
+      (item.income        && String(item.income).toLowerCase().includes(q)) ||
+      (item.expense       && String(item.expense).toLowerCase().includes(q))
+    );
+  }, [data, searchMode, searchQuery]);
 
   useEffect(() => { loadData(); }, [loadData]);
-
-  useEffect(() => {
-    let filtered = [...data];
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(item =>
-        (item.keyref && item.keyref.toLowerCase().includes(query)) ||
-        (item.shipper_name && item.shipper_name.toLowerCase().includes(query))
-      );
-    }
-    setFilteredData(filtered);
-  }, [data, searchQuery]);
 
   const handleRowSelect = (row: StatementRecord) => {
     setSelectedRows(prev => prev.some(s => s.id === row.id) ? prev.filter(s => s.id !== row.id) : [...prev, row]);
   };
 
   const handleSelectAll = (selectAll: boolean) => {
-    setSelectedRows(selectAll ? [...filteredData] : []);
+    setSelectedRows(selectAll ? [...data] : []);
   };
 
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
       <StatementFilters
         week={week} year={year} weekRange={weekRange} searchQuery={searchQuery}
+        searchMode={searchMode}
         onWeekChange={setWeek} onYearChange={setYear} onSearchQueryChange={setSearchQuery}
-        weekSummary={weekSummary} totalRecords={totalRows}
+        onSearchModeChange={setSearchMode}
+        weekSummary={weekSummary} totalRecords={searchMode === 'local' ? displayData.length : totalRows}
       />
       <StatementToolbar
-        data={filteredData} selectedRows={selectedRows}
+        data={displayData} selectedRows={selectedRows}
         onExportExcel={(data, filename) => { console.log('Export Excel:', data, filename); enqueueSnackbar(t('statementsList.exportExcelPending'), { variant: 'info' }); }}
         onExportPDF={(data, filename) => { console.log('Export PDF:', data, filename); enqueueSnackbar(t('statementsList.exportPDFPending'), { variant: 'info' }); }}
         onRefresh={loadData} onVerifyRecords={onVerifyRecords}
       />
       <StatementDataTable
-        data={filteredData} loading={loading} page={pagination.pageIndex}
+        data={displayData} loading={loading} page={pagination.pageIndex}
         rowsPerPage={pagination.pageSize} totalRows={totalRows} selectedRows={selectedRows}
         onPageChange={(p) => setPagination(prev => ({ ...prev, pageIndex: p }))}
         onRowsPerPageChange={(rpp) => setPagination({ pageIndex: 0, pageSize: rpp })}
