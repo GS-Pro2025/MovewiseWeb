@@ -364,7 +364,7 @@ const EditCostFuelDialog: React.FC<EditCostFuelDialogProps> = ({
               sx={{ mb: 3, borderRadius: 2 }}
             >
               {t('editCostFuel.distribution', {
-                count: formData.orders.length,
+                count: selectedOrders.length,
                 each: distributed.toFixed(2),
               })}
             </Alert>
