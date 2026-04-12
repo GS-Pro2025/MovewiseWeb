@@ -716,6 +716,14 @@
     "searchLabel": "Search by Key Ref or Shipper",
     "searchPlaceholder": "Enter key ref or shipper name...",
     "searchHelper": "Type to search across key references and shipper names",
+    "searchModeGlobal": "Global",
+    "searchModeLocal": "Local",
+    "searchModeGlobalHint": "Search via the API (filters all pages)",
+    "searchModeLocalHint": "Filter only the current page data",
+    "searchPlaceholderGlobal": "Search keyref, shipper, income, expense...",
+    "searchPlaceholderLocal": "Filter visible rows...",
+    "searchHelperGlobal": "Searches across all records via the server (keyref, shipper, income, expense)",
+    "searchHelperLocal": "Filters only the rows currently loaded on screen",
     "weekSummary": "Week Summary",
     "records": "Records",
     "income": "Income",
@@ -1251,6 +1259,43 @@
       "error": "Error: {{message}}"
     }
   },
+  "editCostFuel": {
+    "title": "Edit Fuel Cost",
+    "subtitle": "Truck #{{truck}} · {{date}}",
+    "sections": {
+      "metrics": "Fuel Metrics",
+      "orders": "Associated Orders"
+    },
+    "fields": {
+      "costFuel": "Total Cost",
+      "costFuelHelper": "Original: ${{original}}",
+      "fuelQty": "Fuel Quantity",
+      "fuelQtyHelper": "Original: {{original}} gl",
+      "distance": "Distance",
+      "distanceHelper": "Original: {{original}} mi",
+      "costGl": "Cost per Gallon",
+      "costGlHelper": "Original: ${{original}}/gl"
+    },
+    "distribution": "{{count}} order(s) will each receive ${{each}}",
+    "orderSearch": {
+      "placeholder": "Search orders by reference or client...",
+      "noResults": "No orders found for this search"
+    },
+    "validation": {
+      "costRequired": "Total cost must be greater than 0",
+      "fuelQtyRequired": "Fuel quantity must be greater than 0",
+      "distanceRequired": "Distance must be greater than 0"
+    },
+    "success": "Fuel cost updated successfully",
+    "error": "Error updating fuel cost: {{message}}",
+    "errorLoadingOrders": "Error loading orders",
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "footer": {
+      "ordersCount": "{{count}} order(s) assigned"
+    }
+  },
   "resumeFuelTable": {
     "title": "Fuel Cost Records",
     "exportAll": "Export All",
@@ -1295,6 +1340,10 @@
         "distance": "Distance"
       },
       "empty": "No orders associated with this fuel cost"
+    },
+    "editButton": {
+      "label": "Edit",
+      "tooltip": "Edit fuel cost"
     },
     "footer": {
       "total": "Total: {{count}} fuel records | Selected: {{selected}}",

@@ -717,6 +717,14 @@
     "searchLabel": "Buscar por Ref. Clave o Transportista",
     "searchPlaceholder": "Ingresa ref. clave o nombre del transportista...",
     "searchHelper": "Escribe para buscar entre referencias y transportistas",
+    "searchModeGlobal": "Global",
+    "searchModeLocal": "Local",
+    "searchModeGlobalHint": "Busca mediante la API (filtra todas las páginas)",
+    "searchModeLocalHint": "Filtra solo los datos cargados en pantalla",
+    "searchPlaceholderGlobal": "Buscar keyref, transportista, ingreso, gasto...",
+    "searchPlaceholderLocal": "Filtrar filas visibles...",
+    "searchHelperGlobal": "Busca en todos los registros del servidor (keyref, transportista, ingreso, gasto)",
+    "searchHelperLocal": "Filtra solo las filas cargadas actualmente en pantalla",
     "weekSummary": "Resumen de Semana",
     "records": "Registros",
     "income": "Ingreso",
@@ -1196,6 +1204,43 @@
       "error": "Error: {{message}}"
     }
   },
+  "editCostFuel": {
+    "title": "Editar Costo de Combustible",
+    "subtitle": "Camión #{{truck}} · {{date}}",
+    "sections": {
+      "metrics": "Métricas de Combustible",
+      "orders": "Órdenes Asociadas"
+    },
+    "fields": {
+      "costFuel": "Costo Total",
+      "costFuelHelper": "Original: ${{original}}",
+      "fuelQty": "Cantidad de Combustible",
+      "fuelQtyHelper": "Original: {{original}} gl",
+      "distance": "Distancia",
+      "distanceHelper": "Original: {{original}} mi",
+      "costGl": "Costo por Galón",
+      "costGlHelper": "Original: ${{original}}/gl"
+    },
+    "distribution": "{{count}} orden(es) recibirán ${{each}} cada una",
+    "orderSearch": {
+      "placeholder": "Buscar órdenes por referencia o cliente...",
+      "noResults": "No se encontraron órdenes para esta búsqueda"
+    },
+    "validation": {
+      "costRequired": "El costo total debe ser mayor a 0",
+      "fuelQtyRequired": "La cantidad de combustible debe ser mayor a 0",
+      "distanceRequired": "La distancia debe ser mayor a 0"
+    },
+    "success": "Costo de combustible actualizado exitosamente",
+    "error": "Error al actualizar el costo: {{message}}",
+    "errorLoadingOrders": "Error al cargar las órdenes",
+    "cancel": "Cancelar",
+    "save": "Guardar Cambios",
+    "saving": "Guardando...",
+    "footer": {
+      "ordersCount": "{{count}} orden(es) asignada(s)"
+    }
+  },
 "summaryCostTable": {
     "loading": "Cargando datos...",
     "copyToClipboard": "Copiar al portapapeles",
@@ -1303,6 +1348,10 @@
         "distance": "Distancia"
       },
       "empty": "No hay órdenes asociadas a este costo de combustible"
+    },
+    "editButton": {
+      "label": "Editar",
+      "tooltip": "Editar costo de combustible"
     },
     "footer": {
       "total": "Total: {{count}} registros | Seleccionados: {{selected}}",

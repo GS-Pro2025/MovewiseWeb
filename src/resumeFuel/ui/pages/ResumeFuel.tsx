@@ -2,10 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import ResumeFuelTable from '../components/ResumeFuelTable';
 import { ResumeFuelService } from '../../data/ResumeFuelServices';
-import { WeeklyFuelDataResponse } from '../../domain/CostFuelWithOrders';
+import { WeeklyFuelDataResponse, CostFuelWithOrders } from '../../domain/CostFuelWithOrders';
 import YearPicker from '../../../components/YearPicker';
 import WeekPicker from '../../../components/WeekPicker';
 import CreateCostFuelDialog from '../../../addFuelCostToOrder/ui/CreateCostFuelDialog';
+import EditCostFuelDialog from '../../../addFuelCostToOrder/ui/EditCostFuelDialog';
 import { Plus, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,6 +18,7 @@ const ResumeFuel: React.FC = () => {
   const [currentWeek, setCurrentWeek] = useState<number>(1);
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
   const [createDialogOpen, setCreateDialogOpen] = useState<boolean>(false);
+  const [editCostFuel, setEditCostFuel] = useState<CostFuelWithOrders | null>(null);
 
   const resumeFuelServices = new ResumeFuelService();
 
@@ -164,6 +166,7 @@ const ResumeFuel: React.FC = () => {
       <ResumeFuelTable
         data={resumeFuel}
         isLoading={isLoading}
+        onEditCostFuel={setEditCostFuel}
       />
 
       {/* Create Fuel Cost Dialog */}
@@ -172,6 +175,17 @@ const ResumeFuel: React.FC = () => {
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={() => {
           setCreateDialogOpen(false);
+          fetchResumeFuel(currentWeek, currentYear);
+        }}
+      />
+
+      {/* Edit Fuel Cost Dialog */}
+      <EditCostFuelDialog
+        open={!!editCostFuel}
+        costFuel={editCostFuel}
+        onClose={() => setEditCostFuel(null)}
+        onSuccess={() => {
+          setEditCostFuel(null);
           fetchResumeFuel(currentWeek, currentYear);
         }}
       />

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, MapPin, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, MapPin, ChevronDown, ChevronRight, Package, Pencil } from 'lucide-react';
 import { WeeklyFuelDataResponse, CostFuelWithOrders } from '../../domain/CostFuelWithOrders';
 import { generateCsv, download, mkConfig } from 'export-to-csv';
 
@@ -155,7 +155,8 @@ const csvConfig = mkConfig({
 export const ResumeFuelTable: React.FC<{
   data: WeeklyFuelDataResponse | null;
   isLoading: boolean;
-}> = ({ data, isLoading }) => {
+  onEditCostFuel?: (costFuel: CostFuelWithOrders) => void;
+}> = ({ data, isLoading, onEditCostFuel }) => {
   const { t } = useTranslation();
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
@@ -480,23 +481,37 @@ export const ResumeFuelTable: React.FC<{
                                     <Package size={18} />
                                     {t('resumeFuelTable.orders.title', { count: row.orders_count })}
                                   </h4>
-                                  {row.image_url && (
-                                    <button
-                                      onClick={() => setPreviewImage({ 
-                                        url: row.image_url!, 
-                                        fuelData: { 
-                                          cost_gl: row.cost_gl, 
-                                          fuel_qty: row.fuel_qty, 
-                                          cost_fuel: row.cost_fuel,
-                                          date: row.date
-                                        }
-                                      })}
-                                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
-                                    >
-                                      <Eye size={16} />
-                                      {t('resumeFuelTable.receipt.viewButton')}
-                                    </button>
-                                  )}
+                                  <div className="flex items-center gap-2">
+                                    {/* Edit button */}
+                                    {onEditCostFuel && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onEditCostFuel(row); }}
+                                        className="px-4 py-2 border-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all hover:shadow-md"
+                                        style={{ borderColor: '#F09F52', color: '#F09F52', backgroundColor: 'white' }}
+                                        title={t('resumeFuelTable.editButton.tooltip')}
+                                      >
+                                        <Pencil size={15} />
+                                        {t('resumeFuelTable.editButton.label')}
+                                      </button>
+                                    )}
+                                    {row.image_url && (
+                                      <button
+                                        onClick={() => setPreviewImage({ 
+                                          url: row.image_url!, 
+                                          fuelData: { 
+                                            cost_gl: row.cost_gl, 
+                                            fuel_qty: row.fuel_qty, 
+                                            cost_fuel: row.cost_fuel,
+                                            date: row.date
+                                          }
+                                        })}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
+                                      >
+                                        <Eye size={16} />
+                                        {t('resumeFuelTable.receipt.viewButton')}
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                                 
                                 {row.order_cost_fuels && row.order_cost_fuels.length > 0 ? (
