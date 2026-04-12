@@ -1,6 +1,9 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, ArrowUpDown, ArrowUp, ArrowDown, Copy, MoreVertical } from 'lucide-react';
+import { 
+  Check, CheckCircle, ChevronDown, ChevronUp, Inbox, FileX, 
+  ArrowUpDown, ArrowUp, ArrowDown, Copy, MoreVertical, AlertTriangle, X 
+} from 'lucide-react';
 import OperatorsTable from './operatorsTable';
 import CostFuelsTable from './CostFuelsTable';
 import AssignedToolsTable from './Assignedtoolstable';                                          
@@ -199,6 +202,74 @@ const SortIcon: React.FC<{ column: Column; sortConfig: SortConfig }> = ({ column
   return <ArrowUpDown size={12} style={{ color: iconColor }} />;
 };
 
+const AlertNoOperators: React.FC<{ 
+  ordersWithoutOperators: TableData[]; 
+  onClose: () => void;
+  onNavigateToOrder: (orderId: string) => void;
+  t: (key: string) => string;
+}> = ({ ordersWithoutOperators, onClose, onNavigateToOrder, t }) => {
+  if (ordersWithoutOperators.length === 0) return null;
+
+  const handleOrderClick = (orderId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onNavigateToOrder(orderId);
+  };
+
+  return (
+    <div className="mb-4 mx-4 mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3 flex-1">
+          <AlertTriangle className="text-yellow-600 mt-0.5 flex-shrink-0" size={20} />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-yellow-800">
+              ⚠️ {ordersWithoutOperators.length} {t('table.alert.noOperatorsTitle')}
+            </h3>
+            <p className="text-xs text-yellow-700 mt-1">
+              {t('table.alert.noOperatorsMessage')}
+            </p>
+            <div className="mt-2 max-h-40 overflow-y-auto">
+              <ul className="text-xs text-yellow-700 space-y-1">
+                {ordersWithoutOperators.map(order => (
+                  <li 
+                    key={order.id} 
+                    className="flex items-center gap-2 cursor-pointer hover:bg-yellow-100 p-1.5 rounded transition-colors duration-150 group"
+                    onClick={(e) => handleOrderClick(order.id, e)}
+                  >
+                    <span className="font-mono bg-yellow-100 px-1.5 py-0.5 rounded group-hover:bg-yellow-200">
+                      {order.key_ref}
+                    </span>
+                    <span className="text-gray-500">-</span>
+                    <span className="font-medium">{order.firstName} {order.lastName}</span>
+                    <span className="text-gray-400">({order.job})</span>
+                    <span className="ml-auto text-yellow-600 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click para ver →
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-3 text-xs text-yellow-600">
+              💡 Tip: Haz clic en cualquier orden para ir directamente a ella en la tabla
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
+          className="text-yellow-600 hover:text-yellow-800 transition-colors flex-shrink-0"
+          title="Cerrar alerta"
+        >
+          <X size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const DataTable: React.FC<DataTableProps> = ({
   data,
   loading,
@@ -224,8 +295,81 @@ export const DataTable: React.FC<DataTableProps> = ({
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [costFuelsByOrder, setCostFuelsByOrder] = useState<Record<string, CostFuelByOrderData[]>>({});
   const [assignedToolsByOrder, setAssignedToolsByOrder] = useState<Record<string, AssignedTool[]>>({});
+  const [showNoOperatorsAlert, setShowNoOperatorsAlert] = useState<boolean>(true);
+  const [ordersWithoutOperators, setOrdersWithoutOperators] = useState<TableData[]>([]);
+  const [highlightedRow, setHighlightedRow] = useState<string | null>(null);
+  const [navigating, setNavigating] = useState<boolean>(false);
+  
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const sortedData = useMemo(() => sortData(data, sortConfig), [data, sortConfig]);
+
+  useEffect(() => {
+    const withoutOps = data.filter(order => !order.operators || order.operators.length === 0);
+    setOrdersWithoutOperators(withoutOps);
+    
+    if (withoutOps.length === 0 && showNoOperatorsAlert) {
+      setShowNoOperatorsAlert(false);
+    }
+    
+    if (withoutOps.length > 0 && !showNoOperatorsAlert) {
+      setShowNoOperatorsAlert(true);
+    }
+  }, [data]);
+
+  const navigateToOrder = useCallback((orderId: string) => {
+    if (navigating) return;
+    
+    setNavigating(true);
+    
+    const orderIndex = sortedData.findIndex(order => order.id === orderId);
+    
+    if (orderIndex === -1) {
+      setNavigating(false);
+      return;
+    }
+
+    const targetPage = Math.floor(orderIndex / rowsPerPage);
+    
+    if (targetPage !== page) {
+      onPageChange(targetPage);
+      setTimeout(() => {
+        scrollToRow(orderId);
+        setTimeout(() => setNavigating(false), 500);
+      }, 300);
+    } else {
+      scrollToRow(orderId);
+      setTimeout(() => setNavigating(false), 500);
+    }
+  }, [sortedData, page, rowsPerPage, onPageChange, navigating]);
+
+  const scrollToRow = useCallback((orderId: string) => {
+    const rowElement = rowRefs.current.get(orderId);
+    if (rowElement && tableContainerRef.current) {
+      setHighlightedRow(null);
+      
+      const containerRect = tableContainerRef.current.getBoundingClientRect();
+      const rowRect = rowElement.getBoundingClientRect();
+      const scrollTop = tableContainerRef.current.scrollTop;
+      const offset = rowRect.top - containerRect.top + scrollTop - 100;
+      
+      tableContainerRef.current.scrollTo({
+        top: offset,
+        behavior: 'smooth'
+      });
+      
+      setHighlightedRow(orderId);
+      
+      setTimeout(() => {
+        setHighlightedRow(null);
+      }, 3000);
+    }
+  }, []);
+
+  useEffect(() => {
+    rowRefs.current.clear();
+  }, [sortedData, page]);
 
   const fetchCostFuelsForOrder = useCallback(async (orderKey: string) => {
     try {
@@ -238,7 +382,6 @@ export const DataTable: React.FC<DataTableProps> = ({
     }
   }, []);
 
-  // ← NEW: fetch assigned tools when row expands
   const fetchAssignedToolsForOrder = useCallback(async (orderKey: string) => {
     try {
       const response = await AssignToolRepository.getAssignedToolsByOrder(orderKey);
@@ -300,7 +443,20 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-md border overflow-hidden" style={{ borderColor: '#0B2863' }}>
-      <div className="overflow-x-auto" style={{ maxHeight: '600px' }}>
+      {!loading && ordersWithoutOperators.length > 0 && showNoOperatorsAlert && (
+        <AlertNoOperators 
+          ordersWithoutOperators={ordersWithoutOperators}
+          onClose={() => setShowNoOperatorsAlert(false)}
+          onNavigateToOrder={navigateToOrder}
+          t={t}
+        />
+      )}
+      
+      <div 
+        className="overflow-x-auto" 
+        style={{ maxHeight: '600px' }}
+        ref={tableContainerRef}
+      >
         <table className="w-full">
           <thead className="sticky top-0 z-10 text-white" style={{ backgroundColor: '#0B2863' }}>
             <tr>
@@ -368,14 +524,24 @@ export const DataTable: React.FC<DataTableProps> = ({
                 {sortedData.map((row, rowIndex) => {
                   const isRowSelected = isSelected(row);
                   const isExpanded = expandedRows.has(row.id);
+                  const hasNoOperators = !row.operators || row.operators.length === 0;
+                  const isHighlighted = highlightedRow === row.id;
 
                   return (
                     <React.Fragment key={row.id}>
                       <tr
+                        ref={(el) => {
+                          if (el) rowRefs.current.set(row.id, el);
+                          else rowRefs.current.delete(row.id);
+                        }}
                         className={`transition-all duration-200 hover:shadow-sm cursor-pointer ${
                           rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                        } ${isRowSelected ? 'ring-1 ring-blue-200' : ''}`}
-                        style={{ backgroundColor: isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined }}
+                        } ${isRowSelected ? 'ring-1 ring-blue-200' : ''} ${
+                          hasNoOperators ? 'border-l-4 border-yellow-400' : ''
+                        } ${isHighlighted ? 'bg-yellow-100 ring-2 ring-yellow-400' : ''}`}
+                        style={{ 
+                          backgroundColor: isHighlighted ? '#fef3c7' : (isRowSelected ? 'rgba(11, 40, 99, 0.08)' : undefined)
+                        }}
                         onContextMenu={(e) => onContextMenu(e, row)}
                       >
                         <td className="px-3 py-2">
@@ -388,7 +554,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                           />
                         </td>
 
-                        {/* Expand button */}
                         <td className="px-3 py-2 text-center">
                           <button
                             className="p-1 rounded-lg transition-all duration-200 hover:shadow-sm"
@@ -397,14 +562,13 @@ export const DataTable: React.FC<DataTableProps> = ({
                             title={
                               row.operators?.length > 0
                                 ? (isExpanded ? t('table.collapseOperators') : t('table.expandOperators'))
-                                : t('table.noOperators')
+                                : t('table.alert.noOperators')
                             }
                           >
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </button>
                         </td>
 
-                        {/* Actions */}
                         <td className="px-3 py-2 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
@@ -488,7 +652,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                         })}
                       </tr>
 
-                      {/* ── Expanded row ── */}
                       {isExpanded && (
                         <tr>
                           <td colSpan={columns.length + 1} className="px-0 py-0">
@@ -503,7 +666,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                                   costFuels={costFuelsByOrder[row.id] || []}
                                   onAddFuelCost={onAddFuelCost ? () => onAddFuelCost(row) : undefined}
                                 />
-                                {/* ← NEW */}
                                 <AssignedToolsTable
                                   tools={assignedToolsByOrder[row.id] || []}
                                   onAssignTools={onAssignTools ? () => onAssignTools(row) : undefined}
@@ -522,7 +684,6 @@ export const DataTable: React.FC<DataTableProps> = ({
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="bg-white border-t px-4 py-3 flex items-center justify-between" style={{ borderColor: '#0B2863' }}>
         <div className="flex items-center space-x-3">
           <span className="text-xs text-gray-700">{t('table.rowsPerPage')}</span>

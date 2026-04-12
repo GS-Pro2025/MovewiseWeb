@@ -373,6 +373,11 @@
     "saturday": "Sábado"
   },
   "table": {
+    "alert": {
+      "noOperatorsTitle": "orden(es) sin operadores asignados",
+      "noOperatorsMessage": "Estas órdenes no tienen operadores asignados. Por favor, asigne operadores para poder procesarlas correctamente.",
+      "noOperators": "Sin operadores"
+    },
     "actions": "Acciones",
     "status": "Estado",
     "reference": "Referencia",
@@ -1236,7 +1241,11 @@
       "ordersCount": "{{count}} orden(es) asignada(s)"
     }
   },
-  "summaryCostTable": {
+"summaryCostTable": {
+    "loading": "Cargando datos...",
+    "copyToClipboard": "Copiar al portapapeles",
+    "copied": "¡Copiado!",
+    "moreActions": "Más acciones",
     "columns": {
       "actions": "Acciones",
       "reference": "Referencia",
@@ -1246,23 +1255,16 @@
       "customer": "Cliente",
       "income": "Ingreso",
       "expense": "Gasto",
-      "totalCost": "Costo Total"
-    },
-    "loading": "Cargando costos resumidos...",
-    "empty": {
-      "title": "No se encontraron datos",
-      "desc": "No hay costos resumidos disponibles para los filtros seleccionados. Intenta ajustar los criterios de búsqueda.",
-      "tip": "Consejo: Verifica la semana y los filtros seleccionados"
+      "totalCost": "Costo total"
     },
     "expand": {
-      "collapse": "Contraer Detalles",
-      "expand": "Expandir Detalles"
+      "expand": "Expandir fila",
+      "collapse": "Contraer fila"
     },
-    "moreActions": "Más acciones",
-    "copyToClipboard": "Copiar al portapapeles",
-    "footer": {
-      "total": "Total: {{count}} órdenes | Seleccionados: {{selected}}",
-      "showing": "Mostrando {{count}} resultados"
+    "empty": {
+      "title": "Sin registros",
+      "desc": "No hay órdenes que coincidan con los filtros actuales.",
+      "tip": "Intenta ajustar la semana, el año o el término de búsqueda."
     },
     "details": {
       "order": "Orden",
@@ -1271,18 +1273,35 @@
       "location": "Ubicación",
       "status": "Estado",
       "customer": "Cliente",
+      "customerFactory": "Empresa cliente",
       "income": "Ingreso",
       "expense": "Gasto",
-      "summaryBreakdown": "Desglose del Resumen",
-      "fuelCost": "Costo de Combustible",
-      "workCost": "Costo de Trabajo",
-      "driverSalaries": "Salarios de Conductores",
-      "otherSalaries": "Otros Salarios",
-      "additional": "Adicional",
-      "customerFactory": "Fábrica del Cliente",
+      "netProfit": "Ganancia neta",
+      "summaryBreakdown": "Desglose de costos",
+      "fuelCost": "Costo de gasolina",
+      "workCost": "Costos extra",
+      "driverSalaries": "Salarios conductores",
+      "otherSalaries": "Salarios de Operadores",
       "bonus": "Bono",
-      "totalCost": "Costo Total",
-      "netProfit": "Utilidad Neta"
+      "totalCost": "Costo total",
+      "additional": "Detalle"
+    },
+    "weeklySummary": {
+      "title": "Resumen semanal",
+      "orders": "órdenes",
+      "fuelDetail": "Detalle de gasolina",
+      "workDetail": "Detalle de costos extra",
+      "ref": "Ref",
+      "truck": "Camión",
+      "date": "Fecha",
+      "distributed": "Distribuido",
+      "name": "Nombre",
+      "type": "Tipo",
+      "cost": "Costo"
+    },
+    "footer": {
+      "total": "Total: {{count}} registros · {{selected}} seleccionados",
+      "showing": "Mostrando {{count}} filas"
     }
   },
   "resumeFuelTable": {
@@ -1360,7 +1379,9 @@
       "orderReference": "Referencia de Orden",
       "date": "Fecha",
       "orderStatus": "Estado de Orden",
-      "location": "Ubicación"
+      "location": "Ubicación",
+      "client":"Nombre cliente",
+      "week":"Semana"
     },
     "loading": "Cargando costos extra...",
     "empty": {
@@ -1393,7 +1414,11 @@
       "cost": "Costo",
       "additionalInfo": "Información Adicional",
       "payStatus": "Estado de Pago",
-      "dispatchTicket": "Ticket de Despacho"
+      "dispatchTicket": "Ticket de Despacho",
+      "client":"Nombre cliente",
+      "week":"Semana",
+      "receiptImage": "Imagen del Recibo",
+      "phone":"Teléfono"
     },
     "footer": {
       "total": "Total: {{count}} costos extra | Seleccionados: {{selected}}",
