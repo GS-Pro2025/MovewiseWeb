@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, FileText, DollarSign, TrendingUp, TrendingDown, Filter, Calendar } from 'lucide-react';
+import { CalendarDays, FileText, DollarSign, TrendingUp, TrendingDown, Filter, Calendar, Globe, MonitorSmartphone } from 'lucide-react';
 import { WeekSummary } from '../domain/StatementModels';
 import WeekPicker from '../../components/WeekPicker';
 
@@ -9,9 +9,11 @@ interface StatementFiltersProps {
   year: number;
   weekRange: { start: string; end: string };
   searchQuery: string;
+  searchMode: 'global' | 'local';
   onWeekChange: (week: number) => void;
   onYearChange: (year: number) => void;
   onSearchQueryChange: (query: string) => void;
+  onSearchModeChange: (mode: 'global' | 'local') => void;
   weekSummary: WeekSummary | null;
   totalRecords: number;
 }
@@ -22,8 +24,8 @@ const COLORS = {
 };
 
 export const StatementFilters: React.FC<StatementFiltersProps> = ({
-  week, year, weekRange, searchQuery,
-  onWeekChange, onYearChange, onSearchQueryChange,
+  week, year, weekRange, searchQuery, searchMode,
+  onWeekChange, onYearChange, onSearchQueryChange, onSearchModeChange,
   weekSummary, totalRecords,
 }) => {
   const { t } = useTranslation();
@@ -102,26 +104,61 @@ export const StatementFilters: React.FC<StatementFiltersProps> = ({
       <div className="border-t my-3" style={{ borderColor: COLORS.primary }} />
 
       {/* Search */}
-      <div className="flex items-center gap-2 mb-2">
-        <Filter size={14} className="flex-shrink-0" style={{ color: COLORS.primary }} />
-        <h4 className="text-xs sm:text-sm font-bold" style={{ color: COLORS.primary }}>
-          {t('statementFilters.searchTitle')}
-        </h4>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <Filter size={14} className="flex-shrink-0" style={{ color: COLORS.primary }} />
+          <h4 className="text-xs sm:text-sm font-bold" style={{ color: COLORS.primary }}>
+            {t('statementFilters.searchTitle')}
+          </h4>
+        </div>
+
+        {/* Mode toggle */}
+        <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: COLORS.primary }}>
+          <button
+            type="button"
+            onClick={() => onSearchModeChange('global')}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors"
+            style={{
+              backgroundColor: searchMode === 'global' ? COLORS.primary : 'transparent',
+              color: searchMode === 'global' ? '#fff' : COLORS.primary,
+            }}
+            title={t('statementFilters.searchModeGlobalHint')}
+          >
+            <Globe size={12} />
+            {t('statementFilters.searchModeGlobal')}
+          </button>
+          <button
+            type="button"
+            onClick={() => onSearchModeChange('local')}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold transition-colors"
+            style={{
+              backgroundColor: searchMode === 'local' ? COLORS.primary : 'transparent',
+              color: searchMode === 'local' ? '#fff' : COLORS.primary,
+            }}
+            title={t('statementFilters.searchModeLocalHint')}
+          >
+            <MonitorSmartphone size={12} />
+            {t('statementFilters.searchModeLocal')}
+          </button>
+        </div>
       </div>
 
       <div className="w-full mb-3">
-        <label className="block text-xs font-bold mb-1" style={{ color: COLORS.primary }}>
-          {t('statementFilters.searchLabel')}
-        </label>
         <input type="text" value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
-          placeholder={t('statementFilters.searchPlaceholder')}
+          placeholder={
+            searchMode === 'global'
+              ? t('statementFilters.searchPlaceholderGlobal')
+              : t('statementFilters.searchPlaceholderLocal')
+          }
           className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
-          style={{ borderColor: COLORS.primary }}
+          style={{ borderColor: searchMode === 'global' ? COLORS.primary : COLORS.secondary }}
           {...focusStyle}
         />
         <p className="text-xs mt-1" style={{ color: COLORS.gray }}>
-          {t('statementFilters.searchHelper')}
+          {searchMode === 'global'
+            ? t('statementFilters.searchHelperGlobal')
+            : t('statementFilters.searchHelperLocal')}
         </p>
       </div>
 
