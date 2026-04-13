@@ -26,7 +26,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
             throw new Error('No hay token de autenticación');
         }
         
-        let url = `${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100000`;
+        let url = `${this.baseUrl}/summary-list-financial/?number_week=${week}&year=${year}&page=${pageNumber + 1}&page_size=100000&include_table_costs=false`;
         if (onlyPaid === true) {
             url += '&only_paid=true';
         }
