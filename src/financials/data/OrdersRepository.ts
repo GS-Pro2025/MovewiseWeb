@@ -12,7 +12,7 @@ export async function searchOrdersByKeyRefLike(keyref: string): Promise<OrderSum
   }
 
   const response = await fetch(
-    `${BASE_URL_API}/orders-by-keyref-like/?keyref=${encodeURIComponent(keyref)}&page_size=100000`,
+    `${BASE_URL_API}/orders-by-keyref-like/?keyref=${encodeURIComponent(keyref)}&page_size=100000&include_table_costs=false`,
     {
       method: "GET",
       headers: {
