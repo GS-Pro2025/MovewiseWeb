@@ -4,15 +4,24 @@ import { AddAmountRequest, AddAmountResponse, UpdatedItem } from "../domain/AddI
 
 const BASE_URL_API = import.meta.env.VITE_URL_BASE || "http://127.0.0.1:8000";
 
-export async function searchOrdersByKeyRefLike(keyref: string): Promise<OrderSummary[]> {
+export async function searchOrdersByKeyRefLike(
+  keyref: string,
+  week?: number,
+  year?: number
+): Promise<OrderSummary[]> {
   const token = Cookies.get("authToken");
   if (!token) {
     window.location.href = "/login";
     throw new Error("No hay token de autenticación");
   }
 
+  let url = `${BASE_URL_API}/summary-list-financial/?keyref=${encodeURIComponent(keyref)}&page_size=100000&include_table_costs=false`;
+  if (week !== undefined && year !== undefined) {
+    url += `&number_week=${week}&year=${year}`;
+  }
+
   const response = await fetch(
-    `${BASE_URL_API}/summary-list-financial/?keyref=${encodeURIComponent(keyref)}&page_size=100000&include_table_costs=false`,
+    url,
     {
       method: "GET",
       headers: {

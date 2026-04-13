@@ -1418,7 +1418,10 @@
     "search": "Search",
     "clear": "Clear",
     "uploadOcr": "Upload OCR",
-    "searchResultInfo": "Results for <1>{{ref}}</1> — {{count}} orders"
+    "scopeGlobal": "All time",
+    "searchResultInfo": "Results for <1>{{ref}}</1> — {{count}} orders",
+    "searchResultInfoWeek": "{{ref}} · W{{week}} {{year}} · {{count}} refs",
+    "searchResultInfoGlobal": "{{ref}} · All history · {{count}} refs"
   },
   "financialTable": {
     "columns": {
