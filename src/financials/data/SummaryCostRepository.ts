@@ -164,7 +164,7 @@ export class SummaryCostRepository implements SummaryCostRepositoryInterface {
         throw new Error('No hay token de autenticación');
       }
 
-      let url = `${this.baseUrl}/orders-summary-light/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}&summary_mode=totals`;
+      let url = `${this.baseUrl}/orders-summary-light/?mode=week_range&start_week=${startWeek}&end_week=${endWeek}&year=${year}&summary_mode=totals&include_table_costs=true`;
       if (onlyPaid === true) {
         url += '&only_paid=true';
       }
