@@ -198,7 +198,7 @@ export const getMonthFromWeek = (year: number, week: number): number => {
 export interface WeeklyOrderProfit {
   order_id: string;
   operator_payments: number;
-  total_expenses: number;  // Backend usa snake_case
+  total_expenses: number;
   costfuel_expenses: number;
   order_expense: number;
   additional_costs: number;
@@ -208,7 +208,24 @@ export interface WeeklyOrderProfit {
   expenses: number;
 }
 
-export async function fetchWeeklyProfitReport(year: number, week: number): Promise<WeeklyOrderProfit[]> {
+export interface WeeklyProfitTotals {
+  count: number;
+  operator_payments: number;
+  total_expenses: number;
+  costfuel_expenses: number;
+  order_expense: number;
+  additional_costs: number;
+  total_cost: number;
+  income: number;
+  net_profit: number;
+}
+
+export interface WeeklyProfitReportResponse {
+  orders: WeeklyOrderProfit[];
+  totals: WeeklyProfitTotals;
+}
+
+export async function fetchWeeklyProfitReport(year: number, week: number): Promise<WeeklyProfitReportResponse> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -265,8 +282,8 @@ export async function fetchWeeklyPaymentStatus(year: number, week: number): Prom
 
 // Función para procesar estadísticas de pagos
 export function processPaymentStatusStats(
-  data: WeeklyPaymentStatusResponse, 
-  profitData?: WeeklyOrderProfit[]
+  data: WeeklyPaymentStatusResponse,
+  profitTotals?: WeeklyProfitTotals
 ): PaymentStatusStats {
   const totalOrders = data.paid_orders.length + data.unpaid_orders.length;
   const paidOrders = data.paid_orders.length;
@@ -278,19 +295,9 @@ export function processPaymentStatusStats(
   const paidIncome = data.paid_orders.reduce((sum, order) => sum + order.income, 0);
   const unpaidIncome = data.unpaid_orders.reduce((sum, order) => sum + order.income, 0);
   const totalIncome = paidIncome + unpaidIncome;
-  
-  // Usar total_expenses del backend (snake_case)
-  const totalExpenses = profitData 
-    ? profitData.reduce((sum, order) => {
-        return sum + (order.total_expenses || 0);
-      }, 0)
-    : 0;
 
-  console.log('Processing payment status with expenses:', {
-    profitDataLength: profitData?.length || 0,
-    totalExpenses,
-    sampleProfitData: profitData?.slice(0, 2)
-  });
+  // Usar total_cost del backend (operator_payments + expenses)
+  const totalExpenses = profitTotals?.total_cost ?? 0;
 
   return {
     totalOrders,
@@ -301,7 +308,7 @@ export function processPaymentStatusStats(
     totalIncome,
     paidIncome,
     unpaidIncome,
-    totalExpenses  // Retornar en camelCase para el frontend
+    totalExpenses,
   };
 }
 
@@ -322,15 +329,9 @@ export async function fetchPaymentStatusWithComparison(
     fetchWeeklyProfitReport(prevYear, prevWeek)
   ]);
 
-  console.log('Current profit data:', currentProfitData);
-  console.log('Previous profit data:', previousProfitData);
-
-  // Pasar profitData al procesar estadísticas
-  const currentStats = processPaymentStatusStats(currentData, currentProfitData);
-  const previousStats = processPaymentStatusStats(previousData, previousProfitData);
-
-  console.log('Processed current stats with expenses:', currentStats);
-  console.log('Processed previous stats with expenses:', previousStats);
+  // Pasar los totales pre-calculados al procesar estadísticas
+  const currentStats = processPaymentStatusStats(currentData, currentProfitData.totals);
+  const previousStats = processPaymentStatusStats(previousData, previousProfitData.totals);
 
   // Calcular cambios incluyendo expenses
   const changes = {
@@ -517,14 +518,14 @@ export async function fetchClientStatsWithComparison(
   };
 }
 
-export async function fetchOrdersBasicDataList(year: number, week: number): Promise<OrdersBasicDataResponse> {
+export async function fetchOrdersBasicDataList(year: number, week: number, includeTableCosts = false): Promise<OrdersBasicDataResponse> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
     throw new Error('No hay token de autenticación');
   }
 
-  const url = `${BASE_URL_API}/orders-basic-data-list/?year=${year}&week=${week}`;
+  const url = `${BASE_URL_API}/orders-basic-data-list/?year=${year}&week=${week}&include_table_costs=${includeTableCosts}`;
   const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${token}`,

@@ -65,7 +65,7 @@ const OrderBreakdownPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchOrdersBasicDataList(year, week);
+        const data = await fetchOrdersBasicDataList(year, week, true);
         setOrdersData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading orders data');
