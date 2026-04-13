@@ -1,5 +1,5 @@
 // components/FinancialControls.tsx
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   TextField,
   useMediaQuery,
@@ -14,6 +14,30 @@ import ExportMenuComponent from './ExportMenuComponent';
 import WeekPicker from '../../components/WeekPicker';
 import YearPicker from '../../components/YearPicker';
 import { useTranslation } from 'react-i18next';
+
+// ── Tooltip ────────────────────────────────────────────────────────────────────
+const ScopeTooltip: React.FC<{ children: React.ReactNode; content: React.ReactNode }> = ({ children, content }) => {
+  const [on, setOn] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  return (
+    <span
+      ref={ref}
+      className="relative inline-flex items-center"
+      onMouseEnter={() => setOn(true)}
+      onMouseLeave={() => setOn(false)}
+    >
+      {children}
+      {on && (
+        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[9999] pointer-events-none w-64">
+          <span className="block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg">
+            {content}
+          </span>
+          <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-l border-t border-gray-200 rotate-45" />
+        </span>
+      )}
+    </span>
+  );
+};
 
 interface FinancialControlsProps {
   week: number;
@@ -104,32 +128,50 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
 
         {/* Scope toggle */}
         <div className="flex items-center gap-1">
-          <Chip
-            label={`W${currentWeek} ${currentYear}`}
-            size="small"
-            onClick={() => onSearchScopeChange('week')}
-            sx={{
-              fontWeight: 600,
-              cursor: 'pointer',
-              backgroundColor: searchScope === 'week' ? '#0B2863' : 'transparent',
-              color: searchScope === 'week' ? '#ffffff' : '#0B2863',
-              border: '1.5px solid #0B2863',
-              '&:hover': { backgroundColor: searchScope === 'week' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
-            }}
-          />
-          <Chip
-            label={t('financialControls.scopeGlobal')}
-            size="small"
-            onClick={() => onSearchScopeChange('global')}
-            sx={{
-              fontWeight: 600,
-              cursor: 'pointer',
-              backgroundColor: searchScope === 'global' ? '#0B2863' : 'transparent',
-              color: searchScope === 'global' ? '#ffffff' : '#0B2863',
-              border: '1.5px solid #0B2863',
-              '&:hover': { backgroundColor: searchScope === 'global' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
-            }}
-          />
+          <ScopeTooltip
+            content={
+              <div className="px-3 py-2 text-xs text-gray-700">
+                <p className="font-semibold text-[#0B2863] mb-1">{t('financialControls.tooltipWeekTitle', { week: currentWeek, year: currentYear })}</p>
+                <p>{t('financialControls.tooltipWeekDesc')}</p>
+              </div>
+            }
+          >
+            <Chip
+              label={`W${currentWeek} ${currentYear}`}
+              size="small"
+              onClick={() => onSearchScopeChange('week')}
+              sx={{
+                fontWeight: 600,
+                cursor: 'pointer',
+                backgroundColor: searchScope === 'week' ? '#0B2863' : 'transparent',
+                color: searchScope === 'week' ? '#ffffff' : '#0B2863',
+                border: '1.5px solid #0B2863',
+                '&:hover': { backgroundColor: searchScope === 'week' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
+              }}
+            />
+          </ScopeTooltip>
+          <ScopeTooltip
+            content={
+              <div className="px-3 py-2 text-xs text-gray-700">
+                <p className="font-semibold text-[#0B2863] mb-1">{t('financialControls.tooltipGlobalTitle')}</p>
+                <p>{t('financialControls.tooltipGlobalDesc')}</p>
+              </div>
+            }
+          >
+            <Chip
+              label={t('financialControls.scopeGlobal')}
+              size="small"
+              onClick={() => onSearchScopeChange('global')}
+              sx={{
+                fontWeight: 600,
+                cursor: 'pointer',
+                backgroundColor: searchScope === 'global' ? '#0B2863' : 'transparent',
+                color: searchScope === 'global' ? '#ffffff' : '#0B2863',
+                border: '1.5px solid #0B2863',
+                '&:hover': { backgroundColor: searchScope === 'global' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
+              }}
+            />
+          </ScopeTooltip>
         </div>
 
         <Button
