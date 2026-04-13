@@ -1419,6 +1419,10 @@
     "clear": "Clear",
     "uploadOcr": "Upload OCR",
     "scopeGlobal": "All time",
+    "tooltipWeekTitle": "Week {{week}}, {{year}}",
+    "tooltipWeekDesc": "Searches only within this week — numbers match what you see in the table.",
+    "tooltipGlobalTitle": "All history",
+    "tooltipGlobalDesc": "Searches the entire company history — may include orders from other weeks.",
     "searchResultInfo": "Results for <1>{{ref}}</1> — {{count}} orders",
     "searchResultInfoWeek": "{{ref}} · W{{week}} {{year}} · {{count}} refs",
     "searchResultInfoGlobal": "{{ref}} · All history · {{count}} refs"
