@@ -39,24 +39,53 @@ const fmt = (n: number) =>
   `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ── Tooltip ────────────────────────────────────────────────────────────────────
+const TOOLTIP_W = 288; // w-72 = 18rem = 288px
+
 const Tooltip: React.FC<{ children: React.ReactNode; content: React.ReactNode }> = ({ children, content }) => {
-  const [on, setOn] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const left = Math.min(
+      Math.max(r.left + r.width / 2 - TOOLTIP_W / 2, 8),
+      window.innerWidth - TOOLTIP_W - 8,
+    );
+    setPos({ top: r.bottom + 8, left });
+  };
+
+  const hide = () => setPos(null);
 
   return (
     <span
       ref={ref}
       className="relative inline-flex items-center"
-      onMouseEnter={() => setOn(true)}
-      onMouseLeave={() => setOn(false)}
+      onMouseEnter={show}
+      onMouseLeave={hide}
     >
       {children}
-      {on && (
-        <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-[9999] pointer-events-none w-72">
+      {pos && (
+        <span
+          className="pointer-events-none"
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            width: TOOLTIP_W,
+            zIndex: 99999,
+          }}
+        >
           <span className="block bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg">
             {content}
           </span>
-          <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white border-l border-t border-gray-200 rotate-45" />
+          <span
+            className="absolute -top-1 w-2.5 h-2.5 bg-white border-l border-t border-gray-200 rotate-45"
+            style={{ left: Math.min(
+              Math.max((ref.current?.getBoundingClientRect().left ?? pos.left) + (ref.current?.getBoundingClientRect().width ?? 0) / 2 - pos.left - 5, 10),
+              TOOLTIP_W - 18,
+            )}}
+          />
         </span>
       )}
     </span>
