@@ -4,7 +4,8 @@ import {
   TextField,
   useMediaQuery,
   useTheme,
-  Button
+  Button,
+  Chip
 } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { Calendar, Search, RotateCcw } from 'lucide-react';
@@ -36,6 +37,11 @@ interface FinancialControlsProps {
   loading: boolean;
 
   onViewExpenseBreakdown?: () => void;
+
+  searchScope: 'week' | 'global';
+  onSearchScopeChange: (scope: 'week' | 'global') => void;
+  currentWeek: number;
+  currentYear: number;
 }
 
 const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
@@ -57,6 +63,10 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
     exportData,
     isSearchResults,
     loading,
+    searchScope,
+    onSearchScopeChange,
+    currentWeek,
+    currentYear,
   } = props;
 
   const theme = useTheme();
@@ -91,6 +101,36 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
             startAdornment: <Search size={16} className="mr-2 text-gray-500" />,
           }}
         />
+
+        {/* Scope toggle */}
+        <div className="flex items-center gap-1">
+          <Chip
+            label={`W${currentWeek} ${currentYear}`}
+            size="small"
+            onClick={() => onSearchScopeChange('week')}
+            sx={{
+              fontWeight: 600,
+              cursor: 'pointer',
+              backgroundColor: searchScope === 'week' ? '#0B2863' : 'transparent',
+              color: searchScope === 'week' ? '#ffffff' : '#0B2863',
+              border: '1.5px solid #0B2863',
+              '&:hover': { backgroundColor: searchScope === 'week' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
+            }}
+          />
+          <Chip
+            label={t('financialControls.scopeGlobal')}
+            size="small"
+            onClick={() => onSearchScopeChange('global')}
+            sx={{
+              fontWeight: 600,
+              cursor: 'pointer',
+              backgroundColor: searchScope === 'global' ? '#0B2863' : 'transparent',
+              color: searchScope === 'global' ? '#ffffff' : '#0B2863',
+              border: '1.5px solid #0B2863',
+              '&:hover': { backgroundColor: searchScope === 'global' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
+            }}
+          />
+        </div>
 
         <Button
           size="small"
@@ -137,8 +177,12 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
 
       {/* SEARCH RESULT INDICATOR */}
       {hasSearchResults && (
-        <div className="text-xs text-gray-600 border-t pt-2">
-          {t('financialControls.searchResultInfo', { ref: searchRef, count: exportData.length })}
+        <div className="text-xs text-gray-600 border-t pt-2 flex items-center gap-2">
+          <span>
+            {searchScope === 'week'
+              ? t('financialControls.searchResultInfoWeek', { ref: searchRef, week: currentWeek, year: currentYear, count: exportData.length })
+              : t('financialControls.searchResultInfoGlobal', { ref: searchRef, count: exportData.length })}
+          </span>
         </div>
       )}
     </div>

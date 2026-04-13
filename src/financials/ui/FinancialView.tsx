@@ -63,6 +63,7 @@ const FinancialView = () => {
   const [searchRef, setSearchRef] = useState("");
   const [searchResults, setSearchResults] = useState<OrderSummary[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchScope, setSearchScope] = useState<'week' | 'global'>('week');
 
   // Modal states
   const [payDialogOpen, setPayDialogOpen] = useState(false);
@@ -198,11 +199,16 @@ const FinancialView = () => {
     setExpandedRows(newExpanded);
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (scopeOverride?: 'week' | 'global') => {
     if (!searchRef.trim()) return;
+    const scope = scopeOverride ?? searchScope;
     setSearchLoading(true);
     try {
-      const results = await searchOrdersByKeyRefLike(searchRef.trim());
+      const results = await searchOrdersByKeyRefLike(
+        searchRef.trim(),
+        scope === 'week' ? week : undefined,
+        scope === 'week' ? year : undefined
+      );
       setSearchResults(results);
       if (results.length === 0) enqueueSnackbar(t('financialView.search.noResults'), { variant: "info" });
     } catch (err) {
@@ -213,9 +219,17 @@ const FinancialView = () => {
     }
   };
 
+  const handleSearchScopeChange = (newScope: 'week' | 'global') => {
+    setSearchScope(newScope);
+    if (searchRef.trim()) {
+      handleSearch(newScope);
+    }
+  };
+
   const handleClearSearch = () => {
     setSearchResults(null);
     setSearchRef("");
+    setSearchScope('week');
   };
 
   const handleConfirmPay = async (expense: number, income: number) => {
@@ -482,6 +496,10 @@ const FinancialView = () => {
           isSearchResults={!!searchResults}
           loading={loading}
           onViewExpenseBreakdown={() => navigate("/app/financial-expense-breakdown")}
+          searchScope={searchScope}
+          onSearchScopeChange={handleSearchScopeChange}
+          currentWeek={week}
+          currentYear={year}
         />
       </div>
 

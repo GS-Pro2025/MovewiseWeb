@@ -1430,7 +1430,10 @@
     "search": "Buscar",
     "clear": "Limpiar",
     "uploadOcr": "Subir OCR",
-    "searchResultInfo": "Resultados para <1>{{ref}}</1> — {{count}} órdenes"
+    "scopeGlobal": "Historial",
+    "searchResultInfo": "Resultados para <1>{{ref}}</1> — {{count}} órdenes",
+    "searchResultInfoWeek": "{{ref}} · S{{week}} {{year}} · {{count}} refs",
+    "searchResultInfoGlobal": "{{ref}} · Historial completo · {{count}} refs"
   },
   "financialTable": {
     "columns": {
