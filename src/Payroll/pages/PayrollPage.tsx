@@ -157,14 +157,14 @@ export default function PayrollPage() {
       setLoading(true);  
       const response = await payrollService(week, year, locationString);
       console.log('[RESPONSE] Datos recibidos del servicio:', response);
+      
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(response.week_info.start_date);
       setWeekDates(dates);
-
+  
       const map = new Map<string, OperatorRow>();
-
+  
       // PASO 1: Crear la estructura básica de cada operador y agrupar assignments por día
-      // payment_expense, id_payment y payment_status vienen directamente en cada assignment
       response.data.forEach((d, index) => {
         if (index === 0) {
           console.log('👤 [SAMPLE] Ejemplo de registro raw:', d);
@@ -173,7 +173,7 @@ export default function PayrollPage() {
         const key = d.code;
         const assignId = d.id_assign;
         const payId = d.id_payment;
-
+  
         if (!map.has(key)) {
           map.set(key, {
             code: d.code,
@@ -195,7 +195,6 @@ export default function PayrollPage() {
             assignmentsByDay: {},
             operator_phone: d.operator_phone,
             _bonusDaysAdded: new Set<string>(),
-            _salaryType: d.salary_type,
           } as any);
         } else {
           const ex = map.get(key)!;
@@ -204,7 +203,7 @@ export default function PayrollPage() {
             ex.paymentIds.push(payId);
           }
         }
-
+  
         const dataDate = d.date.split("T")[0];
         const dayKey = Object.entries(dates).find(
           ([, date]) => date === dataDate
@@ -228,34 +227,35 @@ export default function PayrollPage() {
             startTime: d.start_time,
             endTime: d.end_time,
             salary: d.salary,
-            salaryType: d.salary_type,
+            salaryType: d.salary_type, 
           } as any);
         }
       });
-
+  
       console.log(`✅ [STEP 1] Total de operadores únicos: ${map.size}`);
-
-      // PASO 3: Calcular earnings por día según salary_type
+  
+      // PASO 3: Calcular earnings por día según salary_type DE CADA DÍA
       console.log('🔄 [STEP 3] Calculando earnings por día...');
       const operators = Array.from(map.values()).map((row) => {
-        const salaryType = (row as any)._salaryType;
         delete (row as any)._bonusDaysAdded;
-        delete (row as any)._salaryType;
-
+  
         let totalEarnings = 0;
-
+  
         weekdayKeys.forEach((dayKey) => {
           const assignments = row.assignmentsByDay?.[dayKey];
           
           if (assignments && assignments.length > 0) {
-            if (salaryType === 'hour') {
+            // ⚡ CAMBIO CLAVE: Detectar el salary_type del PRIMER assignment del día
+            const daySalaryType = assignments[0].salaryType;
+            
+            if (daySalaryType === 'hour') {
               // MODO HOUR: Sumar los salaries de todas las órdenes del día
               let dailyEarnings = 0;
               
               assignments.forEach((assignment: any) => {
                 const assignmentSalary = Number(assignment.salary) || 0;
                 dailyEarnings += assignmentSalary;
-                console.log(`💵 [ORDER] ${row.code} - ${dayKey} - Assignment ${assignment.id}: ${assignmentSalary}`);
+                console.log(`💵 [ORDER-HOUR] ${row.code} - ${dayKey} - Assignment ${assignment.id}: ${assignmentSalary}`);
               });
               
               row[dayKey] = dailyEarnings;
@@ -263,41 +263,40 @@ export default function PayrollPage() {
               
               console.log(`💰 [DAILY HOUR] ${row.code} - ${dayKey}: ${assignments.length} órdenes = ${dailyEarnings.toFixed(2)}`);
             } else {
-              // MODO DAY: Un solo pago por día (comportamiento original)
+              // MODO DAY: Un solo pago por día (aunque haya múltiples órdenes)
               const dailyEarnings = row.cost;
               row[dayKey] = dailyEarnings;
               totalEarnings += dailyEarnings;
               
-              console.log(`💵 [DAILY DAY] ${row.code} - ${dayKey}: ${dailyEarnings}`);
+              console.log(`💵 [DAILY DAY] ${row.code} - ${dayKey}: ${dailyEarnings} (${assignments.length} órdenes, se cuenta solo 1 día)`);
             }
           }
         });
-
+  
         // Calcular totales
         row.total = totalEarnings;
         row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
         (row as any).netTotal = row.grandTotal - (row.expense || 0);
-
+  
         const daysWorked = weekdayKeys.filter(
           (day) => row[day] != null && row[day]! > 0
         ).length;
-
-        console.log(`📊 [TOTALS] ${row.code} (${salaryType}):`, {
+  
+        console.log(`📊 [TOTALS] ${row.code}:`, {
           días: daysWorked,
-          tarifa: salaryType === 'hour' ? `${row.cost}/hora` : `${row.cost}/día`,
           totalBase: row.total,
           bonos: row.additionalBonuses,
           bruto: row.grandTotal,
           gastos: row.expense,
           neto: (row as any).netTotal
         });
-
+  
         return row;
       });
-
+  
       console.log('✅ [COMPLETE] Datos procesados completamente');
       console.log('👥 [FINAL] Total de operadores procesados:', operators.length);
-
+  
       setGrouped(operators);
       setWeekInfo(response.week_info);
       setError(null);
