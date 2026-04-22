@@ -136,7 +136,6 @@ export default function PayrollPage() {
     let loc = country;
     if (state) loc += `, ${state}`;
     if (city) loc += `, ${city}`;
-    console.log('📍 [LOCATION] String de ubicación construido:', loc);
     return loc;
   }, [country, state, city]);
 
@@ -156,8 +155,6 @@ export default function PayrollPage() {
     try {
       setLoading(true);  
       const response = await payrollService(week, year, locationString);
-      console.log('[RESPONSE] Datos recibidos del servicio:', response);
-      
       // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(response.week_info.start_date);
       setWeekDates(dates);
@@ -216,7 +213,6 @@ export default function PayrollPage() {
           if (!(ex as any)._bonusDaysAdded.has(dayKey)) {
             ex.additionalBonuses += Number(d.bonus) || 0;
             (ex as any)._bonusDaysAdded.add(dayKey);
-            console.log(`💰 [BONUS] ${d.code} - ${dayKey}: +${d.bonus}`);
           }
           
           if (!ex.assignmentsByDay![dayKey]) ex.assignmentsByDay![dayKey] = [];
@@ -232,10 +228,7 @@ export default function PayrollPage() {
         }
       });
   
-      console.log(`✅ [STEP 1] Total de operadores únicos: ${map.size}`);
-  
-      // PASO 3: Calcular earnings por día según salary_type DE CADA DÍA
-      console.log('🔄 [STEP 3] Calculando earnings por día...');
+      console.log(`[STEP 1] Total de operadores únicos: ${map.size}`);
       const operators = Array.from(map.values()).map((row) => {
         delete (row as any)._bonusDaysAdded;
   
@@ -245,9 +238,9 @@ export default function PayrollPage() {
           const assignments = row.assignmentsByDay?.[dayKey];
           
           if (assignments && assignments.length > 0) {
-
+            // ⚡ CAMBIO CLAVE: Detectar el salary_type del PRIMER assignment del día
             const daySalaryType = assignments[0].salaryType;
-            
+            console.log(`🔍 [SALARY_TYPE] ${row.code} - ${dayKey}: salary_type detectado = ${daySalaryType}`);
             if (daySalaryType === 'hour') {
               // MODO HOUR: Sumar los salaries de todas las órdenes del día
               let dailyEarnings = 0;
@@ -255,7 +248,7 @@ export default function PayrollPage() {
               assignments.forEach((assignment: any) => {
                 const assignmentSalary = Number(assignment.salary) || 0;
                 dailyEarnings += assignmentSalary;
-                console.log(`💵 [ORDER-HOUR] ${row.code} - ${dayKey} - Assignment ${assignment.id}: ${assignmentSalary}`);
+               
               });
               
               row[dayKey] = dailyEarnings;
@@ -317,7 +310,6 @@ export default function PayrollPage() {
    * handleModalClose - Cierra el modal y refresca los datos
    */
   const handleModalClose = () => {
-    console.log('🔒 [MODAL] Cerrando modal de operador');
     setSelectedOperator(null);
     fetchData();
   };
@@ -328,7 +320,6 @@ export default function PayrollPage() {
   const totalGrand = useMemo(
     () => {
       const total = grouped.reduce((sum, r) => sum + (r.grandTotal || 0), 0);
-      console.log('💰 [TOTAL BRUTO] Total general bruto:', total);
       return total;
     },
     [grouped]
@@ -340,7 +331,6 @@ export default function PayrollPage() {
   const totalNet = useMemo(
     () => {
       const total = grouped.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0);
-      console.log('[TOTAL NETO] Total general neto:', total);
       return total;
     },
     [grouped]
