@@ -245,7 +245,7 @@ export default function PayrollPage() {
           const assignments = row.assignmentsByDay?.[dayKey];
           
           if (assignments && assignments.length > 0) {
-            // ⚡ CAMBIO CLAVE: Detectar el salary_type del PRIMER assignment del día
+
             const daySalaryType = assignments[0].salaryType;
             
             if (daySalaryType === 'hour') {
