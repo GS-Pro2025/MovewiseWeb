@@ -148,6 +148,36 @@ export async function patchTruckAssignment(
     }
 }
 
+export async function patchSalaryAssignment(
+    assignmentId: number,
+    salary_type: 'hour' | 'day',
+    hourly_salary?: string,
+): Promise<void> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+  try {
+    const body: { salary_type: string; hourly_salary?: string } = { salary_type };
+    if (salary_type === 'hour' && hourly_salary) body.hourly_salary = hourly_salary;
+    const response = await fetch(`${BASE_URL_API}/assigns/${assignmentId}/update/`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error('Error al actualizar el salario de la asignación');
+    }
+  } catch (error) {
+    console.error('Error updating salary assignment:', error);
+    throw error;
+  }
+}
+
 export async function patchAssignmentTimes(
     assignmentId: number,
     start_time?: string | null,
