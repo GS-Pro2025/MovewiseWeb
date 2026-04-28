@@ -51,4 +51,6 @@ export interface CreateAssignmentData {
     assigned_at: string;
     additional_costs: string;
     rol: string;
+    salary_type?: 'hour' | 'day';
+    hourly_salary?: string;
 }

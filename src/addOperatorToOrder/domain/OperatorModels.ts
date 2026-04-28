@@ -34,6 +34,8 @@ export interface OperatorAssigned {
   location_start: string | null;
   location_end: string | null;
   status_order: string;
+  salary_type?: string | null;
+  hourly_salary?: string | null;
 }
 export interface OperatorAvailable {
   id_operator: number;
@@ -58,6 +60,8 @@ export interface OperatorAvailable {
   id_company: number;
   sons: Son[];
   is_freelance: boolean;
+  hourly_salary?: string | null;
+  salary_type?: string | null;
 }
 export interface Son {
   name: string;

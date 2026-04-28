@@ -5,13 +5,20 @@ import { OperatorAvailable, OperatorAssigned } from '../domain/OperatorModels';
 import { fetchOperatorsAssignedToOrder, fetchAvailableOperators } from '../data/repositoryOperators';
 import { 
   IconButton, MenuItem, Select, Box, Typography, Paper, CircularProgress, 
-  List, ListItem, ListItemText, Button, TextField, Alert, AlertTitle 
+  List, ListItem, ListItemText, Button, TextField, Alert, AlertTitle,
+  Tooltip, Dialog, DialogTitle, DialogContent, DialogActions,
+  ToggleButton, ToggleButtonGroup, InputAdornment, ListItemIcon
 } from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import EditIcon from '@mui/icons-material/Edit';
+import PersonIcon from '@mui/icons-material/Person';
+import StarIcon from '@mui/icons-material/Star';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { Fuel } from 'lucide-react';
 import AssignOrderToCostFuelDialog from '../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
-import { assignOperatorToOrder, patchRoleAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
+import { assignOperatorToOrder, patchRoleAssignment, patchSalaryAssignment, patchTruckAssignment, unassignOperatorFromOrder } from '../data/repositoryAssign';
 import { CreateAssignmentData } from '../domain/AssignModels';
 import AssignTruckDialog from './AssignTruckDialog';
 import OperatorAssignmentDetailDialog from './OperatorAssignamentDetailDialog';
@@ -29,6 +36,15 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 const AddOperatorsToOrder: React.FC = () => {
   const ROLES = ["leader", "operator", "driver"];
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'driver':   return <DirectionsCarIcon fontSize="small" />;
+      case 'operator': return <PersonIcon fontSize="small" />;
+      case 'leader':   return <StarIcon fontSize="small" />;
+      default:         return <PersonIcon fontSize="small" />;
+    }
+  };
+
   const { orderKey } = useParams<{ orderKey: string }>();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
@@ -43,6 +59,14 @@ const AddOperatorsToOrder: React.FC = () => {
 
   const [truckModalOpen, setTruckModalOpen] = useState(false);
   const [fuelCostDialogOpen, setFuelCostDialogOpen] = useState(false);
+
+  // Estados para diálogo de asignación (salary_type / hourly_salary)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [pendingAssignOperator, setPendingAssignOperator] = useState<OperatorAvailable | null>(null);
+  // When editing an existing assignment, stores its id_assign; null = create mode
+  const [editAssignId, setEditAssignId] = useState<number | null>(null);
+  const [assignSalaryType, setAssignSalaryType] = useState<'hour' | 'day'>('day');
+  const [assignHourlySalary, setAssignHourlySalary] = useState<string>('');
 
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -151,7 +175,7 @@ const AddOperatorsToOrder: React.FC = () => {
     loadOperators();
   }, [enqueueSnackbar, orderKey]);
 
-  const handleAssign = async (operator: OperatorAvailable) => {
+  const handleAssign = async (operator: OperatorAvailable, salaryType: 'hour' | 'day', hourlySalary?: string) => {
     if (!orderKey) return;
     try {
       const now = new Date();
@@ -163,6 +187,8 @@ const AddOperatorsToOrder: React.FC = () => {
         assigned_at: assignedAt,
         rol: "operator",
         additional_costs: "",
+        salary_type: salaryType,
+        ...(salaryType === 'hour' && hourlySalary ? { hourly_salary: hourlySalary } : {}),
       };
       await assignOperatorToOrder(data);
       enqueueSnackbar('Operador asignado correctamente', { variant: 'success' });
@@ -184,6 +210,32 @@ const AddOperatorsToOrder: React.FC = () => {
       console.error('Error assigning operator:', error);
       enqueueSnackbar('Error al asignar operador', { variant: 'error' });
     }
+  };
+
+  // Abre el diálogo de configuración antes de asignar (modo creación)
+  const handleRequestAssign = (operator: OperatorAvailable) => {
+    setPendingAssignOperator(operator);
+    setEditAssignId(null);
+    setAssignSalaryType('day');
+    setAssignHourlySalary(operator.hourly_salary?.toString() ?? '');
+    setAssignDialogOpen(true);
+  };
+
+  // Abre el diálogo para editar salary de una asignación existente (modo edición)
+  const handleEditSalary = (op: OperatorAssigned) => {
+    // Construct a minimal OperatorAvailable-like object just for the dialog header
+    setPendingAssignOperator({
+      id_operator: op.id,
+      first_name: op.first_name,
+      last_name: op.last_name,
+      is_freelance: false,
+      hourly_salary: op.hourly_salary ?? null,
+      salary_type: op.salary_type ?? null,
+    } as OperatorAvailable);
+    setEditAssignId(op.id_assign);
+    setAssignSalaryType((op.salary_type === 'hour' ? 'hour' : 'day'));
+    setAssignHourlySalary(op.hourly_salary?.toString() ?? '');
+    setAssignDialogOpen(true);
   };
 
   const handleChangeRole = async (operator: OperatorAssigned, newRole: string) => {
@@ -232,7 +284,7 @@ const AddOperatorsToOrder: React.FC = () => {
 
     if (source.droppableId === 'available' && destination.droppableId === 'assigned') {
       const operator = filteredAvailableOperators[source.index];
-      handleAssign(operator);
+      handleRequestAssign(operator);
     }
 
     if (source.droppableId === 'assigned' && destination.droppableId === 'available') {
@@ -378,27 +430,57 @@ const AddOperatorsToOrder: React.FC = () => {
                           }}
                           secondaryAction={
                             <>
-                              <Select
-                                size="small"
-                                value={op.rol}
-                                onChange={(e) => handleChangeRole(op, e.target.value)}
-                                sx={{ minWidth: 120, mr: 1 }}
+                              <Tooltip
+                                title={`Rol actual: ${op.rol} — haz clic para cambiar`}
+                                arrow
+                                placement="top"
                               >
-                                {ROLES.map((role) => (
-                                  <MenuItem key={role} value={role}>
-                                    {role}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                              {(op.rol === "leader" || op.rol === "driver") && (
+                                <Select
+                                  size="small"
+                                  value={op.rol}
+                                  onChange={(e) => handleChangeRole(op, e.target.value)}
+                                  renderValue={(value) => getRoleIcon(value)}
+                                  sx={{
+                                    minWidth: 48,
+                                    mr: 1,
+                                    '.MuiSelect-select': {
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      p: '6px 28px 6px 8px',
+                                    },
+                                  }}
+                                >
+                                  {ROLES.map((role) => (
+                                    <MenuItem key={role} value={role}>
+                                      <ListItemIcon sx={{ minWidth: 36 }}>
+                                        {getRoleIcon(role)}
+                                      </ListItemIcon>
+                                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </Tooltip>
+                              <Tooltip title="Editar tipo de salario para esta asignación" arrow placement="top">
                                 <IconButton
                                   size="small"
-                                  color="primary"
-                                  onClick={() => handleOpenTruckModal(op)}
-                                  sx={{ ml: 1 }}
+                                  color="secondary"
+                                  onClick={() => handleEditSalary(op)}
+                                  sx={{ ml: 0.5 }}
                                 >
-                                  <DirectionsCarIcon />
+                                  <EditIcon fontSize="small" />
                                 </IconButton>
+                              </Tooltip>
+                              {(op.rol === "leader" || op.rol === "driver") && (
+                                <Tooltip title="Asignar camión a este operador" arrow placement="top">
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() => handleOpenTruckModal(op)}
+                                    sx={{ ml: 0.5 }}
+                                  >
+                                    <DirectionsCarIcon />
+                                  </IconButton>
+                                </Tooltip>
                               )}
                             </>
                           }
@@ -434,6 +516,32 @@ const AddOperatorsToOrder: React.FC = () => {
                                 >
                                   {op.rol}
                                 </Typography>
+                                {op.salary_type && (
+                                  <Tooltip
+                                    title={
+                                      op.salary_type === 'hour'
+                                        ? `Pago por hora${op.hourly_salary ? ` — $${op.hourly_salary}/h` : ''}`
+                                        : 'Pago por día (salario del operador)'
+                                    }
+                                    arrow
+                                    placement="top"
+                                  >
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        backgroundColor: op.salary_type === 'hour' ? 'warning.main' : 'success.main',
+                                        color: 'white',
+                                        px: 1,
+                                        py: 0.3,
+                                        borderRadius: 1,
+                                        fontWeight: 'bold',
+                                        cursor: 'default',
+                                      }}
+                                    >
+                                      {op.salary_type === 'hour' ? `$${op.salary ?? '?'}/h` : 'día'}
+                                    </Typography>
+                                  </Tooltip>
+                                )}
                               </Box>
                             }
                             secondary={
@@ -534,6 +642,18 @@ const AddOperatorsToOrder: React.FC = () => {
                               backgroundColor: 'action.hover',
                             },
                           }}
+                          secondaryAction={
+                            <Tooltip title="Asignar a la orden" arrow>
+                              <IconButton
+                                edge="end"
+                                size="small"
+                                color="primary"
+                                onClick={() => handleRequestAssign(op)}
+                              >
+                                <PersonAddIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          }
                         >
                           <ListItemAvatar>
                             <Avatar src={op.photo || undefined}>
@@ -614,6 +734,127 @@ const AddOperatorsToOrder: React.FC = () => {
           setFuelCostDialogOpen(false);
         }}
       />
+
+      {/* Diálogo de configuración de asignación */}
+      <Dialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          {editAssignId ? 'Editar salario de asignación' : 'Configurar asignación'}
+          {pendingAssignOperator && (
+            <Typography variant="body2" color="text.secondary">
+              {`${pendingAssignOperator.first_name} ${pendingAssignOperator.last_name}`}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Tipo de salario para esta orden
+            </Typography>
+            <Tooltip
+              title="'Por día' usa automáticamente el salario diario configurado del operador. 'Por hora' te permite especificar un valor por hora sólo para esta asignación."
+              arrow
+              placement="top"
+            >
+              <ToggleButtonGroup
+                value={assignSalaryType}
+                exclusive
+                onChange={(_, val) => { if (val) setAssignSalaryType(val); }}
+                size="small"
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                <ToggleButton value="day">
+                  <CalendarTodayIcon fontSize="small" sx={{ mr: 1 }} />
+                  Por día
+                </ToggleButton>
+                <ToggleButton value="hour">
+                  <AccessTimeIcon fontSize="small" sx={{ mr: 1 }} />
+                  Por hora
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Tooltip>
+
+            {assignSalaryType === 'day' && (
+              <Alert severity="info">
+                El sistema usará automáticamente el salario diario configurado para este operador.
+                No es necesario ingresar ningún valor adicional.
+              </Alert>
+            )}
+
+            {assignSalaryType === 'hour' && (
+              <Tooltip
+                title="Valor por hora que se usará para calcular el pago de esta asignación. Por defecto se muestra el salario por hora del operador; puedes ajustarlo sólo para esta orden."
+                arrow
+                placement="top"
+              >
+                <TextField
+                  label="Salario por hora"
+                  size="small"
+                  fullWidth
+                  type="number"
+                  value={assignHourlySalary}
+                  onChange={(e) => setAssignHourlySalary(e.target.value)}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                  helperText="Valor por hora para esta orden. Deja el valor por defecto para usar el salario del operador."
+                  sx={{ mt: 1 }}
+                />
+              </Tooltip>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setAssignDialogOpen(false); setPendingAssignOperator(null); setEditAssignId(null); }}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              if (editAssignId !== null) {
+                // Modo edición: PATCH sobre asignación existente
+                try {
+                  await patchSalaryAssignment(
+                    editAssignId,
+                    assignSalaryType,
+                    assignSalaryType === 'hour' ? assignHourlySalary : undefined,
+                  );
+                  // Actualización optimista: no depender del endpoint de lista
+                  setAssignedOperators(prev => prev.map(op =>
+                    op.id_assign === editAssignId
+                      ? {
+                          ...op,
+                          salary_type: assignSalaryType,
+                          hourly_salary: assignSalaryType === 'hour' ? assignHourlySalary : null,
+                        }
+                      : op
+                  ));
+                  enqueueSnackbar('Salario actualizado correctamente', { variant: 'success' });
+                } catch {
+                  enqueueSnackbar('Error al actualizar el salario', { variant: 'error' });
+                }
+              } else if (pendingAssignOperator) {
+                // Modo creación: POST nueva asignación
+                await handleAssign(
+                  pendingAssignOperator,
+                  assignSalaryType,
+                  assignSalaryType === 'hour' ? assignHourlySalary : undefined,
+                );
+              }
+              setAssignDialogOpen(false);
+              setPendingAssignOperator(null);
+              setEditAssignId(null);
+            }}
+          >
+            {editAssignId ? 'Guardar' : 'Asignar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
