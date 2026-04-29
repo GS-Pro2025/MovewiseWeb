@@ -152,7 +152,7 @@ export async function patchSalaryAssignment(
     assignmentId: number,
     salary_type: 'hour' | 'day',
     hourly_salary?: string,
-): Promise<void> {
+): Promise<{ salary_type: string; hourly_salary: string | null; salary: string | null }> {
   const token = Cookies.get('authToken');
   if (!token) {
     window.location.href = '/login';
@@ -172,6 +172,14 @@ export async function patchSalaryAssignment(
     if (!response.ok) {
       throw new Error('Error al actualizar el salario de la asignación');
     }
+    const json = await response.json();
+    // The API wraps the assignment in { data: { ... } }
+    const data = json.data ?? json;
+    return {
+      salary_type: data.salary_type,
+      hourly_salary: data.hourly_salary ?? null,
+      salary: data.salary ?? null,
+    };
   } catch (error) {
     console.error('Error updating salary assignment:', error);
     throw error;
