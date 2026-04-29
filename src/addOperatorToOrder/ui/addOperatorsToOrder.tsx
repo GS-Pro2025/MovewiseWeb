@@ -519,9 +519,11 @@ const AddOperatorsToOrder: React.FC = () => {
                                 {op.salary_type && (
                                   <Tooltip
                                     title={
-                                      op.salary_type === 'hour'
-                                        ? `Pago por hora${op.hourly_salary ? ` — $${op.hourly_salary}/h` : ''}`
-                                        : 'Pago por día (salario del operador)'
+                                      op.salary_type === 'day'
+                                        ? 'Pago por día — usa el salario base del operador'
+                                        : op.end_time
+                                          ? `Salario total calculado (horas trabajadas × $${op.hourly_salary ?? '?'}/h)`
+                                          : `Tarifa por hora: $${op.hourly_salary ?? '?'}/h — el total se calculará al registrar la hora de fin`
                                     }
                                     arrow
                                     placement="top"
@@ -538,7 +540,11 @@ const AddOperatorsToOrder: React.FC = () => {
                                         cursor: 'default',
                                       }}
                                     >
-                                      {op.salary_type === 'hour' ? `$${op.salary ?? '?'}/h` : 'día'}
+                                      {op.salary_type === 'day'
+                                        ? 'día'
+                                        : op.end_time
+                                          ? `$${op.salary ?? '?'} total`
+                                          : `$${op.hourly_salary ?? '?'}/h`}
                                     </Typography>
                                   </Tooltip>
                                 )}
@@ -819,18 +825,19 @@ const AddOperatorsToOrder: React.FC = () => {
               if (editAssignId !== null) {
                 // Modo edición: PATCH sobre asignación existente
                 try {
-                  await patchSalaryAssignment(
+                  const updated = await patchSalaryAssignment(
                     editAssignId,
                     assignSalaryType,
                     assignSalaryType === 'hour' ? assignHourlySalary : undefined,
                   );
-                  // Actualización optimista: no depender del endpoint de lista
+                  // Actualizar estado con los valores reales devueltos por el servidor
                   setAssignedOperators(prev => prev.map(op =>
                     op.id_assign === editAssignId
                       ? {
                           ...op,
-                          salary_type: assignSalaryType,
-                          hourly_salary: assignSalaryType === 'hour' ? assignHourlySalary : null,
+                          salary_type: updated.salary_type as 'hour' | 'day',
+                          hourly_salary: updated.hourly_salary,
+                          salary: updated.salary ? Number(updated.salary) : op.salary,
                         }
                       : op
                   ));
