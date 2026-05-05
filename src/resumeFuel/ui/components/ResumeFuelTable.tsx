@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, MapPin, ChevronDown, ChevronRight, Package, Pencil } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Download, Inbox, Eye, X, Image as ImageIcon, Truck as TruckIcon, MapPin, ChevronDown, ChevronRight, Package, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { WeeklyFuelDataResponse, CostFuelWithOrders } from '../../domain/CostFuelWithOrders';
 import { generateCsv, download, mkConfig } from 'export-to-csv';
 
@@ -152,16 +152,84 @@ const csvConfig = mkConfig({
   useKeysAsHeaders: true,
 });
 
+const DeleteConfirmDialog: React.FC<{
+  open: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isDeleting: boolean;
+}> = ({ open, onConfirm, onCancel, isDeleting }) => {
+  const { t } = useTranslation();
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/40"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={20} className="text-red-600" />
+          </div>
+          <h3 className="text-base font-bold text-gray-900">{t('resumeFuelTable.deleteDialog.title')}</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">{t('resumeFuelTable.deleteDialog.message')}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {t('resumeFuelTable.deleteDialog.cancel')}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {isDeleting ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            {t('resumeFuelTable.deleteDialog.confirm')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ResumeFuelTable: React.FC<{
   data: WeeklyFuelDataResponse | null;
   isLoading: boolean;
   onEditCostFuel?: (costFuel: CostFuelWithOrders) => void;
-}> = ({ data, isLoading, onEditCostFuel }) => {
+  onDeleteCostFuel?: (costFuel: CostFuelWithOrders) => void;
+}> = ({ data, isLoading, onEditCostFuel, onDeleteCostFuel }) => {
   const { t } = useTranslation();
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [previewImage, setPreviewImage] = useState<{ url: string; fuelData?: any } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CostFuelWithOrders | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const handleDeleteClick = useCallback((row: CostFuelWithOrders) => {
+    setDeleteTarget(row);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget || !onDeleteCostFuel) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteCostFuel(deleteTarget);
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, onDeleteCostFuel]);
 
   // Columns defined inside component to access `t`
   const columns: Column[] = useMemo(() => [
@@ -494,6 +562,18 @@ export const ResumeFuelTable: React.FC<{
                                         {t('resumeFuelTable.editButton.label')}
                                       </button>
                                     )}
+                                    {/* Delete button */}
+                                    {onDeleteCostFuel && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteClick(row); }}
+                                        className="px-4 py-2 border-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all hover:shadow-md"
+                                        style={{ borderColor: '#DC2626', color: '#DC2626', backgroundColor: 'white' }}
+                                        title={t('resumeFuelTable.deleteButton.tooltip')}
+                                      >
+                                        <Trash2 size={15} />
+                                        {t('resumeFuelTable.deleteButton.label')}
+                                      </button>
+                                    )}
                                     {row.image_url && (
                                       <button
                                         onClick={() => setPreviewImage({ 
@@ -599,6 +679,12 @@ export const ResumeFuelTable: React.FC<{
           onClose={() => setPreviewImage(null)} 
         />
       )}
+      <DeleteConfirmDialog
+        open={!!deleteTarget}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        isDeleting={isDeleting}
+      />
     </>
   );
 };
