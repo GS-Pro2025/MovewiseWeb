@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Fuel, DollarSign, Gauge, Calendar } from 'lucide-react';
+import { Plus, Fuel, DollarSign, Gauge, Calendar, Unlink, Loader } from 'lucide-react';
 import { CostFuelByOrderData } from '../../addFuelCostToOrder/domain/AssignOrderToCostFuelModels';
+import { AssignOrderToCostFuelRepository } from '../../addFuelCostToOrder/repository/AssignOrderToCostFuelRepository';
 
 interface CostFuelsTableProps {
   costFuels: CostFuelByOrderData[];
+  orderKey?: string;
   onAddFuelCost?: () => void;
+  onUnassignSuccess?: () => void;
 }
 
 const COLORS = {
@@ -14,10 +17,13 @@ const COLORS = {
   success: '#22c55e',
   gray: '#6b7280',
   fuel: '#ef4444',
+  warning: '#f59e0b',
 };
 
-const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCost }) => {
+const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, orderKey, onAddFuelCost, onUnassignSuccess }) => {
   const { t, i18n } = useTranslation();
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [unassigningId, setUnassigningId] = useState<number | null>(null);
 
   const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return 'N/A';
@@ -31,6 +37,20 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
     const numValue = Number(value);
     if (isNaN(numValue)) return 'N/A';
     return numValue.toFixed(2);
+  };
+
+  const handleUnassign = async (costFuelId: number) => {
+    if (!orderKey) return;
+    setUnassigningId(costFuelId);
+    setConfirmingId(null);
+    try {
+      await AssignOrderToCostFuelRepository.unassignOrderFromCostFuel(costFuelId, orderKey);
+      if (onUnassignSuccess) onUnassignSuccess();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t('costFuels.unassignError', 'Error al desasignar'));
+    } finally {
+      setUnassigningId(null);
+    }
   };
 
   return (
@@ -86,6 +106,9 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">{t('costFuels.gallons')}</th>
                 <th className="px-2 py-1.5 text-right font-bold whitespace-nowrap w-20">{t('costFuels.distance')}</th>
                 <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-24">{t('costFuels.date')}</th>
+                {orderKey && (
+                  <th className="px-2 py-1.5 text-center font-bold whitespace-nowrap w-20">{t('costFuels.actions', 'Actions')}</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -147,6 +170,38 @@ const CostFuelsTable: React.FC<CostFuelsTableProps> = ({ costFuels, onAddFuelCos
                       </span>
                     </div>
                   </td>
+                  {orderKey && (
+                    <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                      {unassigningId === costFuel.id_fuel ? (
+                        <Loader size={14} className="animate-spin mx-auto" style={{ color: COLORS.gray }} />
+                      ) : confirmingId === costFuel.id_fuel ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleUnassign(costFuel.id_fuel)}
+                            className="px-1.5 py-0.5 rounded text-xs font-bold text-white"
+                            style={{ backgroundColor: COLORS.fuel }}
+                          >
+                            {t('costFuels.confirmUnassign', 'Yes')}
+                          </button>
+                          <button
+                            onClick={() => setConfirmingId(null)}
+                            className="px-1.5 py-0.5 rounded text-xs font-bold text-white"
+                            style={{ backgroundColor: COLORS.gray }}
+                          >
+                            {t('costFuels.cancelUnassign', 'No')}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmingId(costFuel.id_fuel)}
+                          className="p-1 rounded transition-all duration-200 hover:bg-red-50"
+                          title={t('costFuels.unassign', 'Unassign from this order')}
+                        >
+                          <Unlink size={13} style={{ color: COLORS.fuel }} />
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

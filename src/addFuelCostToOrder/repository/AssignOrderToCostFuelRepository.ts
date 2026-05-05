@@ -165,6 +165,34 @@ export class AssignOrderToCostFuelRepository {
 
     return response.json();
   }
+
+  /**
+   * Desasigna una orden de un CostFuel existente
+   * @param costFuelId ID del CostFuel
+   * @param orderKey UUID de la orden a desasignar
+   * @returns Respuesta con el CostFuel actualizado y costos redistribuidos
+   */
+  static async unassignOrderFromCostFuel(
+    costFuelId: number,
+    orderKey: string
+  ): Promise<AssignOrderToCostFuelApiResponse> {
+    const headers = getAuthHeaders();
+
+    const response = await fetch(`${BASE_URL_API}/costfuels/${costFuelId}/unassign-order/`, {
+      method: 'DELETE',
+      headers,
+      body: JSON.stringify({ order_key: orderKey }),
+    });
+
+    handleAuthError(response);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.messUser || error.messDev || 'Error al desasignar la orden del CostFuel');
+    }
+
+    return response.json();
+  }
 }
 
 export default AssignOrderToCostFuelRepository;

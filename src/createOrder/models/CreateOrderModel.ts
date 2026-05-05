@@ -30,6 +30,38 @@ export interface CustomerFactoryModel {
     name: string;
 }
 
+// OCR types
+export interface OcrWarning {
+  field: string;
+  problem: string;
+  ocr_value?: string;
+  matched_to?: string;
+  similarity?: number;
+  suggestion?: string;
+}
+
+export interface OcrOrderBody {
+  job: { id: number; name: string };
+  key_ref?: string;
+  date?: string;
+  weight?: number;
+  state_usa?: string;
+  customer_factory?: { id: number; name: string };
+  person: {
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    phone: string;
+    address: string;
+  };
+}
+
+export interface OcrPreviewResponse {
+  parsed_raw: Record<string, string | null>;
+  order_body: OcrOrderBody;
+  warnings: OcrWarning[];
+}
+
 export interface OrderCreated{
   key: string;
   key_ref: string;

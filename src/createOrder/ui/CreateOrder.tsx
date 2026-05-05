@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import {
   Button, TextField, CircularProgress, Autocomplete, Alert, AlertTitle
 } from '@mui/material';
-import { createOrder, fetchCustomerFactories, fetchJobs, fetchOrderStates } from '../repository/repositoryCreateOrder';
-import { CreateOrderModel, CustomerFactoryModel, OrderState, Person } from '../models/CreateOrderModel';
+import { createOrder, fetchCustomerFactories, fetchJobs, fetchOrderStates, ocrPreviewOrder } from '../repository/repositoryCreateOrder';
+import { CreateOrderModel, CustomerFactoryModel, OcrWarning, OrderState, Person } from '../models/CreateOrderModel';
 import { JobModel } from '../models/JobModel';
 import { enqueueSnackbar } from 'notistack';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -24,6 +24,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ScaleIcon from '@mui/icons-material/Scale';
 import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 const COLORS = {
   primary: '#0B2863',
@@ -144,6 +146,13 @@ const CreateOrder: React.FC = () => {
   // Estados para las sugerencias
   const [showJobSuggestion, setShowJobSuggestion] = useState(false);
   const [showCompanySuggestion, setShowCompanySuggestion] = useState(false);
+
+  // Estados para OCR
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrWarnings, setOcrWarnings] = useState<OcrWarning[]>([]);
+  const [ocrFilledLocation, setOcrFilledLocation] = useState(false);
+
+  const getOcrWarning = (field: string) => ocrWarnings.find(w => w.field === field);
   
   const navigate = useNavigate();
 
@@ -268,6 +277,57 @@ const CreateOrder: React.FC = () => {
     }
   };
 
+  // Normaliza el teléfono OCR para react-phone-input-2 (espera dígitos sin '+')
+  const normalizePhoneForInput = (phone: string): string => {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (phone.startsWith('+') && digits.length === 11) return digits; // +1XXXXXXXXXX → 1XXXXXXXXXX
+    if (digits.length === 10) return `1${digits}`;                   // XXXXXXXXXX  → 1XXXXXXXXXX
+    return digits;                                                    // formato desconocido, solo dígitos
+  };
+
+  const handleOcrScan = async () => {
+    if (!dispatchTicketFile) return;
+    setOcrLoading(true);
+    setOcrWarnings([]);
+    try {
+      const result = await ocrPreviewOrder(dispatchTicketFile);
+      const body = result.order_body;
+
+      if (body.job) handleChange('job', body.job.id);
+      if (body.key_ref) handleChange('key_ref', body.key_ref);
+      if (body.date) handleChange('date', body.date);
+      if (body.weight !== undefined) {
+        setWeightInput(String(body.weight));
+        handleChange('weight', body.weight);
+      }
+      if (body.state_usa) {
+        handleChange('state_usa', body.state_usa);
+        handleChange('address', body.state_usa);
+        setOcrFilledLocation(true);
+        setEditingLocation(false);
+      }
+      if (body.customer_factory) handleChange('customer_factory', body.customer_factory.id);
+      setOrder(prev => ({
+        ...prev,
+        person: {
+          first_name: body.person.first_name,
+          last_name: body.person.last_name,
+          email: body.person.email ?? '',
+          phone: normalizePhoneForInput(body.person.phone),
+          address: body.person.address,
+        },
+      }));
+
+      setOcrWarnings(result.warnings);
+      enqueueSnackbar(t('createOrder.ocr.success', 'Datos extraídos del ticket. Revisa los campos marcados.'), { variant: 'info' });
+    } catch (err) {
+      enqueueSnackbar(err instanceof Error ? err.message : t('createOrder.ocr.error', 'Error al procesar la imagen con OCR'), { variant: 'error' });
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setSuccessMsg(''); setErrorMsg('');
@@ -337,6 +397,81 @@ const CreateOrder: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-10">
 
+            {/* Dispatch Ticket — al inicio para auto-llenado con OCR */}
+            <div className="p-6 rounded-2xl border-2"
+              style={{ borderColor: COLORS.primary, backgroundColor: 'rgba(11, 40, 99, 0.02)' }}>
+              <h2 className="text-2xl font-bold mb-2 flex items-center gap-3" style={{ color: COLORS.primary }}>
+                <UploadFileIcon style={{ color: COLORS.secondary }} />
+                {t('createOrder.sections.dispatch')}
+              </h2>
+
+              {/* Banner de auto-llenado */}
+              <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded-xl border"
+                style={{ backgroundColor: 'rgba(11, 40, 99, 0.06)', borderColor: COLORS.primary }}>
+                <DocumentScannerIcon style={{ color: COLORS.primary, marginTop: 2, flexShrink: 0 }} />
+                <p className="text-sm" style={{ color: COLORS.primary }}>
+                  <strong>{t('createOrder.ocr.hint.title', 'Relleno automático:')}</strong>{' '}
+                  {t('createOrder.ocr.hint.message', 'Sube una foto del dispatch ticket y pulsa «Llenar con OCR» para completar el formulario automáticamente.')}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                  <Button variant="outlined" component="label"
+                    startIcon={<UploadFileIcon />}
+                    sx={{
+                      borderColor: COLORS.secondary, color: COLORS.secondary,
+                      '&:hover': { borderColor: COLORS.secondary, backgroundColor: 'rgba(240, 159, 82, 0.1)' },
+                      py: 1.5, px: 3, borderWidth: 2, borderRadius: 2,
+                    }}>
+                    {dispatchTicketFile ? t('createOrder.dispatch.change') : t('createOrder.dispatch.upload')}
+                    <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleDispatchTicketChange} />
+                  </Button>
+
+                  {dispatchTicketFile && (
+                    <Button variant="outlined"
+                      onClick={() => { setDispatchTicketFile(null); setDispatchTicketPreview(null); setOcrWarnings([]); setOcrFilledLocation(false); }}
+                      startIcon={<DeleteOutlineIcon />}
+                      sx={{
+                        borderColor: COLORS.error, color: COLORS.error,
+                        '&:hover': { borderColor: COLORS.error, backgroundColor: 'rgba(239, 68, 68, 0.1)' },
+                        py: 1.5, px: 3, borderWidth: 2, borderRadius: 2,
+                      }}>
+                      {t('createOrder.dispatch.remove')}
+                    </Button>
+                  )}
+
+                  {dispatchTicketFile && (
+                    <Button
+                      variant="contained"
+                      onClick={handleOcrScan}
+                      disabled={ocrLoading}
+                      startIcon={ocrLoading ? <CircularProgress size={20} color="inherit" /> : <DocumentScannerIcon />}
+                      sx={{
+                        backgroundColor: COLORS.primary, color: 'white',
+                        '&:hover': { backgroundColor: '#091d47' },
+                        '&:disabled': { backgroundColor: '#d1d5db', color: '#6b7280' },
+                        py: 1.5, px: 3, borderRadius: 2, fontWeight: 'bold',
+                      }}>
+                      {ocrLoading
+                        ? t('createOrder.ocr.scanning', 'Escaneando...')
+                        : t('createOrder.ocr.fillButton', 'Llenar con OCR')}
+                    </Button>
+                  )}
+                </div>
+
+                {dispatchTicketPreview && (
+                  <div className="mt-4">
+                    <div className="inline-block p-3 rounded-xl border-2"
+                      style={{ backgroundColor: 'rgba(240, 159, 82, 0.05)', borderColor: COLORS.secondary }}>
+                      <img src={dispatchTicketPreview} alt={t('createOrder.dispatch.preview')}
+                        className="max-w-xs max-h-48 object-contain rounded-lg shadow-md" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Order Information */}
             <div className="p-6 rounded-2xl border-2"
               style={{ borderColor: COLORS.primary, backgroundColor: 'rgba(11, 40, 99, 0.02)' }}>
@@ -346,12 +481,19 @@ const CreateOrder: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TextField label={t('createOrder.fields.reference')} fullWidth value={order.key_ref}
-                  onChange={(e) => handleChange('key_ref', e.target.value)} required sx={muiSx} />
+                  onChange={(e) => handleChange('key_ref', e.target.value)} required sx={muiSx}
+                  helperText={getOcrWarning('key_ref')?.problem}
+                  error={!!getOcrWarning('key_ref')}
+                  color={getOcrWarning('key_ref') ? 'warning' : undefined}
+                />
                 <TextField label={t('createOrder.fields.date')} type="date" fullWidth value={order.date}
                   onChange={(e) => handleChange('date', e.target.value)} required
                   InputLabelProps={{ shrink: true }}
                   InputProps={{ startAdornment: <CalendarTodayIcon style={{ color: COLORS.secondary, marginRight: 8 }} /> }}
-                  sx={muiSx} />
+                  sx={muiSx}
+                  helperText={getOcrWarning('date')?.problem}
+                  error={!!getOcrWarning('date')}
+                />
                 <TextField label={t('createOrder.fields.address')} fullWidth value={order.address}
                   onChange={(e) => handleChange('address', e.target.value)} required
                   InputProps={{ startAdornment: <HomeIcon style={{ color: COLORS.secondary, marginRight: 8 }} /> }}
@@ -362,10 +504,13 @@ const CreateOrder: React.FC = () => {
                   required placeholder={t('createOrder.fields.weightPlaceholder')}
                   inputProps={{ inputMode: 'decimal', pattern: '[0-9]*[\\.,]?[0-9]*' }}
                   InputProps={{ startAdornment: <ScaleIcon style={{ color: COLORS.secondary, marginRight: 8 }} /> }}
-                  helperText={weightInput && isNaN(parseFloat(weightInput.replace(',', '.')))
-                    ? t('createOrder.fields.weightError')
-                    : t('createOrder.fields.weightHelper')}
-                  error={weightInput !== '' && isNaN(parseFloat(weightInput.replace(',', '.')))}
+                  helperText={
+                    getOcrWarning('weight')?.problem ||
+                    (weightInput && isNaN(parseFloat(weightInput.replace(',', '.')))
+                      ? t('createOrder.fields.weightError')
+                      : t('createOrder.fields.weightHelper'))
+                  }
+                  error={(weightInput !== '' && isNaN(parseFloat(weightInput.replace(',', '.')))) || !!getOcrWarning('weight')}
                   sx={muiSx}
                 />
               </div>
@@ -379,10 +524,14 @@ const CreateOrder: React.FC = () => {
                 {t('createOrder.sections.location')}
               </h2>
               <div className="space-y-6">
-                {!editingLocation && continuedOrder ? (
+                {!editingLocation && (continuedOrder || ocrFilledLocation) ? (
                   <div className="flex items-center gap-2">
-                    <TextField label={t('createOrder.fields.location')} fullWidth value={continuedOrder.state_usa}
-                      InputProps={{ readOnly: true }}
+                    <TextField label={t('createOrder.fields.location')} fullWidth
+                      value={ocrFilledLocation ? order.state_usa : continuedOrder.state_usa}
+                      onChange={ocrFilledLocation ? (e) => handleChange('state_usa', e.target.value) : undefined}
+                      InputProps={{ readOnly: !ocrFilledLocation }}
+                      helperText={getOcrWarning('state_usa')?.problem}
+                      error={!!getOcrWarning('state_usa')}
                       sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'rgba(240, 159, 82, 0.05)' } }} />
                     <Button variant="outlined" onClick={() => setEditingLocation(true)} startIcon={<EditIcon />}
                       sx={{
@@ -490,8 +639,15 @@ const CreateOrder: React.FC = () => {
                       label={t('createOrder.fields.company')}
                       fullWidth
                       required
-                      error={cf.length === 0}
-                      helperText={cf.length === 0 ? t('createOrder.messages.noCompanies', 'No hay empresas registradas') : ''}
+                      error={cf.length === 0 || !!getOcrWarning('customer_factory')}
+                      helperText={
+                        getOcrWarning('customer_factory')
+                          ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <WarningAmberIcon style={{ fontSize: 14 }} />
+                              {getOcrWarning('customer_factory')!.problem}
+                            </span>
+                          : cf.length === 0 ? t('createOrder.messages.noCompanies', 'No hay empresas registradas') : ''
+                      }
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
@@ -518,7 +674,10 @@ const CreateOrder: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <TextField label={t('createOrder.fields.firstName')} fullWidth value={order.person.first_name}
-                  onChange={(e) => handlePersonChange('first_name', e.target.value)} required sx={muiSx} />
+                  onChange={(e) => handlePersonChange('first_name', e.target.value)} required sx={muiSx}
+                  error={!!getOcrWarning('person.first_name') || (ocrWarnings.length > 0 && !order.person.first_name)}
+                  helperText={getOcrWarning('person.first_name')?.problem || (ocrWarnings.length > 0 && !order.person.first_name ? t('createOrder.ocr.firstNameRequired', 'Requerido: el OCR no pudo extraer el nombre') : undefined)}
+                />
                 <TextField label={t('createOrder.fields.lastName')} fullWidth value={order.person.last_name}
                   onChange={(e) => handlePersonChange('last_name', e.target.value)} required sx={muiSx} />
                 <TextField label={t('createOrder.fields.email')} type="email" fullWidth value={order.person.email}
@@ -527,57 +686,21 @@ const CreateOrder: React.FC = () => {
                   <PhoneInput country={'us'} value={order.person.phone}
                     onChange={phone => handlePersonChange('phone', phone)}
                     inputProps={{ name: 'phone', required: true, autoFocus: false }}
-                    inputStyle={{ width: '100%', height: '56px', fontSize: '16px', backgroundColor: 'white', border: '1px solid rgba(0,0,0,0.23)', borderRadius: '8px', paddingLeft: '48px' }}
+                    inputStyle={{
+                      width: '100%', height: '56px', fontSize: '16px', backgroundColor: 'white',
+                      border: getOcrWarning('person.phone') ? `2px solid ${COLORS.error}` : '1px solid rgba(0,0,0,0.23)',
+                      borderRadius: '8px', paddingLeft: '48px',
+                    }}
                     buttonStyle={{ backgroundColor: 'white', border: '1px solid rgba(0,0,0,0.23)', borderRight: 'none', borderRadius: '8px 0 0 8px' }}
                     specialLabel={t('createOrder.fields.phone')}
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Dispatch Ticket */}
-            <div className="p-6 rounded-2xl border-2"
-              style={{ borderColor: COLORS.primary, backgroundColor: 'rgba(11, 40, 99, 0.02)' }}>
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3" style={{ color: COLORS.primary }}>
-                <UploadFileIcon style={{ color: COLORS.secondary }} />
-                {t('createOrder.sections.dispatch')}
-              </h2>
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4 items-start">
-                  <Button variant="outlined" component="label" onClick={() => fileInputRef.current?.click()}
-                    startIcon={<UploadFileIcon />}
-                    sx={{
-                      borderColor: COLORS.secondary, color: COLORS.secondary,
-                      '&:hover': { borderColor: COLORS.secondary, backgroundColor: 'rgba(240, 159, 82, 0.1)' },
-                      py: 1.5, px: 3, borderWidth: 2, borderRadius: 2,
-                    }}>
-                    {dispatchTicketFile ? t('createOrder.dispatch.change') : t('createOrder.dispatch.upload')}
-                    <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleDispatchTicketChange} />
-                  </Button>
-
-                  {dispatchTicketFile && (
-                    <Button variant="outlined"
-                      onClick={() => { setDispatchTicketFile(null); setDispatchTicketPreview(null); }}
-                      startIcon={<DeleteOutlineIcon />}
-                      sx={{
-                        borderColor: COLORS.error, color: COLORS.error,
-                        '&:hover': { borderColor: COLORS.error, backgroundColor: 'rgba(239, 68, 68, 0.1)' },
-                        py: 1.5, px: 3, borderWidth: 2, borderRadius: 2,
-                      }}>
-                      {t('createOrder.dispatch.remove')}
-                    </Button>
+                  {getOcrWarning('person.phone') && (
+                    <p className="text-xs mt-1 flex items-center gap-1" style={{ color: COLORS.error }}>
+                      <WarningAmberIcon style={{ fontSize: 13 }} />
+                      {getOcrWarning('person.phone')!.problem}
+                    </p>
                   )}
                 </div>
-
-                {dispatchTicketPreview && (
-                  <div className="mt-4">
-                    <div className="inline-block p-3 rounded-xl border-2"
-                      style={{ backgroundColor: 'rgba(240, 159, 82, 0.05)', borderColor: COLORS.secondary }}>
-                      <img src={dispatchTicketPreview} alt={t('createOrder.dispatch.preview')}
-                        className="max-w-xs max-h-48 object-contain rounded-lg shadow-md" />
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -603,7 +726,8 @@ const CreateOrder: React.FC = () => {
 
             {/* Submit */}
             <div className="flex justify-end pt-6">
-              <Button type="submit" variant="contained" disabled={loading}
+              <Button type="submit" variant="contained"
+                disabled={loading || (ocrWarnings.length > 0 && !order.person.first_name)}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <AddBusinessIcon />}
                 sx={{
                   backgroundColor: COLORS.primary, color: 'white',
