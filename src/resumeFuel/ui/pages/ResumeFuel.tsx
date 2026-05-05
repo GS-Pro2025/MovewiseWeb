@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnackbar } from 'notistack';
 import ResumeFuelTable from '../components/ResumeFuelTable';
 import { ResumeFuelService } from '../../data/ResumeFuelServices';
 import { WeeklyFuelDataResponse, CostFuelWithOrders } from '../../domain/CostFuelWithOrders';
@@ -7,12 +8,14 @@ import YearPicker from '../../../components/YearPicker';
 import WeekPicker from '../../../components/WeekPicker';
 import CreateCostFuelDialog from '../../../addFuelCostToOrder/ui/CreateCostFuelDialog';
 import EditCostFuelDialog from '../../../addFuelCostToOrder/ui/EditCostFuelDialog';
+import { deleteCostFuel } from '../../../addFuelCostToOrder/repository/DeleteCostFuelRepository';
 import { Plus, Truck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ResumeFuel: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [resumeFuel, setResumeFuel] = useState<WeeklyFuelDataResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentWeek, setCurrentWeek] = useState<number>(1);
@@ -55,6 +58,16 @@ const ResumeFuel: React.FC = () => {
     setCurrentYear(year);
     fetchResumeFuel(currentWeek, year);
   }, [currentWeek, fetchResumeFuel]);
+
+  const handleDeleteCostFuel = useCallback(async (costFuel: CostFuelWithOrders) => {
+    try {
+      await deleteCostFuel(costFuel.id_fuel);
+      enqueueSnackbar(t('resumeFuel.deleteSuccess'), { variant: 'success' });
+      fetchResumeFuel(currentWeek, currentYear);
+    } catch (error: any) {
+      enqueueSnackbar(error?.message || t('resumeFuel.deleteError'), { variant: 'error' });
+    }
+  }, [currentWeek, currentYear, fetchResumeFuel, enqueueSnackbar, t]);
 
   const totals = resumeFuel?.data.reduce((acc, weekData) => {
     weekData.cost_fuels.forEach(costFuel => {
@@ -167,6 +180,7 @@ const ResumeFuel: React.FC = () => {
         data={resumeFuel}
         isLoading={isLoading}
         onEditCostFuel={setEditCostFuel}
+        onDeleteCostFuel={handleDeleteCostFuel}
       />
 
       {/* Create Fuel Cost Dialog */}
