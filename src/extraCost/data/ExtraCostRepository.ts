@@ -136,4 +136,87 @@ export class ExtraCostRepository implements ExtraCostRepositoryInterface {
 
     return await response.json();
   }
+
+  async updateExtraCost(workCostId: number, data: { name: string; cost: number; type: string }): Promise<ExtraCost> {
+    const token = Cookies.get('authToken');
+    if (!token) {
+      window.location.href = '/login';
+      throw new Error('No hay token de autenticación');
+    }
+    const response = await fetch(`${this.baseUrl}/workcost/${workCostId}/`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada');
+    }
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      // Soporta { messUser: "..." } y errores de validación DRF { field: ["msg"] }
+      const message =
+        err.messUser ||
+        (typeof err === 'object' && !Array.isArray(err)
+          ? Object.entries(err)
+              .map(([field, msgs]) =>
+                `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`
+              )
+              .join(' | ')
+          : null) ||
+        'Error al actualizar el costo extra';
+      throw new Error(message);
+    }
+    return response.json();
+  }
+
+  async updateReceipt(workCostId: number, imageFile: File): Promise<ExtraCost> {
+    const token = Cookies.get('authToken');
+    if (!token) {
+      window.location.href = '/login';
+      throw new Error('No hay token de autenticación');
+    }
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    const response = await fetch(`${this.baseUrl}/workcost/${workCostId}/receipt/`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada');
+    }
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.messUser || 'Error al actualizar el recibo');
+    }
+    return response.json();
+  }
+
+  async deleteExtraCost(workCostId: number): Promise<void> {
+    const token = Cookies.get('authToken');
+    if (!token) {
+      window.location.href = '/login';
+      throw new Error('No hay token de autenticación');
+    }
+    const response = await fetch(`${this.baseUrl}/workcost/${workCostId}/`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.status === 403) {
+      Cookies.remove('authToken');
+      window.location.href = '/login';
+      throw new Error('Sesión expirada');
+    }
+    if (response.status !== 204 && !response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.messUser || 'Error al eliminar el costo extra');
+    }
+  }
 }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -12,8 +12,14 @@ import {
   Copy,
   Image as ImageIcon,
   X,
+  Trash2,
+  Upload,
+  Loader,
+  Pencil,
 } from "lucide-react";
 import { ExtraCost, ExtraCostResponse } from "../../domain/ExtraCostModel";
+import { ExtraCostRepository } from "../../data/ExtraCostRepository";
+import EditExtraCostDialog from "./EditExtraCostDialog";
 
 interface Column {
   id: string;
@@ -35,6 +41,8 @@ interface ExtraCostDataTableProps {
   loading: boolean;
   searchTerm?: string;
   onContextMenu?: (event: React.MouseEvent, row: ExtraCost) => void;
+  onDeleteSuccess?: () => void;
+  onUpdateSuccess?: () => void;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -199,6 +207,8 @@ export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
   loading,
   searchTerm = "",
   onContextMenu,
+  onDeleteSuccess,
+  onUpdateSuccess,
 }) => {
   const { t } = useTranslation();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -212,6 +222,43 @@ export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
     url: string;
     keyRef: string;
   } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [editingReceiptId, setEditingReceiptId] = useState<number | null>(null);
+  const [editDialogRow, setEditDialogRow] = useState<ExtraCost | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const repository = useMemo(() => new ExtraCostRepository(), []);
+
+  const handleDeleteConfirm = useCallback(async (id: number) => {
+    setDeletingId(id);
+    setConfirmDeleteId(null);
+    try {
+      await repository.deleteExtraCost(id);
+      onDeleteSuccess?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t('extraCostTable.actions.deleteError', 'Error al eliminar'));
+    } finally {
+      setDeletingId(null);
+    }
+  }, [repository, onDeleteSuccess, t]);
+
+  const handleReceiptChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingReceiptId) return;
+    e.target.value = '';
+    setUploadingId(editingReceiptId);
+    const id = editingReceiptId;
+    setEditingReceiptId(null);
+    try {
+      await repository.updateReceipt(id, file);
+      onUpdateSuccess?.();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : t('extraCostTable.actions.updateReceiptError', 'Error al actualizar el recibo'));
+    } finally {
+      setUploadingId(null);
+    }
+  }, [repository, editingReceiptId, onUpdateSuccess, t]);
 
   const columns: Column[] = useMemo(
     () => [
@@ -596,33 +643,93 @@ export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
                           </button>
                         </td>
 
-                        {/* Actions — receipt icon */}
+                        {/* Actions — view / edit receipt / delete */}
                         <td className="px-3 py-2 text-center">
-                          <button
-                            className={`p-1.5 rounded-lg transition-all duration-200 ${
-                              hasImage
-                                ? "hover:shadow-sm hover:bg-blue-50 cursor-pointer"
-                                : "opacity-25 cursor-not-allowed"
-                            }`}
-                            style={{ color: "#0B2863" }}
-                            disabled={!hasImage}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (hasImage) {
-                                setImageModal({
-                                  url: row.image_url!,
-                                  keyRef: row.order.key_ref,
-                                });
-                              }
-                            }}
-                            title={
-                              hasImage
-                                ? t("extraCostTable.actions.viewImage")
-                                : t("extraCostTable.actions.noImage")
-                            }
-                          >
-                            <ImageIcon size={16} />
-                          </button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={handleReceiptChange}
+                          />
+                          <div className="flex items-center justify-center gap-1">
+                            {/* Edit fields */}
+                            <button
+                              className="p-1.5 rounded-lg transition-all duration-200 hover:bg-blue-50 cursor-pointer"
+                              style={{ color: '#0B2863' }}
+                              onClick={(e) => { e.stopPropagation(); setEditDialogRow(row); }}
+                              title="Editar nombre, costo y tipo"
+                            >
+                              <Pencil size={15} />
+                            </button>
+
+                            {/* View receipt */}
+                            <button
+                              className={`p-1.5 rounded-lg transition-all duration-200 ${
+                                hasImage
+                                  ? "hover:bg-blue-50 cursor-pointer"
+                                  : "opacity-25 cursor-not-allowed"
+                              }`}
+                              style={{ color: "#0B2863" }}
+                              disabled={!hasImage}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (hasImage) setImageModal({ url: row.image_url!, keyRef: row.order.key_ref });
+                              }}
+                              title={hasImage ? t("extraCostTable.actions.viewImage") : t("extraCostTable.actions.noImage")}
+                            >
+                              <ImageIcon size={15} />
+                            </button>
+
+                            {/* Edit receipt */}
+                            {uploadingId === row.id_workCost ? (
+                              <Loader size={14} className="animate-spin" style={{ color: '#6b7280' }} />
+                            ) : (
+                              <button
+                                className="p-1.5 rounded-lg transition-all duration-200 hover:bg-orange-50 cursor-pointer"
+                                style={{ color: "#F09F52" }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingReceiptId(row.id_workCost);
+                                  fileInputRef.current?.click();
+                                }}
+                                title={t("extraCostTable.actions.editReceipt", "Change receipt image")}
+                              >
+                                <Upload size={15} />
+                              </button>
+                            )}
+
+                            {/* Delete */}
+                            {deletingId === row.id_workCost ? (
+                              <Loader size={14} className="animate-spin" style={{ color: '#6b7280' }} />
+                            ) : confirmDeleteId === row.id_workCost ? (
+                              <div className="flex items-center gap-0.5">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteConfirm(row.id_workCost); }}
+                                  className="px-1.5 py-0.5 rounded text-xs font-bold text-white"
+                                  style={{ backgroundColor: '#ef4444' }}
+                                >
+                                  {t('extraCostTable.actions.confirmDelete', 'Yes')}
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                                  className="px-1.5 py-0.5 rounded text-xs font-bold text-white"
+                                  style={{ backgroundColor: '#6b7280' }}
+                                >
+                                  {t('extraCostTable.actions.cancelDelete', 'No')}
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="p-1.5 rounded-lg transition-all duration-200 hover:bg-red-50 cursor-pointer"
+                                style={{ color: '#ef4444' }}
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(row.id_workCost); }}
+                                title={t('extraCostTable.actions.delete', 'Delete extra cost')}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
                         </td>
 
                         {/* Data columns */}
@@ -855,27 +962,55 @@ export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
                                         src={row.image_url}
                                         alt="Receipt"
                                         className="w-full rounded-lg object-cover cursor-pointer transition-transform hover:scale-105"
-                                        style={{
-                                          height: "140px",
-                                          borderRadius: "8px",
-                                          border: "0.5px solid #e2e8f0",
-                                        }}
-                                        onClick={() =>
-                                          setImageModal({
-                                            url: row.image_url!,
-                                            keyRef: row.order.key_ref,
-                                          })
-                                        }
+                                        style={{ height: "120px", borderRadius: "8px", border: "0.5px solid #e2e8f0" }}
+                                        onClick={() => setImageModal({ url: row.image_url!, keyRef: row.order.key_ref })}
                                         title={t("extraCostTable.actions.viewImage")}
                                       />
                                     ) : (
-                                      <div className="w-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 h-[140px]">
+                                      <div className="w-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 h-[120px]">
                                         <ImageIcon size={24} className="text-gray-300" />
                                         <span className="text-xs text-gray-400">
                                           {t("extraCostTable.actions.noImage")}
                                         </span>
                                       </div>
                                     )}
+                                    <div className="mt-2 flex justify-center">
+                                      {uploadingId === row.id_workCost ? (
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                          <Loader size={12} className="animate-spin" />
+                                          {t('extraCostTable.actions.uploading', 'Uploading...')}
+                                        </div>
+                                      ) : (
+                                        <label
+                                          className="flex items-center gap-1 px-2 py-1 rounded cursor-pointer text-xs font-medium transition-all hover:shadow-sm"
+                                          style={{ backgroundColor: '#F09F52', color: 'white' }}
+                                        >
+                                          <Upload size={12} />
+                                          {row.image_url
+                                            ? t('extraCostTable.actions.changeReceipt', 'Change')
+                                            : t('extraCostTable.actions.uploadReceipt', 'Upload')}
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            hidden
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (!file) return;
+                                              e.target.value = '';
+                                              setUploadingId(row.id_workCost);
+                                              try {
+                                                await repository.updateReceipt(row.id_workCost, file);
+                                                onUpdateSuccess?.();
+                                              } catch (err) {
+                                                alert(err instanceof Error ? err.message : 'Error');
+                                              } finally {
+                                                setUploadingId(null);
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -913,6 +1048,14 @@ export const ExtraCostDataTable: React.FC<ExtraCostDataTableProps> = ({
           onClose={() => setImageModal(null)}
         />
       )}
+
+      {/* Edit Dialog */}
+      <EditExtraCostDialog
+        open={!!editDialogRow}
+        onClose={() => setEditDialogRow(null)}
+        extraCost={editDialogRow}
+        onSuccess={() => { setEditDialogRow(null); onUpdateSuccess?.(); }}
+      />
     </>
   );
 };

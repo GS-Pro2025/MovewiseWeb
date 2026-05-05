@@ -664,7 +664,9 @@ export const DataTable: React.FC<DataTableProps> = ({
                                 />
                                 <CostFuelsTable
                                   costFuels={costFuelsByOrder[row.id] || []}
+                                  orderKey={row.id}
                                   onAddFuelCost={onAddFuelCost ? () => onAddFuelCost(row) : undefined}
+                                  onUnassignSuccess={() => fetchCostFuelsForOrder(row.id)}
                                 />
                                 <AssignedToolsTable
                                   tools={assignedToolsByOrder[row.id] || []}
