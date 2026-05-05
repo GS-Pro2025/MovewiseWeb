@@ -83,6 +83,8 @@ const ExtraCostPage: React.FC = () => {
         data={extraCosts}
         loading={isLoading}
         searchTerm={searchTerm}
+        onDeleteSuccess={fetchExtraCosts}
+        onUpdateSuccess={fetchExtraCosts}
       />
 
       {/* Pagination */}

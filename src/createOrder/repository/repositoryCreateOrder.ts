@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { CreateOrderModel, CustomerFactoryModel, OrderCreated, OrderState } from "../models/CreateOrderModel";
+import { CreateOrderModel, CustomerFactoryModel, OcrPreviewResponse, OrderCreated, OrderState } from "../models/CreateOrderModel";
 
 const BASE_URL_API  = import.meta.env.VITE_URL_BASE || 'http://127.0.0.1:8000';
 
@@ -123,4 +123,35 @@ export async function fetchCustomerFactories(): Promise<CustomerFactoryModel[]> 
   }
 
   return await response.json();
+}
+
+export async function ocrPreviewOrder(
+  image: File,
+  parser: 'regex' | 'ai' = 'regex'
+): Promise<OcrPreviewResponse> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  const formData = new FormData();
+  formData.append('image', image);
+
+  const response = await fetch(
+    `${BASE_URL_API}/orders/ocr-create/?action=preview&parser=${parser}`,
+    {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || `OCR error: ${response.statusText}`);
+  }
+
+  return data as OcrPreviewResponse;
 }
