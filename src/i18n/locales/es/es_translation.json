@@ -1150,6 +1150,8 @@
     "year": "Año",
     "week": "Semana",
     "loading": "Cargando datos de combustible...",
+    "deleteSuccess": "Costo de combustible eliminado exitosamente",
+    "deleteError": "Error al eliminar el costo de combustible",
     "summary": {
       "totalRecords": "Total de Registros:",
       "totalCost": "Costo Total:",
@@ -1353,6 +1355,16 @@
     "editButton": {
       "label": "Editar",
       "tooltip": "Editar costo de combustible"
+    },
+    "deleteButton": {
+      "label": "Eliminar",
+      "tooltip": "Eliminar costo de combustible"
+    },
+    "deleteDialog": {
+      "title": "Eliminar Costo de Combustible",
+      "message": "¿Estás seguro de que deseas eliminar este registro de costo de combustible? Esta acción no se puede deshacer.",
+      "confirm": "Eliminar",
+      "cancel": "Cancelar"
     },
     "footer": {
       "total": "Total: {{count}} registros | Seleccionados: {{selected}}",
