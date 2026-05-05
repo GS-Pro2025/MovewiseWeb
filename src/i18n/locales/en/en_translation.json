@@ -457,7 +457,8 @@
     "viewDispatchTicket": "View Dispatch Ticket",
     "addFuelCost": "Add Fuel Cost",
     "createExtraCost": "Create Extra Cost",
-    "assignTools": "Assign Tools"
+    "assignTools": "Assign Tools",
+    "trackOrder": "Track Order"
   },
   "costFuels": {
     "title": "Fuel Costs",
@@ -2634,5 +2635,17 @@
     "notes": "Notes",
     "latest": "Latest"
   }
+},
+"tracking": {
+  "title": "Live Tracking",
+  "activeOperators": "active",
+  "lastRefresh": "Updated",
+  "refresh": "Refresh",
+  "noActiveTracking": "No active tracking for this order",
+  "noActiveTrackingHint": "The operator must share their location from the mobile app",
+  "noSignal": "No signal (>30s)",
+  "active": "Active",
+  "disabledFinished": "This order is finished — tracking is not available",
+  "disabledInactive": "This order is inactive — tracking is not available"
 }
 }

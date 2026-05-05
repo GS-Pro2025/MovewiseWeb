@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle, Wrench } from 'lucide-react';
+import { Menu, MenuItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle, Wrench, MapPin } from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
 interface ContextMenuProps {
@@ -16,7 +16,8 @@ interface ContextMenuProps {
   onViewDispatchTicket?: (order: TableData) => void;
   onAddFuelCost?: (order: TableData) => void;
   onCreateExtraCost?: (order: TableData) => void;
-  onAssignTools?: (order: TableData) => void;   // ← NEW
+  onAssignTools?: (order: TableData) => void;
+  onTrackOrder?: (order: TableData) => void;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -31,7 +32,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onViewDispatchTicket,
   onAddFuelCost,
   onCreateExtraCost,
-  onAssignTools,           
+  onAssignTools,
+  onTrackOrder,
 }) => {
   const { t } = useTranslation();
 
@@ -46,7 +48,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       case 'view-dispatch':   if (onViewDispatchTicket) onViewDispatchTicket(row); break;
       case 'addFuelCost':     if (onAddFuelCost) onAddFuelCost(row); break;
       case 'createExtraCost': if (onCreateExtraCost) onCreateExtraCost(row); break;
-      case 'assignTools':     if (onAssignTools) onAssignTools(row); break; 
+      case 'assignTools':     if (onAssignTools) onAssignTools(row); break;
+      case 'trackOrder':      if (onTrackOrder) onTrackOrder(row); break;
     }
     onClose();
   };
@@ -113,11 +116,35 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         <ListItemText>{t('contextMenu.createExtraCost')}</ListItemText>
       </MenuItem>
 
-      {/* ← NEW */}
       <MenuItem onClick={() => handleAction('assignTools')}>
         <ListItemIcon><Wrench size={16} color="#0B2863" /></ListItemIcon>
         <ListItemText>{t('contextMenu.assignTools')}</ListItemText>
       </MenuItem>
+
+      {(() => {
+        const isDisabled = row?.status === 'finished' || row?.status === 'inactive';
+        const disabledMsg = row?.status === 'finished'
+          ? t('tracking.disabledFinished')
+          : row?.status === 'inactive'
+            ? t('tracking.disabledInactive')
+            : '';
+        return (
+          <Tooltip title={isDisabled ? disabledMsg : ''} placement="left" arrow>
+            <span>
+              <MenuItem
+                onClick={() => handleAction('trackOrder')}
+                disabled={isDisabled}
+                sx={{ '&.Mui-disabled': { pointerEvents: 'none' } }}
+              >
+                <ListItemIcon>
+                  <MapPin size={16} color={isDisabled ? '#9ca3af' : '#0B2863'} />
+                </ListItemIcon>
+                <ListItemText>{t('contextMenu.trackOrder')}</ListItemText>
+              </MenuItem>
+            </span>
+          </Tooltip>
+        );
+      })()}
     </Menu>
   );
 };

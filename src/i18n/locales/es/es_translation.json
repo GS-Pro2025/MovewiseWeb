@@ -457,7 +457,8 @@
     "viewDispatchTicket": "Ver Ticket de Despacho",
     "addFuelCost": "Agregar Costo de Combustible",
     "createExtraCost": "Crear Costo Extra",
-    "assignTools": "Asignar Herramientas"
+    "assignTools": "Asignar Herramientas",
+    "trackOrder": "Rastrear Orden"
 
   },
   "costFuels": {
@@ -2647,5 +2648,17 @@
     "notes": "Notas",
     "latest": "Último"
   }
+},
+"tracking": {
+  "title": "Rastreo en Vivo",
+  "activeOperators": "activo(s)",
+  "lastRefresh": "Actualizado",
+  "refresh": "Actualizar",
+  "noActiveTracking": "Sin rastreo activo para esta orden",
+  "noActiveTrackingHint": "El operador debe compartir su ubicación desde la app móvil",
+  "noSignal": "Sin señal (>30s)",
+  "active": "Activo",
+  "disabledFinished": "Esta orden está finalizada — el rastreo no está disponible",
+  "disabledInactive": "Esta orden está inactiva — el rastreo no está disponible"
 }
 }

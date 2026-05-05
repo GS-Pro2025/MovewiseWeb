@@ -18,6 +18,7 @@ import PaymentDialog from "./PaymentDialog";
 import DeleteOrderDialog from "./deleteOrderDialog";
 import CalendarDialog from "./calendarDialog";
 import AssignOrderToCostFuelDialog from "../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog";
+import OrderTrackingDialog from "./OrderTrackingDialog";
 import CreateExtraCostDialog from "../../extraCost/ui/components/CreateExtraCostDialog";
 import { AssignToolModal } from "./Assigntoolmodal";
 import CreateCostFuelDialog from "../../addFuelCostToOrder/ui/CreateCostFuelDialog";
@@ -243,6 +244,16 @@ const OrdersTable: React.FC = () => {
   const [selectedOrderForFuel, setSelectedOrderForFuel] =
     useState<NormalizedTableData | null>(null);
   const [createCostFuelOpen, setCreateCostFuelOpen] = useState(false);
+
+  // ── Tracking ─────────────────────────────────────────────────────────────
+  const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
+  const [selectedOrderForTracking, setSelectedOrderForTracking] =
+    useState<NormalizedTableData | null>(null);
+
+  const handleTrackOrder = (order: NormalizedTableData) => {
+    setSelectedOrderForTracking(order);
+    setTrackingDialogOpen(true);
+  };
 
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -675,6 +686,7 @@ const OrdersTable: React.FC = () => {
         onAddFuelCost={handleAddFuelCost}
         onCreateExtraCost={handleCreateExtraCost}
         onAssignTools={handleAssignTools}
+        onTrackOrder={handleTrackOrder}
       />
 
       {/* Modals */}
@@ -851,6 +863,16 @@ const OrdersTable: React.FC = () => {
         }}
         id_order={selectedOrderForExtraCost?.id || ""}
         onSuccess={handleExtraCostSuccess}
+      />
+
+      {/* ── 5. MODAL OrderTracking ───────────────────────────────────────── */}
+      <OrderTrackingDialog
+        open={trackingDialogOpen}
+        order={selectedOrderForTracking}
+        onClose={() => {
+          setTrackingDialogOpen(false);
+          setSelectedOrderForTracking(null);
+        }}
       />
 
       {/* ── 4. MODAL AssignTool ─────────────────────────────────────────────── */}
