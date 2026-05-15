@@ -9,6 +9,7 @@ type ExcelCsvExporterProps = PayrollExportProps;
 // Función para generar CSV
 const generateCSV = (props: PayrollExportProps): string => {
   const { operators, weekInfo, week, location, paymentStats, totalGrand, weekDates } = props;
+  const totalNet = operators.reduce((sum, op) => sum + (op.netTotal || 0), 0);
   
   let csv = '';
   
@@ -37,7 +38,7 @@ const generateCSV = (props: PayrollExportProps): string => {
     headerRow += `,"${day} (${displayDate})"`;
   });
   
-  headerRow += ',"Additional Bonuses","Expenses","Total","Grand Total"\n';
+  headerRow += '"Additional Bonuses","Expenses","Total","Grand Total","Total to Pay"\n';
   csv += headerRow;
   
   // Data rows
@@ -57,8 +58,7 @@ const generateCSV = (props: PayrollExportProps): string => {
     row += `,"${formatCurrency(operator.additionalBonuses || 0)}"`;
     row += `,"${formatCurrency(operator.expense || 0)}"`;
     row += `,"${formatCurrency((operator.total || 0) + (operator.additionalBonuses || 0))}"`;
-    row += `,"${formatCurrency(operator.grandTotal || 0)}"`;
-    row += '\n';
+    row += `,"${formatCurrency(operator.grandTotal || 0)}"`;    row += `","${formatCurrency(operator.netTotal || 0)}"`;    row += '\n';
     
     csv += row;
   });
@@ -69,7 +69,7 @@ const generateCSV = (props: PayrollExportProps): string => {
   weekdayKeys.forEach(() => {
     csv += '"",';
   });
-  csv += `"","${formatCurrency(totalGrand)}"\n`;
+  csv += `"","${formatCurrency(totalGrand)}","${formatCurrency(totalNet)}"\n`;
   
   return csv;
 };
@@ -77,6 +77,7 @@ const generateCSV = (props: PayrollExportProps): string => {
 // Función para generar Excel
 const generateExcel = (props: PayrollExportProps): string => {
   const { operators, weekInfo, week, location, paymentStats, totalGrand, weekDates } = props;
+  const totalNet = operators.reduce((sum, op) => sum + (op.netTotal || 0), 0);
   
   let excel = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -154,16 +155,16 @@ const generateExcel = (props: PayrollExportProps): string => {
 <body>
   <table border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
     <!-- Main Header -->
-    <tr><td colspan="13" class="main-header">PAYROLL REPORT</td></tr>
-    <tr><td colspan="13" class="sub-header">Week ${week} - ${location || 'All Locations'}</td></tr>
-    <tr><td colspan="13" class="sub-header">Period: ${formatDate(weekInfo.start_date)} to ${formatDate(weekInfo.end_date)}</td></tr>
-    <tr><td colspan="13" class="sub-header">Generated: ${new Date().toLocaleDateString()}</td></tr>
+    <tr><td colspan="14" class="main-header">PAYROLL REPORT</td></tr>
+    <tr><td colspan="14" class="sub-header">Week ${week} - ${location || 'All Locations'}</td></tr>
+    <tr><td colspan="14" class="sub-header">Period: ${formatDate(weekInfo.start_date)} to ${formatDate(weekInfo.end_date)}</td></tr>
+    <tr><td colspan="14" class="sub-header">Generated: ${new Date().toLocaleDateString()}</td></tr>
     
     <!-- Empty row -->
-    <tr><td colspan="13" style="height: 20px; border: none;"></td></tr>
+    <tr><td colspan="14" style="height: 20px; border: none;"></td></tr>
     
     <!-- Statistics Section -->
-    <tr><td colspan="13" class="stats-header">SUMMARY STATISTICS</td></tr>
+    <tr><td colspan="14" class="stats-header">SUMMARY STATISTICS</td></tr>
     <tr>
       <td class="left" style="font-weight: bold;">Total Operators:</td>
       <td class="stat-value">${operators.length}</td>
@@ -173,11 +174,11 @@ const generateExcel = (props: PayrollExportProps): string => {
       <td class="stat-value pending-stat">${paymentStats.unpaid}</td>
       <td class="left" style="font-weight: bold;">Grand Total:</td>
       <td class="stat-value total-stat">${formatCurrency(totalGrand)}</td>
-      <td colspan="5" style="border: none;"></td>
+      <td colspan="6" style="border: none;"></td>
     </tr>
     
     <!-- Empty row -->
-    <tr><td colspan="13" style="height: 20px; border: none;"></td></tr>
+    <tr><td colspan="14" style="height: 20px; border: none;"></td></tr>
     
     <!-- Table Headers -->
     <tr>
@@ -199,6 +200,7 @@ const generateExcel = (props: PayrollExportProps): string => {
       <td class="table-header">EXPENSES</td>
       <td class="table-header">TOTAL</td>
       <td class="table-header">GRAND TOTAL</td>
+      <td class="table-header">TOTAL TO PAY</td>
     </tr>`;
   
   // Data rows
@@ -223,6 +225,7 @@ const generateExcel = (props: PayrollExportProps): string => {
       <td class="currency">${operator.expense && operator.expense > 0 ? '-' + formatCurrency(operator.expense) : '—'}</td>
       <td class="currency">${formatCurrency((operator.total || 0) + (operator.additionalBonuses || 0))}</td>
       <td class="currency">${formatCurrency(operator.grandTotal || 0)}</td>
+      <td class="currency">${formatCurrency(operator.netTotal || 0)}</td>
     </tr>`;
   });
   
@@ -240,6 +243,7 @@ const generateExcel = (props: PayrollExportProps): string => {
       <td class="currency"></td>
       <td class="currency"></td>
       <td class="currency" style="font-size: 14px;">${formatCurrency(totalGrand)}</td>
+      <td class="currency" style="font-size: 14px;">${formatCurrency(totalNet)}</td>
     </tr>
   </table>
 </body>
