@@ -9,6 +9,7 @@ type PdfExporterProps = PayrollExportProps;
 // Función para imprimir reporte (PDF con orientación landscape)
 const printReport = (props: PayrollExportProps): void => {
   const { operators, weekInfo, week, location, paymentStats, totalGrand, weekDates } = props;
+  const totalNet = operators.reduce((sum, op) => sum + (op.netTotal || 0), 0);
   
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
@@ -347,6 +348,7 @@ const printReport = (props: PayrollExportProps): void => {
           <th>Expenses</th>
           <th>Total</th>
           <th>Grand Total</th>
+          <th>Total to Pay</th>
         </tr>
       </thead>
       <tbody>`;
@@ -374,6 +376,7 @@ const printReport = (props: PayrollExportProps): void => {
           <td class="currency">${operator.expense && operator.expense > 0 ? '-' + formatCurrency(operator.expense) : '—'}</td>
           <td class="currency">${formatCurrency((operator.total || 0) + (operator.additionalBonuses || 0))}</td>
           <td class="currency">${formatCurrency(operator.grandTotal || 0)}</td>
+          <td class="currency">${formatCurrency(operator.netTotal || 0)}</td>
         </tr>`;
   });
 
@@ -390,6 +393,7 @@ const printReport = (props: PayrollExportProps): void => {
           <td class="currency"></td>
           <td class="currency"></td>
           <td class="currency">${formatCurrency(totalGrand)}</td>
+          <td class="currency">${formatCurrency(totalNet)}</td>
         </tr>
       </tbody>
     </table>
