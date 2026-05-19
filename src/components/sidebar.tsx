@@ -317,6 +317,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
                 <DropdownLink icon="fa-building"  text={t("sidebar.nav.customers")}  to="/app/customers"  onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-briefcase" text={t("sidebar.nav.jobsTools")}  to="/app/jobs-tools" onClick={closeMobileMenu} />
                 <DropdownLink icon="fa-truck"     text={t("sidebar.nav.trucks")}     to="/app/trucks"     onClick={closeMobileMenu} />
+                <DropdownLink icon="fa-file-alt"  text={t("sidebar.nav.reports")}    to="/app/reports"    onClick={closeMobileMenu} />
                 {/* Operators con badge propio en el DropdownLink */}
                 <DropdownLinkWithBadge
                   icon="fa-users"
