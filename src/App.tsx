@@ -27,6 +27,7 @@ import LoansSummary from './statistics/ui/LoansSummary';
 import StatementPage from './statement/ui/StatementPage';
 import MyCompanyPage from './myCompanyPage/ui/MyCompanyPage';
 import TrucksPage from './Truck/ui/TrucksPage';
+import ReportsPage from './reports/ui/ReportsPage';
 import { OperatorsAlertProvider } from './operators/ui/components/context/Operatorsalertcontext'; 
 
 const App = () => {
@@ -115,6 +116,7 @@ const App = () => {
           <Route path="expense-breakdown"                element={<FinancialExpenseBreakdownView />} />
           <Route path="operator-loans"                   element={<LoansSummary />} />
           <Route path="trucks"                           element={<TrucksPage />} />
+          <Route path="reports"                          element={<ReportsPage />} />
         </Route>
 
         <Route
