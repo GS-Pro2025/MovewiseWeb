@@ -433,7 +433,7 @@ const ReportConfigBuilder: React.FC<Props> = ({ value, onChange }) => {
                   <FormControl size="small" sx={{ minWidth: 160 }}>
                     <InputLabel>{t('reports.config.payStatusFilter')}</InputLabel>
                     <Select
-                      value={value.pay_status_filter ?? ''}
+                      value={value.pay_status_filter != null ? String(value.pay_status_filter) : ''}
                       label={t('reports.config.payStatusFilter')}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -441,8 +441,8 @@ const ReportConfigBuilder: React.FC<Props> = ({ value, onChange }) => {
                       }}
                     >
                       <MenuItem value="">{t('reports.config.filterAll')}</MenuItem>
-                      <MenuItem value={1 as unknown as string}>{t('reports.config.paid')}</MenuItem>
-                      <MenuItem value={0 as unknown as string}>{t('reports.config.unpaid')}</MenuItem>
+                      <MenuItem value="1">{t('reports.config.paid')}</MenuItem>
+                      <MenuItem value="0">{t('reports.config.unpaid')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
