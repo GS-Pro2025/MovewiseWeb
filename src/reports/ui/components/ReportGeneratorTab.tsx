@@ -92,7 +92,7 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
       const cfg = resolvedConfig();
       setResult(data);
       setActiveConfig(cfg);
-      setIsPreview(data.total_records > PREVIEW_PAGE_SIZE);
+      setIsPreview((data.total_records ?? 0) > PREVIEW_PAGE_SIZE);
     } catch (err) {
       enqueueSnackbar(
         err instanceof Error ? err.message : t('reports.generator.generateError'),

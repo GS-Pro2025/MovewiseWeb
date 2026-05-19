@@ -89,7 +89,12 @@ const TemplateList: React.FC<Props> = ({ templates, loading, onEdit, onRefresh }
           </TableHead>
           <TableBody>
             {templates.map((tpl) => (
-              <TableRow key={tpl.id} hover>
+              <TableRow
+                key={tpl.id}
+                hover
+                onClick={() => onEdit(tpl)}
+                sx={{ cursor: 'pointer' }}
+              >
                 <TableCell>{tpl.name}</TableCell>
                 <TableCell>
                   <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 240 }}>
@@ -117,7 +122,7 @@ const TemplateList: React.FC<Props> = ({ templates, loading, onEdit, onRefresh }
                     </IconButton>
                   </Tooltip>
                   <Tooltip title={t('reports.templates.deleteTooltip')}>
-                    <IconButton size="small" color="error" onClick={() => setDeleteTarget(tpl)}>
+                    <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); setDeleteTarget(tpl); }}>
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>

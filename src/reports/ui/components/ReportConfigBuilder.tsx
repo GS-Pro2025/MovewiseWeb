@@ -441,8 +441,8 @@ const ReportConfigBuilder: React.FC<Props> = ({ value, onChange }) => {
                       }}
                     >
                       <MenuItem value="">{t('reports.config.filterAll')}</MenuItem>
-                      <MenuItem value="1">{t('reports.config.paid')}</MenuItem>
-                      <MenuItem value="0">{t('reports.config.unpaid')}</MenuItem>
+                      <MenuItem value={1 as unknown as string}>{t('reports.config.paid')}</MenuItem>
+                      <MenuItem value={0 as unknown as string}>{t('reports.config.unpaid')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>

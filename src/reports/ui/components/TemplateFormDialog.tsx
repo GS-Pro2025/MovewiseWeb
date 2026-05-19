@@ -17,6 +17,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import EditIcon from '@mui/icons-material/Edit';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useSnackbar } from 'notistack';
 import type { ReportTemplate } from '../../domain/ReportModels';
 import { DEFAULT_ORDER_CONFIG, type ReportConfig } from '../../domain/ReportModels';
@@ -37,6 +38,9 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
   const [description, setDescription] = useState('');
   const [config, setConfig] = useState<ReportConfig>(DEFAULT_ORDER_CONFIG);
   const [saving, setSaving] = useState(false);
+  // View mode = fields locked; edit mode = fields unlocked.
+  // Create mode (template === null) always starts in edit mode.
+  const [isEditing, setIsEditing] = useState(false);
 
   // Populate form when editing
   useEffect(() => {
@@ -44,10 +48,12 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
       setName(template.name);
       setDescription(template.description ?? '');
       setConfig(template.config);
+      setIsEditing(false); // open in view mode for existing templates
     } else {
       setName('');
       setDescription('');
       setConfig(DEFAULT_ORDER_CONFIG);
+      setIsEditing(true); // create mode is always editable
     }
   }, [template, open]);
 
@@ -118,16 +124,22 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
             color: 'white',
           }}
         >
-          {template ? <EditIcon /> : <BookmarkAddIcon />}
+          {!template ? <BookmarkAddIcon /> : isEditing ? <EditIcon /> : <VisibilityIcon />}
         </Avatar>
         <Box flex={1}>
           <Typography variant="h6" fontWeight={700} color="white" lineHeight={1.2}>
-            {template ? t('reports.templates.editTitle') : t('reports.templates.createTitle')}
+            {!template
+              ? t('reports.templates.createTitle')
+              : isEditing
+              ? t('reports.templates.editTitle')
+              : t('reports.templates.viewTitle', 'View Template')}
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-            {template
+            {!template
+              ? t('reports.templates.createSubtitle', 'Configure fields, filters and data to include')
+              : isEditing
               ? t('reports.templates.editSubtitle', 'Modify the template configuration')
-              : t('reports.templates.createSubtitle', 'Configure fields, filters and data to include')}
+              : t('reports.templates.viewSubtitle', 'Read-only view — click Edit to make changes')}
           </Typography>
         </Box>
         <IconButton
@@ -149,11 +161,14 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
             required
             fullWidth
             size="small"
+            disabled={!isEditing}
             inputProps={{ maxLength: 120 }}
             helperText={
-              <Typography variant="caption" color={name.length > 100 ? 'warning.main' : 'text.secondary'} component="span">
-                {name.length}/120
-              </Typography>
+              isEditing ? (
+                <Typography variant="caption" color={name.length > 100 ? 'warning.main' : 'text.secondary'} component="span">
+                  {name.length}/120
+                </Typography>
+              ) : undefined
             }
           />
           <TextField
@@ -164,6 +179,7 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
             size="small"
             multiline
             rows={2}
+            disabled={!isEditing}
             inputProps={{ maxLength: 500 }}
           />
 
@@ -173,22 +189,45 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
             {t('reports.templates.configSection')}
           </Typography>
 
-          <ReportConfigBuilder value={config} onChange={setConfig} />
+          {/* Wrap in a pointer-events blocker when in view mode */}
+          <Box sx={!isEditing ? { pointerEvents: 'none', opacity: 0.65 } : undefined}>
+            <ReportConfigBuilder value={config} onChange={setConfig} />
+          </Box>
         </Box>
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>
-          {t('reports.cancel')}
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={saving}
-          startIcon={saving ? <CircularProgress size={14} /> : <SaveIcon />}
-        >
-          {t('reports.save')}
-        </Button>
+        {/* View mode: Close + Edit button */}
+        {template && !isEditing ? (
+          <>
+            <Button onClick={onClose}>{t('reports.close', 'Close')}</Button>
+            <Button
+              variant="contained"
+              startIcon={<EditIcon />}
+              onClick={() => setIsEditing(true)}
+            >
+              {t('reports.edit', 'Edit')}
+            </Button>
+          </>
+        ) : (
+          /* Create / Edit mode: Cancel + Save */
+          <>
+            <Button
+              onClick={template ? () => setIsEditing(false) : onClose}
+              disabled={saving}
+            >
+              {t('reports.cancel')}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saving}
+              startIcon={saving ? <CircularProgress size={14} /> : <SaveIcon />}
+            >
+              {t('reports.save')}
+            </Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );
