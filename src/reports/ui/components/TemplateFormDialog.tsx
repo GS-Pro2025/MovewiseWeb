@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Avatar,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
   TextField,
   CircularProgress,
   Divider,
+  IconButton,
   Typography,
   Box,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
+import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
+import EditIcon from '@mui/icons-material/Edit';
 import { useSnackbar } from 'notistack';
 import type { ReportTemplate } from '../../domain/ReportModels';
 import { DEFAULT_ORDER_CONFIG, type ReportConfig } from '../../domain/ReportModels';
@@ -94,9 +98,46 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {template ? t('reports.templates.editTitle') : t('reports.templates.createTitle')}
-      </DialogTitle>
+      {/* Gradient header */}
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #0B2863 0%, #1a4a9c 100%)',
+          px: 3,
+          py: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          position: 'relative',
+        }}
+      >
+        <Avatar
+          sx={{
+            bgcolor: 'rgba(255,255,255,0.15)',
+            width: 44,
+            height: 44,
+            color: 'white',
+          }}
+        >
+          {template ? <EditIcon /> : <BookmarkAddIcon />}
+        </Avatar>
+        <Box flex={1}>
+          <Typography variant="h6" fontWeight={700} color="white" lineHeight={1.2}>
+            {template ? t('reports.templates.editTitle') : t('reports.templates.createTitle')}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            {template
+              ? t('reports.templates.editSubtitle', 'Modify the template configuration')
+              : t('reports.templates.createSubtitle', 'Configure fields, filters and data to include')}
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ color: 'rgba(255,255,255,0.8)', '&:hover': { color: 'white', bgcolor: 'rgba(255,255,255,0.1)' } }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
       <DialogContent dividers>
         <Box display="flex" flexDirection="column" gap={2}>
@@ -109,6 +150,11 @@ const TemplateFormDialog: React.FC<Props> = ({ open, template, onClose, onSaved 
             fullWidth
             size="small"
             inputProps={{ maxLength: 120 }}
+            helperText={
+              <Typography variant="caption" color={name.length > 100 ? 'warning.main' : 'text.secondary'} component="span">
+                {name.length}/120
+              </Typography>
+            }
           />
           <TextField
             label={t('reports.templates.descriptionLabel')}

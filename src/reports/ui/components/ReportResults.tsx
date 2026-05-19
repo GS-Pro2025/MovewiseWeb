@@ -33,12 +33,103 @@ function fieldLabel(key: string): string {
   return FIELD_LABELS[key] ?? key;
 }
 
+/** Convert YYYY-MM-DD → DD/MM/YYYY. Passes through any other string. */
+function formatDate(v: unknown): string {
+  const s = String(v ?? '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  return s;
+}
+
 /** Top-level scalar columns derived from config (excluding nested arrays) */
 function getPreviewColumns(config: ReportConfig): string[] {
   if (config.report_type === 'orders') {
     return config.order_fields ?? [];
   }
   return config.operator_fields ?? [];
+}
+
+/**
+ * Build a display record for one super-order group, mapping consolidated
+ * totals and aggregated nested data into the shape expected by the table.
+ */
+function buildGroupDisplayRecord(group: Record<string, unknown>): Record<string, unknown> {
+  const consolidated = (group['consolidated'] ?? {}) as Record<string, unknown>;
+  const orders = Array.isArray(group['orders'])
+    ? (group['orders'] as Record<string, unknown>[])
+    : [];
+
+  const allAssigns = orders.flatMap((o) =>
+    Array.isArray(o['assigns']) ? (o['assigns'] as Record<string, unknown>[]) : [],
+  );
+  const allFuel = orders.flatMap((o) =>
+    Array.isArray(o['cost_fuel']) ? (o['cost_fuel'] as Record<string, unknown>[]) : [],
+  );
+  const allTools = orders.flatMap((o) =>
+    Array.isArray(o['tools']) ? (o['tools'] as Record<string, unknown>[]) : [],
+  );
+
+  const uniqueOps = new Set(
+    allAssigns.map((a) => a['operator_code'] || a['operator_name']).filter(Boolean),
+  );
+  const opCount = uniqueOps.size || allAssigns.length;
+
+  const toolStr = allTools
+    .map((t) => {
+      const qty = Number(t['quantity'] ?? 1);
+      return qty > 1 ? `${t['tool_name']} x${qty}` : String(t['tool_name'] ?? '');
+    })
+    .filter(Boolean)
+    .join(', ');
+
+  const jobs = [
+    ...new Set(orders.map((o) => o['job']).filter((v) => v != null && v !== '')),
+  ];
+
+  return {
+    // Identifiers
+    key_ref: group['key_ref'],
+    key: consolidated['order_count'] ?? orders.length,
+    // Consolidated numeric totals
+    income: consolidated['total_income'],
+    expense: consolidated['total_expense'],
+    weight: consolidated['total_weight'],
+    distance: consolidated['total_distance'],
+    // Date range (DD/MM/YYYY, with -> separator for multi-day)
+    date:
+      consolidated['date_first'] === consolidated['date_last']
+        ? formatDate(consolidated['date_first'])
+        : `${formatDate(consolidated['date_first'])} -> ${formatDate(consolidated['date_last'])}`,
+    // Aggregated scalar fields
+    status: [...new Set(orders.map((o) => o['status']).filter(Boolean))].join(', '),
+    payStatus: orders.find((o) => o['payStatus'] != null)?.['payStatus'] ?? null,
+    state_usa: orders.map((o) => o['state_usa']).find((v) => v != null) ?? null,
+    address: orders.map((o) => o['address']).find((v) => v != null) ?? null,
+    // Nested — kept as arrays so nestedCount() still works
+    assigns: allAssigns,
+    cost_fuel: allFuel,
+    tools: allTools,
+    // Person from first order that has person data
+    person: orders.map((o) => o['person']).find((p) => p != null) ?? null,
+    // Job names concatenated
+    job: jobs.join(', '),
+    // Pre-computed summary strings for display
+    _assigns_display: opCount === 0 ? null : `${opCount} operator${opCount !== 1 ? 's' : ''}`,
+    _tools_display: toolStr || null,
+  };
+}
+
+/**
+ * For orders the API returns GROUPS (by key_ref). Build one display record per
+ * group using consolidated totals. For operators the items are already flat.
+ */
+function getPreviewRecords(result: ReportResult): Record<string, unknown>[] {
+  if (result.report_type === 'orders') {
+    return result.data.map(buildGroupDisplayRecord);
+  }
+  return result.data;
 }
 
 /** Format a cell value for display */
@@ -66,13 +157,12 @@ const ReportResults: React.FC<Props> = ({
   const { t } = useTranslation();
 
   const previewCols = getPreviewColumns(config);
+  const previewRecords = getPreviewRecords(result);
 
   // Determine which nested arrays are included (for summary columns)
   const nestedSummaryKeys: { key: string; label: string }[] = [];
   if (config.report_type === 'orders') {
-    if (config.include_assigns) nestedSummaryKeys.push({ key: 'assigns', label: t('reports.results.assigns') });
-    if (config.include_costfuel) nestedSummaryKeys.push({ key: 'cost_fuel', label: t('reports.results.costFuel') });
-    if (config.include_tools) nestedSummaryKeys.push({ key: 'tools', label: t('reports.results.tools') });
+    // assigns, tools and fuel cost are shown in their own PDF/Excel sections, not in the main table
     if (config.include_person) nestedSummaryKeys.push({ key: 'person', label: t('reports.results.client') });
     if (config.include_job) nestedSummaryKeys.push({ key: 'job', label: t('reports.results.job') });
   }
@@ -90,14 +180,30 @@ const ReportResults: React.FC<Props> = ({
           <Typography variant="subtitle1" fontWeight={600}>
             {t('reports.results.title')}
           </Typography>
-          <Chip
-            label={`${result.total_records} ${t('reports.results.records')}`}
-            size="small"
-            color="primary"
-          />
+          {result.report_type === 'orders' ? (
+            <>
+              <Chip
+                label={`${result.total_groups ?? result.data.length} ${t('reports.results.groups', 'groups')}`}
+                size="small"
+                color="primary"
+              />
+              <Chip
+                label={`${result.total_individual_orders ?? previewRecords.length} ${t('reports.results.records')}`}
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+            </>
+          ) : (
+            <Chip
+              label={`${result.total_records ?? result.data.length} ${t('reports.results.records')}`}
+              size="small"
+              color="primary"
+            />
+          )}
           {isPreview && (
             <Chip
-              label={t('reports.results.previewBadge', { count: result.data.length })}
+              label={t('reports.results.previewBadge', { count: previewRecords.length })}
               size="small"
               variant="outlined"
               color="warning"
@@ -132,7 +238,7 @@ const ReportResults: React.FC<Props> = ({
               size="small"
               variant="outlined"
               startIcon={<PictureAsPdfIcon />}
-              onClick={() => exportToPDF(result, config, reportName)}
+              onClick={() => void exportToPDF(result, config, reportName)}
             >
               PDF
             </Button>
@@ -168,7 +274,7 @@ const ReportResults: React.FC<Props> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {result.data.map((record, idx) => (
+            {previewRecords.map((record, idx) => (
               <TableRow key={idx} hover>
                 {previewCols.map((col) => (
                   <TableCell key={col}>
@@ -189,7 +295,29 @@ const ReportResults: React.FC<Props> = ({
                   if (key === 'job') {
                     return <TableCell key={key}>{String(record['job'] ?? '—')}</TableCell>;
                   }
-                  // nested arrays — show count
+                  // Operators: show unique count string
+                  if (key === 'assigns') {
+                    const display = record['_assigns_display'];
+                    return (
+                      <TableCell key={key}>
+                        {display
+                          ? <Chip label={String(display)} size="small" variant="outlined" />
+                          : <Typography variant="body2" color="text.disabled">—</Typography>}
+                      </TableCell>
+                    );
+                  }
+                  // Tools: show concatenated names
+                  if (key === 'tools') {
+                    const display = record['_tools_display'];
+                    return (
+                      <TableCell key={key} sx={{ maxWidth: 200 }}>
+                        {display
+                          ? <Typography variant="body2" sx={{ fontSize: '0.75rem', wordBreak: 'break-word' }}>{String(display)}</Typography>
+                          : <Typography variant="body2" color="text.disabled">—</Typography>}
+                      </TableCell>
+                    );
+                  }
+                  // Other nested arrays — show count chip
                   const count = nestedCount(record, key);
                   return (
                     <TableCell key={key}>
@@ -211,7 +339,12 @@ const ReportResults: React.FC<Props> = ({
 
       {isPreview && (
         <Typography variant="caption" color="text.secondary" mt={1} display="block">
-          {t('reports.results.previewNote', { shown: result.data.length, total: result.total_records })}
+          {t('reports.results.previewNote', {
+            shown: previewRecords.length,
+            total: result.report_type === 'orders'
+              ? result.total_individual_orders
+              : result.total_records,
+          })}
         </Typography>
       )}
     </Box>

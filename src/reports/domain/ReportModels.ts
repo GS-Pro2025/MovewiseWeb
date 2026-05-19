@@ -55,7 +55,11 @@ export interface GenerateRequest {
 export interface ReportResult {
   report_type: 'orders' | 'operators';
   date_range: { start: string; end: string };
-  total_records: number;
+  // operators
+  total_records?: number;
+  // orders — super-order groups
+  total_groups?: number;
+  total_individual_orders?: number;
   data: Record<string, unknown>[];
 }
 
