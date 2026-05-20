@@ -100,6 +100,7 @@ function buildOperatorsColumns(config: ReportConfig): string[] {
 function columnHeader(col: string): string {
   if (col === 'assigns_summary') return 'Operators';
   if (col === '_assigns')        return 'Operators';
+  if (col === '_assigns_salary') return 'Operators Total';
   if (col === '_tools')          return 'Tools';
   // Fuel cost — split columns
   if (col === '_fuel_cost')  return 'Fuel Cost';
@@ -295,7 +296,7 @@ function buildExcelOrderCols(config: ReportConfig): string[] {
   if (config.include_job)              cols.push('job');
   if (config.include_customer_factory) cols.push('customer_factory');
   // Nested arrays become inline concat columns (no separate section tables in Excel)
-  if (config.include_assigns)  cols.push('_assigns');
+  if (config.include_assigns) { cols.push('_assigns'); cols.push('_assigns_salary'); }
   if (config.include_tools)    cols.push('_tools');
   if (config.include_costfuel) {
     // Four separate fuel columns instead of one concatenated cell
@@ -363,6 +364,7 @@ function buildExcelOrderRows(
 
   // Column indices for conditional styling
   const earningsColIdx = cols.indexOf('_earnings');
+  const assignsSalaryColIdx = cols.indexOf('_assigns_salary');
   const fuelNumericCols = new Set(
     ['_fuel_cost', '_fuel_qty', '_fuel_dist'].map((k) => cols.indexOf(k)).filter((i) => i >= 0),
   );
@@ -414,6 +416,17 @@ function buildExcelOrderRows(
           return assigns.map((a) => formatAssignCell(a, assignFields)).join('\n');
         }
 
+        // ── Operators total salary (sum of all assigns' salary) ───────────────
+        if (col === '_assigns_salary') {
+          const assigns = Array.isArray(order['assigns'])
+            ? (order['assigns'] as Record<string, unknown>[])
+            : [];
+          const total = assigns.reduce((sum, a) => {
+            return sum + (parseFloat(String(a['salary'] ?? 0)) || 0);
+          }, 0);
+          return total === 0 ? '$0.00' : `$${total.toFixed(2)}`;
+        }
+
         // ── Tools: "tool_name xN" per tool, joined with ", "
         if (col === '_tools') {
           const tools = Array.isArray(order['tools'])
@@ -454,6 +467,11 @@ function buildExcelOrderRows(
       // Fuel numeric columns: right-align with row-appropriate background
       for (const ci of fuelNumericCols) {
         overrides[ci] = isEven ? XLS_NUM_RIGHT_EVEN : XLS_NUM_RIGHT;
+      }
+
+      // Operators total salary: right-align
+      if (assignsSalaryColIdx >= 0) {
+        overrides[assignsSalaryColIdx] = isEven ? XLS_NUM_RIGHT_EVEN : XLS_NUM_RIGHT;
       }
 
       if (Object.keys(overrides).length > 0) cellStyles[rowIdx] = overrides;
