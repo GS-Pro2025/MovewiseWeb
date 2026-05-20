@@ -43,9 +43,24 @@ function truncate(s: string, max = 25): string {
   return s.length > max ? `${s.slice(0, max)}...` : s;
 }
 
+/** Fields that should display as '0' (not blank) when null/undefined — numeric accounting fields. */
+const NUMERIC_FIELDS = new Set([
+  'income', 'expense', 'weight', 'distance',
+  'salary', 'hourly_salary', 'additional_costs',
+  'cost_fuel_distributed', 'fuel_qty_distributed', 'distance_distributed',
+  'quantity',
+]);
+
+/** Like formatValue but returns '0' instead of '' for null/undefined numeric fields. */
+function formatNumeric(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '0';
+  return String(value);
+}
+
 function renderCell(key: string, value: unknown): string {
   if (key === 'payStatus') return formatPayStatus(value);
   if (key === 'salary_type') return formatSalaryType(value);
+  if (NUMERIC_FIELDS.has(key)) return formatNumeric(value);
   return formatValue(value);
 }
 
@@ -84,8 +99,18 @@ function buildOperatorsColumns(config: ReportConfig): string[] {
 
 function columnHeader(col: string): string {
   if (col === 'assigns_summary') return 'Operators';
-  if (col === 'fuel_summary') return 'Fuel';
-  if (col === 'tools_summary') return 'Tools';
+  if (col === '_assigns')        return 'Operators';
+  if (col === '_tools')          return 'Tools';
+  // Fuel cost — split columns
+  if (col === '_fuel_cost')  return 'Fuel Cost';
+  if (col === '_fuel_qty')   return 'Fuel (gal)';
+  if (col === '_fuel_dist')  return 'Distance';
+  if (col === '_fuel_truck') return 'Truck';
+  // Legacy / PDF summary keys
+  if (col === '_costfuel')      return 'Fuel';
+  if (col === 'fuel_summary')   return 'Fuel';
+  if (col === 'tools_summary')  return 'Tools';
+  if (col === '_earnings')      return 'Earnings';
   if (col === 'job') return 'Job';
   if (col === 'customer_factory') return 'Factory';
   // strip prefix (person., assignment.)
@@ -254,33 +279,194 @@ function buildFlatRows(result: ReportResult, config: ReportConfig): { cols: stri
   return { cols, rows };
 }
 
-// ─── Shared detail-section builders (used by both Excel and PDF) ────────────────────────────
+// ─── Excel-specific flatten: 1 row per individual sub-order ───────────────────────
+//
+// Unlike the PDF/CSV path (1 row per super-order group), the Excel export
+// produces one row per individual order. Assigns, tools and fuel are
+// concatenated into dedicated columns (comma-separated between items,
+// pipe-separated between fields within each item).
 
-function collectToolRows(result: ReportResult): string[][] {
+/** Column list for the Excel orders export (no filtering of nested-array cols). */
+function buildExcelOrderCols(config: ReportConfig): string[] {
+  const cols: string[] = [...(config.order_fields ?? [])];
+  if (config.include_person) {
+    (config.person_fields ?? []).forEach((f) => cols.push(`person.${f}`));
+  }
+  if (config.include_job)              cols.push('job');
+  if (config.include_customer_factory) cols.push('customer_factory');
+  // Nested arrays become inline concat columns (no separate section tables in Excel)
+  if (config.include_assigns)  cols.push('_assigns');
+  if (config.include_tools)    cols.push('_tools');
+  if (config.include_costfuel) {
+    // Four separate fuel columns instead of one concatenated cell
+    cols.push('_fuel_cost', '_fuel_qty', '_fuel_dist', '_fuel_truck');
+  }
+  // Earnings (income − expense) is always appended last for orders
+  cols.push('_earnings');
+  return cols;
+}
+
+/**
+ * Format one assign record for the Excel Operators cell.
+ * Identity fields (operator_name, operator_code) are shown without a label on the first line;
+ * all other requested fields are shown with labels on a second line.
+ * Example: "John Doe (DRV01)\nRol: Driver, Salary: $180.00, Type: Per Day, Truck: 5"
+ */
+function formatAssignCell(assign: Record<string, unknown>, fields: string[]): string {
+  const IDENTITY_FIELDS = new Set(['operator_name', 'operator_code']);
+  const CELL_LABELS: Record<string, string> = {
+    rol: 'Rol', salary: 'Salary', salary_type: 'Type', hourly_salary: 'Hr Salary',
+    truck_number: 'Truck', assigned_at: 'Date', start_time: 'Start',
+    end_time: 'End', additional_costs: 'Extra',
+  };
+
+  // ── Identity line: "John Doe (DRV01)" ──────────────────────────────────────
+  const name     = formatValue(assign['operator_name']);
+  const hasCode  = fields.includes('operator_code');
+  const code     = hasCode ? formatValue(assign['operator_code']) : '';
+  const identity = [name, code ? `(${code})` : ''].filter(Boolean).join(' ');
+
+  // ── Detail line: labeled non-identity fields ────────────────────────────────
+  const detailParts = fields
+    .filter((f) => !IDENTITY_FIELDS.has(f))
+    .map((f) => {
+      let val: string;
+      if (f === 'assigned_at') val = formatDate(assign[f]);
+      else if (f === 'salary_type') val = formatSalaryType(assign[f]);
+      else if (f === 'salary' || f === 'hourly_salary') {
+        const num = parseFloat(String(assign[f] ?? ''));
+        val = isNaN(num) || num === 0 ? '0' : `$${num.toFixed(2)}`;
+      } else {
+        val = NUMERIC_FIELDS.has(f) ? formatNumeric(assign[f]) : formatValue(assign[f]);
+      }
+      const lbl = CELL_LABELS[f] ?? f;
+      return `${lbl}: ${val}`;
+    });
+
+  const details = detailParts.join(', ');
+  return [identity, details].filter(Boolean).join('\n');
+}
+
+/** Build Excel rows: one row per individual sub-order.
+ *  Returns rows (string values) and cellStyles (per-cell style overrides for conditional formatting). */
+function buildExcelOrderRows(
+  result: ReportResult,
+  config: ReportConfig,
+): { cols: string[]; rows: string[][]; cellStyles: Record<number, Record<number, object>> } {
+  const cols = buildExcelOrderCols(config);
+  const assignFields = config.assign_fields?.length
+    ? config.assign_fields
+    : ['operator_name', 'rol', 'salary', 'truck_number'];
+
   const rows: string[][] = [];
+  const cellStyles: Record<number, Record<number, object>> = {};
+
+  // Column indices for conditional styling
+  const earningsColIdx = cols.indexOf('_earnings');
+  const fuelNumericCols = new Set(
+    ['_fuel_cost', '_fuel_qty', '_fuel_dist'].map((k) => cols.indexOf(k)).filter((i) => i >= 0),
+  );
+
+  let rowIdx = 0;
   for (const group of result.data) {
-    const keyRef = String(group['key_ref'] ?? '');
-    const orders = Array.isArray(group['orders'])
+    const keyRef  = String(group['key_ref'] ?? '');
+    const orders  = Array.isArray(group['orders'])
       ? (group['orders'] as Record<string, unknown>[])
       : [];
-    const person = orders.map((o) => o['person']).find((p) => p != null) as
-      | Record<string, unknown>
-      | undefined;
-    const clientName = person
-      ? `${person['first_name'] ?? ''} ${person['last_name'] ?? ''}`.trim()
-      : '';
+
     for (const order of orders) {
-      const day = formatDate(order['date']);
-      const tools = Array.isArray(order['tools'])
-        ? (order['tools'] as Record<string, unknown>[])
+      const person = order['person'] as Record<string, unknown> | undefined;
+      const isEven = rowIdx % 2 !== 0; // matches XLS_ROW_EVEN (1-indexed feel)
+
+      // Pre-compute income/expense for earnings
+      const incomeRaw  = parseFloat(String(order['income']  ?? 0)) || 0;
+      const expenseRaw = parseFloat(String(order['expense'] ?? 0)) || 0;
+      const earnings   = incomeRaw - expenseRaw;
+
+      // Fuel entries for this order
+      const fuels = Array.isArray(order['cost_fuel'])
+        ? (order['cost_fuel'] as Record<string, unknown>[])
         : [];
-      for (const tool of tools) {
-        rows.push([keyRef, clientName, day, String(tool['tool_name'] ?? ''), String(tool['quantity'] ?? 1)]);
+
+      const row: string[] = cols.map((col) => {
+        if (col === 'key_ref')   return keyRef;
+        if (col === 'date')      return formatDate(order['date']);
+        if (col === 'payStatus') return formatPayStatus(order['payStatus']);
+        if (col === 'status')    return formatValue(order['status']);
+
+        if (['income', 'expense', 'weight', 'distance'].includes(col))
+          return renderCell(col, order[col]);
+
+        if (col.startsWith('person.')) {
+          const field = col.split('.')[1];
+          return renderCell(field, person?.[field]);
+        }
+
+        if (col === 'job')              return formatValue(order['job']);
+        if (col === 'customer_factory') return formatValue(order['customer_factory']);
+        if (col === 'state_usa' || col === 'address') return formatValue(order[col]);
+
+        // ── Operators: one formatted block per assign, separated by blank line ──
+        if (col === '_assigns') {
+          const assigns = Array.isArray(order['assigns'])
+            ? (order['assigns'] as Record<string, unknown>[])
+            : [];
+          return assigns.map((a) => formatAssignCell(a, assignFields)).join('\n');
+        }
+
+        // ── Tools: "tool_name xN" per tool, joined with ", "
+        if (col === '_tools') {
+          const tools = Array.isArray(order['tools'])
+            ? (order['tools'] as Record<string, unknown>[])
+            : [];
+          return tools
+            .map((t) => {
+              const qty = Number(t['quantity'] ?? 1);
+              return qty > 1 ? `${t['tool_name']} x${qty}` : String(t['tool_name'] ?? '');
+            })
+            .filter(Boolean)
+            .join(', ');
+        }
+
+        // ── Fuel split columns ────────────────────────────────────────────────
+        if (col === '_fuel_cost')  return fuels.map((f) => formatNumeric(f['cost_fuel_distributed'])).join(', ') || '0';
+        if (col === '_fuel_qty')   return fuels.map((f) => formatNumeric(f['fuel_qty_distributed'])).join(', ') || '0';
+        if (col === '_fuel_dist')  return fuels.map((f) => formatNumeric(f['distance_distributed'])).join(', ') || '0';
+        if (col === '_fuel_truck') return fuels.map((f) => String(f['truck_number'] ?? '')).filter(Boolean).join(', ');
+
+        // ── Earnings (income − expense) ───────────────────────────────────────
+        if (col === '_earnings') {
+          return earnings === 0 ? '$0.00' : `$${earnings.toFixed(2)}`;
+        }
+
+        // Fallback for any order_field not explicitly handled
+        return renderCell(col, order[col]);
+      });
+
+      // ── Per-cell style overrides ──────────────────────────────────────────────
+      const overrides: Record<number, object> = {};
+
+      // Earnings: green (profit) / red (loss) / gray (break-even)
+      if (earningsColIdx >= 0) {
+        overrides[earningsColIdx] = earnings > 0 ? XLS_EARN_POS : earnings < 0 ? XLS_EARN_NEG : XLS_EARN_ZERO;
       }
+
+      // Fuel numeric columns: right-align with row-appropriate background
+      for (const ci of fuelNumericCols) {
+        overrides[ci] = isEven ? XLS_NUM_RIGHT_EVEN : XLS_NUM_RIGHT;
+      }
+
+      if (Object.keys(overrides).length > 0) cellStyles[rowIdx] = overrides;
+
+      rows.push(row);
+      rowIdx++;
     }
   }
-  return rows;
+
+  return { cols, rows, cellStyles };
 }
+
+// ─── Shared detail-section builders (used by PDF) ──────────────────────────────────
 
 function collectFuelRows(result: ReportResult): string[][] {
   const rows: string[][] = [];
@@ -305,9 +491,9 @@ function collectFuelRows(result: ReportResult): string[][] {
           keyRef,
           clientName,
           day,
-          formatValue(fuel['cost_fuel_distributed']),
-          formatValue(fuel['fuel_qty_distributed']),
-          formatValue(fuel['distance_distributed']),
+          formatNumeric(fuel['cost_fuel_distributed']),
+          formatNumeric(fuel['fuel_qty_distributed']),
+          formatNumeric(fuel['distance_distributed']),
           String(fuel['truck_number'] ?? ''),
         ]);
       }
@@ -353,7 +539,7 @@ function collectAssignRows(
           ...fields.map((f) => {
             if (f === 'salary_type') return formatSalaryType(assign[f]);
             if (f === 'assigned_at') return formatDate(assign[f]);
-            return formatValue(assign[f]);
+            return NUMERIC_FIELDS.has(f) ? formatNumeric(assign[f]) : formatValue(assign[f]);
           }),
         ]);
       }
@@ -464,13 +650,22 @@ const XLS_TITLE    = xlsStyle('FF0B2863', 'FFFFFFFF', true,  14);
 const XLS_SUBTITLE = xlsStyle('FFF09F52', 'FFFFFFFF', false,  9);
 const XLS_SEC_HDR  = xlsStyle('FF0B2863', 'FFFFFFFF', true,  10);
 const XLS_COL_HDR  = xlsStyle('FF1E4080', 'FFFFFFFF', true,   8, 'center', true);
-const XLS_ROW_ODD  = xlsStyle('FFFFFFFF', 'FF333333', false,  8, 'left',   true);
-const XLS_ROW_EVEN = xlsStyle('FFF5F7FA', 'FF333333', false,  8, 'left',   true);
+const XLS_ROW_ODD  = { ...xlsStyle('FFFFFFFF', 'FF333333', false, 8, 'left',   true), alignment: { horizontal: 'left'  as const, vertical: 'top' as const, wrapText: true } };
+const XLS_ROW_EVEN = { ...xlsStyle('FFF5F7FA', 'FF333333', false, 8, 'left',   true), alignment: { horizontal: 'left'  as const, vertical: 'top' as const, wrapText: true } };
+// Earnings conditional styles (Excel standard conditional-formatting palette)
+const XLS_EARN_POS  = { ...xlsStyle('FFC6EFCE', 'FF276221', true,  8, 'right', true), alignment: { horizontal: 'right' as const, vertical: 'top' as const, wrapText: false } };
+const XLS_EARN_NEG  = { ...xlsStyle('FFFFC7CE', 'FF9C0006', true,  8, 'right', true), alignment: { horizontal: 'right' as const, vertical: 'top' as const, wrapText: false } };
+const XLS_EARN_ZERO = { ...xlsStyle('FFF2F2F2', 'FF666666', false, 8, 'right', true), alignment: { horizontal: 'right' as const, vertical: 'top' as const, wrapText: false } };
+// Right-aligned numeric style for fuel cost / qty / distance cells
+const XLS_NUM_RIGHT = { ...xlsStyle('FFFFFFFF', 'FF333333', false, 8, 'right', true), alignment: { horizontal: 'right' as const, vertical: 'top' as const, wrapText: false } };
+const XLS_NUM_RIGHT_EVEN = { ...xlsStyle('FFF5F7FA', 'FF333333', false, 8, 'right', true), alignment: { horizontal: 'right' as const, vertical: 'top' as const, wrapText: false } };
 
 interface XlsSection {
   title: string;
   head:  string[];
   rows:  string[][];
+  /** Optional per-cell style overrides: cellStyles[rowIdx][colIdx] replaces the base alternating style. */
+  cellStyles?: Record<number, Record<number, object>>;
 }
 
 /**
@@ -523,12 +718,13 @@ function buildXlsSheet(
     rowHeights[R] = { hpt: 18 };
     R++;
 
-    // Data rows (alternating)
+    // Data rows (alternating) with per-cell style overrides
     for (let i = 0; i < section.rows.length; i++) {
       const dataRow = section.rows[i];
-      const style   = i % 2 === 0 ? XLS_ROW_ODD : XLS_ROW_EVEN;
+      const baseStyle = i % 2 === 0 ? XLS_ROW_ODD : XLS_ROW_EVEN;
       for (let c = 0; c < numCols; c++) {
-        ws[enc(R, c)] = { v: dataRow[c] ?? '', t: 's', s: style };
+        const overrideStyle = section.cellStyles?.[i]?.[c];
+        ws[enc(R, c)] = { v: dataRow[c] ?? '', t: 's', s: overrideStyle ?? baseStyle };
       }
       R++;
     }
@@ -551,58 +747,33 @@ function buildXlsSheet(
 // ─── Excel ────────────────────────────────────────────────────────────────────
 
 export function exportToExcel(result: ReportResult, config: ReportConfig, filename: string): void {
-  const { cols, rows } = buildFlatRows(result, config);
-
   const reportTypeLabel = result.report_type === 'orders' ? 'Orders Report' : 'Operators Report';
   const titleText    = `Movewise  |  ${reportTypeLabel}`;
   const subtitleText = `Date range: ${formatDate(result.date_range.start)}  ->  ${formatDate(result.date_range.end)}`;
 
   const sections: XlsSection[] = [];
 
-  // Main section
-  sections.push({
-    title: result.report_type === 'orders' ? 'Orders' : 'Operators',
-    head:  cols.map(columnHeader),
-    rows:  rows.map((row) => cols.map((col) => row[col] ?? '')),
-  });
-
   if (config.report_type === 'orders') {
-    if (config.include_tools) {
-      const toolRows = collectToolRows(result);
-      if (toolRows.length > 0) {
-        sections.push({
-          title: 'Tools Detail',
-          head:  ['Order #', 'Client', 'Day', 'Tool', 'Qty'],
-          rows:  toolRows,
-        });
-      }
-    }
-
-    if (config.include_costfuel) {
-      const fuelRows = collectFuelRows(result);
-      if (fuelRows.length > 0) {
-        sections.push({
-          title: 'Fuel Cost Detail',
-          head:  ['Order #', 'Client', 'Day', 'Fuel Cost', 'Fuel (gal)', 'Distance', 'Truck'],
-          rows:  fuelRows,
-        });
-      }
-    }
-
-    if (config.include_assigns) {
-      const { head: aHead, rows: aRows } = collectAssignRows(result, config);
-      if (aRows.length > 0) {
-        sections.push({
-          title: 'Operator Assignments',
-          head:  aHead,
-          rows:  aRows,
-        });
-      }
-    }
+    // Excel: 1 row per individual sub-order; assigns/tools/fuel as inline columns (no separate sections)
+    const { cols, rows, cellStyles } = buildExcelOrderRows(result, config);
+    sections.push({
+      title: 'Orders',
+      head:  cols.map(columnHeader),
+      rows,
+      cellStyles,
+    });
+  } else {
+    // Operators: keep existing flat-row approach
+    const { cols, rows } = buildFlatRows(result, config);
+    sections.push({
+      title: 'Operators',
+      head:  cols.map(columnHeader),
+      rows:  rows.map((row) => cols.map((col) => row[col] ?? '')),
+    });
   }
 
   const numCols = Math.max(
-    ...sections.map((s) => Math.max(s.head.length, ...s.rows.map((r) => r.length))),
+    ...sections.map((s) => Math.max(s.head.length, ...s.rows.map((r) => r.length), s.head.length)),
   );
 
   const wb = XLSX.utils.book_new();
