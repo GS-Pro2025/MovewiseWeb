@@ -7,7 +7,6 @@ import {
   Button,
   Box,
   CircularProgress,
-  Grid,
   IconButton,
   Typography,
   Tooltip,
@@ -121,21 +120,21 @@ const OrderEvidenceDialog: React.FC<OrderEvidenceDialogProps> = ({
               <Typography variant="body2">No evidence photos yet.</Typography>
             </Box>
           ) : (
-            <Grid container spacing={2}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
               {evidences.map((ev) => (
-                <Grid item xs={12} sm={6} md={4} key={ev.id}>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      borderRadius: 2,
-                      overflow: 'hidden',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      cursor: 'pointer',
-                      '&:hover .overlay': { opacity: 1 },
-                    }}
-                    onClick={() => setPreviewSrc(ev.image_url)}
-                  >
+                <Box
+                  key={ev.id}
+                  sx={{
+                    position: 'relative',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    cursor: 'pointer',
+                    '&:hover .overlay': { opacity: 1 },
+                  }}
+                  onClick={() => setPreviewSrc(ev.image_url)}
+                >
                     <img
                       src={ev.image_url}
                       alt={`Evidence ${ev.id}`}
@@ -182,9 +181,8 @@ const OrderEvidenceDialog: React.FC<OrderEvidenceDialogProps> = ({
                       {new Date(ev.created_at).toLocaleString()}
                     </Typography>
                   </Box>
-                </Grid>
               ))}
-            </Grid>
+            </Box>
           )}
         </DialogContent>
 
