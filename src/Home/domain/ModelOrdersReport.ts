@@ -6,6 +6,12 @@ export interface Person {
   address: string;
 }
 
+export interface OrderEvidence {
+  id: number;
+  image_url: string;
+  created_at: string; // ISO 8601
+}
+
 export interface Operator {
   id_assign: number;
   date: string;
@@ -53,6 +59,7 @@ export interface OrderReportResult {
   status: string;
   payStatus: number | string | null;
   evidence: string | null;
+  evidences: OrderEvidence[];
   dispatch_ticket: string | null;
   dispatch_ticket_url: string | null;
   state_usa: string;

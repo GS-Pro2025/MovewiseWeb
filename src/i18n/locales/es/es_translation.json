@@ -588,7 +588,8 @@
     "addFuelCost": "Agregar Costo de Combustible",
     "createExtraCost": "Crear Costo Extra",
     "assignTools": "Asignar Herramientas",
-    "trackOrder": "Rastrear Orden"
+    "trackOrder": "Rastrear Orden",
+    "viewEvidence": "Ver Fotos de Evidencia"
 
   },
   "costFuels": {

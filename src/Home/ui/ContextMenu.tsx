@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Menu, MenuItem, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
-import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle, Wrench, MapPin } from 'lucide-react';
+import { Check, Edit, Ban, Trash2, Copy, Image, Fuel, PlusCircle, Wrench, MapPin, Camera } from 'lucide-react';
 import { TableData } from '../domain/TableData';
 
 interface ContextMenuProps {
@@ -18,6 +18,7 @@ interface ContextMenuProps {
   onCreateExtraCost?: (order: TableData) => void;
   onAssignTools?: (order: TableData) => void;
   onTrackOrder?: (order: TableData) => void;
+  onViewEvidence?: (order: TableData) => void;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -34,6 +35,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onCreateExtraCost,
   onAssignTools,
   onTrackOrder,
+  onViewEvidence,
 }) => {
   const { t } = useTranslation();
 
@@ -50,6 +52,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       case 'createExtraCost': if (onCreateExtraCost) onCreateExtraCost(row); break;
       case 'assignTools':     if (onAssignTools) onAssignTools(row); break;
       case 'trackOrder':      if (onTrackOrder) onTrackOrder(row); break;
+      case 'viewEvidence':    if (onViewEvidence) onViewEvidence(row); break;
     }
     onClose();
   };
@@ -97,6 +100,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       <MenuItem onClick={() => handleAction('delete')} sx={{ color: 'error.main' }}>
         <ListItemIcon><Trash2 size={20} color="#ef4444" /></ListItemIcon>
         <ListItemText>{t('contextMenu.deleteOrder')}</ListItemText>
+      </MenuItem>
+
+      <MenuItem onClick={() => handleAction('viewEvidence')}>
+        <ListItemIcon><Camera size={20} color="#3b82f6" /></ListItemIcon>
+        <ListItemText>{t('contextMenu.viewEvidence')}</ListItemText>
       </MenuItem>
 
       <MenuItem onClick={() => handleAction('view-dispatch')} disabled={!row?.dispatch_ticket}>
