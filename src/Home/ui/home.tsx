@@ -19,6 +19,7 @@ import DeleteOrderDialog from "./deleteOrderDialog";
 import CalendarDialog from "./calendarDialog";
 import AssignOrderToCostFuelDialog from "../../addFuelCostToOrder/ui/AssignOrderToCostFuelDialog";
 import OrderTrackingDialog from "./OrderTrackingDialog";
+import OrderEvidenceDialog from "./OrderEvidenceDialog";
 import CreateExtraCostDialog from "../../extraCost/ui/components/CreateExtraCostDialog";
 import { AssignToolModal } from "./Assigntoolmodal";
 import CreateCostFuelDialog from "../../addFuelCostToOrder/ui/CreateCostFuelDialog";
@@ -255,6 +256,16 @@ const OrdersTable: React.FC = () => {
     setTrackingDialogOpen(true);
   };
 
+  // ── Evidence ─────────────────────────────────────────────────────────────
+  const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
+  const [selectedOrderForEvidence, setSelectedOrderForEvidence] =
+    useState<NormalizedTableData | null>(null);
+
+  const handleViewEvidence = (order: NormalizedTableData) => {
+    setSelectedOrderForEvidence(order);
+    setEvidenceDialogOpen(true);
+  };
+
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
@@ -321,6 +332,7 @@ const OrdersTable: React.FC = () => {
               income: item.income != null ? Number(item.income) : 0,
               payStatus: Number(item.payStatus) || 0,
               dispatch_ticket: item.dispatch_ticket ?? "",
+              evidences: item.evidences ?? [],
               created_by: item.created_by ?? "N/A",
             };
           }
@@ -687,6 +699,7 @@ const OrdersTable: React.FC = () => {
         onCreateExtraCost={handleCreateExtraCost}
         onAssignTools={handleAssignTools}
         onTrackOrder={handleTrackOrder}
+        onViewEvidence={handleViewEvidence}
       />
 
       {/* Modals */}
@@ -873,6 +886,19 @@ const OrdersTable: React.FC = () => {
           setTrackingDialogOpen(false);
           setSelectedOrderForTracking(null);
         }}
+      />
+
+      {/* ── 6. MODAL Evidence ───────────────────────────────────────────── */}
+      <OrderEvidenceDialog
+        open={evidenceDialogOpen}
+        onClose={() => {
+          setEvidenceDialogOpen(false);
+          setSelectedOrderForEvidence(null);
+        }}
+        orderKey={selectedOrderForEvidence?.id || ""}
+        orderRef={selectedOrderForEvidence?.key_ref || ""}
+        initialEvidences={selectedOrderForEvidence?.evidences ?? []}
+        onDataChanged={loadData}
       />
 
       {/* ── 4. MODAL AssignTool ─────────────────────────────────────────────── */}

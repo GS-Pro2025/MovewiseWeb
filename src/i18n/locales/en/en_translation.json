@@ -588,7 +588,8 @@
     "addFuelCost": "Add Fuel Cost",
     "createExtraCost": "Create Extra Cost",
     "assignTools": "Assign Tools",
-    "trackOrder": "Track Order"
+    "trackOrder": "Track Order",
+    "viewEvidence": "View Evidence Photos"
   },
   "costFuels": {
     "title": "Fuel Costs",
