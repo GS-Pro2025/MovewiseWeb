@@ -27,7 +27,8 @@ export interface TableData {
   created_by: string | null;
   operators: Operator[];
   dispatch_ticket: string;
-  
+  evidences: import('./ModelOrdersReport').OrderEvidence[];
+
   // Propiedades opcionales específicas de ExtraCost
   extraCostName?: string;
   extraCostType?: string;

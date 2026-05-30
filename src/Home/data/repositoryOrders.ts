@@ -269,6 +269,80 @@ export const getRegisteredLocations = async (): Promise<{ success: boolean; data
   }
 };
 
+// ── Evidence endpoints ───────────────────────────────────────────────────────
+// NOTE: GET /orders/<pk>/ returns 405. Evidences are loaded from the orders
+// list response (fetchOrdersReport) which already includes evidences[].
+// The dialog receives them as initialEvidences prop and updates locally.
+
+import { OrderEvidence } from '../domain/ModelOrdersReport';
+
+export async function addOrderEvidence(
+  orderKey: string,
+  file: File
+): Promise<{ success: boolean; data?: OrderEvidence; errorMessage?: string }> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  const formData = new FormData();
+  formData.append('evidence', file);
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/orders/${orderKey}/evidences/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, errorMessage: data.messDev || data.error || 'Error uploading evidence' };
+    }
+
+    return { success: true, data: data.data };
+  } catch (err: any) {
+    return { success: false, errorMessage: err?.message || 'An unexpected error occurred' };
+  }
+}
+
+export async function deleteOrderEvidence(
+  orderKey: string,
+  evidenceId: number
+): Promise<{ success: boolean; errorMessage?: string }> {
+  const token = Cookies.get('authToken');
+  if (!token) {
+    window.location.href = '/login';
+    throw new Error('No hay token de autenticación');
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL_API}/orders/${orderKey}/evidences/${evidenceId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Error deleting evidence';
+      try {
+        const data = await response.json();
+        errorMessage = data.messDev || data.error || errorMessage;
+      } catch { /* no body */ }
+      return { success: false, errorMessage };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, errorMessage: err?.message || 'An unexpected error occurred' };
+  }
+}
+
 export const deleteOrderAbsolute = async (orderKey: string): Promise<{ success: boolean; data?: any; errorMessage?: string }> => {
   const token = Cookies.get('authToken');
   if (!token) {
