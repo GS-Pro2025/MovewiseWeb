@@ -72,7 +72,29 @@ async function fetchProxyCities(countryIso: string, stateIso: string): Promise<s
   return arr;
 }
 
-// Fetcher para países con nuevo orden de fallback (proxy -> countriesnow -> local fallback)
+/* CountriesNow proxy helpers (backend proxies countriesnow.space server-side) */
+async function fetchCNCountries(): Promise<CountriesResponse> {
+  const url = `${PROXY_BASE}/orders-locations-countriesnow/countries/`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`CN proxy countries error ${res.status}`);
+  return res.json();
+}
+
+async function fetchCNStates(country: string): Promise<StatesResponse> {
+  const url = `${PROXY_BASE}/orders-locations-countriesnow/states/?country=${encodeURIComponent(country)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`CN proxy states error ${res.status}`);
+  return res.json();
+}
+
+async function fetchCNCities(country: string, state: string): Promise<CitiesResponse> {
+  const url = `${PROXY_BASE}/orders-locations-countriesnow/cities/?country=${encodeURIComponent(country)}&state=${encodeURIComponent(state)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`CN proxy cities error ${res.status}`);
+  return res.json();
+}
+
+// Fetcher para países con nuevo orden de fallback (proxy -> countriesnow proxy -> local fallback)
 export async function fetchCountries(): Promise<Country[]> {
   // 1) Check cache first
   const cachedCountries = LocationCache.get<Country[]>('countries');
@@ -91,18 +113,16 @@ export async function fetchCountries(): Promise<Country[]> {
     console.warn("Proxy countries failed, falling back to countriesnow.space...", proxyErr);
   }
 
-  // 3) Try countriesnow.space (existing primary previously)
+  // 3) Try countriesnow.space via backend proxy
   try {
-    console.log('Attempting to fetch countries from countriesnow.space...');
-    const res = await fetch('https://countriesnow.space/api/v0.1/countries/positions');
-    if (!res.ok) throw new Error(`countriesnow error ${res.status}`);
-    const data: CountriesResponse = await res.json();
-    if (!data.data || data.data.length === 0) throw new Error('countriesnow returned empty data');
-    console.log(`countriesnow: Successfully fetched ${data.data.length} countries`);
+    console.log('Attempting to fetch countries from countriesnow proxy...');
+    const data: CountriesResponse = await fetchCNCountries();
+    if (!data.data || data.data.length === 0) throw new Error('countriesnow proxy returned empty data');
+    console.log(`CountriesNow proxy: Successfully fetched ${data.data.length} countries`);
     LocationCache.set('countries', data.data);
     return data.data;
   } catch (secondErr) {
-    console.warn('countriesnow failed, trying fallback source...', secondErr);
+    console.warn('countriesnow proxy failed, trying fallback source...', secondErr);
   }
 
   // 4) Last resort: local fallback
@@ -156,22 +176,16 @@ export async function fetchStates(country: string): Promise<State[]> {
     }
   }
 
-  // 3) Try countriesnow.space POST as before (uses country name)
+  // 3) Try countriesnow.space via backend proxy (uses country name)
   try {
-    console.log(`Attempting to fetch states for "${country}" from countriesnow.space...`);
-    const res = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ country }),
-    });
-    if (!res.ok) throw new Error(`countriesnow states error ${res.status}`);
-    const data: StatesResponse = await res.json();
-    if (!data.data || !data.data.states || data.data.states.length === 0) throw new Error('countriesnow returned empty states');
-    console.log(`countriesnow: Successfully fetched ${data.data.states.length} states for ${country}`);
+    console.log(`Attempting to fetch states for "${country}" from countriesnow proxy...`);
+    const data: StatesResponse = await fetchCNStates(country);
+    if (!data.data || !data.data.states || data.data.states.length === 0) throw new Error('countriesnow proxy returned empty states');
+    console.log(`CountriesNow proxy: Successfully fetched ${data.data.states.length} states for ${country}`);
     LocationCache.set('states', data.data.states, country);
     return data.data.states;
   } catch (secondErr) {
-    console.warn(`countriesnow states failed for "${country}", trying fallback...`, secondErr);
+    console.warn(`countriesnow proxy states failed for "${country}", trying fallback...`, secondErr);
   }
 
   // 4) Fallback
@@ -238,16 +252,10 @@ export async function fetchCities(country: string, state: string): Promise<strin
     }
   }
 
-  // 3) Try countriesnow.space POST as before (uses country + state)
+  // 3) Try countriesnow.space via backend proxy (uses country + state)
   try {
-    console.log(`Attempting to fetch cities for "${state}, ${country}" from countriesnow.space...`);
-    const res = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ country, state }),
-    });
-    if (!res.ok) throw new Error(`countriesnow cities error ${res.status}`);
-    const data: CitiesResponse = await res.json();
+    console.log(`Attempting to fetch cities for "${state}, ${country}" from countriesnow proxy...`);
+    const data: CitiesResponse = await fetchCNCities(country, state);
     // data.data may be an array of strings or nested; try to normalize
     let list: string[] = [];
     if (Array.isArray((data as any).data)) {
@@ -257,13 +265,13 @@ export async function fetchCities(country: string, state: string): Promise<strin
     } else if (Array.isArray((data as any).data?.cities)) {
       list = (data as any).data.cities;
     }
-    if (!Array.isArray(list) || list.length === 0) throw new Error('countriesnow returned empty cities');
-    console.log(`countriesnow: Successfully fetched ${list.length} cities for ${state}, ${country}`);
+    if (!Array.isArray(list) || list.length === 0) throw new Error('countriesnow proxy returned empty cities');
+    console.log(`CountriesNow proxy: Successfully fetched ${list.length} cities for ${state}, ${country}`);
     const filteredList = list.filter(Boolean);
     LocationCache.set('cities', filteredList, country, state);
     return filteredList;
   } catch (secondErr) {
-    console.warn(`countriesnow cities failed for "${state}, ${country}", trying fallback...`, secondErr);
+    console.warn(`countriesnow proxy cities failed for "${state}, ${country}", trying fallback...`, secondErr);
   }
 
   // 4) Fallback (should return [] gracefully)
