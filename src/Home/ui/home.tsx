@@ -110,6 +110,7 @@ const mapTableDataToUpdateOrderData = (item: TableData): UpdateOrderData => ({
   state_usa: item.state,
   customer_factory:
     typeof item.customer_factory === "number" ? item.customer_factory : 0,
+  dispatch_ticket: item.dispatch_ticket ?? "",
   person: {
     email: item.email,
     first_name: item.firstName,
