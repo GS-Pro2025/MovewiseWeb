@@ -62,13 +62,14 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
     }
   }, [open, order, dispatchTicketFile]);
   // Cargar países al montar
-    useEffect(() => {
-      setLoadingCountries(true);
-      fetchCountries()
-        .then(setCountries)
-        .finally(() => setLoadingCountries(false));
-      console.log('Countries loaded:', countries);
-    }, [countries]);
+useEffect(() => {
+  setLoadingCountries(true);
+
+  fetchCountries()
+    .then(setCountries)
+    .finally(() => setLoadingCountries(false));
+
+}, []);
   
     // Cargar estados cuando cambia el país
     useEffect(() => {
