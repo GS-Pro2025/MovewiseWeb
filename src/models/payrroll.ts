@@ -37,6 +37,7 @@ export interface WeekInfo {
         id: number | string;
         date: string;
         bonus?: number;
+        bonus_description?: string | null;
       }[];
     };
     netTotal: number; 
