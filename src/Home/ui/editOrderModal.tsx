@@ -19,7 +19,6 @@ interface EditOrderDialogProps {
 }
 
 const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose, onSave, onChange }) => {
-  console.log('EditOrderDialog rendered with order:', order);
   const [jobs, setJobs] = useState<JobModel[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [cf, setCf] = useState<CustomerFactoryModel[]>([]);
@@ -130,10 +129,6 @@ useEffect(() => {
   };
 
   if (!order) return null;
-  console.log('cf', cf);
-  console.log('order.customer_factory', order.customer_factory);
-  console.log('order.status', order.status, typeof order.status);
-  console.log('order.payStatus', order.payStatus, typeof order.payStatus);
 
 
   return (

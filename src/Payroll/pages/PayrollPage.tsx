@@ -220,6 +220,7 @@ export default function PayrollPage() {
             id: assignId,
             date: dataDate,
             bonus: Number(d.bonus) || 0,
+            bonus_description: d.bonus_description ?? null,
             startTime: d.start_time,
             endTime: d.end_time,
             salary: d.salary,

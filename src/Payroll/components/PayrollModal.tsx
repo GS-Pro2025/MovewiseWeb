@@ -86,7 +86,7 @@ interface PayrollModalProps {
   periodStart: string;
   periodEnd: string;
   weekDates: { [key: string]: string };
-  assignmentsByDay?: { [key in keyof WeekAmounts]?: { id: number | string; date: string; bonus?: number }[] };
+  assignmentsByDay?: { [key in keyof WeekAmounts]?: { id: number | string; date: string; bonus?: number; bonus_description?: string | null }[] };
 }
 
 const formatCurrency = (n?: number) =>
@@ -305,6 +305,36 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
 
   const [savingBonus, setSavingBonus] = useState<{ [k in keyof WeekAmounts]?: boolean }>({});
 
+  const [dailyBonusDescriptions, setDailyBonusDescriptions] = useState<{ [key in keyof WeekAmounts]?: string }>(() => {
+    const init: { [key in keyof WeekAmounts]?: string } = {};
+    (['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as (keyof WeekAmounts)[]).forEach(d => {
+      const a = assignmentsByDay?.[d]?.[0];
+      init[d] = a?.bonus_description || '';
+    });
+    return init;
+  });
+
+  const [descriptionDialog, setDescriptionDialog] = useState<keyof WeekAmounts | null>(null);
+  const [draftDescription, setDraftDescription] = useState('');
+
+  const openDescriptionDialog = (day: keyof WeekAmounts) => {
+    setDraftDescription(dailyBonusDescriptions[day] || '');
+    setDescriptionDialog(day);
+  };
+
+  const closeDescriptionDialog = () => {
+    setDescriptionDialog(null);
+    setDraftDescription('');
+  };
+
+  const confirmDescriptionDialog = () => {
+    if (descriptionDialog) {
+      handleDailyBonusDescriptionChange(descriptionDialog, draftDescription);
+      handleSaveDailyBonus(descriptionDialog, draftDescription || null);
+      closeDescriptionDialog();
+    }
+  };
+
   const days: DayInfo[] = [
     { key: 'Mon', label: 'Lunes'    }, { key: 'Tue', label: 'Martes'   },
     { key: 'Wed', label: 'Miércoles' }, { key: 'Thu', label: 'Jueves'  },
@@ -345,6 +375,9 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   const handleDailyBonusChange = (day: keyof WeekAmounts, value: number) =>
     setDailyBonuses(p => ({ ...p, [day]: value }));
 
+  const handleDailyBonusDescriptionChange = (day: keyof WeekAmounts, value: string) =>
+    setDailyBonusDescriptions(p => ({ ...p, [day]: value }));
+
   const handleSaveExpense = async () => {
     const firstAssignId = operatorData.assignmentIds?.[0];
     if (firstAssignId == null) { toast.error('No hay asignación para guardar el gasto'); return; }
@@ -378,12 +411,16 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
     }
   };
 
-  const handleSaveDailyBonus = async (day: keyof WeekAmounts) => {
+  const handleSaveDailyBonus = async (day: keyof WeekAmounts, descriptionOverride?: string | null) => {
     const assigns = assignmentsByDay?.[day];
     if (!assigns?.length) { toast.error('No hay asignación para este día'); return; }
     setSavingBonus(p => ({ ...p, [day]: true }));
     try {
-      await Promise.all(assigns.map(a => updateAssign(Number(a.id), { bonus: dailyBonuses[day] || 0 })));
+      const desc = descriptionOverride !== undefined ? descriptionOverride : (dailyBonusDescriptions[day] || null);
+      await Promise.all(assigns.map(a => updateAssign(Number(a.id), {
+        bonus: dailyBonuses[day] || 0,
+        bonus_description: desc,
+      })));
       toast.success(`¡Bono para ${day} actualizado!`);
     } catch (e: any) {
       toast.error(`Error: ${e.message}`);
@@ -425,6 +462,7 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
           date: weekDates[key] || '',
           bonus: dailyBonuses[key] || 0,
           assign_ids: (assignmentsByDay?.[key] || []).map(a => Number(a.id)),
+          ...(dailyBonusDescriptions[key] ? { description: dailyBonusDescriptions[key] } : {}),
         }))
         .filter(i => i.assign_ids.length > 0);
 
@@ -665,6 +703,29 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                           </button>
                         </div>
                         <span className="text-xs text-green-600 mt-0.5">Bono</span>
+                        <button
+                          type="button"
+                          onClick={() => openDescriptionDialog(key)}
+                          disabled={loading || isPaid}
+                          className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded border border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                          title={dailyBonusDescriptions[key] || 'Agregar descripción a este bono'}
+                        >
+                          {dailyBonusDescriptions[key] ? (
+                            <>
+                              <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                              </svg>
+                              <span className="text-xs text-blue-600 truncate max-w-[80px]">{dailyBonusDescriptions[key]}</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+                              </svg>
+                              <span className="text-xs text-blue-500">descr.</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                       <div className="text-right min-w-[72px]">
                         <p className="font-bold text-gray-900 text-sm">{formatCurrency((operatorData[key]||0)+(dailyBonuses[key]||0))}</p>
@@ -947,6 +1008,77 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
 
       {showSendOptions && (
         <div className="fixed inset-0 z-40" onClick={() => setShowSendOptions(false)} />
+      )}
+
+      {/* Description Dialog */}
+      {descriptionDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={closeDescriptionDialog}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg, #0B2863 0%, #1a4a9e 100%)' }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                  </svg>
+                  <h3 className="text-sm font-bold">
+                    Descripción — {days.find(d => d.key === descriptionDialog)?.label}
+                  </h3>
+                </div>
+                <button onClick={closeDescriptionDialog} className="hover:bg-white/20 rounded-full p-1 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-5">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Motivo del bono
+              </label>
+              <textarea
+                value={draftDescription}
+                onChange={e => setDraftDescription(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    confirmDescriptionDialog();
+                  }
+                }}
+                placeholder="Ej: Bono por puntualidad, productividad..."
+                rows={3}
+                autoFocus
+                className="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 placeholder-slate-300 transition-colors"
+              />
+              <p className="text-xs text-slate-400 mt-1">Ctrl+Enter para confirmar</p>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={closeDescriptionDialog}
+                  disabled={loading || savingBonus[descriptionDialog]}
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-40"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDescriptionDialog}
+                  disabled={loading || savingBonus[descriptionDialog]}
+                  className="px-4 py-2 text-sm font-semibold text-white rounded-lg flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-50"
+                  style={{ backgroundColor: '#0B2863' }}
+                >
+                  {savingBonus[descriptionDialog] ? (
+                    <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando...</>
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>Guardar</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
