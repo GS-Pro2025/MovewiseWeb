@@ -38,6 +38,7 @@ export interface WeekInfo {
         date: string;
         bonus?: number;
         bonus_description?: string | null;
+        salaryType?: string;
       }[];
     };
     netTotal: number; 

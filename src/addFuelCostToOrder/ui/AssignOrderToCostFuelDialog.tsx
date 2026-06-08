@@ -36,7 +36,7 @@ interface AssignOrderToCostFuelDialogProps {
 
 type Step = 'trucks' | 'costfuels' | 'date';
 
-const RECENT_DAYS = 7;
+const RECENT_DAYS = 15;
 
 const AssignOrderToCostFuelDialog: React.FC<AssignOrderToCostFuelDialogProps> = ({
   open,
