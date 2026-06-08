@@ -60,14 +60,15 @@ const EditOrderDialog: React.FC<EditOrderDialogProps> = ({ open, order, onClose,
       setDispatchTicketPreview(null);
     }
   }, [open, order, dispatchTicketFile]);
-  // Cargar países al abrir el modal (solo una vez)
-    useEffect(() => {
-      if (!open) return;
-      setLoadingCountries(true);
-      fetchCountries()
-        .then(setCountries)
-        .finally(() => setLoadingCountries(false));
-    }, [open]);
+  // Cargar países al montar
+useEffect(() => {
+  setLoadingCountries(true);
+
+  fetchCountries()
+    .then(setCountries)
+    .finally(() => setLoadingCountries(false));
+
+}, []);
   
     // Cargar estados cuando cambia el país
     useEffect(() => {
