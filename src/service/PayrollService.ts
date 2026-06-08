@@ -10,6 +10,7 @@ export interface AssignmentData {
   last_name: string;
   email: string; 
   bonus: number | null;
+  bonus_description: string | null;
   role: string;
   id_payment: number | null;
   payment_expense: number | null;
@@ -94,6 +95,7 @@ export interface DailyBonusItem {
   date: string;
   bonus: number;
   assign_ids: number[];
+  description?: string;
 }
 
 // Payload for creating a draft payment (Step 1)
