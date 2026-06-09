@@ -151,17 +151,16 @@ export default function PayrollPage() {
    * 6. Obtiene gastos (expenses) de payments
    * 7. Calcula totales brutos y netos
    */
-  const fetchData = async () => {
+
+const fetchData = async () => {
     try {
       setLoading(true);  
       const response = await payrollService(week, year, locationString);
-      // Generar mapeo de fechas para los encabezados
       const dates = generateWeekDates(response.week_info.start_date);
       setWeekDates(dates);
   
       const map = new Map<string, OperatorRow>();
   
-      // PASO 1: Crear la estructura básica de cada operador y agrupar assignments por día
       response.data.forEach((d, index) => {
         if (index === 0) {
           console.log('👤 [SAMPLE] Ejemplo de registro raw:', d);
@@ -170,6 +169,8 @@ export default function PayrollPage() {
         const key = d.code;
         const assignId = d.id_assign;
         const payId = d.id_payment;
+        const paymentValue = d.payment_value;
+        const validPayId = payId != null && paymentValue != null && paymentValue > 0;
   
         if (!map.has(key)) {
           map.set(key, {
@@ -179,14 +180,14 @@ export default function PayrollPage() {
             role: d.role,
             cost: d.salary,
             email: d.email,
-            pay: payId ? payId.toString() : null,
+            pay: validPayId ? payId.toString() : null,
             total: 0,
             additionalBonuses: 0,
             expense: d.payment_expense != null ? Number(d.payment_expense) : 0,
             grandTotal: 0,
             assignmentIds: [assignId],
-            paymentIds: payId != null ? [payId] : [],
-            draftPaymentId: d.payment_status === 'draft' && payId != null ? payId : null,
+            paymentIds: validPayId ? [payId] : [],
+            draftPaymentId: d.payment_status === 'draft' && validPayId ? payId : null,
             paymentStatus: d.payment_status ?? null,
             paymentDescription: d.payment_description ?? null,
             assignmentsByDay: {},
@@ -196,7 +197,7 @@ export default function PayrollPage() {
         } else {
           const ex = map.get(key)!;
           ex.assignmentIds.push(assignId);
-          if (payId != null && !ex.paymentIds.includes(payId)) {
+          if (validPayId && !ex.paymentIds.includes(payId)) {
             ex.paymentIds.push(payId);
           }
         }
@@ -209,7 +210,6 @@ export default function PayrollPage() {
         if (dayKey) {
           const ex = map.get(key)!;
           
-          // Solo suma el bonus si aún no se sumó para ese día
           if (!(ex as any)._bonusDaysAdded.has(dayKey)) {
             ex.additionalBonuses += Number(d.bonus) || 0;
             (ex as any)._bonusDaysAdded.add(dayKey);
@@ -239,35 +239,26 @@ export default function PayrollPage() {
           const assignments = row.assignmentsByDay?.[dayKey];
           
           if (assignments && assignments.length > 0) {
-            // ⚡ CAMBIO CLAVE: Detectar el salary_type del PRIMER assignment del día
             const daySalaryType = assignments[0].salaryType;
             console.log(`🔍 [SALARY_TYPE] ${row.code} - ${dayKey}: salary_type detectado = ${daySalaryType}`);
             if (daySalaryType === 'hour') {
-              // MODO HOUR: Sumar los salaries de todas las órdenes del día
               let dailyEarnings = 0;
-              
               assignments.forEach((assignment: any) => {
                 const assignmentSalary = Number(assignment.salary) || 0;
                 dailyEarnings += assignmentSalary;
-               
               });
-              
               row[dayKey] = dailyEarnings;
               totalEarnings += dailyEarnings;
-              
               console.log(`💰 [DAILY HOUR] ${row.code} - ${dayKey}: ${assignments.length} órdenes = ${dailyEarnings.toFixed(2)}`);
             } else {
-              // MODO DAY: Un solo pago por día (aunque haya múltiples órdenes)
               const dailyEarnings = row.cost;
               row[dayKey] = dailyEarnings;
               totalEarnings += dailyEarnings;
-              
               console.log(`💵 [DAILY DAY] ${row.code} - ${dayKey}: ${dailyEarnings} (${assignments.length} órdenes, se cuenta solo 1 día)`);
             }
           }
         });
   
-        // Calcular totales
         row.total = totalEarnings;
         row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
         (row as any).netTotal = row.grandTotal - (row.expense || 0);
@@ -301,7 +292,6 @@ export default function PayrollPage() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
