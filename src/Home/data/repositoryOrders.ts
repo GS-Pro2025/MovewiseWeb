@@ -17,13 +17,17 @@ export async function updateOrder(
   }
 
   try {
+    const payload = { ...orderData };
+    if (payload.dispatch_ticket && payload.dispatch_ticket.startsWith('http')) {
+      delete payload.dispatch_ticket;
+    }
     const response = await fetch(`${BASE_URL_API}/orders/${orderKey}/`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
