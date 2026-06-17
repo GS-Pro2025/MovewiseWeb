@@ -9,32 +9,29 @@ import {
 } from "../../createOrder/repository/repositoryLocation";
 
 // Imports de los nuevos módulos
-import { 
-  weekdayKeys, 
-  LocationStep, 
-  OperatorRow, 
-  WeekAmounts, 
-} from '../../models/payrroll';
 import {
-  getISOWeek, 
-  generateWeekDates 
-} from '../util/PayrollUtil';
+  weekdayKeys,
+  LocationStep,
+  OperatorRow,
+  WeekAmounts,
+} from "../../models/payrroll";
+import { getISOWeek, generateWeekDates } from "../util/PayrollUtil";
 
 // Componentes separados
-import { PayrollHeader } from '../components/PayrollHeader';
-import { PayrollControls } from '../components/PayrollControls';
-import { PayrollStats } from '../components/PayrollStats';
-import { PayrollTable } from '../components/PayrollTable';
-import { PayrollError } from '../components/PayrollError';
-import { PayrollLoading } from '../components/PayrollLoading';
-import { PayrollEmailDialog } from '../components/PayrollEmailDialog';
-import { OperatorRowExtended } from '../types/payroll.types';
+import { PayrollHeader } from "../components/PayrollHeader";
+import { PayrollControls } from "../components/PayrollControls";
+import { PayrollStats } from "../components/PayrollStats";
+import { PayrollTable } from "../components/PayrollTable";
+import { PayrollError } from "../components/PayrollError";
+import { PayrollLoading } from "../components/PayrollLoading";
+import { PayrollEmailDialog } from "../components/PayrollEmailDialog";
+import { OperatorRowExtended } from "../types/payroll.types";
 
 // Ya no necesitamos calcular horas, el salary ya viene calculado para tipo "hour"
 
 /**
  * PayrollPage - Componente principal para la gestión de nóminas
- * 
+ *
  * Este componente maneja:
  * - Visualización de nóminas por semana y año
  * - Filtrado por ubicación (país, estado, ciudad)
@@ -48,7 +45,9 @@ export default function PayrollPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [grouped, setGrouped] = useState<OperatorRow[]>([]);
-  const [selectedOperator, setSelectedOperator] = useState<OperatorRow | null>(null);
+  const [selectedOperator, setSelectedOperator] = useState<OperatorRow | null>(
+    null,
+  );
   const [weekInfo, setWeekInfo] = useState<WeekInfo | null>(null);
   const [weekDates, setWeekDates] = useState<{
     [key in keyof WeekAmounts]?: string;
@@ -68,7 +67,8 @@ export default function PayrollPage() {
 
   // Estado para el diálogo de envío de correo
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [selectedOperatorForEmail, setSelectedOperatorForEmail] = useState<OperatorRowExtended | null>(null);
+  const [selectedOperatorForEmail, setSelectedOperatorForEmail] =
+    useState<OperatorRowExtended | null>(null);
 
   /**
    * Effect: Cargar países al montar el componente
@@ -141,7 +141,7 @@ export default function PayrollPage() {
 
   /**
    * fetchData - Método principal para obtener y procesar datos de nómina
-   * 
+   *
    * Proceso:
    * 1. Obtiene datos raw del servicio de nómina
    * 2. Genera mapeo de fechas para la semana
@@ -152,26 +152,27 @@ export default function PayrollPage() {
    * 7. Calcula totales brutos y netos
    */
 
-const fetchData = async () => {
+  const fetchData = async () => {
     try {
-      setLoading(true);  
+      setLoading(true);
       const response = await payrollService(week, year, locationString);
       const dates = generateWeekDates(response.week_info.start_date);
       setWeekDates(dates);
-  
+
       const map = new Map<string, OperatorRow>();
-  
+
       response.data.forEach((d, index) => {
         if (index === 0) {
-          console.log('👤 [SAMPLE] Ejemplo de registro raw:', d);
+          console.log("👤 [SAMPLE] Ejemplo de registro raw:", d);
         }
-        
+
         const key = d.code;
         const assignId = d.id_assign;
         const payId = d.id_payment;
         const paymentValue = d.payment_value;
-        const validPayId = payId != null && paymentValue != null && paymentValue > 0;
-  
+        const validPayId =
+          payId != null && paymentValue != null && paymentValue > 0;
+
         if (!map.has(key)) {
           map.set(key, {
             code: d.code,
@@ -187,7 +188,8 @@ const fetchData = async () => {
             grandTotal: 0,
             assignmentIds: [assignId],
             paymentIds: validPayId ? [payId] : [],
-            draftPaymentId: d.payment_status === 'draft' && validPayId ? payId : null,
+            draftPaymentId:
+              d.payment_status === "draft" && validPayId ? payId : null,
             paymentStatus: d.payment_status ?? null,
             paymentDescription: d.payment_description ?? null,
             assignmentsByDay: {},
@@ -201,20 +203,20 @@ const fetchData = async () => {
             ex.paymentIds.push(payId);
           }
         }
-  
+
         const dataDate = d.date.split("T")[0];
         const dayKey = Object.entries(dates).find(
-          ([, date]) => date === dataDate
+          ([, date]) => date === dataDate,
         )?.[0] as keyof WeekAmounts;
-        
+
         if (dayKey) {
           const ex = map.get(key)!;
-          
+
           if (!(ex as any)._bonusDaysAdded.has(dayKey)) {
             ex.additionalBonuses += Number(d.bonus) || 0;
             (ex as any)._bonusDaysAdded.add(dayKey);
           }
-          
+
           if (!ex.assignmentsByDay![dayKey]) ex.assignmentsByDay![dayKey] = [];
           ex.assignmentsByDay![dayKey]!.push({
             id: assignId,
@@ -224,24 +226,26 @@ const fetchData = async () => {
             startTime: d.start_time,
             endTime: d.end_time,
             salary: d.salary,
-            salaryType: d.salary_type, 
+            salaryType: d.salary_type,
           } as any);
         }
       });
-  
+
       console.log(`[STEP 1] Total de operadores únicos: ${map.size}`);
       const operators = Array.from(map.values()).map((row) => {
         delete (row as any)._bonusDaysAdded;
-  
+
         let totalEarnings = 0;
-  
+
         weekdayKeys.forEach((dayKey) => {
           const assignments = row.assignmentsByDay?.[dayKey];
-          
+
           if (assignments && assignments.length > 0) {
             const daySalaryType = assignments[0].salaryType;
-            console.log(`🔍 [SALARY_TYPE] ${row.code} - ${dayKey}: salary_type detectado = ${daySalaryType}`);
-            if (daySalaryType === 'hour') {
+            console.log(
+              `🔍 [SALARY_TYPE] ${row.code} - ${dayKey}: salary_type detectado = ${daySalaryType}`,
+            );
+            if (daySalaryType === "hour") {
               let dailyEarnings = 0;
               assignments.forEach((assignment: any) => {
                 const assignmentSalary = Number(assignment.salary) || 0;
@@ -249,44 +253,52 @@ const fetchData = async () => {
               });
               row[dayKey] = dailyEarnings;
               totalEarnings += dailyEarnings;
-              console.log(`💰 [DAILY HOUR] ${row.code} - ${dayKey}: ${assignments.length} órdenes = ${dailyEarnings.toFixed(2)}`);
+              console.log(
+                `💰 [DAILY HOUR] ${row.code} - ${dayKey}: ${assignments.length} órdenes = ${dailyEarnings.toFixed(2)}`,
+              );
             } else {
-              const dailyEarnings = row.cost;
-              row[dayKey] = dailyEarnings;
-              totalEarnings += dailyEarnings;
-              console.log(`💵 [DAILY DAY] ${row.code} - ${dayKey}: ${dailyEarnings} (${assignments.length} órdenes, se cuenta solo 1 día)`);
+              // Para tipo "day", tomar el salary del primer assignment de ese día
+              const dailySalary = Number(assignments[0].salary) || row.cost;
+              row[dayKey] = dailySalary;
+              totalEarnings += dailySalary;
+              console.log(
+                `💵 [DAILY DAY] ${row.code} - ${dayKey}: ${dailySalary} (salary del día, ${assignments.length} órdenes)`,
+              );
             }
           }
         });
-  
+
         row.total = totalEarnings;
         row.grandTotal = (row.total || 0) + (row.additionalBonuses || 0);
         (row as any).netTotal = row.grandTotal - (row.expense || 0);
-  
+
         const daysWorked = weekdayKeys.filter(
-          (day) => row[day] != null && row[day]! > 0
+          (day) => row[day] != null && row[day]! > 0,
         ).length;
-  
+
         console.log(`📊 [TOTALS] ${row.code}:`, {
           días: daysWorked,
           totalBase: row.total,
           bonos: row.additionalBonuses,
           bruto: row.grandTotal,
           gastos: row.expense,
-          neto: (row as any).netTotal
+          neto: (row as any).netTotal,
         });
-  
+
         return row;
       });
-  
-      console.log('✅ [COMPLETE] Datos procesados completamente');
-      console.log('👥 [FINAL] Total de operadores procesados:', operators.length);
-  
+
+      console.log("✅ [COMPLETE] Datos procesados completamente");
+      console.log(
+        "👥 [FINAL] Total de operadores procesados:",
+        operators.length,
+      );
+
       setGrouped(operators);
       setWeekInfo(response.week_info);
       setError(null);
     } catch (e) {
-      console.error('❌ [ERROR] Error en fetchData:', e);
+      console.error("❌ [ERROR] Error en fetchData:", e);
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setLoading(false);
@@ -308,32 +320,29 @@ const fetchData = async () => {
   /**
    * Memo: Total bruto (sin descuentos)
    */
-  const totalGrand = useMemo(
-    () => {
-      const total = grouped.reduce((sum, r) => sum + (r.grandTotal || 0), 0);
-      return total;
-    },
-    [grouped]
-  );
-  
+  const totalGrand = useMemo(() => {
+    const total = grouped.reduce((sum, r) => sum + (r.grandTotal || 0), 0);
+    return total;
+  }, [grouped]);
+
   /**
    * Memo: Total neto (con descuentos aplicados)
    */
-  const totalNet = useMemo(
-    () => {
-      const total = grouped.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0);
-      return total;
-    },
-    [grouped]
-  );
-  
+  const totalNet = useMemo(() => {
+    const total = grouped.reduce(
+      (sum, r) => sum + ((r as any).netTotal || 0),
+      0,
+    );
+    return total;
+  }, [grouped]);
+
   /**
    * Memo: Conteo de días trabajados en la semana
    */
   const countDays = useMemo(
     () =>
       weekdayKeys.filter((day) => grouped.some((r) => r[day] != null)).length,
-    [grouped]
+    [grouped],
   );
 
   /**
@@ -350,10 +359,12 @@ const fetchData = async () => {
       (operator) =>
         operator.code.toLowerCase().includes(term) ||
         operator.name.toLowerCase().includes(term) ||
-        operator.lastName.toLowerCase().includes(term)
+        operator.lastName.toLowerCase().includes(term),
     );
 
-    console.log(`🔍 [SEARCH] Término: "${searchTerm}" | Resultados: ${filtered.length}/${grouped.length}`);
+    console.log(
+      `🔍 [SEARCH] Término: "${searchTerm}" | Resultados: ${filtered.length}/${grouped.length}`,
+    );
     return filtered;
   }, [grouped, searchTerm]);
 
@@ -362,15 +373,16 @@ const fetchData = async () => {
    */
   const filteredTotalGrand = useMemo(
     () => filteredOperators.reduce((sum, r) => sum + (r.grandTotal || 0), 0),
-    [filteredOperators]
+    [filteredOperators],
   );
-  
+
   /**
    * Memo: Totales para los operadores filtrados (neto)
    */
   const filteredTotalNet = useMemo(
-    () => filteredOperators.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0),
-    [filteredOperators]
+    () =>
+      filteredOperators.reduce((sum, r) => sum + ((r as any).netTotal || 0), 0),
+    [filteredOperators],
   );
 
   /**
@@ -378,7 +390,7 @@ const fetchData = async () => {
    */
   const totalExpenses = useMemo(
     () => filteredOperators.reduce((sum, r) => sum + (r.expense || 0), 0),
-    [filteredOperators]
+    [filteredOperators],
   );
 
   /**
@@ -390,11 +402,11 @@ const fetchData = async () => {
 
     const paidAmount = paidOperators.reduce(
       (sum, r) => sum + ((r as any).netTotal || 0),
-      0
+      0,
     );
     const unpaidAmount = unpaidOperators.reduce(
       (sum, r) => sum + ((r as any).netTotal || 0),
-      0
+      0,
     );
 
     const stats = {
@@ -405,7 +417,7 @@ const fetchData = async () => {
       unpaidAmount,
     };
 
-    console.log('📊 [PAYMENT STATS] Estadísticas de pago:', stats);
+    console.log("📊 [PAYMENT STATS] Estadísticas de pago:", stats);
     return stats;
   }, [filteredOperators]);
 
@@ -416,7 +428,7 @@ const fetchData = async () => {
   const changeWeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const w = parseInt(e.target.value, 10);
     if (!isNaN(w) && w >= 1 && w <= 53) {
-      console.log('📅 [WEEK CHANGE] Nueva semana:', w);
+      console.log("📅 [WEEK CHANGE] Nueva semana:", w);
       setWeek(w);
     }
   };
@@ -426,8 +438,12 @@ const fetchData = async () => {
    * @param newYear - Nuevo año seleccionado
    */
   const changeYear = (newYear: number) => {
-    if (Number.isInteger(newYear) && newYear >= 2020 && newYear <= new Date().getFullYear() + 2) {
-      console.log('📅 [YEAR CHANGE] Nuevo año:', newYear);
+    if (
+      Number.isInteger(newYear) &&
+      newYear >= 2020 &&
+      newYear <= new Date().getFullYear() + 2
+    ) {
+      console.log("📅 [YEAR CHANGE] Nuevo año:", newYear);
       setYear(newYear);
     }
   };
@@ -436,7 +452,7 @@ const fetchData = async () => {
    * handleCloseEmailDialog - Cierra el diálogo de envío de email
    */
   const handleCloseEmailDialog = () => {
-    console.log('📧 [EMAIL] Cerrando diálogo de email');
+    console.log("📧 [EMAIL] Cerrando diálogo de email");
     setEmailDialogOpen(false);
     setSelectedOperatorForEmail(null);
   };
@@ -512,28 +528,28 @@ const fetchData = async () => {
 
         {/* Modal */}
         {selectedOperator && weekInfo && (
-        <PayrollModal
-          isOpen={!!selectedOperator}
-          onClose={handleModalClose}
-          operatorData={{
-            ...selectedOperator,
-            cost: selectedOperator.cost,
-            total: selectedOperator.total || 0,
-            additionalBonuses: selectedOperator.additionalBonuses || 0, 
-            assignmentIds: selectedOperator.assignmentIds || [], 
-            paymentIds: selectedOperator.paymentIds || [],
-            expense: selectedOperator.expense || 0,
-            draftPaymentId: selectedOperator.draftPaymentId ?? null,
-            paymentStatus: selectedOperator.paymentStatus ?? null,
-            paymentDescription: selectedOperator.paymentDescription ?? null,
-            operator_phone: selectedOperator.operator_phone || null,
-          }}
-          periodStart={weekInfo.start_date}
-          periodEnd={weekInfo.end_date}
-          weekDates={weekDates}
-          assignmentsByDay={selectedOperator.assignmentsByDay}
-        />
-      )}
+          <PayrollModal
+            isOpen={!!selectedOperator}
+            onClose={handleModalClose}
+            operatorData={{
+              ...selectedOperator,
+              cost: selectedOperator.cost,
+              total: selectedOperator.total || 0,
+              additionalBonuses: selectedOperator.additionalBonuses || 0,
+              assignmentIds: selectedOperator.assignmentIds || [],
+              paymentIds: selectedOperator.paymentIds || [],
+              expense: selectedOperator.expense || 0,
+              draftPaymentId: selectedOperator.draftPaymentId ?? null,
+              paymentStatus: selectedOperator.paymentStatus ?? null,
+              paymentDescription: selectedOperator.paymentDescription ?? null,
+              operator_phone: selectedOperator.operator_phone || null,
+            }}
+            periodStart={weekInfo.start_date}
+            periodEnd={weekInfo.end_date}
+            weekDates={weekDates}
+            assignmentsByDay={selectedOperator.assignmentsByDay}
+          />
+        )}
 
         {/* Email Dialog */}
         <PayrollEmailDialog
