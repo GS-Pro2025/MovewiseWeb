@@ -119,9 +119,14 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators, pro
                   ${order.income?.toLocaleString() || 0}
                 </td>
 
-                {/* Total Cost */}
-                <td className={`${td} text-right`}>
-                  ${order.summary?.totalCost?.toLocaleString() || 0}
+                {/* Total Cost (proportional operator salary) */}
+                <td className={`${td} text-right font-semibold`} style={{ color: '#7c3aed' }}>
+                  {proportionalSalariesMap?.get(order.key) != null
+                    ? `$${(
+                        proportionalSalariesMap.get(order.key)!.driverSalariesProportional +
+                        proportionalSalariesMap.get(order.key)!.otherSalariesProportional
+                      ).toFixed(2)}`
+                    : '—'}
                 </td>
 
                 {/* Fuel */}
