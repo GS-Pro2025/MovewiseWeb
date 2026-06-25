@@ -15,9 +15,10 @@ interface OrdersByKeyRefTableProps {
   keyRef: string;
   onOrderPaid?: () => void;
   onViewOperators: (orderId: string) => void;
+  proportionalSalariesMap?: Map<string, { driverSalariesProportional: number; otherSalariesProportional: number }> | null;
 }
 
-const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: OrdersByKeyRefTableProps) => {
+const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators, proportionalSalariesMap }: OrdersByKeyRefTableProps) => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -75,6 +76,9 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
               <th className={`${th} text-right`}>Total Cost</th>
               <th className={`${th} text-right`}>Fuel</th>
               <th className={`${th} text-right`}>Bonus</th>
+              <th className={`${th} text-right`}>Weight</th>
+              <th className={`${th} text-right`}>Driver ∝</th>
+              <th className={`${th} text-right`}>Oper. ∝</th>
               <th className={th}>Status</th>
               <th className={th}>Pay</th>
             </tr>
@@ -128,6 +132,25 @@ const OrdersByKeyRefTable = ({ orders, keyRef, onOrderPaid, onViewOperators }: O
                 {/* Bonus */}
                 <td className={`${td} text-right`}>
                   ${order.summary?.bonus?.toLocaleString() || 0}
+                </td>
+
+                {/* Weight */}
+                <td className={`${td} text-right`}>
+                  {order.weight != null ? order.weight : '—'}
+                </td>
+
+                {/* Driver Salary (proportional) */}
+                <td className={`${td} text-right font-semibold`} style={{ color: '#22c55e' }}>
+                  {proportionalSalariesMap?.get(order.key) != null
+                    ? `$${proportionalSalariesMap.get(order.key)!.driverSalariesProportional.toFixed(2)}`
+                    : '—'}
+                </td>
+
+                {/* Operator Salary (proportional) */}
+                <td className={`${td} text-right font-semibold`} style={{ color: '#0B2863' }}>
+                  {proportionalSalariesMap?.get(order.key) != null
+                    ? `$${proportionalSalariesMap.get(order.key)!.otherSalariesProportional.toFixed(2)}`
+                    : '—'}
                 </td>
 
                 {/* Status */}
