@@ -21,6 +21,9 @@ import PaymentDialog from "./PaymentDialog";
 import SuperOrderDetailsDialog from "./SuperOrderDetailsDialog";
 import DocaiResultDialog from "./DocaiResultDialog";
 import AddAmountDialog from './components/AddAmountDialog';
+import { fetchOperatorsAssignedToOrder } from '../../addOperatorToOrder/data/repositoryOperators';
+import type { OperatorAssigned } from '../../addOperatorToOrder/domain/OperatorModels';
+import { computeProportionalSalaries, type ProportionalSalary } from '../util/proportionalSalaryUtils';
 
 // Utility function for week range calculation
 function getWeekRange(year: number, week: number): { start: string; end: string } {
@@ -89,8 +92,14 @@ const FinancialView = () => {
   const [addAmountSuperOrder, setAddAmountSuperOrder] = useState<SuperOrder | null>(null);
   const [addAmountLoading, setAddAmountLoading] = useState(false);
 
+  // Proportional salary map: order.key → { driverSalariesProportional, otherSalariesProportional }
+  const [proportionalSalariesMap, setProportionalSalariesMap] = useState<Map<string, ProportionalSalary> | null>(null);
+
   // Group orders by key_ref and calculate totals
-  function groupByKeyRef(data: OrderSummary[]): SuperOrder[] {
+  function groupByKeyRef(
+    data: OrderSummary[],
+    proportionalMap?: Map<string, ProportionalSalary> | null,
+  ): SuperOrder[] {
     const map = new Map<string, SuperOrder>();
     data.forEach((item) => {
       if (!map.has(item.key_ref)) {
@@ -113,16 +122,27 @@ const FinancialView = () => {
       const superOrder = map.get(item.key_ref)!;
       superOrder.orders.push(item);
       superOrder.totalIncome     += item.income ?? 0;
-      superOrder.totalCost       += item.summary?.totalCost ?? 0;
       superOrder.expense         += item.summary?.expense ?? 0;
       superOrder.fuelCost        += item.summary?.fuelCost ?? 0;
       superOrder.bonus           += item.summary?.bonus ?? 0;
       superOrder.workCost        += item.summary?.workCost ?? 0;
-      superOrder.driverSalaries  += item.summary?.driverSalaries ?? 0;
-      superOrder.otherSalaries   += item.summary?.otherSalaries ?? 0;
       superOrder.payStatus = superOrder.payStatus && item.payStatus === 1 ? 1 : 0;
+      if (proportionalMap) {
+        const prop = proportionalMap.get(item.key);
+        superOrder.driverSalaries += prop?.driverSalariesProportional ?? item.summary?.driverSalaries ?? 0;
+        superOrder.otherSalaries  += prop?.otherSalariesProportional  ?? item.summary?.otherSalaries  ?? 0;
+      } else {
+        superOrder.driverSalaries += item.summary?.driverSalaries ?? 0;
+        superOrder.otherSalaries  += item.summary?.otherSalaries  ?? 0;
+        superOrder.totalCost      += item.summary?.totalCost ?? 0;
+      }
     });
     map.forEach((superOrder) => {
+      if (proportionalMap) {
+        superOrder.totalCost =
+          superOrder.expense + superOrder.fuelCost + superOrder.workCost +
+          superOrder.driverSalaries + superOrder.otherSalaries + superOrder.bonus;
+      }
       superOrder.totalProfit = superOrder.totalIncome - superOrder.totalCost;
     });
     return Array.from(map.values());
@@ -146,20 +166,45 @@ const FinancialView = () => {
     fetchData(page, week, year);
   }, [page, week, year]);
 
+  // Fetch operator assignments and compute proportional salaries after week data loads
+  useEffect(() => {
+    if (data.length === 0) {
+      setProportionalSalariesMap(null);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      data.map(async (order) => {
+        try {
+          const operators = await fetchOperatorsAssignedToOrder(order.key);
+          return [order.key, operators] as [string, OperatorAssigned[]];
+        } catch {
+          return [order.key, [] as OperatorAssigned[]] as [string, OperatorAssigned[]];
+        }
+      }),
+    ).then((entries) => {
+      if (!cancelled) {
+        const assignsMap = new Map<string, OperatorAssigned[]>(entries);
+        setProportionalSalariesMap(computeProportionalSalaries(data, assignsMap));
+      }
+    }).catch(() => { /* silently fail; table falls back to original salary values */ });
+    return () => { cancelled = true; };
+  }, [data]);
+
   // Sorted super orders
   const superOrders = useMemo(() => {
-    const grouped = groupByKeyRef(data);
+    const grouped = groupByKeyRef(data, proportionalSalariesMap);
     return grouped.sort((a, b) => {
       const aValue = a[sortBy];
       const bValue = b[sortBy];
       const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
       return sortOrder === 'asc' ? comparison : -comparison;
     });
-  }, [data, sortBy, sortOrder]);
+  }, [data, proportionalSalariesMap, sortBy, sortOrder]);
 
   // Summary totals
   const totalSummary = useMemo(() => {
-    const currentData = searchResults ? groupByKeyRef(searchResults) : superOrders;
+    const currentData = searchResults ? groupByKeyRef(searchResults, proportionalSalariesMap) : superOrders;
     return currentData.reduce((acc, order) => ({
       totalIncome:   acc.totalIncome   + order.totalIncome,
       totalCost:     acc.totalCost     + order.totalCost,
@@ -169,7 +214,7 @@ const FinancialView = () => {
     }), { totalIncome: 0, totalCost: 0, totalProfit: 0, paidOrders: 0, unpaidOrders: 0 });
   }, [superOrders, searchResults]);
 
-  const currentExportData = searchResults ? groupByKeyRef(searchResults) : superOrders;
+  const currentExportData = searchResults ? groupByKeyRef(searchResults, proportionalSalariesMap) : superOrders;
 
   // ── Event Handlers ──────────────────────────────────────────────────────────
   const handleWeekChange = (newWeek: number) => {
@@ -525,6 +570,7 @@ const FinancialView = () => {
           onViewDetails={handleViewDetails}
           onOrderPaid={handleOrderPaid}
           onViewOperators={(orderId: string) => navigate(`/app/add-operators-to-order/${orderId}`)}
+          proportionalSalariesMap={proportionalSalariesMap}
         />
       )}
 
