@@ -27,6 +27,7 @@ interface FinancialTableProps {
   onViewDetails: (superOrder: SuperOrder) => void;
   onOrderPaid: () => void;
   onViewOperators: (orderId: string) => void;
+  proportionalSalariesMap?: Map<string, { driverSalariesProportional: number; otherSalariesProportional: number }> | null;
 }
 
 // ── FIX: Currency formatter — always 2 decimal places, en-US locale ──────────
@@ -36,7 +37,7 @@ const fmt = (value: number) =>
 const FinancialTable: React.FC<FinancialTableProps> = ({
   data, sortBy, sortOrder, expandedRows,
   onSort, onToggleExpand, onAddIncome, onAddExpense,
-  onViewDetails, onOrderPaid, onViewOperators
+  onViewDetails, onOrderPaid, onViewOperators, proportionalSalariesMap
 }) => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -214,7 +215,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
               ))}
             </div>
             <div className="max-h-[300px] overflow-auto rounded border" style={{ borderColor: '#0B2863' }}>
-              <OrdersByKeyRefTable orders={superOrder.orders} keyRef={superOrder.key_ref} onOrderPaid={onOrderPaid} onViewOperators={onViewOperators} />
+              <OrdersByKeyRefTable orders={superOrder.orders} keyRef={superOrder.key_ref} onOrderPaid={onOrderPaid} onViewOperators={onViewOperators} proportionalSalariesMap={proportionalSalariesMap} />
             </div>
           </div>
         </Collapse>
@@ -329,7 +330,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                               </div>
                               {/* Orders table */}
                               <div className="overflow-auto max-h-[350px] rounded border" style={{ borderColor: '#cbd5e1', scrollbarWidth: 'thin', scrollbarColor: '#0B2863 #f1f5f9' }}>
-                                <OrdersByKeyRefTable orders={superOrder.orders} keyRef={superOrder.key_ref} onOrderPaid={onOrderPaid} onViewOperators={onViewOperators} />
+                                <OrdersByKeyRefTable orders={superOrder.orders} keyRef={superOrder.key_ref} onOrderPaid={onOrderPaid} onViewOperators={onViewOperators} proportionalSalariesMap={proportionalSalariesMap} />
                               </div>
                             </div>
                           </Collapse>
