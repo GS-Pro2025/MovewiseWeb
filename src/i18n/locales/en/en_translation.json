@@ -369,7 +369,7 @@
       "key_ref": "Order #",
       "date": "Date",
       "income": "Income",
-      "expense": "Expense",
+      "expense": "Expense Order",
       "weight": "Weight",
       "distance": "Distance",
       "status": "Status",
@@ -1732,9 +1732,9 @@
       "variableFromDb": "Variable Costs from Database"
     },
     "expenseTypes": {
-      "expense": "Expense",
+      "expense": "Order Discount",
       "fuelCost": "Fuel Costs",
-      "workCost": "Extra Costs",
+      "workCost": "Extra Costs (Lunch, DEF, Toll, etc.)",
       "bonus": "Bonus",
       "driverSalaries": "Driver Salaries",
       "otherSalaries": "Operators Salaries",

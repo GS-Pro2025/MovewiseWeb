@@ -1744,9 +1744,9 @@
       "variableFromDb": "Costos Variables de Base de Datos"
     },
     "expenseTypes": {
-      "expense": "Gasto",
+      "expense": "Descuentos de Orden",
       "fuelCost": "Combustible",
-      "workCost": "Costos Extra",
+      "workCost": "Costos Extra (Almuerzos, Peajes, etc.)",
       "bonus": "Bonificación",
       "driverSalaries": "Salarios de Conductores",
       "otherSalaries": "Salarios de Operadores",
