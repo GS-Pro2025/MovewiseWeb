@@ -179,6 +179,10 @@ export const TableFilters: React.FC<TableFiltersProps> = ({
         opacity: 0;
       }
       .filter-accordion-inner {
+        overflow: visible;
+        min-height: 0;
+      }
+      .filter-accordion-content.collapsed .filter-accordion-inner {
         overflow: hidden;
       }
 

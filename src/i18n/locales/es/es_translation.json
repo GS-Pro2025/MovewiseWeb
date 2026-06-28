@@ -369,7 +369,7 @@
       "key_ref": "Orden #",
       "date": "Fecha",
       "income": "Ingreso",
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "weight": "Peso",
       "distance": "Distancia",
       "status": "Estado",
@@ -710,7 +710,7 @@
     "name": "Nombre",
     "lastName": "Apellido",
     "additionalBonuses": "Bonos Adicionales",
-    "expenses": "Gastos",
+    "expenses": "Descuento de orden",
     "grandTotal": "Total General",
     "totalToPay": "Total a Pagar",
     "noResultsSearch": "No se encontraron operadores que coincidan con \"{{search}}\"",
@@ -822,7 +822,7 @@
     "week": "Semana",
     "shipper": "Transportista",
     "income": "Ingreso",
-    "expense": "Gasto",
+    "expense": "Descuento de Orden",
     "state": "Estado",
     "copyToClipboard": "Copiar al portapapeles",
     "copied": "¡Copiado!",
@@ -860,7 +860,7 @@
     "weekSummary": "Resumen de Semana",
     "records": "Registros",
     "income": "Ingreso",
-    "expense": "Gasto",
+    "expense": "Descuento de Orden",
     "net": "Neto",
     "statusBreakdown": "Desglose por Estado:",
     "stateNotExists": "No Existe",
@@ -887,8 +887,8 @@
   "statementsList": {
     "errorLoading": "Error al cargar estados de cuenta",
     "stateUpdated": "Estado de {{keyref}} actualizado a {{state}}",
-    "exportExcelPending": "Exportación a Excel pendiente de implementación",
-    "exportPDFPending": "Exportación a PDF pendiente de implementación"
+    "exportExcelSuccess": "¡Excel exportado exitosamente!",
+    "exportPDFSuccess": "¡Reporte PDF abierto para imprimir!"
   },
   "verificationResultsDialog": {
     "title": "Resultados de Verificación",
@@ -920,7 +920,7 @@
       "table": {
         "orderKey": "Clave de Orden",
         "income": "Ingreso",
-        "expense": "Gasto",
+        "expense": "Descuento de Orden",
         "date": "Fecha",
         "status": "Estado"
       }
@@ -1052,7 +1052,7 @@
       "thisWeek": "Esta Semana",
       "lastWeek": "Semana Anterior",
       "income": "Ingresos",
-      "expenses": "Gastos",
+      "expenses": "Descuento de orden",
       "profit": "Ganancia",
       "tooltipOrders": "Órdenes",
       "tooltipAmount": "Monto"
@@ -1231,7 +1231,9 @@
       "next": "Siguiente →",
       "page": "Página {{page}}",
       "recordsPerPage": "Registros por página:"
-    }
+    },
+    "exportExcel": "Descargar como Excel (.xlsx)",
+    "exportPDF": "Imprimir / Guardar como PDF"
   },
   "weekPicker": {
     "label": "Semana",
@@ -1388,7 +1390,7 @@
       "status": "Estado",
       "customer": "Cliente",
       "income": "Ingreso",
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "totalCost": "Costo total"
     },
     "expand": {
@@ -1409,7 +1411,7 @@
       "customer": "Cliente",
       "customerFactory": "Empresa cliente",
       "income": "Ingreso",
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "netProfit": "Ganancia neta",
       "summaryBreakdown": "Desglose de costos",
       "fuelCost": "Costo de gasolina",
@@ -1549,7 +1551,7 @@
       "orderId": "ID de Orden",
       "email": "Correo",
       "distance": "Distancia",
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "income": "Ingreso",
       "extraCostDetails": "Detalles del Costo Extra",
       "id": "ID",
@@ -1587,7 +1589,7 @@
     "columns": {
       "reference": "Referencia",
       "client": "Cliente",
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "fuelCost": "Costo Combustible",
       "bonus": "Bono",
       "operatorSalaries": "Salarios Operadores",
@@ -1603,7 +1605,7 @@
     "unpaid": "Pendiente",
     "view": "Ver",
     "income": "Ingreso",
-    "expense": "Gasto",
+    "expense": "Descuento de orden",
     "edit": "Editar",
     "netProfit": "Ganancia Neta",
     "costBreakdown": "Desglose de Costos",
@@ -1653,7 +1655,7 @@
     "total": "Total",
     "perOrder": "Por Orden",
     "income": "Ingreso",
-    "expense": "Gasto"
+    "expense": "Descuento de orden"
   },
   "financialView": {
     "title": "Resumen Financiero",
@@ -1687,19 +1689,19 @@
     },
     "addAmount": {
       "income": "Ingreso",
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "success": "{{type}} agregado exitosamente a {{count}} orden(es)",
       "noOrdersUpdated": "Ninguna orden fue actualizada",
       "error": "Error al agregar {{type}}: {{message}}"
     }
   },
   "expenseBreakdown": {
-    "title": "Desglose de Gastos",
+    "title": "Desglose de Descuentos de Orden",
     "subtitle": "Selecciona un período a continuación. El desglose mostrará los datos del rango seleccionado. Usa los botones rápidos para períodos estándar o personaliza tu propio rango.",
     "back": "Volver al Resumen Financiero",
     "actions": {
       "refresh": "Actualizar",
-      "createCost": "Crear Gasto",
+      "createCost": "Crear Descuento de Orden",
       "createIncome": "Crear Ingreso",
       "export": "Exportar / Imprimir"
     },
@@ -1744,7 +1746,7 @@
       "variableFromDb": "Costos Variables de Base de Datos"
     },
     "expenseTypes": {
-      "expense": "Gasto",
+      "expense": "Descuento de orden",
       "fuelCost": "Combustible",
       "workCost": "Costos Extra",
       "bonus": "Bonificación",
