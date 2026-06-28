@@ -7,6 +7,7 @@ import { StatementFilters } from './StatementFilters';
 import { StatementToolbar } from './StatementToolbar';
 import { StatementDataTable } from './StatementDataTable';
 import { fetchStatementsByWeek } from '../data/StatementRepository';
+import { StatementExportUtils } from '../util/StatementExportUtils';
 import { StatementRecord, StatementsByWeekResponse, WeekSummary } from '../domain/StatementModels';
 import EditStatementDialog from './EditStatementDialog';
 import DeleteStatementDialog from './DeleteStatementDialog';
@@ -119,8 +120,8 @@ const StatementsTable: React.FC<{ onVerifyRecords?: (records: StatementRecord[])
       />
       <StatementToolbar
         data={displayData} selectedRows={selectedRows}
-        onExportExcel={(data, filename) => { console.log('Export Excel:', data, filename); enqueueSnackbar(t('statementsList.exportExcelPending'), { variant: 'info' }); }}
-        onExportPDF={(data, filename) => { console.log('Export PDF:', data, filename); enqueueSnackbar(t('statementsList.exportPDFPending'), { variant: 'info' }); }}
+        onExportExcel={(data, filename) => { StatementExportUtils.exportToExcel(data, filename); }}
+        onExportPDF={(data, filename) => { StatementExportUtils.exportToPDF(data, filename, week, year); }}
         onRefresh={loadData} onVerifyRecords={onVerifyRecords}
       />
       <StatementDataTable
