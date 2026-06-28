@@ -886,8 +886,8 @@
   "statementsList": {
     "errorLoading": "Error loading statements",
     "stateUpdated": "Statement {{keyref}} state updated to {{state}}",
-    "exportExcelPending": "Export to Excel functionality to be implemented",
-    "exportPDFPending": "Export to PDF functionality to be implemented"
+    "exportExcelSuccess": "Excel exported successfully!",
+    "exportPDFSuccess": "PDF report opened for printing!"
   },
   "verificationResultsDialog": {
     "title": "Verification Results",
@@ -1223,7 +1223,9 @@
       "next": "Next →",
       "page": "Page {{page}}",
       "recordsPerPage": "Records per page:"
-    }
+    },
+    "exportExcel": "Download as Excel (.xlsx)",
+    "exportPDF": "Print / Save as PDF"
   },
   "weekPicker": {
     "label": "Week",

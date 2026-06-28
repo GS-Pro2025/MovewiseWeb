@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FileSpreadsheet, FileText } from 'lucide-react';
 import { SummaryCostService } from '../../data/SummaryCostService';
 import { PaginatedOrderSummaryResult } from '../../domain/OrderSummaryModel';
 import { SummaryCostParams } from '../../data/SummaryCostRepository';
+import { SummaryCostExportUtils } from '../../util/SummaryCostExportUtils';
 import WeekPicker from '../../../components/WeekPicker';
 import YearPicker from '../../../components/YearPicker';
 import SummaryCostDataTable from '../components/SummaryCostDataTable';
@@ -32,20 +34,28 @@ const SummaryCost: React.FC = () => {
   const [page,         setPage]         = useState<number>(0);
   const [rowsPerPage,  setRowsPerPage]  = useState<number>(25);
   const [searchTerm,   setSearchTerm]   = useState<string>('');
+  const [isExporting,  setIsExporting]  = useState<boolean>(false);
 
   const summaryCostService = useMemo(() => new SummaryCostService(), []);
 
-  const fetchSummaryCost = useCallback(async (pageNum?: number, pageSize?: number, search?: string) => {
+  const doFetch = useCallback(async (overrides: {
+    pageNum?: number; pageSize?: number; search?: string;
+    yearVal?: number; weekVal?: number; startWeekVal?: number; endWeekVal?: number; modeVal?: 'single_week' | 'week_range';
+  } = {}) => {
+    const y  = overrides.yearVal  ?? year;
+    const m  = overrides.modeVal  ?? mode;
+    const pg = (overrides.pageNum ?? page) + 1;
+    const ps = overrides.pageSize ?? rowsPerPage;
+    const s  = overrides.search?.trim() || undefined;
+
     try {
       setIsLoading(true);
-      const params: SummaryCostParams = {
-        page: (pageNum ?? page) + 1,
-        pageSize: pageSize ?? rowsPerPage,
-        year, mode, onlyPaid: false,
-        search: search?.trim() ? search.trim() : undefined
-      };
-      if (mode === 'single_week') { params.numberWeek = week; }
-      else { params.startWeek = startWeek; params.endWeek = endWeek; }
+      const params: SummaryCostParams = { page: pg, pageSize: ps, year: y, mode: m, onlyPaid: false, search: s };
+      if (m === 'single_week') { params.numberWeek = overrides.weekVal ?? week; }
+      else {
+        params.startWeek = overrides.startWeekVal ?? startWeek;
+        params.endWeek   = overrides.endWeekVal   ?? endWeek;
+      }
       const response = await summaryCostService.getSummaryCost(params);
       setSummaryCost(response);
     } catch (error) {
@@ -54,19 +64,46 @@ const SummaryCost: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, rowsPerPage, year, week, mode, startWeek, endWeek, summaryCostService]);
+  }, [summaryCostService, year, mode, page, rowsPerPage, week, startWeek, endWeek]);
 
-  useEffect(() => { fetchSummaryCost(0, 25); }, [fetchSummaryCost]);
+  useEffect(() => { doFetch({ pageNum: 0, pageSize: 25 }); }, []);
 
-  const handleWeekChange        = useCallback((v: number) => { setWeek(v);      setPage(0); fetchSummaryCost(0, rowsPerPage, searchTerm); }, [rowsPerPage, searchTerm, fetchSummaryCost]);
-  const handleYearChange        = useCallback((v: number) => { setYear(v);      setPage(0); fetchSummaryCost(0, rowsPerPage, searchTerm); }, [rowsPerPage, searchTerm, fetchSummaryCost]);
-  const handleStartWeekChange   = useCallback((v: number) => { setStartWeek(v); setPage(0); fetchSummaryCost(0, rowsPerPage, searchTerm); }, [rowsPerPage, searchTerm, fetchSummaryCost]);
-  const handleEndWeekChange     = useCallback((v: number) => { setEndWeek(v);   setPage(0); fetchSummaryCost(0, rowsPerPage, searchTerm); }, [rowsPerPage, searchTerm, fetchSummaryCost]);
-  const handleSearchChange      = useCallback((s: string) => { setSearchTerm(s); setPage(0); fetchSummaryCost(0, rowsPerPage, s); }, [rowsPerPage, fetchSummaryCost]);
-  const handlePageChange        = useCallback((p: number) => { setPage(p); fetchSummaryCost(p, rowsPerPage, searchTerm); }, [rowsPerPage, searchTerm, fetchSummaryCost]);
-  const handleRowsPerPageChange = useCallback((r: number) => { setRowsPerPage(r); setPage(0); fetchSummaryCost(0, r, searchTerm); }, [searchTerm, fetchSummaryCost]);
+  const handleWeekChange        = useCallback((v: number) => { setWeek(v);      setPage(0); doFetch({ pageNum: 0, weekVal: v }); }, [doFetch]);
+  const handleYearChange        = useCallback((v: number) => { setYear(v);      setPage(0); doFetch({ pageNum: 0, yearVal: v }); }, [doFetch]);
+  const handleStartWeekChange   = useCallback((v: number) => { setStartWeek(v); setPage(0); doFetch({ pageNum: 0, startWeekVal: v }); }, [doFetch]);
+  const handleEndWeekChange     = useCallback((v: number) => { setEndWeek(v);   setPage(0); doFetch({ pageNum: 0, endWeekVal: v }); }, [doFetch]);
+  const handleSearchChange      = useCallback((s: string) => { setSearchTerm(s); setPage(0); doFetch({ pageNum: 0, search: s }); }, [doFetch]);
+  const handlePageChange        = useCallback((p: number) => { setPage(p); doFetch({ pageNum: p }); }, [doFetch]);
+  const handleRowsPerPageChange = useCallback((r: number) => { setRowsPerPage(r); setPage(0); doFetch({ pageNum: 0, pageSize: r }); }, [doFetch]);
 
   const handleContextMenu     = (event: React.MouseEvent, row: any) => { event.preventDefault(); console.log('Context menu for:', row); };
+
+  const handleExportExcel = async () => {
+    if (!summaryCost?.results?.length) return;
+    setIsExporting(true);
+    try {
+      await SummaryCostExportUtils.exportToExcel(
+        summaryCost.results, mode, year,
+        mode === 'single_week' ? week : undefined,
+        mode === 'week_range' ? startWeek : undefined,
+        mode === 'week_range' ? endWeek : undefined
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (!summaryCost?.results?.length) return;
+    SummaryCostExportUtils.exportToPDF(
+      summaryCost.results, mode, year,
+      mode === 'single_week' ? week : undefined,
+      mode === 'week_range' ? startWeek : undefined,
+      mode === 'week_range' ? endWeek : undefined
+    );
+  };
+
+  const exportDisabled = isExporting || !summaryCost?.results?.length;
 
   const totalPages   = summaryCost ? Math.ceil(summaryCost.count / rowsPerPage) : 0;
   const isLastPage   = page >= totalPages - 1;
@@ -97,11 +134,43 @@ const SummaryCost: React.FC = () => {
     <div className="container mx-auto p-4">
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2" style={{ color: '#0B2863' }}>
-          {t('summaryCost.title')}
-        </h1>
-        <p className="text-gray-600 text-sm">{t('summaryCost.subtitle')}</p>
+      <div className="mb-6 flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: '#0B2863' }}>
+            {t('summaryCost.title')}
+          </h1>
+          <p className="text-gray-600 text-sm">{t('summaryCost.subtitle')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportExcel}
+            disabled={exportDisabled}
+            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2"
+            style={{
+              background: exportDisabled ? '#e5e7eb' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              color: exportDisabled ? '#9ca3af' : '#fff',
+              cursor: exportDisabled ? 'not-allowed' : 'pointer',
+            }}
+            title={isExporting ? 'Exporting...' : t('summaryCost.exportExcel')}
+          >
+            <FileSpreadsheet size={16} />
+            {isExporting ? '...' : 'Excel'}
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={exportDisabled}
+            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2"
+            style={{
+              background: exportDisabled ? '#e5e7eb' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: exportDisabled ? '#9ca3af' : '#fff',
+              cursor: exportDisabled ? 'not-allowed' : 'pointer',
+            }}
+            title={t('summaryCost.exportPDF')}
+          >
+            <FileText size={16} />
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
