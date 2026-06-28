@@ -26,6 +26,7 @@ export interface AssignmentData {
   order_status: string;
   status_order: string;
   id_operator: number;
+  payment_value: number | null;
 }
 
 export interface WeekInfo {
