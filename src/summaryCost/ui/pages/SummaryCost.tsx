@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { SummaryCostService } from '../../data/SummaryCostService';
@@ -37,11 +37,13 @@ const SummaryCost: React.FC = () => {
   const [isExporting,  setIsExporting]  = useState<boolean>(false);
 
   const summaryCostService = useMemo(() => new SummaryCostService(), []);
+  const fetchIdRef = useRef(0);
 
   const doFetch = useCallback(async (overrides: {
     pageNum?: number; pageSize?: number; search?: string;
     yearVal?: number; weekVal?: number; startWeekVal?: number; endWeekVal?: number; modeVal?: 'single_week' | 'week_range';
   } = {}) => {
+    const id = ++fetchIdRef.current;
     const y  = overrides.yearVal  ?? year;
     const m  = overrides.modeVal  ?? mode;
     const pg = (overrides.pageNum ?? page) + 1;
@@ -57,12 +59,14 @@ const SummaryCost: React.FC = () => {
         params.endWeek   = overrides.endWeekVal   ?? endWeek;
       }
       const response = await summaryCostService.getSummaryCost(params);
+      if (id !== fetchIdRef.current) return;
       setSummaryCost(response);
     } catch (error) {
+      if (id !== fetchIdRef.current) return;
       console.error('Error fetching summary cost:', error);
       setSummaryCost(null);
     } finally {
-      setIsLoading(false);
+      if (id === fetchIdRef.current) setIsLoading(false);
     }
   }, [summaryCostService, year, mode, page, rowsPerPage, week, startWeek, endWeek]);
 
