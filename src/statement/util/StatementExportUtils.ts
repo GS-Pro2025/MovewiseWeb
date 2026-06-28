@@ -105,7 +105,7 @@ export class StatementExportUtils {
 
   static exportToPDF(
     data: StatementRecord[],
-    filename: string,
+    _filename: string,
     week?: number,
     year?: number
   ): void {
