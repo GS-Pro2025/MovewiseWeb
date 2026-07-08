@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Paper,
   Table,
   TableBody,
@@ -20,12 +21,14 @@ import GridOnIcon from '@mui/icons-material/GridOn';
 import { FIELD_LABELS, type ReportConfig, type ReportResult } from '../../domain/ReportModels';
 import { exportToCSV, exportToExcel, exportToPDF } from './ExportUtils';
 
+export type ExportFormat = 'excel' | 'csv' | 'pdf';
+
 interface Props {
   result: ReportResult;
   config: ReportConfig;
-  isPreview?: boolean; // true = subset, full export available
-  onExportAll?: () => void; // triggers re-generate without page_size
-  exportLoading?: boolean;
+  isPreview?: boolean; // true = subset, full export re-fetches on click
+  onExportAll?: (format: ExportFormat) => void; // re-generate without page_size and export
+  exportingFormat?: ExportFormat | null;
 }
 
 /** Returns a human-readable label for a field, stripping internal prefixes. */
@@ -152,12 +155,13 @@ const ReportResults: React.FC<Props> = ({
   config,
   isPreview = false,
   onExportAll,
-  exportLoading = false,
+  exportingFormat = null,
 }) => {
   const { t } = useTranslation();
 
   const previewCols = getPreviewColumns(config);
   const previewRecords = getPreviewRecords(result);
+  const isAnyExporting = exportingFormat !== null;
 
   // Determine which nested arrays are included (for summary columns)
   const nestedSummaryKeys: { key: string; label: string }[] = [];
@@ -213,46 +217,81 @@ const ReportResults: React.FC<Props> = ({
 
         {/* Export buttons */}
         <Box display="flex" gap={1} flexWrap="wrap">
-          <Tooltip title={t('reports.results.exportExcelTooltip')}>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<GridOnIcon />}
-              onClick={() => exportToExcel(result, config, reportName)}
-            >
-              Excel
-            </Button>
+          <Tooltip
+            title={
+              isPreview
+                ? t('reports.results.exportExcelTooltipAll')
+                : t('reports.results.exportExcelTooltip')
+            }
+          >
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={
+                  exportingFormat === 'excel' ? <CircularProgress size={16} color="inherit" /> : <GridOnIcon />
+                }
+                onClick={() =>
+                  isPreview && onExportAll
+                    ? onExportAll('excel')
+                    : exportToExcel(result, config, reportName)
+                }
+                disabled={isAnyExporting}
+              >
+                Excel
+              </Button>
+            </span>
           </Tooltip>
-          <Tooltip title={t('reports.results.exportCsvTooltip')}>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<TableViewIcon />}
-              onClick={() => exportToCSV(result, config, reportName)}
-            >
-              CSV
-            </Button>
+          <Tooltip
+            title={
+              isPreview
+                ? t('reports.results.exportCsvTooltipAll')
+                : t('reports.results.exportCsvTooltip')
+            }
+          >
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={
+                  exportingFormat === 'csv' ? <CircularProgress size={16} color="inherit" /> : <TableViewIcon />
+                }
+                onClick={() =>
+                  isPreview && onExportAll
+                    ? onExportAll('csv')
+                    : exportToCSV(result, config, reportName)
+                }
+                disabled={isAnyExporting}
+              >
+                CSV
+              </Button>
+            </span>
           </Tooltip>
-          <Tooltip title={t('reports.results.exportPdfTooltip')}>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<PictureAsPdfIcon />}
-              onClick={() => void exportToPDF(result, config, reportName)}
-            >
-              PDF
-            </Button>
+          <Tooltip
+            title={
+              isPreview
+                ? t('reports.results.exportPdfTooltipAll')
+                : t('reports.results.exportPdfTooltip')
+            }
+          >
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={
+                  exportingFormat === 'pdf' ? <CircularProgress size={16} color="inherit" /> : <PictureAsPdfIcon />
+                }
+                onClick={() =>
+                  isPreview && onExportAll
+                    ? onExportAll('pdf')
+                    : void exportToPDF(result, config, reportName)
+                }
+                disabled={isAnyExporting}
+              >
+                PDF
+              </Button>
+            </span>
           </Tooltip>
-          {isPreview && onExportAll && (
-            <Button
-              size="small"
-              variant="contained"
-              onClick={onExportAll}
-              disabled={exportLoading}
-            >
-              {exportLoading ? t('reports.results.exporting') : t('reports.results.exportAll')}
-            </Button>
-          )}
         </Box>
       </Box>
 

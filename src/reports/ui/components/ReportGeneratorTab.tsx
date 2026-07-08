@@ -23,15 +23,31 @@ import { DEFAULT_ORDER_CONFIG } from '../../domain/ReportModels';
 import { generateReport } from '../../data/ReportGenerateRepository';
 import ReportConfigBuilder from './ReportConfigBuilder';
 import ReportResults from './ReportResults';
-import { exportToExcel } from './ExportUtils';
+import { exportToCSV, exportToExcel, exportToPDF } from './ExportUtils';
 
 interface Props {
   templates: ReportTemplate[];
 }
 
 type Mode = 'template' | 'adhoc';
+type ExportFormat = 'excel' | 'csv' | 'pdf';
 
 const PREVIEW_PAGE_SIZE = 50;
+
+/**
+ * Determines whether the current report result is a partial preview that
+ * needs a re-fetch before export. Works for both report types:
+ *  - orders:    `total_individual_orders` (raw orders across all groups)
+ *  - operators: `total_records`
+ * Falls back to `data.length` if the server omitted the totals.
+ */
+function computeIsPreview(data: ReportResult): boolean {
+  const total =
+    data.total_individual_orders ??
+    data.total_records ??
+    data.data.length;
+  return total > PREVIEW_PAGE_SIZE;
+}
 
 const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
   const { t } = useTranslation();
@@ -44,7 +60,7 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
   const [endDate, setEndDate] = useState('');
 
   const [generating, setGenerating] = useState(false);
-  const [exportingAll, setExportingAll] = useState(false);
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [result, setResult] = useState<ReportResult | null>(null);
   const [activeConfig, setActiveConfig] = useState<ReportConfig | null>(null);
   const [isPreview, setIsPreview] = useState(false);
@@ -92,7 +108,7 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
       const cfg = resolvedConfig();
       setResult(data);
       setActiveConfig(cfg);
-      setIsPreview((data.total_records ?? 0) > PREVIEW_PAGE_SIZE);
+      setIsPreview(computeIsPreview(data));
     } catch (err) {
       enqueueSnackbar(
         err instanceof Error ? err.message : t('reports.generator.generateError'),
@@ -103,15 +119,18 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
     }
   };
 
-  const handleExportAll = async () => {
-    setExportingAll(true);
+  const handleExportAll = async (format: ExportFormat) => {
+    setExportingFormat(format);
     try {
       const data = await generateReport(buildRequest(false));
       const cfg = resolvedConfig();
       if (!cfg) return;
 
       const filename = `movewise-report-${startDate}-${endDate}`;
-      exportToExcel(data, cfg, filename);
+      if (format === 'excel')      exportToExcel(data, cfg, filename);
+      else if (format === 'csv')   exportToCSV(data, cfg, filename);
+      else if (format === 'pdf')   await exportToPDF(data, cfg, filename);
+
       setResult(data);
       setActiveConfig(cfg);
       setIsPreview(false);
@@ -121,7 +140,7 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
         { variant: 'error' },
       );
     } finally {
-      setExportingAll(false);
+      setExportingFormat(null);
     }
   };
 
@@ -209,7 +228,7 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
           size="large"
           startIcon={generating ? <CircularProgress size={16} color="inherit" /> : <PlayArrowIcon />}
           onClick={handleGenerate}
-          disabled={generating || exportingAll}
+          disabled={generating || exportingFormat !== null}
         >
           {generating ? t('reports.generator.generating') : t('reports.generator.preview', { count: PREVIEW_PAGE_SIZE })}
         </Button>
@@ -227,7 +246,7 @@ const ReportGeneratorTab: React.FC<Props> = ({ templates }) => {
             config={activeConfig}
             isPreview={isPreview}
             onExportAll={handleExportAll}
-            exportLoading={exportingAll}
+            exportingFormat={exportingFormat}
           />
         </>
       )}
