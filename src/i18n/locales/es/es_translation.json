@@ -454,7 +454,10 @@
       "exporting": "Exportando...",
       "exportExcelTooltip": "Descargar como Excel (.xlsx)",
       "exportCsvTooltip": "Descargar como CSV",
-      "exportPdfTooltip": "Descargar como PDF"
+      "exportPdfTooltip": "Descargar como PDF",
+      "exportExcelTooltipAll": "Descargar todos los registros como Excel (.xlsx)",
+      "exportCsvTooltipAll": "Descargar todos los registros como CSV",
+      "exportPdfTooltipAll": "Descargar todos los registros como PDF"
     }
   },
   "filters": {
