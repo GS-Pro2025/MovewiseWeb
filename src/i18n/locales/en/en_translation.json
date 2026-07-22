@@ -2269,7 +2269,10 @@
       "addChildSuccess": "Child added successfully",
       "addChildError": "Error adding child",
       "freelancerCreated": "Freelancer created successfully",
-      "freelancerCreatedWarning": "Freelancer created, but error updating list"
+      "freelancerCreatedWarning": "Freelancer created, but error updating list",
+      "convertedToFreelancer": "Converted to freelancer successfully",
+      "convertedToOperator": "Converted to operator successfully",
+      "convertError": "Error converting operator type"
     },
     "header": {
       "inviteLinkButton": "Invite Operator",
@@ -2317,6 +2320,8 @@
       "menu": {
         "viewDetails": "View Details",
         "edit": "Edit",
+        "convertToFreelancer": "Convert to Freelancer",
+        "convertToOperator": "Convert to Operator",
         "manageChildren": "Manage Children",
         "viewLoans": "View Loans",
         "createLoan": "Create Loan",

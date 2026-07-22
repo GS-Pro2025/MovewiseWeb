@@ -283,6 +283,33 @@ const OperatorsPage: React.FC = () => {
     }
   }, [operatorToDelete, enqueueSnackbar, t, viewMode, freelancersPage, freelancersPageSize]);
 
+  const handleToggleFreelanceStatus = useCallback(async (operator: Operator) => {
+    const newStatus = operator.status === 'freelance' ? 'active' : 'freelance';
+    try {
+      const formData = new FormData();
+      formData.append('status', newStatus);
+      await updateOperator(operator.id_operator, formData);
+
+      if (viewMode === 'freelancers') {
+        const resp = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
+        setFreelancers(resp.results);
+        setFreelancersTotal(resp.count);
+      } else {
+        const response = await fetchOperators();
+        setOperators(response.results);
+      }
+
+      enqueueSnackbar(
+        newStatus === 'freelance'
+          ? t('operators.snackbar.convertedToFreelancer')
+          : t('operators.snackbar.convertedToOperator'),
+        { variant: 'success' }
+      );
+    } catch {
+      enqueueSnackbar(t('operators.snackbar.convertError'), { variant: 'error' });
+    }
+  }, [enqueueSnackbar, t, viewMode, freelancersPage, freelancersPageSize]);
+
   const handleViewDetails = useCallback((operator: Operator) => {
     setSelectedOperator(operator);
     setIsDialogOpen(true);
@@ -484,6 +511,7 @@ useEffect(() => {
             onDeleteOperator={handleDeleteOperator}
             onManageChildren={handleManageChildren}
             onActivateOperator={handleActivateOperator}
+            onToggleFreelanceStatus={handleToggleFreelanceStatus}
           />
         </>
       )}
@@ -581,6 +609,7 @@ useEffect(() => {
             onDeleteOperator={handleDeleteOperator}
             onManageChildren={() => {}}
             onActivateOperator={() => {}}
+            onToggleFreelanceStatus={handleToggleFreelanceStatus}
           />
           </div>
 

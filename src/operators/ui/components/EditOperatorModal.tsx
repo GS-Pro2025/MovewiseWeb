@@ -232,7 +232,6 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
       submitFormData.append('id_number', formData.person.id_number);
       submitFormData.append('type_id', formData.person.type_id);
       submitFormData.append('email', formData.person.email);
-      if (formData.person.status) submitFormData.append('status', formData.person.status);
       if (files.photo)         submitFormData.append('photo', files.photo);
       if (files.license_front) submitFormData.append('license_front', files.license_front);
       if (files.license_back)  submitFormData.append('license_back', files.license_back);
@@ -269,6 +268,7 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
     `w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ${ring} disabled:opacity-60`;
 
   const fullName = `${operator.first_name} ${operator.last_name}`;
+  const isFreelancer = operator.status === 'freelance';
 
   return (
     <>
@@ -341,14 +341,14 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('operators.editModal.fields.birthDate')} *
+                    {t('operators.editModal.fields.birthDate')}{!isFreelancer ? ' *' : ''}
                   </label>
                   <input
                     type="date"
                     value={formData.person.birth_date}
                     onChange={(e) => handleInputChange('person.birth_date', e.target.value)}
                     className={inputCls('focus:ring-blue-500')}
-                    required disabled={loading}
+                    required={!isFreelancer} disabled={loading}
                   />
                 </div>
                 <div>
@@ -393,14 +393,14 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('operators.editModal.fields.email')} *
+                    {t('operators.editModal.fields.email')}{!isFreelancer ? ' *' : ''}
                   </label>
                   <input
                     type="email"
                     value={formData.person.email}
                     onChange={(e) => handleInputChange('person.email', e.target.value)}
                     className={inputCls('focus:ring-green-500')}
-                    required disabled={loading}
+                    required={!isFreelancer} disabled={loading}
                   />
                 </div>
                 <div>
@@ -417,14 +417,14 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('operators.editModal.fields.address')} *
+                    {t('operators.editModal.fields.address')}{!isFreelancer ? ' *' : ''}
                   </label>
                   <textarea
                     value={formData.person.address}
                     onChange={(e) => handleInputChange('person.address', e.target.value)}
                     className={inputCls('focus:ring-green-500')}
                     rows={3}
-                    required disabled={loading}
+                    required={!isFreelancer} disabled={loading}
                   />
                 </div>
               </div>
@@ -451,14 +451,14 @@ const EditOperatorModal: React.FC<EditOperatorModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('operators.editModal.fields.licenseNumber')} *
+                    {t('operators.editModal.fields.licenseNumber')}{!isFreelancer ? ' *' : ''}
                   </label>
                   <input
                     type="text"
                     value={formData.number_licence}
                     onChange={(e) => handleInputChange('number_licence', e.target.value)}
                     className={inputCls('focus:ring-purple-500')}
-                    required disabled={loading}
+                    required={!isFreelancer} disabled={loading}
                   />
                 </div>
                 <div>
