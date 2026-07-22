@@ -2266,7 +2266,10 @@
       "addChildSuccess": "Hijo agregado exitosamente",
       "addChildError": "Error al agregar el hijo",
       "freelancerCreated": "Freelancer creado exitosamente",
-      "freelancerCreatedWarning": "Freelancer creado, pero hubo un error al actualizar la lista"
+      "freelancerCreatedWarning": "Freelancer creado, pero hubo un error al actualizar la lista",
+      "convertedToFreelancer": "Convertido a freelancer exitosamente",
+      "convertedToOperator": "Convertido a operador exitosamente",
+      "convertError": "Error al convertir el tipo de operador"
     },
     "inviteLink": {
     "title": "Generar Enlace de Invitación",
@@ -2329,6 +2332,8 @@
       "menu": {
         "viewDetails": "Ver Detalles",
         "edit": "Editar",
+        "convertToFreelancer": "Convertir a Freelancer",
+        "convertToOperator": "Convertir a Operador",
         "manageChildren": "Gestionar Hijos",
         "viewLoans": "Ver Préstamos",
         "createLoan": "Crear Préstamo",

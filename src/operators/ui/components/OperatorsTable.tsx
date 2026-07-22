@@ -8,7 +8,7 @@ import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
-import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle, KeyRound, AlertTriangle } from 'lucide-react';
+import { MoreVertical, Eye, Edit, Baby, Trash2, Mail, DollarSign, PlusCircle, KeyRound, AlertTriangle, ArrowRightLeft } from 'lucide-react';
 import SendEmailDialog from './SendEmailDialog';
 import OperatorLoansDialog from './OperatorLoansDialog';
 import CreateLoanDialog from './CreateLoanDialog';
@@ -25,6 +25,7 @@ interface OperatorsTableProps {
   onDeleteOperator: (operator: Operator) => void;
   onManageChildren: (operator: Operator) => void;
   onActivateOperator: (id: number) => void;
+  onToggleFreelanceStatus?: (operator: Operator) => void;
 }
 
 // ── Helper: detecta si un operador tiene salario faltante o en cero ──────────
@@ -50,7 +51,8 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
   onEditOperator,
   onDeleteOperator,
   onManageChildren,
-  onActivateOperator
+  onActivateOperator,
+  onToggleFreelanceStatus
 }) => {
   const { t } = useTranslation();
 
@@ -108,6 +110,9 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
         case 'edit':       onEditOperator(operator);   break;
         case 'children':   onManageChildren(operator); break;
         case 'delete':     onDeleteOperator(operator); break;
+        case 'toggleFreelance':
+          if (onToggleFreelanceStatus) onToggleFreelanceStatus(operator);
+          break;
         case 'email':
           setSelectedOperator(operator);
           setIsEmailDialogOpen(true);
@@ -216,6 +221,24 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
             <ListItemIcon><AlertTriangle size={18} color="#B45309" /></ListItemIcon>
             <ListItemText sx={{ color: '#92400E', fontWeight: 700 }}>
               {t('operators.table.menu.setSalary', 'Configurar salario')}
+            </ListItemText>
+          </MenuItem>
+        )}
+
+        {/* Toggle freelance / operator */}
+        {menuOperator && onToggleFreelanceStatus && menuOperator.status === 'freelance' && (
+          <MenuItem onClick={() => handleAction('toggleFreelance')}>
+            <ListItemIcon><ArrowRightLeft size={18} color="#0B2863" /></ListItemIcon>
+            <ListItemText sx={{ color: '#0B2863', fontWeight: 600 }}>
+              {t('operators.table.menu.convertToOperator', 'Convertir a Operador')}
+            </ListItemText>
+          </MenuItem>
+        )}
+        {menuOperator && onToggleFreelanceStatus && menuOperator.status === 'active' && (
+          <MenuItem onClick={() => handleAction('toggleFreelance')}>
+            <ListItemIcon><ArrowRightLeft size={18} color="#F09F52" /></ListItemIcon>
+            <ListItemText sx={{ color: '#F09F52', fontWeight: 600 }}>
+              {t('operators.table.menu.convertToFreelancer', 'Convertir a Freelancer')}
             </ListItemText>
           </MenuItem>
         )}
