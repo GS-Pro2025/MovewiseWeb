@@ -218,8 +218,16 @@ const OperatorsPage: React.FC = () => {
         ? operatorData
         : createOperatorFormData(operatorData);
       await updateOperator(operatorToEdit.id_operator, dataToSend);
-      const response = await fetchOperators();
-      setOperators(response.results);
+
+      if (viewMode === 'freelancers') {
+        const resp = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
+        setFreelancers(resp.results);
+        setFreelancersTotal(resp.count);
+      } else {
+        const response = await fetchOperators();
+        setOperators(response.results);
+      }
+
       setIsEditDialogOpen(false);
       setOperatorToEdit(null);
       enqueueSnackbar(t('operators.snackbar.updateSuccess'), { variant: 'success' });
@@ -242,7 +250,7 @@ const OperatorsPage: React.FC = () => {
       enqueueSnackbar(errorMessage, { variant: 'error' });
       throw error;
     }
-  }, [operatorToEdit, createOperatorFormData, enqueueSnackbar, t]);
+  }, [operatorToEdit, createOperatorFormData, enqueueSnackbar, t, viewMode, freelancersPage, freelancersPageSize]);
 
   const handleDeleteOperator = useCallback((operator: Operator) => {
     setOperatorToDelete(operator);
@@ -253,19 +261,27 @@ const OperatorsPage: React.FC = () => {
     if (!operatorToDelete) return;
     try {
       await deleteOperator(operatorToDelete.id_operator);
-      const [operatorsResponse, inactiveResponse] = await Promise.all([
-        fetchOperators(),
-        fetchInactiveOperators(),
-      ]);
-      setOperators(operatorsResponse.results);
-      setInactiveOperators(inactiveResponse.results);
+
+      if (viewMode === 'freelancers') {
+        const resp = await fetchFreelanceOperators(freelancersPage, freelancersPageSize);
+        setFreelancers(resp.results);
+        setFreelancersTotal(resp.count);
+      } else {
+        const [operatorsResponse, inactiveResponse] = await Promise.all([
+          fetchOperators(),
+          fetchInactiveOperators(),
+        ]);
+        setOperators(operatorsResponse.results);
+        setInactiveOperators(inactiveResponse.results);
+      }
+
       setIsDeleteDialogOpen(false);
       setOperatorToDelete(null);
       enqueueSnackbar(t('operators.snackbar.deleteSuccess'), { variant: 'success' });
     } catch {
       enqueueSnackbar(t('operators.snackbar.deleteError'), { variant: 'error' });
     }
-  }, [operatorToDelete, enqueueSnackbar, t]);
+  }, [operatorToDelete, enqueueSnackbar, t, viewMode, freelancersPage, freelancersPageSize]);
 
   const handleViewDetails = useCallback((operator: Operator) => {
     setSelectedOperator(operator);
@@ -554,18 +570,18 @@ useEffect(() => {
                 {searchTerm && `(${mappedFreelancers.length} ${t('operators.freelancers.tableResultsSuffix')})`}
               </h3>
             </div>
-            <OperatorsTable
-              activeTab="active"
-              operators={mappedFreelancers}
-              inactiveOperators={[]}
-              inactiveLoading={false}
-              searchTerm={searchTerm}
-              onViewDetails={handleViewDetails}
-              onEditOperator={() => {}}
-              onDeleteOperator={() => {}}
-              onManageChildren={() => {}}
-              onActivateOperator={() => {}}
-            />
+          <OperatorsTable
+            activeTab="active"
+            operators={mappedFreelancers}
+            inactiveOperators={[]}
+            inactiveLoading={false}
+            searchTerm={searchTerm}
+            onViewDetails={handleViewDetails}
+            onEditOperator={handleEditOperator}
+            onDeleteOperator={handleDeleteOperator}
+            onManageChildren={() => {}}
+            onActivateOperator={() => {}}
+          />
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border p-3" style={{ borderColor: COLORS.primary }}>
@@ -604,7 +620,7 @@ useEffect(() => {
       )}
 
       {/* ── Modals ── */}
-      {viewMode === 'operators' && (
+      {(viewMode === 'operators' || viewMode === 'freelancers') && (
         <>
           {isEditDialogOpen && operatorToEdit && (
             <EditOperatorModal
@@ -615,7 +631,7 @@ useEffect(() => {
             />
           )}
 
-          {isChildrenModalOpen && operatorForChildren && (
+          {viewMode === 'operators' && isChildrenModalOpen && operatorForChildren && (
             <ManageChildrenModal
               operator={operatorForChildren}
               isOpen={isChildrenModalOpen}
@@ -633,7 +649,7 @@ useEffect(() => {
             />
           )}
 
-          {isRegisterModalOpen && (
+          {viewMode === 'operators' && isRegisterModalOpen && (
             <RegisterOperatorModal
               isOpen={isRegisterModalOpen}
               onClose={() => setIsRegisterModalOpen(false)}
@@ -641,7 +657,7 @@ useEffect(() => {
             />
           )}
 
-          {isInviteLinkModalOpen && (
+          {viewMode === 'operators' && isInviteLinkModalOpen && (
             <InviteLinkModal
               isOpen={isInviteLinkModalOpen}
               onClose={() => setIsInviteLinkModalOpen(false)}

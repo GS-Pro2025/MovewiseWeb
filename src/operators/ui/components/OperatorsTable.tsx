@@ -98,29 +98,34 @@ const OperatorsTable: React.FC<OperatorsTableProps> = ({
 
   const handleAction = (action: string) => {
     if (!menuOperator) return;
-    switch (action) {
-      case 'view':       onViewDetails(menuOperator);    break;
-      case 'edit':       onEditOperator(menuOperator);   break;
-      case 'children':   onManageChildren(menuOperator); break;
-      case 'delete':     onDeleteOperator(menuOperator); break;
-      case 'email':
-        setSelectedOperator(menuOperator);
-        setIsEmailDialogOpen(true);
-        break;
-      case 'loans':
-        setSelectedOperator(menuOperator);
-        setIsLoansDialogOpen(true);
-        break;
-      case 'createLoan':
-        setSelectedOperator(menuOperator);
-        setIsCreateLoanDialogOpen(true);
-        break;
-      case 'changePassword':
-        setSelectedOperator(menuOperator);
-        setIsChangePasswordDialogOpen(true);
-        break;
-    }
-    handleMenuClose();
+    const operator = menuOperator;
+    handleMenuClose(); // cierra el menú YA
+
+    // Espera un tick para que el Menu termine su cierre y libere el foco
+    setTimeout(() => {
+      switch (action) {
+        case 'view':       onViewDetails(operator);    break;
+        case 'edit':       onEditOperator(operator);   break;
+        case 'children':   onManageChildren(operator); break;
+        case 'delete':     onDeleteOperator(operator); break;
+        case 'email':
+          setSelectedOperator(operator);
+          setIsEmailDialogOpen(true);
+          break;
+        case 'loans':
+          setSelectedOperator(operator);
+          setIsLoansDialogOpen(true);
+          break;
+        case 'createLoan':
+          setSelectedOperator(operator);
+          setIsCreateLoanDialogOpen(true);
+          break;
+        case 'changePassword':
+          setSelectedOperator(operator);
+          setIsChangePasswordDialogOpen(true);
+          break;
+      }
+    }, 0);
   };
 
   const handleCloseEmailDialog      = () => { setIsEmailDialogOpen(false);      setSelectedOperator(null); };
