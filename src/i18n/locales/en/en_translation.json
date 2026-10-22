@@ -2893,7 +2893,9 @@
       "day": "Day of the week",
       "dayHint": "Empty = current week",
       "created": "Fund created",
-      "existed": "The fund already existed this week; no money moved"
+      "existed": "The fund already existed this week; no money moved",
+      "initialSelfHint": "Enters your fund as a deposit.",
+      "depositFailed": "The fund was created, but the initial amount could not be recorded: {{error}}. Use \"Deposit money\" from the fund detail."
     },
     "return": {
       "to": "Who receives it?",

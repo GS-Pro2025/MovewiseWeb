@@ -2904,7 +2904,9 @@
       "day": "Día de la semana",
       "dayHint": "Vacío = semana actual",
       "created": "Caja creada",
-      "existed": "La caja ya existía esta semana; no se movió dinero"
+      "existed": "La caja ya existía esta semana; no se movió dinero",
+      "initialSelfHint": "Entra como entrega de dinero a tu caja.",
+      "depositFailed": "La caja se creó, pero no se pudo registrar el monto inicial: {{error}}. Usa «Entregar dinero» desde el detalle de la caja."
     },
     "return": {
       "to": "¿A quién se lo devuelves?",

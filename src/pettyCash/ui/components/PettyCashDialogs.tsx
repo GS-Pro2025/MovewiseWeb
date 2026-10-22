@@ -61,6 +61,16 @@ export const OpenFundDialog: React.FC<BaseProps & { isSuper: boolean; currentPer
           ...(kind !== 'self' && initial ? { initial_amount: initial } : {}),
           ...(description ? { description } : {}),
         });
+        // The API rejects initial_amount on your own fund, so the amount goes in as a deposit.
+        if (kind === 'self' && initial && res.created) {
+          try {
+            await depositToFund(res.fund.id_fund, { amount: initial.trim(), ...(description ? { description } : {}) });
+          } catch (depErr) {
+            onOpened(res.fund, res.created);
+            setError(t('pettyCash.open.depositFailed', { error: errMsg(depErr) }));
+            return;
+          }
+        }
         onOpened(res.fund, res.created);
         onDone();
       } catch (err) { setError(errMsg(err)); } finally { setBusy(false); }
@@ -89,13 +99,12 @@ export const OpenFundDialog: React.FC<BaseProps & { isSuper: boolean; currentPer
             </select>
           </Field>
         )}
-        {kind !== 'self' && (
+        {(
           <Field label={t('pettyCash.open.initial')}
-            hint={kind === 'operator' ? t('pettyCash.open.initialOperatorHint') : t('pettyCash.open.initialAdminHint')}>
+            hint={kind === 'self' ? t('pettyCash.open.initialSelfHint') : kind === 'operator' ? t('pettyCash.open.initialOperatorHint') : t('pettyCash.open.initialAdminHint')}>
             <input className={inputCls} inputMode="decimal" placeholder="0.00" value={initial} onChange={e => setInitial(e.target.value)} />
           </Field>
         )}
-        {kind === 'self' && <p className="text-xs text-gray-500">{t('pettyCash.open.selfHint')}</p>}
         <Field label={t('pettyCash.open.day')} hint={t('pettyCash.open.dayHint')}>
           <input type="date" className={inputCls} value={day} onChange={e => setDay(e.target.value)} />
         </Field>
