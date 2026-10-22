@@ -33,7 +33,7 @@ export const ModalShell: React.FC<Props> = ({
       className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
     >
       <div className="px-5 py-4 bg-[#0B2863] rounded-t-2xl flex items-center justify-between sticky top-0 z-10">
-        <h3 className="font-bold text-white">{title}</h3>
+        <h3 className="text-[15px] font-semibold text-white">{title}</h3>
         <button type="button" onClick={onClose} className="text-white/70 hover:text-white" aria-label="close">
           <i className="fas fa-times" />
         </button>

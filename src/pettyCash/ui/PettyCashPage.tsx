@@ -55,7 +55,7 @@ export default function PettyCashPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0B2863]">{t('pettyCash.title')}</h1>
+          <h1 className="text-xl font-semibold text-[#0B2863]">{t('pettyCash.title')}</h1>
           <p className="text-sm text-gray-500">{t('pettyCash.subtitle')}</p>
         </div>
         <button

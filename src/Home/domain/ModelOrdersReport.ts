@@ -63,6 +63,7 @@ export interface OrderReportResult {
   dispatch_ticket: string | null;
   dispatch_ticket_url: string | null;
   state_usa: string;
+  city?: string | null;
   person: Person;
   job: number;
   job_name: string;

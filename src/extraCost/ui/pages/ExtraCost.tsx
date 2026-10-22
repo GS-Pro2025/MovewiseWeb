@@ -55,7 +55,7 @@ const ExtraCostPage: React.FC = () => {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: '#0B2863' }}>
+          <h1 className="text-xl font-semibold mb-2" style={{ color: '#0B2863' }}>
             {t('extraCostPage.title')}
           </h1>
           <p className="text-gray-600 text-sm">

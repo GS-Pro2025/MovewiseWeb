@@ -7,6 +7,7 @@ import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
 import LoadingSpinner from './components/Login_Register/LoadingSpinner';
 import PayrollPage from './Payroll/pages/PayrollPage';
+import WeeklyOperatorsReport from './weeklyReport/ui/WeeklyOperatorsReport';
 import PettyCashPage from './pettyCash/ui/PettyCashPage';
 import PettyCashDetailPage from './pettyCash/ui/PettyCashDetailPage';
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
@@ -101,6 +102,7 @@ const App = () => {
           <Route path="summary-cost"                     element={<SummaryCost />} />
           <Route path="operators"                        element={<OperatorsPage />} />
           <Route path="payroll"                          element={<PayrollPage />} />
+          <Route path="weekly-operators-report"          element={<WeeklyOperatorsReport />} />
           <Route path="petty-cash"                       element={<PettyCashPage />} />
           <Route path="petty-cash/:id"                   element={<PettyCashDetailPage />} />
           <Route path="extra-cost"                       element={<ExtraCost />} />

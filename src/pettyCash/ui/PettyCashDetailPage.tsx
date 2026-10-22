@@ -77,7 +77,7 @@ export default function PettyCashDetailPage() {
           <Avatar name={fund.holder_name} size={64}
             photo={fund.holder_type === 'operator' ? photos.operators[fund.holder_operator ?? -1] : photos.admins[fund.holder_user ?? -1]} />
           <div>
-          <div className="text-lg font-bold text-gray-800">{fund.holder_name ?? '—'}</div>
+          <div className="text-base font-semibold text-gray-800">{fund.holder_name ?? '—'}</div>
           <div className="text-sm text-gray-500">
             {t(`pettyCash.holder.${fund.holder_type}`)} · {fmtDay(fund.week_start)} → {fmtDay(fund.week_end)}
           </div>

@@ -326,7 +326,8 @@
       "operatorLoans": "Operator Loans",
       "trucks": "Vehicle Management",
       "reports": "Report Generator",
-      "pettyCash": "Petty Cash"
+      "pettyCash": "Petty Cash",
+      "weeklyReport": "Weekly operators report"
     }
   },
   "reports": {
@@ -2944,5 +2945,18 @@
       "balance": "Total balance",
       "debt": "In debt"
     }
+  },
+  "weeklyReport": {
+    "title": "Weekly operators report",
+    "subtitle": "Orders each operator worked on, by day of the week",
+    "week": "Week",
+    "search": "Operator",
+    "searchPlaceholder": "Search by name or code…",
+    "operators": "Operators",
+    "assignments": "Assignments",
+    "operator": "Operator",
+    "total": "Total",
+    "empty": "No operator worked this week",
+    "goPayroll": "Go to Payroll"
   }
 }

@@ -326,7 +326,8 @@
       "operatorLoans": "Préstamos de Operadores",
       "trucks": "Administración de Vehículos",
       "reports": "Generador de Informes",
-      "pettyCash": "Caja Menor"
+      "pettyCash": "Caja Menor",
+      "weeklyReport": "Informe semanal de operadores"
     }
   },
   "reports": {
@@ -2955,5 +2956,18 @@
       "balance": "Saldo total",
       "debt": "En deuda"
     }
+  },
+  "weeklyReport": {
+    "title": "Informe semanal de operadores",
+    "subtitle": "Órdenes en las que trabajó cada operador, por día de la semana",
+    "week": "Semana",
+    "search": "Operador",
+    "searchPlaceholder": "Buscar por nombre o código…",
+    "operators": "Operadores",
+    "assignments": "Asignaciones",
+    "operator": "Operador",
+    "total": "Total",
+    "empty": "Ningún operador trabajó en esta semana",
+    "goPayroll": "Ir a Nómina"
   }
 }
