@@ -325,7 +325,8 @@
       "expenseBreakdown": "Expense Breakdown",
       "operatorLoans": "Operator Loans",
       "trucks": "Vehicle Management",
-      "reports": "Report Generator"
+      "reports": "Report Generator",
+      "pettyCash": "Petty Cash"
     }
   },
   "reports": {
@@ -1509,7 +1510,8 @@
       "next": "Next →",
       "page": "Page {{page}}",
       "rowsPerPage": "Rows per page:"
-    }
+    },
+    "create": "Create extra cost"
   },
   "extraCostTable": {
     "columns": {
@@ -1521,8 +1523,8 @@
       "date": "Date",
       "orderStatus": "Order Status",
       "location": "Location",
-      "client":"Name client",
-      "week":"Week"
+      "client": "Name client",
+      "week": "Week"
     },
     "loading": "Loading extra costs...",
     "empty": {
@@ -1552,10 +1554,10 @@
       "type": "Type",
       "cost": "Cost",
       "dispatchTicket": "Dispatch Ticket",
-      "client":"Name client",
-      "week":"Week",
+      "client": "Name client",
+      "week": "Week",
       "receiptImage": "Receipt Image",
-      "phone":"Phone"
+      "phone": "Phone"
     },
     "footer": {
       "total": "Total: {{count}} extra costs | Selected: {{selected}}",
@@ -2223,21 +2225,21 @@
     "error": {
       "title": "Error Loading Data"
     },
-  "inviteLink": {
-    "title": "Generate Invitation Link",
-    "subtitle": "Share this link so a new operator can register",
-    "description": "The generated link allows a new operator to self-register. It expires after 24 hours and can only be used once.",
-    "generate": "Generate Link",
-    "regenerate": "Generate New Link",
-    "generating": "Generating...",
-    "registrationLink": "Registration Link",
-    "expiresIn": "Expires in",
-    "copy": "Copy",
-    "copied": "Copied!",
-    "showToken": "Show token",
-    "close": "Close",
-    "error": "Error generating link"
-  },
+    "inviteLink": {
+      "title": "Generate Invitation Link",
+      "subtitle": "Share this link so a new operator can register",
+      "description": "The generated link allows a new operator to self-register. It expires after 24 hours and can only be used once.",
+      "generate": "Generate Link",
+      "regenerate": "Generate New Link",
+      "generating": "Generating...",
+      "registrationLink": "Registration Link",
+      "expiresIn": "Expires in",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "showToken": "Show token",
+      "close": "Close",
+      "error": "Error generating link"
+    },
     "freelancers": {
       "title": "Freelancers Directory",
       "subtitle": "Manage and view freelancer information",
@@ -2416,7 +2418,7 @@
         "registerPayment": "Register Payment",
         "cancelLoan": "Cancel Loan",
         "noActions": "No actions available",
-         "viewHistory": "View history"
+        "viewHistory": "View history"
       },
       "snackbar": {
         "statusUpdated": "Loan status updated to {{status}}",
@@ -2767,38 +2769,180 @@
     "done": "Done",
     "qty": "Qty",
     "describePlaceholder": "Notes (optional)"
-  },"loanPayments": {
-  "title": "Payment History",
-  "noDescription": "No description",
-  "close": "Close",
-  "empty": "No payments registered for this loan yet.",
-  "summary": {
-    "total": "Total Loan",
-    "paid": "Total Paid",
-    "remaining": "Remaining",
-    "payments": "Payments",
-    "recovery": "Recovery rate"
   },
-  "table": {
-    "date": "Date",
-    "amount": "Amount",
-    "method": "Method",
-    "by": "Registered by",
-    "remaining": "Remaining after",
-    "notes": "Notes",
-    "latest": "Latest"
+  "loanPayments": {
+    "title": "Payment History",
+    "noDescription": "No description",
+    "close": "Close",
+    "empty": "No payments registered for this loan yet.",
+    "summary": {
+      "total": "Total Loan",
+      "paid": "Total Paid",
+      "remaining": "Remaining",
+      "payments": "Payments",
+      "recovery": "Recovery rate"
+    },
+    "table": {
+      "date": "Date",
+      "amount": "Amount",
+      "method": "Method",
+      "by": "Registered by",
+      "remaining": "Remaining after",
+      "notes": "Notes",
+      "latest": "Latest"
+    }
+  },
+  "tracking": {
+    "title": "Live Tracking",
+    "activeOperators": "active",
+    "lastRefresh": "Updated",
+    "refresh": "Refresh",
+    "noActiveTracking": "No active tracking for this order",
+    "noActiveTrackingHint": "The operator must share their location from the mobile app",
+    "noSignal": "No signal (>30s)",
+    "active": "Active",
+    "disabledFinished": "This order is finished — tracking is not available",
+    "disabledInactive": "This order is inactive — tracking is not available"
+  },
+  "pettyCash": {
+    "title": "Petty Cash",
+    "subtitle": "One fund per holder and week (Monday to Sunday). The balance only changes through transactions.",
+    "createFund": "Create fund",
+    "createOperatorFund": "Create operator fund",
+    "empty": "No funds for these filters",
+    "total": "Total",
+    "debt": "Owes",
+    "debtLong": "Negative balance: holder owes the company",
+    "closedNotice": "Closed fund: read only.",
+    "noMovements": "No transactions",
+    "reversed": "Reversed",
+    "saved": "Transaction recorded",
+    "filters": {
+      "week": "Week (any day)",
+      "status": "Status",
+      "holder": "Holder type",
+      "all": "All"
+    },
+    "status": {
+      "active": "Active",
+      "closed": "Closed"
+    },
+    "holder": {
+      "user": "Administrator",
+      "operator": "Operator"
+    },
+    "fields": {
+      "holder": "Holder",
+      "week": "Week",
+      "balance": "Balance",
+      "amount": "Amount",
+      "date": "Date",
+      "type": "Type",
+      "description": "Description",
+      "operator": "Operator",
+      "category": "Category",
+      "truck": "Truck",
+      "order": "Order (optional)",
+      "receipt": "Receipt (image)",
+      "direction": "Direction"
+    },
+    "direction": {
+      "in": "Adds (+)",
+      "out": "Subtracts (−)"
+    },
+    "common": {
+      "confirm": "Confirm"
+    },
+    "actions": {
+      "deposit": "Deposit money",
+      "expense": "Record expense",
+      "return": "Return surplus",
+      "transfer": "Transfer to operator",
+      "adjust": "Adjust"
+    },
+    "type": {
+      "fund_in": "Deposit",
+      "expense": "Expense",
+      "return": "Return",
+      "transfer_out": "Transfer sent",
+      "transfer_in": "Transfer received",
+      "carry_over": "Carry-over",
+      "adjustment": "Adjustment",
+      "reversal": "Reversal"
+    },
+    "category": {
+      "fuel": "Fuel",
+      "extra_cost": "Extra cost",
+      "payroll_advance": "Payroll advance",
+      "per_diem": "Per diem",
+      "loan": "Loan",
+      "other": "Other"
+    },
+    "open": {
+      "title": "Create fund",
+      "submit": "Create",
+      "holder": "Holder",
+      "self": "My fund",
+      "operator": "Operator fund",
+      "admin": "Another administrator's fund",
+      "initial": "Initial amount (optional)",
+      "initialOperatorHint": "Deducted from your fund (may go negative).",
+      "initialAdminHint": "Enters as a deposit; not deducted from your fund.",
+      "selfHint": "Opens your fund for the week. To add money use \"Deposit money\".",
+      "day": "Day of the week",
+      "dayHint": "Empty = current week",
+      "created": "Fund created",
+      "existed": "The fund already existed this week; no money moved"
+    },
+    "return": {
+      "to": "Who receives it?",
+      "adminHint": "Without a recipient the money leaves the system (back to the company).",
+      "operatorHint": "The money goes to the chosen administrator's fund.",
+      "company": "To the company (no destination fund)",
+      "default": "Administrator who created the fund"
+    },
+    "transfer": {
+      "hint": "If the operator has no fund this week, one is created automatically."
+    },
+    "expense": {
+      "loanHint": "Creates a loan to the operator for this amount and deducts it from the fund.",
+      "advanceHint": "To deduct it from a payroll payment, record it from Payroll."
+    },
+    "reverse": {
+      "title": "Reverse transaction",
+      "action": "Reverse",
+      "confirm": "Reverse",
+      "done": "Transaction reversed",
+      "warning": "An inverse transaction will be created. For transfers and returns both sides are reversed."
+    },
+    "payroll": {
+      "advance": "Petty cash advance",
+      "advances": "Petty cash advances",
+      "manual": "Manual expense",
+      "add": "Record advance",
+      "noFund": "You have no active fund this week. Create it in Petty Cash.",
+      "goFund": "Go to Petty Cash",
+      "saveFirst": "The payment draft will be created to link the advance.",
+      "registered": "Advance recorded and added to the deduction",
+      "amountHint": "Deducted from your fund and added to the payment expense.",
+      "title": "Payroll advance",
+      "readOnly": "To remove an advance, reverse it in Petty Cash.",
+      "noOperator": "Could not identify the operator",
+      "exceeds": "The advance exceeds the net pay available for this payment; the payment would go negative."
+    },
+    "order": {
+      "search": "Search order by reference, customer…",
+      "none": "No results"
+    },
+    "receipt": {
+      "upload": "Upload receipt image",
+      "hint": "Click or drag an image here",
+      "change": "Change image"
+    },
+    "kpi": {
+      "funds": "Funds",
+      "balance": "Total balance",
+      "debt": "In debt"
+    }
   }
-},
-"tracking": {
-  "title": "Live Tracking",
-  "activeOperators": "active",
-  "lastRefresh": "Updated",
-  "refresh": "Refresh",
-  "noActiveTracking": "No active tracking for this order",
-  "noActiveTrackingHint": "The operator must share their location from the mobile app",
-  "noSignal": "No signal (>30s)",
-  "active": "Active",
-  "disabledFinished": "This order is finished — tracking is not available",
-  "disabledInactive": "This order is inactive — tracking is not available"
-}
 }

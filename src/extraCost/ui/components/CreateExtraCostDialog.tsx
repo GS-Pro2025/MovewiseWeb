@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Dialog } from '@mui/material';
 import { ExtraCostRepository } from '../../data/ExtraCostRepository';
 import { CreateExtraCostDTO } from '../../domain/ExtraCostModel';
+import { OrderSearchSelect } from '../../../pettyCash/ui/components/OrderSearchSelect';
 
 interface Props {
   open: boolean;
@@ -110,6 +111,10 @@ const CreateExtraCostDialog: React.FC<Props> = ({
   };
 
   const validateForm = (): boolean => {
+    if (!form.id_order) {
+      setError('Selecciona la orden a la que pertenece el costo');
+      return false;
+    }
     if (!form.name.trim()) {
       setError('El nombre es obligatorio');
       return false;
@@ -207,6 +212,19 @@ const CreateExtraCostDialog: React.FC<Props> = ({
 
         {/* Form */}
         <div className="space-y-4 mb-6">
+
+          {/* Orden (solo cuando el diálogo se abre sin una orden fija) */}
+          {!id_order && (
+            <div>
+              <label className={labelClassName} style={{ color: '#092961' }}>
+                Orden <span style={{ color: '#F09F52' }}>*</span>
+              </label>
+              <OrderSearchSelect
+                value={form.id_order}
+                onChange={(key) => { setForm(prev => ({ ...prev, id_order: key })); if (error) setError(null); }}
+              />
+            </div>
+          )}
 
           {/* Nombre */}
           <div>

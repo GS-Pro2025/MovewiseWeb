@@ -325,7 +325,8 @@
       "expenseBreakdown": "Desglose de Gastos",
       "operatorLoans": "Préstamos de Operadores",
       "trucks": "Administración de Vehículos",
-      "reports": "Generador de Informes"
+      "reports": "Generador de Informes",
+      "pettyCash": "Caja Menor"
     }
   },
   "reports": {
@@ -593,7 +594,6 @@
     "assignTools": "Asignar Herramientas",
     "trackOrder": "Rastrear Orden",
     "viewEvidence": "Ver Fotos de Evidencia"
-
   },
   "costFuels": {
     "title": "Costos de Combustible",
@@ -1380,7 +1380,7 @@
       "ordersCount": "{{count}} orden(es) asignada(s)"
     }
   },
-"summaryCostTable": {
+  "summaryCostTable": {
     "loading": "Cargando datos...",
     "copyToClipboard": "Copiar al portapapeles",
     "copied": "¡Copiado!",
@@ -1517,7 +1517,8 @@
       "next": "Siguiente →",
       "page": "Página {{page}}",
       "rowsPerPage": "Registros por página:"
-    }
+    },
+    "create": "Crear costo extra"
   },
   "extraCostTable": {
     "columns": {
@@ -1529,8 +1530,8 @@
       "date": "Fecha",
       "orderStatus": "Estado de Orden",
       "location": "Ubicación",
-      "client":"Nombre cliente",
-      "week":"Semana"
+      "client": "Nombre cliente",
+      "week": "Semana"
     },
     "loading": "Cargando costos extra...",
     "empty": {
@@ -1564,10 +1565,10 @@
       "additionalInfo": "Información Adicional",
       "payStatus": "Estado de Pago",
       "dispatchTicket": "Ticket de Despacho",
-      "client":"Nombre cliente",
-      "week":"Semana",
+      "client": "Nombre cliente",
+      "week": "Semana",
       "receiptImage": "Imagen del Recibo",
-      "phone":"Teléfono"
+      "phone": "Teléfono"
     },
     "footer": {
       "total": "Total: {{count}} costos extra | Seleccionados: {{selected}}",
@@ -2272,20 +2273,20 @@
       "convertError": "Error al convertir el tipo de operador"
     },
     "inviteLink": {
-    "title": "Generar Enlace de Invitación",
-    "subtitle": "Comparte este enlace para que un nuevo operador pueda registrarse",
-    "description": "El enlace generado permite que un nuevo operador se registre por su cuenta. Expira en 24 horas y solo puede usarse una vez.",
-    "generate": "Generar Enlace",
-    "regenerate": "Generar Nuevo Enlace",
-    "generating": "Generando...",
-    "registrationLink": "Enlace de Registro",
-    "expiresIn": "Expira en",
-    "copy": "Copiar",
-    "copied": "¡Copiado!",
-    "showToken": "Ver token",
-    "close": "Cerrar",
-    "error": "Error al generar el enlace"
-  },
+      "title": "Generar Enlace de Invitación",
+      "subtitle": "Comparte este enlace para que un nuevo operador pueda registrarse",
+      "description": "El enlace generado permite que un nuevo operador se registre por su cuenta. Expira en 24 horas y solo puede usarse una vez.",
+      "generate": "Generar Enlace",
+      "regenerate": "Generar Nuevo Enlace",
+      "generating": "Generando...",
+      "registrationLink": "Enlace de Registro",
+      "expiresIn": "Expira en",
+      "copy": "Copiar",
+      "copied": "¡Copiado!",
+      "showToken": "Ver token",
+      "close": "Cerrar",
+      "error": "Error al generar el enlace"
+    },
     "header": {
       "inviteLinkButton": "Invitar Operador",
       "title": "Directorio de Operadores",
@@ -2781,37 +2782,178 @@
     "describePlaceholder": "Notas (opcional)"
   },
   "loanPayments": {
-  "title": "Historial de pagos",
-  "noDescription": "Sin descripción",
-  "close": "Cerrar",
-  "empty": "Este préstamo aún no tiene pagos registrados.",
-  "summary": {
-    "total": "Total préstamo",
-    "paid": "Total pagado",
-    "remaining": "Pendiente",
-    "payments": "Pagos",
-    "recovery": "Tasa de recuperación"
+    "title": "Historial de pagos",
+    "noDescription": "Sin descripción",
+    "close": "Cerrar",
+    "empty": "Este préstamo aún no tiene pagos registrados.",
+    "summary": {
+      "total": "Total préstamo",
+      "paid": "Total pagado",
+      "remaining": "Pendiente",
+      "payments": "Pagos",
+      "recovery": "Tasa de recuperación"
+    },
+    "table": {
+      "date": "Fecha",
+      "amount": "Monto",
+      "method": "Método",
+      "by": "Registrado por",
+      "remaining": "Pendiente después",
+      "notes": "Notas",
+      "latest": "Último"
+    }
   },
-  "table": {
-    "date": "Fecha",
-    "amount": "Monto",
-    "method": "Método",
-    "by": "Registrado por",
-    "remaining": "Pendiente después",
-    "notes": "Notas",
-    "latest": "Último"
+  "tracking": {
+    "title": "Rastreo en Vivo",
+    "activeOperators": "activo(s)",
+    "lastRefresh": "Actualizado",
+    "refresh": "Actualizar",
+    "noActiveTracking": "Sin rastreo activo para esta orden",
+    "noActiveTrackingHint": "El operador debe compartir su ubicación desde la app móvil",
+    "noSignal": "Sin señal (>30s)",
+    "active": "Activo",
+    "disabledFinished": "Esta orden está finalizada — el rastreo no está disponible",
+    "disabledInactive": "Esta orden está inactiva — el rastreo no está disponible"
+  },
+  "pettyCash": {
+    "title": "Caja Menor",
+    "subtitle": "Una caja por titular y semana (lunes a domingo). El saldo solo cambia con movimientos.",
+    "createFund": "Crear caja",
+    "createOperatorFund": "Crear caja para operador",
+    "empty": "No hay cajas para estos filtros",
+    "total": "Total",
+    "debt": "Debe",
+    "debtLong": "Saldo negativo: el titular debe a la empresa",
+    "closedNotice": "Caja cerrada: solo lectura.",
+    "noMovements": "Sin movimientos",
+    "reversed": "Anulado",
+    "saved": "Movimiento registrado",
+    "filters": {
+      "week": "Semana (cualquier día)",
+      "status": "Estado",
+      "holder": "Tipo de titular",
+      "all": "Todos"
+    },
+    "status": {
+      "active": "Activa",
+      "closed": "Cerrada"
+    },
+    "holder": {
+      "user": "Administrador",
+      "operator": "Operador"
+    },
+    "fields": {
+      "holder": "Titular",
+      "week": "Semana",
+      "balance": "Saldo",
+      "amount": "Monto",
+      "date": "Fecha",
+      "type": "Tipo",
+      "description": "Descripción",
+      "operator": "Operador",
+      "category": "Categoría",
+      "truck": "Camión",
+      "order": "Orden (opcional)",
+      "receipt": "Recibo (imagen)",
+      "direction": "Dirección"
+    },
+    "direction": {
+      "in": "Suma (+)",
+      "out": "Resta (−)"
+    },
+    "common": {
+      "confirm": "Confirmar"
+    },
+    "actions": {
+      "deposit": "Entregar dinero",
+      "expense": "Registrar gasto",
+      "return": "Devolver sobrante",
+      "transfer": "Transferir a operador",
+      "adjust": "Ajustar"
+    },
+    "type": {
+      "fund_in": "Entrega de dinero",
+      "expense": "Gasto",
+      "return": "Devolución",
+      "transfer_out": "Transferencia enviada",
+      "transfer_in": "Transferencia recibida",
+      "carry_over": "Saldo anterior",
+      "adjustment": "Ajuste",
+      "reversal": "Anulación"
+    },
+    "category": {
+      "fuel": "Combustible",
+      "extra_cost": "Costo extra",
+      "payroll_advance": "Avance de nómina",
+      "per_diem": "Viáticos",
+      "loan": "Préstamo",
+      "other": "Otro"
+    },
+    "open": {
+      "title": "Crear caja",
+      "submit": "Crear",
+      "holder": "Titular",
+      "self": "Mi caja",
+      "operator": "Caja de un operador",
+      "admin": "Caja de otro administrador",
+      "initial": "Monto inicial (opcional)",
+      "initialOperatorHint": "Se descuenta de tu caja (puede quedar en negativo).",
+      "initialAdminHint": "Entra como entrega de dinero; no se descuenta de tu caja.",
+      "selfHint": "Se abre tu caja de la semana. Para sumar dinero usa «Entregar dinero».",
+      "day": "Día de la semana",
+      "dayHint": "Vacío = semana actual",
+      "created": "Caja creada",
+      "existed": "La caja ya existía esta semana; no se movió dinero"
+    },
+    "return": {
+      "to": "¿A quién se lo devuelves?",
+      "adminHint": "Sin destinatario, el dinero sale del sistema (vuelve a la empresa).",
+      "operatorHint": "El dinero pasa a la caja del administrador elegido.",
+      "company": "A la empresa (sin caja destino)",
+      "default": "Administrador que creó la caja"
+    },
+    "transfer": {
+      "hint": "Si el operador no tiene caja esta semana, se crea automáticamente."
+    },
+    "expense": {
+      "loanHint": "Crea un préstamo al operador por este monto y lo descuenta de la caja.",
+      "advanceHint": "Para descontarlo de un pago de nómina, regístralo desde Nómina."
+    },
+    "reverse": {
+      "title": "Anular movimiento",
+      "action": "Anular",
+      "confirm": "Anular",
+      "done": "Movimiento anulado",
+      "warning": "Se creará un movimiento inverso. Si es una transferencia o devolución se anulan ambos lados."
+    },
+    "payroll": {
+      "advance": "Avance de caja menor",
+      "advances": "Avances de caja menor",
+      "manual": "Gasto manual",
+      "add": "Registrar avance",
+      "noFund": "No tienes una caja activa esta semana. Créala en Caja Menor.",
+      "goFund": "Ir a Caja Menor",
+      "saveFirst": "Se creará el borrador del pago para vincular el avance.",
+      "registered": "Avance registrado y sumado al descuento",
+      "amountHint": "Se descuenta de tu caja y se suma al gasto del pago.",
+      "title": "Avance de nómina",
+      "readOnly": "Para quitar un avance, anúlalo en Caja Menor.",
+      "noOperator": "No se pudo identificar al operador",
+      "exceeds": "El avance supera el neto disponible de este pago; el pago quedaría negativo."
+    },
+    "order": {
+      "search": "Buscar orden por referencia, cliente…",
+      "none": "Sin resultados"
+    },
+    "receipt": {
+      "upload": "Subir imagen del recibo",
+      "hint": "Haz clic o arrastra una imagen aquí",
+      "change": "Cambiar imagen"
+    },
+    "kpi": {
+      "funds": "Cajas",
+      "balance": "Saldo total",
+      "debt": "En deuda"
+    }
   }
-},
-"tracking": {
-  "title": "Rastreo en Vivo",
-  "activeOperators": "activo(s)",
-  "lastRefresh": "Actualizado",
-  "refresh": "Actualizar",
-  "noActiveTracking": "Sin rastreo activo para esta orden",
-  "noActiveTrackingHint": "El operador debe compartir su ubicación desde la app móvil",
-  "noSignal": "Sin señal (>30s)",
-  "active": "Activo",
-  "disabledFinished": "Esta orden está finalizada — el rastreo no está disponible",
-  "disabledInactive": "Esta orden está inactiva — el rastreo no está disponible"
-}
 }

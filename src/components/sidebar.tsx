@@ -268,6 +268,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed, toggleSidebar, isMobileOpen, c
           <NavItem icon="fa-home"                text={t("sidebar.nav.dashboard")}       isCollapsed={collapsed} to="/app/dashboard"        onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-box"        text={t("sidebar.nav.createDaily")}     isCollapsed={collapsed} to="/app/create-daily"     onClick={closeMobileMenu} />
           <NavItem icon="fa-solid fa-money-bill" text={t("sidebar.nav.payroll")}         isCollapsed={collapsed} to="/app/payroll"           onClick={closeMobileMenu} />
+          <NavItem icon="fa-wallet"              text={t("sidebar.nav.pettyCash")}       isCollapsed={collapsed} to="/app/petty-cash"        onClick={closeMobileMenu} />
           <NavItem icon="fa-warehouse"           text={t("sidebar.nav.createWarehouse")} isCollapsed={collapsed} to="/app/create-warehouse"  onClick={closeMobileMenu} />
           {!!user?.is_superUser && (
             <NavItem icon="fa-file-invoice-dollar" text={t("sidebar.nav.statements")}   isCollapsed={collapsed} to="/app/statements"        onClick={closeMobileMenu} />

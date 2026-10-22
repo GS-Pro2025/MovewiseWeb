@@ -15,6 +15,7 @@ export interface WeekInfo {
   }
   
   export interface OperatorRow extends WeekAmounts {
+    idOperator?: number;
     code: string;
     name: string;
     lastName: string;

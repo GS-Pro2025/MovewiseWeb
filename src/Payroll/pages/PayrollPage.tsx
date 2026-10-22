@@ -175,6 +175,7 @@ export default function PayrollPage() {
 
         if (!map.has(key)) {
           map.set(key, {
+            idOperator: d.id_operator,
             code: d.code,
             name: d.first_name,
             lastName: d.last_name,

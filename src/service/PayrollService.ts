@@ -61,6 +61,7 @@ export interface PaymentData {
   date_start: string;
   date_end: string;
   expense: string | null;
+  description?: string | null;
 }
 
 const API_BASE: string =

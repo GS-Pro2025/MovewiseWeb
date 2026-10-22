@@ -7,6 +7,8 @@ import { isAuthenticated } from './service/authService';
 import { useState, useEffect } from 'react';
 import LoadingSpinner from './components/Login_Register/LoadingSpinner';
 import PayrollPage from './Payroll/pages/PayrollPage';
+import PettyCashPage from './pettyCash/ui/PettyCashPage';
+import PettyCashDetailPage from './pettyCash/ui/PettyCashDetailPage';
 import ResumeFuel from './resumeFuel/ui/pages/ResumeFuel';
 import SummaryCost from './summaryCost/ui/pages/SummaryCost';
 import ExtraCost from './extraCost/ui/pages/ExtraCost';
@@ -99,6 +101,8 @@ const App = () => {
           <Route path="summary-cost"                     element={<SummaryCost />} />
           <Route path="operators"                        element={<OperatorsPage />} />
           <Route path="payroll"                          element={<PayrollPage />} />
+          <Route path="petty-cash"                       element={<PettyCashPage />} />
+          <Route path="petty-cash/:id"                   element={<PettyCashDetailPage />} />
           <Route path="extra-cost"                       element={<ExtraCost />} />
           <Route path="add-operators-to-order/:orderKey" element={<AddOperatorsToOrder />} />
           <Route path="create-daily"                     element={<CreateOrder />} />

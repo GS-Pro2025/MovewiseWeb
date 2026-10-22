@@ -4,7 +4,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer'; // Quitamos PDFDownloadLink
-import { cancelPayments, createPayment, setAssignExpense } from '../../service/PayrollService';
+import { cancelPayments, createPayment, getPaymentById, setAssignExpense } from '../../service/PayrollService';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { fetchFunds, fetchPaymentAdvances } from '../../pettyCash/data/RepositoryPettyCash';
+import { usePettyCashUser } from '../../pettyCash/ui/usePettyCashUser';
+import { PayrollAdvanceDialog } from './PayrollAdvanceDialog';
 import { updateAssign } from '../../service/AssignService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -82,6 +87,7 @@ interface PayrollModalProps {
     expense?: number;
     assignmentIdsByDay?: { [key in keyof WeekAmounts]?: (number | string)[] };
     operator_phone?: string | null;
+    idOperator?: number;
   };
   periodStart: string;
   periodEnd: string;
@@ -290,6 +296,12 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       : null
   );
   const [savingExpense, setSavingExpense]     = useState(false);
+  const { t } = useTranslation();
+  const { personId } = usePettyCashUser();
+  const [advances, setAdvances]               = useState(0);
+  const [advanceFundId, setAdvanceFundId]     = useState<number | null>(null);
+  const [advanceDialog, setAdvanceDialog]     = useState(false);
+  const [preparingAdvance, setPreparingAdvance] = useState(false);
   const [description, setDescription]         = useState<string>(operatorData.paymentDescription || '');
   const [editingDescription, setEditingDescription] = useState(false);
   const [savingDescription, setSavingDescription]   = useState(false);
@@ -360,6 +372,56 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
       })
       .catch(() => {});
   }, []);
+
+  // Petty cash advances already linked to this draft payment (they are part of `expense`).
+  const loadAdvances = async (paymentId: number) => {
+    try { setAdvances((await fetchPaymentAdvances(paymentId)).total); } catch { setAdvances(0); }
+  };
+
+  useEffect(() => {
+    if (draftPaymentId != null) loadAdvances(draftPaymentId); else setAdvances(0);
+  }, [draftPaymentId]);
+
+  // Admin's own active fund, the source of every advance.
+  useEffect(() => {
+    if (personId == null) return;
+    fetchFunds({ holder_type: 'user', status: 'active' })
+      .then(fs => setAdvanceFundId(fs.find(f => f.holder_user === personId)?.id_fund ?? null))
+      .catch(() => setAdvanceFundId(null));
+  }, [personId]);
+
+  const manualExpense = Math.max(0, Math.round((expense - advances) * 100) / 100);
+
+  const handleOpenAdvance = async () => {
+    const firstAssignId = operatorData.assignmentIds?.[0];
+    if (firstAssignId == null || operatorData.idOperator == null) { toast.error(t('pettyCash.payroll.noOperator')); return; }
+    setPreparingAdvance(true);
+    try {
+      // The draft payment must exist (and hold the current manual edit) before it can be linked.
+      const saved = await setAssignExpense(Number(firstAssignId), expense || 0, description || null);
+      setDraftPaymentId(saved.payment_id);
+      setAdvanceDialog(true);
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    } finally {
+      setPreparingAdvance(false);
+    }
+  };
+
+  const handleAdvanceDone = async () => {
+    setAdvanceDialog(false);
+    if (draftPaymentId == null) return;
+    try {
+      // The backend added the advance to Payment.expense; re-sync instead of computing locally.
+      const pay = await getPaymentById(draftPaymentId);
+      setExpense(Number(pay.expense) || 0);
+      if (pay.description != null) setDescription(pay.description);
+      await loadAdvances(draftPaymentId);
+      toast.success(t('pettyCash.payroll.registered'));
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    }
+  };
 
   useEffect(() => {
     const bonusSum = Object.values(dailyBonuses).reduce((s, b) => s + (b || 0), 0);
@@ -621,6 +683,17 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
   return (
     <>
       <ToastContainer position="top-right" autoClose={4000} theme="light" />
+      {advanceDialog && advanceFundId != null && draftPaymentId != null && operatorData.idOperator != null && (
+        <PayrollAdvanceDialog
+          fundId={advanceFundId}
+          operatorId={operatorData.idOperator}
+          operatorName={`${operatorData.name} ${operatorData.lastName}`}
+          paymentId={draftPaymentId}
+          netAvailable={(operatorData.total || 0) + Object.values(dailyBonuses).reduce((a, b) => a + (b || 0), 0) - expense}
+          onClose={() => setAdvanceDialog(false)}
+          onDone={handleAdvanceDone}
+        />
+      )}
 
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden">
@@ -748,12 +821,12 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                 <span className="font-bold" style={{ color: '#27ae60' }}>+ {formatCurrency(bonusTotal())}</span>
               </div>
               <div className="flex justify-between items-center px-4 py-3 rounded-lg border" style={{ backgroundColor: '#fdecea', borderColor: '#f5c6cb' }}>
-                <span className="font-semibold text-sm" style={{ color: '#c0392b' }}>✗ Gastos</span>
+                <span className="font-semibold text-sm" style={{ color: '#c0392b' }}>✗ {advances > 0 ? t('pettyCash.payroll.manual') : 'Gastos'}</span>
                 <div className="flex items-center gap-1">
                   <span style={{ color: '#c0392b' }} className="text-sm">-$</span>
                   <input
-                    type="number" value={expense || ''} min="0" step="0.01" placeholder="0.00"
-                    onChange={e => setExpense(parseFloat(e.target.value) || 0)}
+                    type="number" value={manualExpense || ''} min="0" step="0.01" placeholder="0.00"
+                    onChange={e => setExpense((parseFloat(e.target.value) || 0) + advances)}
                     disabled={loading || isPaid || savingExpense}
                     className="w-24 px-2 py-1 text-right border rounded-md text-sm font-semibold disabled:opacity-50 outline-none focus:ring-1"
                     style={{ borderColor: '#f5c6cb', color: '#c0392b', backgroundColor: '#fdecea' }}
@@ -772,6 +845,32 @@ export const PayrollModal: React.FC<PayrollModalProps> = ({
                   </button>
                 </div>
               </div>
+              {(advances > 0 || (!isPaid && operatorData.idOperator != null)) && (
+                <div className="px-4 py-3 rounded-lg border" style={{ backgroundColor: '#fff8e6', borderColor: '#f5deb3' }}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-sm" style={{ color: '#b9770e' }}>✗ {t('pettyCash.payroll.advances')}</span>
+                    <span className="font-bold text-sm" style={{ color: '#b9770e' }}>- {formatCurrency(advances)}</span>
+                  </div>
+                  {advances > 0 && <p className="text-xs text-gray-500 mt-1">{t('pettyCash.payroll.readOnly')}</p>}
+                  {!isPaid && operatorData.idOperator != null && (
+                    advanceFundId != null ? (
+                      <button
+                        type="button"
+                        onClick={handleOpenAdvance}
+                        disabled={loading || savingExpense || preparingAdvance}
+                        className="mt-2 text-xs font-semibold text-[#0B2863] hover:underline disabled:opacity-50"
+                      >
+                        + {t('pettyCash.payroll.add')}
+                      </button>
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {t('pettyCash.payroll.noFund')}{' '}
+                        <Link to="/app/petty-cash" className="text-[#0B2863] font-semibold hover:underline">{t('pettyCash.payroll.goFund')}</Link>
+                      </p>
+                    )
+                  )}
+                </div>
+              )}
               {isPaid && !editingDescription ? (
                 description ? (
                   <div className="px-4 py-3 rounded-lg border border-blue-100" style={{ backgroundColor: '#eff6ff' }}>

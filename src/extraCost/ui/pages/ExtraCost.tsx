@@ -5,6 +5,7 @@ import { ExtraCostService } from '../../data/ExtraCostService';
 import { ExtraCostResponse } from '../../domain/ExtraCostModel';
 import { ExtraCostParams } from '../../data/ExtraCostRepository';
 import ExtraCostDataTable from '../components/ExtraCostDataTable';
+import CreateExtraCostDialog from '../components/CreateExtraCostDialog';
 
 const ExtraCostPage: React.FC = () => {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ const ExtraCostPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [createOpen, setCreateOpen] = useState(false);
 
   const extraCostService = useMemo(() => new ExtraCostService(), []);
 
@@ -51,13 +53,23 @@ const ExtraCostPage: React.FC = () => {
     <div className="container w-full mx-auto p-4">
       
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2" style={{ color: '#0B2863' }}>
-          {t('extraCostPage.title')}
-        </h1>
-        <p className="text-gray-600 text-sm">
-          {t('extraCostPage.subtitle')}
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: '#0B2863' }}>
+            {t('extraCostPage.title')}
+          </h1>
+          <p className="text-gray-600 text-sm">
+            {t('extraCostPage.subtitle')}
+          </p>
+        </div>
+        <button
+          onClick={() => setCreateOpen(true)}
+          className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors hover:opacity-90"
+          style={{ backgroundColor: '#0B2863' }}
+        >
+          <i className="fas fa-plus mr-2" />
+          {t('extraCostPage.create')}
+        </button>
       </div>
 
       {/* Search */}
@@ -173,6 +185,13 @@ const ExtraCostPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <CreateExtraCostDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        id_order=""
+        onSuccess={fetchExtraCosts}
+      />
     </div>
   );
 };
