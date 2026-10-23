@@ -23,6 +23,7 @@ import DocaiResultDialog from "./DocaiResultDialog";
 import AddAmountDialog from './components/AddAmountDialog';
 import { fetchOperatorsAssignedToOrder } from '../../addOperatorToOrder/data/repositoryOperators';
 import type { OperatorAssigned } from '../../addOperatorToOrder/domain/OperatorModels';
+import LowMarginTab from '../lowMargin/LowMarginTab';
 import { computeProportionalSalaries, type ProportionalSalary } from '../util/proportionalSalaryUtils';
 
 // Utility function for week range calculation
@@ -41,6 +42,8 @@ const FinancialView = () => {
   const { t } = useTranslation();
   const repository = new SummaryCostRepository();
   const navigate = useNavigate();
+
+  const [view, setView] = useState<'summary' | 'lowMargin'>('summary');
 
   // Core data states
   const [data, setData] = useState<OrderSummary[]>([]);
@@ -505,17 +508,35 @@ const FinancialView = () => {
 
       {/* Header */}
       <div className="mb-4 sm:mb-6 md:mb-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-2">
-          <BarChart3 size={32} className="sm:w-10 sm:h-10 text-[#092962]" />
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#092962]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-1">
+          <BarChart3 size={22} className="text-[#092962]" />
+          <h1 className="text-xl font-semibold text-[#092962]">
             {t('financialView.title')}
           </h1>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base px-1 sm:px-0">
+        <p className="text-gray-500 text-sm px-1 sm:px-0">
           {t('financialView.subtitle')}
         </p>
       </div>
 
+      {/* View tabs */}
+      <div className="mb-4 sm:mb-6 flex gap-1 border-b border-gray-200">
+        {([['summary', t('lowMargin.tabs.summary')], ['lowMargin', t('lowMargin.tabs.lowMargin')]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setView(id)}
+            className={`px-4 py-2 text-sm font-semibold -mb-px border-b-2 transition-colors ${view === id ? 'border-[#092962] text-[#092962]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'lowMargin' ? (
+        <LowMarginTab initialWeek={week} initialYear={year} />
+      ) : (
+      <>
       {/* Summary Cards */}
       <div className="mb-4 sm:mb-6 md:mb-8">
         <FinancialSummaryCards summary={totalSummary} />
@@ -572,6 +593,9 @@ const FinancialView = () => {
           onViewOperators={(orderId: string) => navigate(`/app/add-operators-to-order/${orderId}`)}
           proportionalSalariesMap={proportionalSalariesMap}
         />
+      )}
+
+      </>
       )}
 
       {/* Dialogs */}

@@ -5,7 +5,6 @@ import {
   useMediaQuery,
   useTheme,
   Button,
-  Chip
 } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { Calendar, Search, RotateCcw } from 'lucide-react';
@@ -96,135 +95,116 @@ const FinancialControls: React.FC<FinancialControlsProps> = (props) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const Section: React.FC<{ title: string; className?: string; children: React.ReactNode }> = ({ title, className = '', children }) => (
+    <div className={className}>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{title}</div>
+      {children}
+    </div>
+  );
+
+  const scopeBtn = (scope: 'week' | 'global', label: string) => (
+    <button
+      type="button"
+      onClick={() => onSearchScopeChange(scope)}
+      className={`px-3 h-full text-xs font-semibold transition-colors ${searchScope === scope ? 'bg-[#0B2863] text-white' : 'bg-white text-[#0B2863] hover:bg-blue-50'}`}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <div className="border rounded-xl p-3 mb-4 space-y-3">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-4">
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
 
-      {/* PERIOD */}
-      {showWeekControls && (
-        <div className="flex flex-wrap items-center gap-2">
-          <WeekPicker week={week} onWeekSelect={onWeekChange} min={1} max={53} />
-          <YearPicker year={year} onYearSelect={onYearChange} min={2020} max={new Date().getFullYear() + 2} />
-
-          <div className="flex items-center gap-2 text-xs text-gray-700 border rounded-lg px-2 py-1">
-            <Calendar size={14} />
-            W{week} {year}: {weekRange.start} → {weekRange.end}
-          </div>
-        </div>
-      )}
-
-      {/* SEARCH */}
-      <div className="flex flex-wrap items-center gap-2">
-        <TextField
-          size="small"
-          value={searchRef}
-          onChange={(e) => onSearchRefChange(e.target.value)}
-          placeholder={t('financialControls.searchPlaceholder')}
-          onKeyDown={(e) => e.key === 'Enter' && searchRef && onSearch()}
-          sx={{ minWidth: isMobile ? '100%' : 220 }}
-          InputProps={{
-            startAdornment: <Search size={16} className="mr-2 text-gray-500" />,
-          }}
-        />
-
-        {/* Scope toggle */}
-        <div className="flex items-center gap-1">
-          <ScopeTooltip
-            content={
-              <div className="px-3 py-2 text-xs text-gray-700">
-                <p className="font-semibold text-[#0B2863] mb-1">{t('financialControls.tooltipWeekTitle', { week: currentWeek, year: currentYear })}</p>
-                <p>{t('financialControls.tooltipWeekDesc')}</p>
+        {/* PERIOD */}
+        {showWeekControls && (
+          <Section title={t('financialControls.sectionPeriod')}>
+            <div className="flex flex-wrap items-center gap-2">
+              <WeekPicker week={week} onWeekSelect={onWeekChange} min={1} max={53} />
+              <YearPicker year={year} onYearSelect={onYearChange} min={2020} max={new Date().getFullYear() + 2} />
+              <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 whitespace-nowrap">
+                <Calendar size={14} />
+                {weekRange.start} → {weekRange.end}
               </div>
-            }
-          >
-            <Chip
-              label={`W${currentWeek} ${currentYear}`}
-              size="small"
-              onClick={() => onSearchScopeChange('week')}
-              sx={{
-                fontWeight: 600,
-                cursor: 'pointer',
-                backgroundColor: searchScope === 'week' ? '#0B2863' : 'transparent',
-                color: searchScope === 'week' ? '#ffffff' : '#0B2863',
-                border: '1.5px solid #0B2863',
-                '&:hover': { backgroundColor: searchScope === 'week' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
-              }}
-            />
-          </ScopeTooltip>
-          <ScopeTooltip
-            content={
-              <div className="px-3 py-2 text-xs text-gray-700">
-                <p className="font-semibold text-[#0B2863] mb-1">{t('financialControls.tooltipGlobalTitle')}</p>
-                <p>{t('financialControls.tooltipGlobalDesc')}</p>
-              </div>
-            }
-          >
-            <Chip
-              label={t('financialControls.scopeGlobal')}
-              size="small"
-              onClick={() => onSearchScopeChange('global')}
-              sx={{
-                fontWeight: 600,
-                cursor: 'pointer',
-                backgroundColor: searchScope === 'global' ? '#0B2863' : 'transparent',
-                color: searchScope === 'global' ? '#ffffff' : '#0B2863',
-                border: '1.5px solid #0B2863',
-                '&:hover': { backgroundColor: searchScope === 'global' ? '#0B2863' : 'rgba(11,40,99,0.08)' },
-              }}
-            />
-          </ScopeTooltip>
-        </div>
-
-        <Button
-          size="small"
-          variant="contained"
-          onClick={onSearch}
-          disabled={searchLoading || !searchRef}
-        >
-          {searchLoading ? <RotateCcw size={14} className="animate-spin" /> : t('financialControls.search')}
-        </Button>
-
-        {hasSearchResults && (
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={onClearSearch}
-            startIcon={<RotateCcw size={14} />}
-          >
-            {t('financialControls.clear')}
-          </Button>
+            </div>
+          </Section>
         )}
-      </div>
 
-      {/* ACTIONS */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="small"
-          variant="contained"
-          color="success"
-          startIcon={<UploadFileIcon />}
-          onClick={onUploadClick}
-        >
-          {t('financialControls.uploadOcr')}
-        </Button>
+        {/* SEARCH */}
+        <Section title={t('financialControls.sectionSearch')} className={isMobile ? 'w-full' : 'flex-1 min-w-[320px]'}>
+          <div className="flex flex-wrap items-center gap-2">
+            <TextField
+              size="small"
+              value={searchRef}
+              onChange={(e) => onSearchRefChange(e.target.value)}
+              placeholder={t('financialControls.searchPlaceholder')}
+              onKeyDown={(e) => e.key === 'Enter' && searchRef && onSearch()}
+              sx={{ flex: 1, minWidth: isMobile ? '100%' : 200 }}
+              InputProps={{
+                startAdornment: <Search size={16} className="mr-2 text-gray-500" />,
+              }}
+            />
 
-        <ExportMenuComponent
-          superOrders={exportData}
-          isSearchResults={isSearchResults}
-          week={week}
-          year={year}
-          weekRange={weekRange}
-          disabled={loading}
-        />
+            {/* Scope toggle */}
+            <div className="inline-flex h-8 rounded-lg border border-[#0B2863] overflow-hidden">
+              <ScopeTooltip
+                content={
+                  <div className="px-3 py-2 text-xs text-gray-700">
+                    <p className="font-semibold text-[#0B2863] mb-1">{t('financialControls.tooltipWeekTitle', { week: currentWeek, year: currentYear })}</p>
+                    <p>{t('financialControls.tooltipWeekDesc')}</p>
+                  </div>
+                }
+              >
+                {scopeBtn('week', `W${currentWeek} ${currentYear}`)}
+              </ScopeTooltip>
+              <ScopeTooltip
+                content={
+                  <div className="px-3 py-2 text-xs text-gray-700">
+                    <p className="font-semibold text-[#0B2863] mb-1">{t('financialControls.tooltipGlobalTitle')}</p>
+                    <p>{t('financialControls.tooltipGlobalDesc')}</p>
+                  </div>
+                }
+              >
+                {scopeBtn('global', t('financialControls.scopeGlobal'))}
+              </ScopeTooltip>
+            </div>
+
+            <Button size="small" variant="contained" onClick={onSearch} disabled={searchLoading || !searchRef}>
+              {searchLoading ? <RotateCcw size={14} className="animate-spin" /> : t('financialControls.search')}
+            </Button>
+
+            {hasSearchResults && (
+              <Button size="small" variant="outlined" onClick={onClearSearch} startIcon={<RotateCcw size={14} />}>
+                {t('financialControls.clear')}
+              </Button>
+            )}
+          </div>
+        </Section>
+
+        {/* ACTIONS */}
+        <Section title={t('financialControls.sectionActions')} className={isMobile ? 'w-full' : 'ml-auto'}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="small" variant="contained" color="success" startIcon={<UploadFileIcon />} onClick={onUploadClick}>
+              {t('financialControls.uploadOcr')}
+            </Button>
+            <ExportMenuComponent
+              superOrders={exportData}
+              isSearchResults={isSearchResults}
+              week={week}
+              year={year}
+              weekRange={weekRange}
+              disabled={loading}
+            />
+          </div>
+        </Section>
       </div>
 
       {/* SEARCH RESULT INDICATOR */}
       {hasSearchResults && (
-        <div className="text-xs text-gray-600 border-t pt-2 flex items-center gap-2">
-          <span>
-            {searchScope === 'week'
-              ? t('financialControls.searchResultInfoWeek', { ref: searchRef, week: currentWeek, year: currentYear, count: exportData.length })
-              : t('financialControls.searchResultInfoGlobal', { ref: searchRef, count: exportData.length })}
-          </span>
+        <div className="mt-3 text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+          {searchScope === 'week'
+            ? t('financialControls.searchResultInfoWeek', { ref: searchRef, week: currentWeek, year: currentYear, count: exportData.length })
+            : t('financialControls.searchResultInfoGlobal', { ref: searchRef, count: exportData.length })}
         </div>
       )}
     </div>

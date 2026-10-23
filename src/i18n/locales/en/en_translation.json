@@ -1577,7 +1577,10 @@
     "tooltipGlobalDesc": "Searches the entire company history — may include orders from other weeks.",
     "searchResultInfo": "Results for <1>{{ref}}</1> — {{count}} orders",
     "searchResultInfoWeek": "{{ref}} · W{{week}} {{year}} · {{count}} refs",
-    "searchResultInfoGlobal": "{{ref}} · All history · {{count}} refs"
+    "searchResultInfoGlobal": "{{ref}} · All history · {{count}} refs",
+    "sectionPeriod": "Period",
+    "sectionSearch": "Search",
+    "sectionActions": "Actions"
   },
   "financialTable": {
     "columns": {
@@ -2960,5 +2963,81 @@
     "total": "Total",
     "empty": "No operator worked this week",
     "goPayroll": "Go to Payroll"
+  },
+  "lowMargin": {
+    "tabs": {
+      "summary": "Summary",
+      "lowMargin": "Low margins"
+    },
+    "scope": {
+      "label": "Scope",
+      "week": "Week",
+      "global": "Global",
+      "from": "From week",
+      "to": "To week",
+      "period": "Period"
+    },
+    "groupBy": {
+      "label": "Group",
+      "reference": "By reference",
+      "order": "By order"
+    },
+    "threshold": "Margin below {{value}}%",
+    "searchPlaceholder": "Search reference or customer…",
+    "refresh": "Recalculate",
+    "sort": {
+      "label": "Sort by",
+      "margin": "Worst margin",
+      "profit": "Biggest loss",
+      "income": "Highest income",
+      "cost": "Highest cost"
+    },
+    "calculating": "Splitting operator salaries by order weight… {{done}} / {{total}}. Figures are provisional until done.",
+    "failed": "Operators could not be read for {{count}} order(s); the system's own salary figure is used for them, so the split may differ.",
+    "kpi": {
+      "atRisk": "Orders at risk",
+      "losses": "With a loss",
+      "income": "Income at risk",
+      "avgMargin": "Average margin"
+    },
+    "col": {
+      "reference": "Reference",
+      "income": "Income",
+      "cost": "Cost",
+      "result": "Result",
+      "margin": "Margin"
+    },
+    "cost": {
+      "salaries": "Salaries (split)",
+      "expense": "Expenses",
+      "fuel": "Fuel",
+      "work": "Extra costs",
+      "bonus": "Bonuses"
+    },
+    "ofIncome": "of income",
+    "noIncome": "No income",
+    "noWeight": "An order has no weight: salary was split equally",
+    "orders": "{{count}} order(s)",
+    "ordersOfRef": "Orders of the reference (worst first)",
+    "viewOperators": "View operators",
+    "empty": "No orders with a margin below {{value}}%",
+    "period": {
+      "month": "Month",
+      "semester": "Semester",
+      "year": "Year",
+      "range": "Date range",
+      "s1": "1st semester (Jan–Jun)",
+      "s2": "2nd semester (Jul–Dec)"
+    },
+    "invalidRange": "Select a valid date range (the start date cannot be after the end date).",
+    "fallbackNote": "Calculated in the browser: the server does not offer the low-margin endpoint yet.",
+    "pageOf": "Page {{page}} of {{last}} · {{count}} results",
+    "serverFailed": "The server failed ({{status}}) while computing margins. Showing the browser calculation, which may differ slightly. Use \"Recalculate\" to retry the server.",
+    "income": {
+      "label": "Income",
+      "all": "All",
+      "with": "With income",
+      "without": "No income"
+    }
   }
 }

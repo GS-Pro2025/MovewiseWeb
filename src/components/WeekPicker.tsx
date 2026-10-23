@@ -70,7 +70,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
         </label>
 
         <div
-          className="rounded-lg p-2 flex items-center justify-between gap-2 cursor-pointer w-full bg-white"
+          className="rounded-lg p-2 flex items-center justify-between gap-2 cursor-pointer w-full min-w-[168px] bg-white"
           onClick={() => setShowDropdown(!showDropdown)}
           onKeyDown={handleKeyDown}
           tabIndex={0} aria-haspopup="listbox" aria-expanded={showDropdown} role="button" translate="no"
@@ -113,7 +113,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
 
         {/* Select dropdown */}
         {showDropdown && viewMode === "select" && (
-          <div className="absolute z-50 left-0 right-0 mt-2 rounded-lg shadow-lg max-w-full"
+          <div className="absolute z-50 left-0 mt-2 rounded-lg shadow-lg w-80 max-w-[calc(100vw-2rem)]"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }} translate="no">
             <div className="p-3">
               <div className="flex justify-between items-center mb-2">
@@ -141,10 +141,10 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-7 gap-1.5 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
                 {weeks.map((w) => (
                   <button key={w} onClick={() => { onWeekSelect(w); setShowDropdown(false); }}
-                    className="p-1.5 text-xs rounded font-semibold text-center transition-all duration-200 hover:shadow-sm"
+                    className="py-1.5 text-sm rounded font-semibold text-center transition-all duration-200 hover:shadow-sm"
                     style={{
                       background: w === week ? PRIMARY : "#f8fafc",
                       color: w === week ? "#fff" : PRIMARY,
@@ -161,7 +161,7 @@ const WeekPicker: React.FC<WeekPickerProps> = ({
 
         {/* Input mode */}
         {showDropdown && viewMode === "input" && (
-          <div className="absolute z-50 left-0 right-0 mt-2 p-3 rounded-lg shadow-lg"
+          <div className="absolute z-50 left-0 mt-2 p-3 rounded-lg shadow-lg w-72 max-w-[calc(100vw-2rem)]"
             style={{ background: SURFACE, border: `1px solid ${PRIMARY}` }} translate="no">
             <div className="flex flex-col gap-2">
               <input

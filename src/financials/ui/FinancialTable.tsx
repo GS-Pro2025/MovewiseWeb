@@ -74,7 +74,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const handleCloseContextMenu = () => setContextMenu(null);
 
   const ProfitChip = ({ profit }: { profit: number }) => (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold text-white min-w-[80px] justify-center shadow-md ${profit >= 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} transition-colors duration-200`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold text-white min-w-[72px] justify-center ${profit >= 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} transition-colors duration-200`}>
       ${fmt(profit)}
     </span>
   );
@@ -82,7 +82,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const PayStatusChip = ({ paid }: { paid: boolean }) => (
     <Chip
       label={paid ? t('financialTable.paid') : t('financialTable.unpaid')}
-      size={isMobile ? 'small' : 'medium'}
+      size="small"
       sx={{
         backgroundColor: paid ? '#22c55e' : '#FFE67B',
         color: paid ? '#ffffff' : '#0B2863',
@@ -95,7 +95,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const EditButton = ({ onClick, children, size = 'medium' }: { onClick: (e: React.MouseEvent) => void; children: React.ReactNode; size?: 'small' | 'medium' }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 ${size === 'small' ? 'px-3 py-2 text-xs' : 'px-4 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
+      className={`flex items-center gap-2 ${size === 'small' ? 'px-3 py-1.5 text-xs' : 'px-3 py-1.5 text-xs'} rounded-lg font-medium transition-all duration-200 justify-center bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
       style={{ minWidth: size === 'small' ? '60px' : '80px' }}
     >
       {children}
@@ -105,7 +105,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const ViewButton = ({ onClick, size = 'medium' }: { onClick: (e: React.MouseEvent) => void; size?: 'small' | 'medium' }) => (
     <button
       onClick={onClick}
-      className={`${size === 'small' ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'} font-semibold border-2 rounded-lg transition-all duration-200 hover:shadow-md`}
+      className={`${size === 'small' ? 'px-2 py-1 text-xs' : 'px-2.5 py-1 text-xs'} font-medium border rounded-lg transition-all duration-200 hover:shadow-md`}
       style={{ color: '#0B2863', borderColor: '#0B2863', backgroundColor: 'transparent' }}
       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0B2863'; e.currentTarget.style.color = '#ffffff'; }}
       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#0B2863'; }}
@@ -117,7 +117,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const IncomeButton = ({ onClick, size = 'medium' }: { onClick: (e: React.MouseEvent) => void; size?: 'small' | 'medium' }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 ${size === 'small' ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
+      className={`flex items-center gap-2 ${size === 'small' ? 'px-2 py-1 text-xs' : 'px-2.5 py-1 text-xs'} rounded-lg font-medium transition-all duration-200 justify-center bg-green-500 text-white hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
       style={{ minWidth: size === 'small' ? '50px' : '70px' }}
     >
       <TrendingUp size={size === 'small' ? 12 : 14} />
@@ -128,7 +128,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
   const ExpenseButton = ({ onClick, size = 'medium' }: { onClick: (e: React.MouseEvent) => void; size?: 'small' | 'medium' }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 ${size === 'small' ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'} rounded-xl font-semibold transition-all duration-200 justify-center bg-red-500 text-white hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
+      className={`flex items-center gap-2 ${size === 'small' ? 'px-2 py-1 text-xs' : 'px-2.5 py-1 text-xs'} rounded-lg font-medium transition-all duration-200 justify-center bg-red-500 text-white hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0`}
       style={{ minWidth: size === 'small' ? '50px' : '70px' }}
     >
       <TrendingDown size={size === 'small' ? 12 : 14} />
@@ -140,10 +140,10 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
     <Card
       className="mb-4"
       sx={{
-        borderRadius: 4, border: '2px solid', borderColor: '#0B2863',
+        borderRadius: 3, border: '1px solid', borderColor: '#cbd5e1',
         backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        '&:hover': { boxShadow: '0 8px 25px rgba(0,0,0,0.15)', transform: 'translateY(-2px)' },
+        boxShadow: 'none',
+        '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
         transition: 'all 0.2s'
       }}
     >
@@ -155,7 +155,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
             </IconButton>
           </div>
           <div className="flex-1">
-            <Typography variant="h6" className="!font-bold !text-lg" style={{ color: '#0B2863' }}>{superOrder.key_ref}</Typography>
+            <Typography variant="h6" className="!font-semibold !text-base" style={{ color: '#0B2863' }}>{superOrder.key_ref}</Typography>
             <Typography variant="body2" className="!text-gray-600 !mt-1">
               <User size={14} className="inline mr-1" />{superOrder.client}
             </Typography>
@@ -174,7 +174,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
             { label: t('financialTable.columns.workCost'),       value: superOrder.workCost,       bg: '#eff6ff', border: '#0B2863', color: '#0B2863' },
             { label: t('financialTable.columns.totalDiscount'),  value: superOrder.totalCost,      bg: '#fefce8', border: '#f59e0b', color: '#f59e0b' },
           ].map(({ label, value, bg, border, color }) => (
-            <div key={label} className="text-center p-2 rounded-lg border-2" style={{ backgroundColor: bg, borderColor: border }}>
+            <div key={label} className="text-center p-1.5 rounded-lg border" style={{ backgroundColor: bg, borderColor: border }}>
               <Typography variant="caption" className="!block !text-gray-600 !font-semibold">{label}</Typography>
               <Typography variant="body2" className="!font-bold" style={{ color }}>${fmt(value)}</Typography>
             </div>
@@ -236,10 +236,10 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
           ) : (
             <div
               ref={tableContainerRef}
-              className="rounded-2xl shadow-lg border border-gray-100 bg-white overflow-auto"
+              className="rounded-xl shadow-sm border border-gray-200 bg-white overflow-auto"
               style={{ maxHeight: '70vh', minHeight: '400px', scrollbarWidth: 'thin', scrollbarColor: '#0B2863 #f1f5f9' }}
             >
-              <Table sx={{ minWidth: isTablet ? 600 : 800 }} stickyHeader>
+              <Table sx={{ minWidth: isTablet ? 600 : 800, '& .MuiTypography-body2': { fontSize: '0.8rem' }, '& .MuiTypography-body1': { fontSize: '0.85rem' } }} stickyHeader>
                 <TableHead>
                   <TableRow>
                     {columns.map((column, index) => {
@@ -247,8 +247,8 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       return (
                         <TableCell
                           key={index}
-                          className="!border-none !py-5 !px-4 !sticky !top-0 !z-10"
-                          style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#0B2863', color: '#ffffff', fontWeight: 700, fontSize: isTablet ? '0.85rem' : '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: 'none', padding: isTablet ? '16px 8px' : '20px 16px' }}
+                          className="!border-none !py-3 !px-3 !sticky !top-0 !z-10"
+                          style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#0B2863', color: '#ffffff', fontWeight: 600, fontSize: isTablet ? '0.7rem' : '0.75rem', textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: 'none', padding: isTablet ? '10px 8px' : '12px 12px' }}
                         >
                           {column.sortable && column.key ? (
                             <TableSortLabel
@@ -257,10 +257,10 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                               onClick={() => column.key && onSort(column.key)}
                               sx={{ color: '#ffffff !important', '&:hover': { color: '#FFE67B !important' }, '& .MuiTableSortLabel-icon': { color: '#ffffff !important', '&:hover': { color: '#FFE67B !important' } } }}
                             >
-                              <span className="text-white font-bold hover:text-yellow-300 transition-colors">{column.label}</span>
+                              <span className="text-white font-semibold hover:text-yellow-300 transition-colors">{column.label}</span>
                             </TableSortLabel>
                           ) : (
-                            <span className="text-white font-bold">{column.label}</span>
+                            <span className="text-white font-semibold">{column.label}</span>
                           )}
                         </TableCell>
                       );
@@ -278,28 +278,28 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e0f2fe'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8fafc'; }}
                       >
-                        <TableCell className="!py-4 !px-2 !border-b !border-gray-200" style={{ width: '50px' }}>
+                        <TableCell className="!py-2 !px-1 !border-b !border-gray-200" style={{ width: '50px' }}>
                           <IconButton onClick={(e) => { e.stopPropagation(); onToggleExpand(superOrder.key_ref); }} size="small" className="!transition-all !duration-200 hover:!scale-110" style={{ color: '#0B2863' }}>
                             {expandedRows.has(superOrder.key_ref) ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                           </IconButton>
                         </TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200">
                           <Typography variant="body2" className="font-semibold truncate" style={{ color: '#0B2863', maxWidth: isTablet ? '100px' : '120px' }} title={superOrder.key_ref}>{superOrder.key_ref}</Typography>
                         </TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200">
                           <Typography variant="body2" className="truncate" style={{ color: '#0B2863', maxWidth: isTablet ? '120px' : '180px' }} title={superOrder.client}>{superOrder.client}</Typography>
                         </TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.expense)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.fuelCost)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.bonus)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.otherSalaries)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.workCost)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.driverSalaries)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-bold" style={{ color: '#000000' }}>${fmt(superOrder.totalCost)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>${fmt(superOrder.totalIncome)}</Typography></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><ProfitChip profit={superOrder.totalProfit} /></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200"><PayStatusChip paid={superOrder.payStatus === 1} /></TableCell>
-                        <TableCell className="!py-4 !px-4 !border-b !border-gray-200">
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.expense)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.fuelCost)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.bonus)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.otherSalaries)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.workCost)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#000000' }}>${fmt(superOrder.driverSalaries)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-bold" style={{ color: '#000000' }}>${fmt(superOrder.totalCost)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><Typography variant="body2" className="font-semibold" style={{ color: '#22c55e' }}>${fmt(superOrder.totalIncome)}</Typography></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><ProfitChip profit={superOrder.totalProfit} /></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200"><PayStatusChip paid={superOrder.payStatus === 1} /></TableCell>
+                        <TableCell className="!py-2 !px-3 !border-b !border-gray-200">
                           <div className="flex items-center gap-1">
                             <IncomeButton onClick={(e) => { e.stopPropagation(); onAddIncome(superOrder); }} size={isTablet ? 'small' : 'medium'} />
                             <ExpenseButton onClick={(e) => { e.stopPropagation(); onAddExpense(superOrder); }} size={isTablet ? 'small' : 'medium'} />
@@ -342,12 +342,12 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
 
                 {/* Totals Row */}
                 <TableBody>
-                  <TableRow style={{ backgroundColor: '#f1f5f9', borderTop: '3px solid #0B2863' }}>
-                    <TableCell className="!py-4 !px-2 !border-b-0" style={{ width: '50px' }} />
-                    <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold !text-lg" style={{ color: '#0B2863' }}>{t('financialTable.totals')}</Typography>
+                  <TableRow style={{ backgroundColor: '#f1f5f9', borderTop: '2px solid #0B2863' }}>
+                    <TableCell className="!py-2 !px-1 !border-b-0" style={{ width: '50px' }} />
+                    <TableCell className="!py-2 !px-3 !border-b-0">
+                      <Typography variant="body1" className="!font-semibold" style={{ color: '#0B2863' }}>{t('financialTable.totals')}</Typography>
                     </TableCell>
-                    <TableCell className="!py-4 !px-4 !border-b-0">
+                    <TableCell className="!py-2 !px-3 !border-b-0">
                       <Typography variant="body2" className="!font-semibold !text-center" style={{ color: '#6b7280' }}>
                         {t('financialTable.ordersCount', { count: data.length })}
                       </Typography>
@@ -361,24 +361,24 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                       data.reduce((s, o) => s + o.driverSalaries, 0),
                       data.reduce((s, o) => s + o.totalCost, 0),
                     ].map((total, i) => (
-                      <TableCell key={i} className="!py-4 !px-4 !border-b-0">
-                        <Typography variant="body1" className="!font-bold" style={{ color: '#000000' }}>${fmt(total)}</Typography>
+                      <TableCell key={i} className="!py-2 !px-3 !border-b-0">
+                        <Typography variant="body1" className="!font-semibold" style={{ color: '#000000' }}>${fmt(total)}</Typography>
                       </TableCell>
                     ))}
-                    <TableCell className="!py-4 !px-4 !border-b-0">
-                      <Typography variant="body1" className="!font-bold" style={{ color: '#22c55e' }}>${fmt(data.reduce((s, o) => s + o.totalIncome, 0))}</Typography>
+                    <TableCell className="!py-2 !px-3 !border-b-0">
+                      <Typography variant="body1" className="!font-semibold" style={{ color: '#22c55e' }}>${fmt(data.reduce((s, o) => s + o.totalIncome, 0))}</Typography>
                     </TableCell>
-                    <TableCell className="!py-4 !px-4 !border-b-0">
+                    <TableCell className="!py-2 !px-3 !border-b-0">
                       {(() => {
                         const totalProfit = data.reduce((s, o) => s + o.totalProfit, 0);
                         return (
-                          <span className={`inline-flex items-center px-4 py-2 rounded-full text-lg font-bold text-white min-w-[100px] justify-center shadow-md ${totalProfit >= 0 ? 'bg-green-600' : 'bg-red-600'}`}>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold text-white min-w-[80px] justify-center ${totalProfit >= 0 ? 'bg-green-600' : 'bg-red-600'}`}>
                             ${fmt(totalProfit)}
                           </span>
                         );
                       })()}
                     </TableCell>
-                    <TableCell className="!py-4 !px-4 !border-b-0">
+                    <TableCell className="!py-2 !px-3 !border-b-0">
                       <div className="flex flex-col gap-1">
                         <Typography variant="caption" className="!font-semibold" style={{ color: '#22c55e' }}>
                           {t('financialTable.paidCount', { count: data.filter(o => o.payStatus === 1).length })}
@@ -388,7 +388,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
                         </Typography>
                       </div>
                     </TableCell>
-                    <TableCell className="!py-4 !px-4 !border-b-0" />
+                    <TableCell className="!py-2 !px-3 !border-b-0" />
                   </TableRow>
                 </TableBody>
               </Table>
@@ -398,7 +398,7 @@ const FinancialTable: React.FC<FinancialTableProps> = ({
       ) : (
         <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
           <div className="mb-6">
-            <Inbox size={isMobile ? 60 : 80} style={{ color: '#0B2863', opacity: 0.6 }} />
+            <Inbox size={isMobile ? 40 : 52} style={{ color: '#0B2863', opacity: 0.6 }} />
           </div>
           <Typography variant={isMobile ? 'h6' : 'h5'} className="!font-bold !mb-3" style={{ color: '#0B2863' }}>
             {t('financialTable.empty.title')}

@@ -1588,7 +1588,10 @@
     "tooltipGlobalDesc": "Busca en todo el historial de la empresa — puede incluir órdenes de otras semanas.",
     "searchResultInfo": "Resultados para <1>{{ref}}</1> — {{count}} órdenes",
     "searchResultInfoWeek": "{{ref}} · S{{week}} {{year}} · {{count}} refs",
-    "searchResultInfoGlobal": "{{ref}} · Historial completo · {{count}} refs"
+    "searchResultInfoGlobal": "{{ref}} · Historial completo · {{count}} refs",
+    "sectionPeriod": "Período",
+    "sectionSearch": "Búsqueda",
+    "sectionActions": "Acciones"
   },
   "financialTable": {
     "columns": {
@@ -2971,5 +2974,81 @@
     "total": "Total",
     "empty": "Ningún operador trabajó en esta semana",
     "goPayroll": "Ir a Nómina"
+  },
+  "lowMargin": {
+    "tabs": {
+      "summary": "Resumen",
+      "lowMargin": "Márgenes bajos"
+    },
+    "scope": {
+      "label": "Alcance",
+      "week": "Semana",
+      "global": "Global",
+      "from": "Desde semana",
+      "to": "Hasta semana",
+      "period": "Período"
+    },
+    "groupBy": {
+      "label": "Agrupar",
+      "reference": "Por referencia",
+      "order": "Por orden"
+    },
+    "threshold": "Margen menor a {{value}}%",
+    "searchPlaceholder": "Buscar referencia o cliente…",
+    "refresh": "Recalcular",
+    "sort": {
+      "label": "Ordenar por",
+      "margin": "Peor margen",
+      "profit": "Mayor pérdida",
+      "income": "Mayor ingreso",
+      "cost": "Mayor costo"
+    },
+    "calculating": "Repartiendo salarios de operadores por peso de orden… {{done}} / {{total}}. Las cifras son provisionales hasta terminar.",
+    "failed": "No se pudieron leer los operadores de {{count}} orden(es); se usa el salario que reporta el sistema para ellas, así que el reparto puede variar.",
+    "kpi": {
+      "atRisk": "Órdenes en riesgo",
+      "losses": "Con pérdida",
+      "income": "Ingreso en riesgo",
+      "avgMargin": "Margen promedio"
+    },
+    "col": {
+      "reference": "Referencia",
+      "income": "Ingreso",
+      "cost": "Costo",
+      "result": "Resultado",
+      "margin": "Margen"
+    },
+    "cost": {
+      "salaries": "Salarios (repartidos)",
+      "expense": "Gastos",
+      "fuel": "Gasolina",
+      "work": "Costos extra",
+      "bonus": "Bonos"
+    },
+    "ofIncome": "del ingreso",
+    "noIncome": "Sin ingreso",
+    "noWeight": "Una orden no tiene peso: el salario se repartió en partes iguales",
+    "orders": "{{count}} orden(es)",
+    "ordersOfRef": "Órdenes de la referencia (peor primero)",
+    "viewOperators": "Ver operadores",
+    "empty": "Ninguna orden con margen menor a {{value}}%",
+    "period": {
+      "month": "Mes",
+      "semester": "Semestre",
+      "year": "Año",
+      "range": "Rango de fechas",
+      "s1": "1er semestre (ene–jun)",
+      "s2": "2do semestre (jul–dic)"
+    },
+    "invalidRange": "Selecciona un rango de fechas válido (la fecha inicial no puede ser posterior a la final).",
+    "fallbackNote": "Cálculo en el navegador: el servidor aún no ofrece el endpoint de márgenes bajos.",
+    "pageOf": "Página {{page}} de {{last}} · {{count}} resultados",
+    "serverFailed": "El servidor respondió con error ({{status}}) al calcular los márgenes. Se muestra el cálculo del navegador, que puede diferir ligeramente. Usa «Recalcular» para reintentar con el servidor.",
+    "income": {
+      "label": "Ingresos",
+      "all": "Todas",
+      "with": "Con ingreso",
+      "without": "Sin ingreso"
+    }
   }
 }
