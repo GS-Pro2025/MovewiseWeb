@@ -46,6 +46,7 @@ function truncate(s: string, max = 25): string {
 /** Fields that should display as '0' (not blank) when null/undefined — numeric accounting fields. */
 const NUMERIC_FIELDS = new Set([
   'income', 'expense', 'weight', 'distance',
+  'cost', 'profit', 'margin', 'salaries',
   'salary', 'hourly_salary', 'additional_costs',
   'cost_fuel_distributed', 'fuel_qty_distributed', 'distance_distributed',
   'quantity',
@@ -147,6 +148,10 @@ function flattenOrderGroup(group: Record<string, unknown>, cols: string[]): Flat
     if (col === 'expense')  { row[col] = renderCell('expense',  consolidated['total_expense']);  continue; }
     if (col === 'weight')   { row[col] = renderCell('weight',   consolidated['total_weight']);   continue; }
     if (col === 'distance') { row[col] = renderCell('distance', consolidated['total_distance']); continue; }
+    if (col === 'cost')     { row[col] = renderCell('cost',     consolidated['total_cost']);     continue; }
+    if (col === 'profit')   { row[col] = renderCell('profit',   consolidated['total_profit']);   continue; }
+    if (col === 'margin')   { row[col] = renderCell('margin',   consolidated['margin']);         continue; }
+    if (col === 'salaries') { row[col] = renderCell('salaries', consolidated['total_salaries']); continue; }
 
     // ── Date: range if multi-day (DD/MM/YYYY -> DD/MM/YYYY) ──────────────
     if (col === 'date') {
@@ -396,7 +401,7 @@ function buildExcelOrderRows(
         if (col === 'payStatus') return formatPayStatus(order['payStatus']);
         if (col === 'status')    return formatValue(order['status']);
 
-        if (['income', 'expense', 'weight', 'distance'].includes(col))
+        if (['income', 'expense', 'weight', 'distance', 'cost', 'profit', 'margin', 'salaries'].includes(col))
           return renderCell(col, order[col]);
 
         if (col.startsWith('person.')) {

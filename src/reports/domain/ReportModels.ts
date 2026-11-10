@@ -1,3 +1,48 @@
+// ─── Rules ────────────────────────────────────────────────────────────────────
+
+export type RuleLevel = 'order' | 'group';
+export type RuleOp =
+  | 'lt' | 'lte' | 'gt' | 'gte' | 'eq' | 'ne' | 'between' | 'empty' | 'not_empty'
+  | 'in' | 'contains';
+export type GroupCombine = 'sum' | 'single';
+export type RuleKind = 'number' | 'id' | 'text';
+
+export interface ReportRule {
+  field: string;
+  op: RuleOp;
+  /** number | text | [min, max] | list of ids/texts, depending on op */
+  value?: string | number | (string | number)[];
+  /** Compare against another numeric field (e.g. expense > income) instead of `value`. */
+  value_field?: string;
+  level: RuleLevel;
+}
+
+/** Fields a rule can target, and the level(s) they exist at. Mirrors the backend (ReportRules.py). */
+export const RULE_FIELDS: Record<string, { kind: RuleKind; levels: RuleLevel[] }> = {
+  income:           { kind: 'number', levels: ['order', 'group'] },
+  expense:          { kind: 'number', levels: ['order', 'group'] },
+  weight:           { kind: 'number', levels: ['order', 'group'] },
+  distance:         { kind: 'number', levels: ['order', 'group'] },
+  cost:             { kind: 'number', levels: ['order', 'group'] },
+  profit:           { kind: 'number', levels: ['order', 'group'] },
+  margin:           { kind: 'number', levels: ['order', 'group'] },
+  salaries:         { kind: 'number', levels: ['order', 'group'] },
+  order_count:      { kind: 'number', levels: ['group'] },
+  customer_factory: { kind: 'id',     levels: ['order'] },
+  job:              { kind: 'id',     levels: ['order'] },
+  state_usa:        { kind: 'text',   levels: ['order'] },
+  address:          { kind: 'text',   levels: ['order'] },
+};
+
+/** Operators that can compare a field against another field. */
+export const COMPARE_OPS: RuleOp[] = ['lt', 'lte', 'gt', 'gte', 'eq', 'ne'];
+
+export const RULE_OPS: Record<RuleKind, RuleOp[]> = {
+  number: ['lt', 'lte', 'gt', 'gte', 'eq', 'ne', 'between', 'empty', 'not_empty'],
+  id: ['eq', 'in'],
+  text: ['contains', 'eq', 'in'],
+};
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export interface ReportConfig {
@@ -15,6 +60,12 @@ export interface ReportConfig {
   include_tools?: boolean;
   status_filter?: string | null;
   pay_status_filter?: 0 | 1 | null;
+
+  // rules (orders only)
+  rules?: ReportRule[];
+  rules_match?: 'all' | 'any';
+  /** How income/expense of a reference are combined: add them up or take one (the max). */
+  group_combine?: GroupCombine;
 
   // operators
   operator_fields?: string[];
@@ -68,6 +119,8 @@ export interface ReportResult {
 export const ORDER_FIELDS = [
   'key', 'key_ref', 'date', 'income', 'expense',
   'weight', 'distance', 'status', 'payStatus', 'state_usa', 'address',
+  // computed like Financials (salaries split by order weight)
+  'cost', 'profit', 'margin', 'salaries',
 ] as const;
 
 export const ASSIGN_FIELDS = [
@@ -99,6 +152,10 @@ export const FIELD_LABELS: Record<string, string> = {
   earnings: 'Earnings',
   ganancias: 'Earnings',
   net_income: 'Net Income',
+  cost: 'Cost',
+  profit: 'Result',
+  margin: 'Margin %',
+  salaries: 'Salaries (split)',
   weight: 'Weight',
   distance: 'Distance',
   status: 'Status',
@@ -145,6 +202,9 @@ export const DEFAULT_ORDER_CONFIG: ReportConfig = {
   include_tools: false,
   status_filter: null,
   pay_status_filter: null,
+  rules: [],
+  rules_match: 'all',
+  group_combine: 'sum',
 };
 
 export const DEFAULT_OPERATOR_CONFIG: ReportConfig = {

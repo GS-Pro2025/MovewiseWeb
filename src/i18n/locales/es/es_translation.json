@@ -396,7 +396,11 @@
       "end_time": "Hora de Fin",
       "additional_costs": "Costos Adicionales",
       "order_key_ref": "Orden #",
-      "order_date": "Fecha de Orden"
+      "order_date": "Fecha de Orden",
+      "cost": "Costo",
+      "profit": "Resultado",
+      "margin": "Margen %",
+      "salaries": "Salarios (repartidos)"
     },
     "templates": {
       "createBtn": "Nueva Plantilla",
@@ -460,6 +464,60 @@
       "exportExcelTooltipAll": "Descargar todos los registros como Excel (.xlsx)",
       "exportCsvTooltipAll": "Descargar todos los registros como CSV",
       "exportPdfTooltipAll": "Descargar todos los registros como PDF"
+    },
+    "rules": {
+      "title": "Reglas",
+      "subtitle": "Filtra las órdenes o referencias por valor, vacío, cliente, trabajo o ubicación",
+      "add": "Agregar regla",
+      "empty": "Sin reglas: se incluyen todas las órdenes del período.",
+      "level": "Aplicar a",
+      "levelOrder": "Cada orden",
+      "levelGroup": "Referencia (agrupada)",
+      "field": "Campo",
+      "op": "Condición",
+      "value": "Valor",
+      "min": "Mínimo",
+      "max": "Máximo",
+      "remove": "Quitar regla",
+      "match": "Combinar reglas",
+      "matchAll": "Todas deben cumplirse",
+      "matchAny": "Basta con una",
+      "combine": "Al agrupar por referencia, income y expense",
+      "combineSum": "Sumar las órdenes",
+      "combineSingle": "Tomar el mayor (no sumar)",
+      "combineSingleHint": "Úsalo cuando el pago/expense de la referencia está repetido en cada orden: se toma una sola vez en lugar de multiplicarlo.",
+      "commaHint": "Separa los valores con comas",
+      "ops": {
+        "lt": "menor que",
+        "lte": "menor o igual que",
+        "gt": "mayor que",
+        "gte": "mayor o igual que",
+        "eq": "igual a",
+        "ne": "distinto de",
+        "between": "entre",
+        "empty": "vacío o 0",
+        "not_empty": "con valor",
+        "in": "es uno de",
+        "contains": "contiene"
+      },
+      "fields": {
+        "income": "Ingreso",
+        "expense": "Descuento de orden",
+        "weight": "Peso",
+        "distance": "Distancia",
+        "cost": "Costo total",
+        "profit": "Resultado (ganancia)",
+        "margin": "Margen %",
+        "salaries": "Salarios (repartidos)",
+        "order_count": "Cantidad de órdenes",
+        "customer_factory": "Cliente (fábrica)",
+        "job": "Trabajo",
+        "state_usa": "Estado / ubicación",
+        "address": "Dirección"
+      },
+      "compareWith": "Comparar con",
+      "againstValue": "Valor",
+      "againstField": "Otro campo"
     }
   },
   "filters": {

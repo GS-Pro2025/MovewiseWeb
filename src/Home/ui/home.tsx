@@ -325,6 +325,8 @@ const OrdersTable: React.FC = () => {
               weight: item.weight,
               truckType: item.vehicles[0]?.type,
               totalCost: item.summaryCost?.totalCost,
+              fuelCost: item.summaryCost?.fuelCost ?? 0,
+              extraCost: item.summaryCost?.workCost ?? 0,
               week: calculatedWeek,
               state: item.state_usa,
               operators: item.operators,

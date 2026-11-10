@@ -21,6 +21,8 @@ export interface TableData {
   weight: string;
   truckType: string;
   totalCost: number;
+  fuelCost?: number;
+  extraCost?: number;
   week: number; 
   payStatus: number;
   distance: number;
@@ -55,6 +57,10 @@ export interface TableDataExport {
   job: string;
   weight: string;
   truckType: string;
+  operators: string;
+  operatorsCost: number;
+  fuelCost: number;
+  extraCost: number;
   totalCost: number;
   payStatus: number;
   distance: number;

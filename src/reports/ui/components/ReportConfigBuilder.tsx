@@ -26,6 +26,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import type { ReportConfig } from '../../domain/ReportModels';
+import ReportRulesEditor from './ReportRulesEditor';
 import {
   ORDER_FIELDS,
   ASSIGN_FIELDS,
@@ -256,6 +257,9 @@ const ReportConfigBuilder: React.FC<Props> = ({ value, onChange }) => {
         include_tools: false,
         status_filter: null,
         pay_status_filter: null,
+        rules: [],
+        rules_match: 'all',
+        group_combine: 'sum',
       });
     } else {
       onChange({
@@ -393,6 +397,8 @@ const ReportConfigBuilder: React.FC<Props> = ({ value, onChange }) => {
                 checked={!!value.include_tools}
                 onToggle={(v) => patch({ include_tools: v })}
               />
+
+              <ReportRulesEditor value={value} onChange={patch} />
 
               {/* Filters */}
               <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>

@@ -1,6 +1,27 @@
 import { TableData } from '../domain/TableData';
 
+const money = (n: number) =>
+  '$' + (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const esc = (v: unknown) =>
+  String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Evita el desfase de zona horaria al parsear 'YYYY-MM-DD'
+const fmtDate = (d: string) => {
+  const [y, m, day] = (d || '').split('-').map(Number);
+  if (!y || !m || !day) return esc(d);
+  return new Date(y, m - 1, day).toLocaleDateString('en-US');
+};
+
+// Costo de operadores de una orden (salario ya repartido por peso en el dashboard)
+export const getOperatorsCost = (item: TableData): number =>
+  (item.operators || []).reduce((sum, op) => sum + (Number(op.salary) || 0), 0);
+
 export const generatePrintableHTML = (data: TableData[], filename: string): void => {
+  const totalOperatorsCost = data.reduce((sum, i) => sum + getOperatorsCost(i), 0);
+  const totalFuelCost = data.reduce((sum, i) => sum + (i.fuelCost || 0), 0);
+  const totalExtraCost = data.reduce((sum, i) => sum + (i.extraCost || 0), 0);
+  const totalCostAll = data.reduce((sum, i) => sum + (i.totalCost || 0), 0);
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -24,7 +45,7 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 8px;
@@ -99,7 +120,7 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
         }
 
         th, td {
-            padding: 12px 8px;
+            padding: 10px 8px;
             text-align: left;
             border-bottom: 1px solid #e9ecef;
         }
@@ -156,8 +177,28 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
         }
 
         .operators {
-            font-size: 0.8rem;
-            color: #666;
+            font-size: 0.78rem;
+            color: #444;
+            min-width: 170px;
+        }
+
+        .operators .op {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .operators .op b { font-weight: 600; }
+
+        .cost { font-weight: 600; color: #b45309; }
+        .num { text-align: right; white-space: nowrap; }
+        .muted { color: #888; }
+        td { vertical-align: top; }
+        tfoot td {
+            font-weight: 700;
+            background: #eef2ff;
+            border-top: 2px solid #0B2863;
         }
 
         @media print {
@@ -221,6 +262,12 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
                 page-break-inside: auto;
             }
             
+            tfoot td {
+                background: #eef2ff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
             tr {
                 page-break-inside: avoid;
                 page-break-after: auto;
@@ -235,6 +282,34 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
             margin: 0.5in;
             size: landscape;
         }
+
+        /* ===== Compact layout ===== */
+        body { padding: 8px; font-size: 10px; line-height: 1.25; }
+        .container { max-width: none; width: 100%; }
+        .header { padding: 12px 16px; }
+        .header h1 { font-size: 1.3rem; margin-bottom: 2px; }
+        .header p { font-size: 0.75rem; }
+        .summary { grid-template-columns: repeat(8, 1fr); gap: 6px; padding: 10px 12px; }
+        .summary-card { padding: 8px 6px; border-left-width: 3px; }
+        .summary-card h3 { font-size: 0.95rem; margin-bottom: 1px; }
+        .summary-card p { font-size: 0.65rem; }
+        .table-container { padding: 8px 12px; overflow: visible; }
+        table { table-layout: fixed; width: 100%; font-size: 0.6rem; border-collapse: separate; border-spacing: 0; }
+        th, td { padding: 4px 9px; border-right: 1px solid #eef0f3; word-wrap: break-word; overflow-wrap: anywhere; }
+        th { font-size: 0.54rem; letter-spacing: 0.2px; }
+        .status { padding: 1px 6px; font-size: 0.54rem; display: inline-block; }
+        .operators { min-width: 0; font-size: 0.58rem; }
+        .operators .op { white-space: normal; gap: 10px; }
+        th:last-child, td:last-child { border-right: none; }
+        .sub { display: block; color: #777; font-size: 0.54rem; }
+        .footer { padding: 6px; font-size: 0.65rem; }
+        @media print {
+            body { padding: 0; }
+            .summary { padding: 6px 0; }
+            .table-container { padding: 4px 0; }
+            .header { padding: 8px 12px; }
+        }
+        @page { margin: 0.3in; size: landscape; }
     </style>
 </head>
 <body>
@@ -264,12 +339,28 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
                 <p>Pending</p>
             </div>
             <div class="summary-card">
-                <h3>$${data.reduce((sum, item) => sum + (item.income || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                <h3>${money(data.reduce((sum, item) => sum + (item.income || 0), 0))}</h3>
                 <p>Total Income</p>
             </div>
             <div class="summary-card">
-                <h3>$${data.reduce((sum, item) => sum + (item.expense || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                <h3>${money(data.reduce((sum, item) => sum + (item.expense || 0), 0))}</h3>
                 <p>Total Expenses</p>
+            </div>
+            <div class="summary-card">
+                <h3>${money(totalOperatorsCost)}</h3>
+                <p>Operators Cost</p>
+            </div>
+            <div class="summary-card">
+                <h3>${money(totalFuelCost)}</h3>
+                <p>Fuel Cost</p>
+            </div>
+            <div class="summary-card">
+                <h3>${money(totalExtraCost)}</h3>
+                <p>Extra Costs</p>
+            </div>
+            <div class="summary-card">
+                <h3>${money(totalCostAll)}</h3>
+                <p>Total Cost</p>
             </div>
         </div>
 
@@ -277,41 +368,59 @@ export const generatePrintableHTML = (data: TableData[], filename: string): void
             <table>
                 <thead>
                     <tr>
-                        <th>Status</th>
-                        <th>Order Ref</th>
-                        <th>Date</th>
-                        <th>Customer</th>
-                        <th>Location</th>
-                        <th>Job</th>
-                        <th>Weight</th>
-                        <th>Distance</th>
-                        <th>Income</th>
-                        <th>Expense</th>
-                        <th>Operators</th>
+                        <th style="width:10%">Order</th>
+                        <th style="width:13%">Customer / Location</th>
+                        <th style="width:8%">Job</th>
+                        <th class="num" style="width:7%">Weight / Dist.</th>
+                        <th class="num" style="width:7%">Income</th>
+                        <th class="num" style="width:7%">Expense</th>
+                        <th style="width:20%">Operators (pay split by weight)</th>
+                        <th class="num" style="width:7%">Operators Cost</th>
+                        <th class="num" style="width:7%">Fuel</th>
+                        <th class="num" style="width:7%">Extra Costs</th>
+                        <th class="num" style="width:7%">Total Cost</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${data.map(item => `
                         <tr>
-                            <td><span class="status ${item.status}">${item.status}</span></td>
-                            <td><strong>${item.key_ref}</strong></td>
-                            <td>${new Date(item.dateReference).toLocaleDateString('en-US')}</td>
-                            <td>${item.firstName} ${item.lastName}</td>
-                            <td>${item.city}, ${item.state}</td>
-                            <td>${item.job}</td>
-                            <td>${item.weight} lbs</td>
-                            <td>${item.distance} miles</td>
-                            <td><span class="currency">$${(item.income || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
-                            <td><span class="currency">$${(item.expense || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
+                            <td>
+                                <strong>${esc(item.key_ref)}</strong>
+                                <span class="sub">${fmtDate(item.dateReference)}</span>
+                            </td>
+                            <td>
+                                ${esc(item.firstName)} ${esc(item.lastName)}
+                                <span class="sub">${esc(item.city)}${item.state ? ', ' + esc(item.state) : ''}</span>
+                            </td>
+                            <td>${esc(item.job)}</td>
+                            <td class="num">${esc(item.weight)} lbs<span class="sub">${esc(item.distance)} mi</span></td>
+                            <td class="num"><span class="currency">${money(item.income)}</span></td>
+                            <td class="num">${money(item.expense)}</td>
                             <td class="operators">
-                                ${item.operators && item.operators.length > 0 
-                                    ? item.operators.map(op => `${op.first_name} ${op.last_name}`).join(', ')
-                                    : 'No operators assigned'
+                                ${item.operators && item.operators.length > 0
+                                    ? item.operators.map(op => `<div class="op"><span>${esc(op.first_name)} ${esc(op.last_name)}${op.role ? ` <span class="muted">(${esc(op.role)})</span>` : ''}</span><b>${money(Number(op.salary) || 0)}</b></div>`).join('')
+                                    : '<span class="muted">No operators assigned</span>'
                                 }
                             </td>
+                            <td class="num cost">${money(getOperatorsCost(item))}</td>
+                            <td class="num">${item.fuelCost ? money(item.fuelCost) : '<span class="muted">-</span>'}</td>
+                            <td class="num">${item.extraCost ? money(item.extraCost) : '<span class="muted">-</span>'}</td>
+                            <td class="num"><strong>${money(item.totalCost)}</strong></td>
                         </tr>
                     `).join('')}
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4">TOTALS (${data.length} orders)</td>
+                        <td class="num">${money(data.reduce((sum, i) => sum + (i.income || 0), 0))}</td>
+                        <td class="num">${money(data.reduce((sum, i) => sum + (i.expense || 0), 0))}</td>
+                        <td></td>
+                        <td class="num">${money(totalOperatorsCost)}</td>
+                        <td class="num">${money(totalFuelCost)}</td>
+                        <td class="num">${money(totalExtraCost)}</td>
+                        <td class="num">${money(totalCostAll)}</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 

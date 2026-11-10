@@ -396,7 +396,11 @@
       "end_time": "End Time",
       "additional_costs": "Additional Costs",
       "order_key_ref": "Order #",
-      "order_date": "Order Date"
+      "order_date": "Order Date",
+      "cost": "Cost",
+      "profit": "Result",
+      "margin": "Margin %",
+      "salaries": "Salaries (split)"
     },
     "templates": {
       "createBtn": "New Template",
@@ -460,6 +464,60 @@
       "exportExcelTooltipAll": "Download all records as Excel (.xlsx)",
       "exportCsvTooltipAll": "Download all records as CSV",
       "exportPdfTooltipAll": "Download all records as PDF"
+    },
+    "rules": {
+      "title": "Rules",
+      "subtitle": "Filter orders or references by value, empty, customer, job or location",
+      "add": "Add rule",
+      "empty": "No rules: every order in the period is included.",
+      "level": "Apply to",
+      "levelOrder": "Each order",
+      "levelGroup": "Reference (grouped)",
+      "field": "Field",
+      "op": "Condition",
+      "value": "Value",
+      "min": "Minimum",
+      "max": "Maximum",
+      "remove": "Remove rule",
+      "match": "Combine rules",
+      "matchAll": "All must match",
+      "matchAny": "Any one is enough",
+      "combine": "When grouping by reference, income and expense",
+      "combineSum": "Add the orders up",
+      "combineSingle": "Take the largest (don't add)",
+      "combineSingleHint": "Use it when the reference's payment/expense is repeated on every order: it is taken once instead of multiplied.",
+      "commaHint": "Separate values with commas",
+      "ops": {
+        "lt": "less than",
+        "lte": "less than or equal",
+        "gt": "greater than",
+        "gte": "greater than or equal",
+        "eq": "equal to",
+        "ne": "not equal to",
+        "between": "between",
+        "empty": "empty or 0",
+        "not_empty": "has a value",
+        "in": "is one of",
+        "contains": "contains"
+      },
+      "fields": {
+        "income": "Income",
+        "expense": "Order discount",
+        "weight": "Weight",
+        "distance": "Distance",
+        "cost": "Total cost",
+        "profit": "Result (profit)",
+        "margin": "Margin %",
+        "salaries": "Salaries (split)",
+        "order_count": "Number of orders",
+        "customer_factory": "Customer (factory)",
+        "job": "Job",
+        "state_usa": "State / location",
+        "address": "Address"
+      },
+      "compareWith": "Compare with",
+      "againstValue": "Value",
+      "againstField": "Other field"
     }
   },
   "filters": {

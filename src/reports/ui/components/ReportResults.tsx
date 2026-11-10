@@ -100,6 +100,10 @@ function buildGroupDisplayRecord(group: Record<string, unknown>): Record<string,
     expense: consolidated['total_expense'],
     weight: consolidated['total_weight'],
     distance: consolidated['total_distance'],
+    cost: consolidated['total_cost'],
+    profit: consolidated['total_profit'],
+    margin: consolidated['margin'],
+    salaries: consolidated['total_salaries'],
     // Date range (DD/MM/YYYY, with -> separator for multi-day)
     date:
       consolidated['date_first'] === consolidated['date_last']

@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { TableData, TableDataExport } from '../domain/TableData';
-import { generatePrintableHTML } from './exportToPrintableHTML';
+import { generatePrintableHTML, getOperatorsCost } from './exportToPrintableHTML';
 
 export const exportToExcel = (data: TableData[], filename: string): void => {
   // Transform data for export (flatten complex fields)
@@ -22,6 +22,12 @@ export const exportToExcel = (data: TableData[], filename: string): void => {
     job: item.job,
     weight: item.weight,
     truckType: item.truckType || 'N/A',
+    operators: (item.operators || [])
+      .map(op => `${op.first_name} ${op.last_name} ($${(Number(op.salary) || 0).toFixed(2)})`)
+      .join(', '),
+    operatorsCost: Math.round(getOperatorsCost(item) * 100) / 100,
+    fuelCost: item.fuelCost ?? 0,
+    extraCost: item.extraCost ?? 0,
     totalCost: item.totalCost,
     payStatus: item.payStatus,
     distance: item.distance,
